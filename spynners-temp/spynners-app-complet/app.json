@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "SPYNNERS Live",
+    "slug": "spynners-live-experience",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "spynners",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.spynners.live",
+      "associatedDomains": [
+        "applinks:spynners.com",
+        "webcredentials:spynners.com"
+      ],
+      "infoPlist": {
+        "NSCameraUsageDescription": "SPYNNERS a besoin d'accéder à votre caméra pour prendre des photos et vidéos pendant l'événement.",
+        "NSMicrophoneUsageDescription": "SPYNNERS a besoin d'accéder à votre micro pour enregistrer des vidéos.",
+        "NSPhotoLibraryUsageDescription": "SPYNNERS a besoin d'accéder à votre galerie pour sauvegarder vos photos et vidéos.",
+        "NSPhotoLibraryAddUsageDescription": "SPYNNERS a besoin de sauvegarder vos photos et vidéos dans votre galerie.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.spynners.live",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0a0a0a"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bdee0bb9-363d-44f9-ba7f-37130ffbef06"
+      }
+    }
+  }
+}
