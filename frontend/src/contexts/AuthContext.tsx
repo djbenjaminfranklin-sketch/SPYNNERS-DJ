@@ -7,6 +7,7 @@ interface User {
   id: string;
   email: string;
   full_name: string;
+  user_type?: string; // dj, producer, dj_producer, label
 }
 
 interface AuthContextType {
@@ -14,7 +15,7 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, fullName: string) => Promise<void>;
+  signup: (email: string, password: string, fullName: string, userType?: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
