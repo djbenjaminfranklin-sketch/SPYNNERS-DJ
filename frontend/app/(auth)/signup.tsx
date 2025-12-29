@@ -16,6 +16,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
+import LanguageSelector from '../../src/components/LanguageSelector';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 
@@ -23,10 +25,10 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // User types
 const USER_TYPES = [
-  { id: 'dj', label: 'DJ', icon: 'headset', description: 'Je joue de la musique en club/événements' },
-  { id: 'producer', label: 'Producer', icon: 'musical-notes', description: 'Je produis de la musique' },
-  { id: 'dj_producer', label: 'DJ & Producer', icon: 'disc', description: 'Je joue et je produis' },
-  { id: 'label', label: 'Label', icon: 'business', description: 'Je représente un label musical' },
+  { id: 'dj', labelKey: 'userType.dj', descKey: 'userType.djDesc', icon: 'headset' },
+  { id: 'producer', labelKey: 'userType.producer', descKey: 'userType.producerDesc', icon: 'musical-notes' },
+  { id: 'dj_producer', labelKey: 'userType.djProducer', descKey: 'userType.djProducerDesc', icon: 'disc' },
+  { id: 'label', labelKey: 'userType.label', descKey: 'userType.labelDesc', icon: 'business' },
 ];
 
 export default function SignupScreen() {
@@ -40,6 +42,7 @@ export default function SignupScreen() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const router = useRouter();
   const { signup } = useAuth();
+  const { t } = useLanguage();
 
   const handleSelectType = (typeId: string) => {
     setUserType(typeId);
@@ -47,7 +50,7 @@ export default function SignupScreen() {
 
   const handleContinue = () => {
     if (!userType) {
-      Alert.alert('Sélection requise', 'Veuillez choisir votre profil');
+      Alert.alert(t('common.error'), 'Please select your profile type');
       return;
     }
     setStep(2);
@@ -55,22 +58,22 @@ export default function SignupScreen() {
 
   const handleSignup = async () => {
     if (!fullName || !email || !password || !confirmPassword) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      Alert.alert(t('common.error'), 'Please fill in all fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
+      Alert.alert(t('common.error'), 'Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Erreur', 'Le mot de passe doit contenir au moins 6 caractères');
+      Alert.alert(t('common.error'), 'Password must be at least 6 characters');
       return;
     }
 
     if (!acceptedTerms) {
-      Alert.alert('Erreur', 'Veuillez accepter les conditions d\'utilisation');
+      Alert.alert(t('common.error'), 'Please accept the terms of use');
       return;
     }
 
@@ -79,7 +82,7 @@ export default function SignupScreen() {
       await signup(email, password, fullName, userType);
       router.replace('/(tabs)/home');
     } catch (error: any) {
-      Alert.alert('Inscription échouée', error.response?.data?.message || 'Impossible de créer le compte');
+      Alert.alert(t('common.error'), error.response?.data?.message || 'Could not create account');
     } finally {
       setLoading(false);
     }
@@ -97,6 +100,11 @@ export default function SignupScreen() {
   if (step === 1) {
     return (
       <View style={styles.container}>
+        {/* Language Selector */}
+        <View style={styles.languageContainer}>
+          <LanguageSelector compact />
+        </View>
+
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <View style={styles.header}>
@@ -112,14 +120,12 @@ export default function SignupScreen() {
 
           {/* Welcome Text */}
           <View style={styles.welcomeSection}>
-            <Text style={styles.welcomeTitle}>Bienvenue sur SPYNNERS!</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Rejoignez la plus grande communauté de DJs et producteurs House Music
-            </Text>
+            <Text style={styles.welcomeTitle}>{t('signup.welcome')}</Text>
+            <Text style={styles.welcomeSubtitle}>{t('signup.joinCommunity')}</Text>
           </View>
 
           {/* User Type Selection */}
-          <Text style={styles.questionText}>Vous êtes...</Text>
+          <Text style={styles.questionText}>{t('signup.youAre')}</Text>
           
           <View style={styles.typeContainer}>
             {USER_TYPES.map((type) => (
@@ -147,9 +153,9 @@ export default function SignupScreen() {
                     styles.typeLabel,
                     userType === type.id && styles.typeLabelSelected
                   ]}>
-                    {type.label}
+                    {t(type.labelKey)}
                   </Text>
-                  <Text style={styles.typeDescription}>{type.description}</Text>
+                  <Text style={styles.typeDescription}>{t(type.descKey)}</Text>
                 </View>
                 {userType === type.id && (
                   <Ionicons name="checkmark-circle" size={24} color={Colors.primary} />
@@ -164,7 +170,7 @@ export default function SignupScreen() {
             onPress={handleContinue}
             disabled={!userType}
           >
-            <Text style={styles.continueButtonText}>Continuer</Text>
+            <Text style={styles.continueButtonText}>{t('signup.continue')}</Text>
             <Ionicons name="arrow-forward" size={20} color="#fff" />
           </TouchableOpacity>
 
@@ -174,7 +180,7 @@ export default function SignupScreen() {
             onPress={() => router.back()}
           >
             <Text style={styles.linkText}>
-              Déjà un compte ? <Text style={styles.linkTextBold}>Se connecter</Text>
+              {t('signup.alreadyAccount')} <Text style={styles.linkTextBold}>{t('login.signIn')}</Text>
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -188,6 +194,11 @@ export default function SignupScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
+      {/* Language Selector */}
+      <View style={styles.languageContainer}>
+        <LanguageSelector compact />
+      </View>
+
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
@@ -209,16 +220,16 @@ export default function SignupScreen() {
             color={Colors.primary} 
           />
           <Text style={styles.selectedTypeText}>
-            {USER_TYPES.find(t => t.id === userType)?.label}
+            {t(USER_TYPES.find(ty => ty.id === userType)?.labelKey || '')}
           </Text>
           <TouchableOpacity onPress={() => setStep(1)}>
-            <Text style={styles.changeTypeText}>Modifier</Text>
+            <Text style={styles.changeTypeText}>{t('signup.change')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Form Title */}
-        <Text style={styles.formTitle}>Créer votre compte</Text>
-        <Text style={styles.formSubtitle}>Remplissez vos informations pour rejoindre SPYNNERS</Text>
+        <Text style={styles.formTitle}>{t('signup.createAccount')}</Text>
+        <Text style={styles.formSubtitle}>{t('signup.fillInfo')}</Text>
 
         {/* Form */}
         <View style={styles.form}>
@@ -226,7 +237,7 @@ export default function SignupScreen() {
             <Ionicons name="person-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder={userType === 'label' ? 'Nom du label' : 'Nom complet / Nom d\'artiste'}
+              placeholder={userType === 'label' ? t('signup.labelName') : t('signup.fullName')}
               placeholderTextColor={Colors.textMuted}
               value={fullName}
               onChangeText={setFullName}
@@ -237,7 +248,7 @@ export default function SignupScreen() {
             <Ionicons name="mail-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder={t('login.email')}
               placeholderTextColor={Colors.textMuted}
               value={email}
               onChangeText={setEmail}
@@ -250,7 +261,7 @@ export default function SignupScreen() {
             <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Mot de passe (min. 6 caractères)"
+              placeholder={t('login.password')}
               placeholderTextColor={Colors.textMuted}
               value={password}
               onChangeText={setPassword}
@@ -262,7 +273,7 @@ export default function SignupScreen() {
             <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Confirmer le mot de passe"
+              placeholder={t('signup.confirmPassword')}
               placeholderTextColor={Colors.textMuted}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -280,13 +291,13 @@ export default function SignupScreen() {
               {acceptedTerms && <Ionicons name="checkmark" size={14} color="#fff" />}
             </View>
             <Text style={styles.termsText}>
-              J'accepte les{' '}
+              {t('signup.acceptTerms')}{' '}
               <Text style={styles.termsLink} onPress={openTerms}>
-                conditions d'utilisation
+                {t('signup.termsOfUse')}
               </Text>
-              {' '}et la{' '}
+              {' '}{t('signup.and')}{' '}
               <Text style={styles.termsLink} onPress={openPrivacy}>
-                politique de confidentialité
+                {t('signup.privacyPolicy')}
               </Text>
             </Text>
           </TouchableOpacity>
@@ -301,7 +312,7 @@ export default function SignupScreen() {
             ) : (
               <>
                 <Ionicons name="person-add" size={20} color="#fff" />
-                <Text style={styles.signupButtonText}>Créer mon compte</Text>
+                <Text style={styles.signupButtonText}>{t('signup.createMyAccount')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -311,7 +322,7 @@ export default function SignupScreen() {
             onPress={() => router.back()}
           >
             <Text style={styles.linkText}>
-              Déjà un compte ? <Text style={styles.linkTextBold}>Se connecter</Text>
+              {t('signup.alreadyAccount')} <Text style={styles.linkTextBold}>{t('login.signIn')}</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -324,6 +335,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  languageContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 100,
   },
   scrollContent: {
     flexGrow: 1,
