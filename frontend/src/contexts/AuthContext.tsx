@@ -83,34 +83,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signup = async (email: string, password: string, fullName: string) => {
+  const signup = async (email: string, password: string, fullName: string, userType?: string) => {
     try {
       // Use Base44 API directly
       const response = await axios.post(
         `https://api.base44.com/v1/apps/691a4d96d819355b52c063f3/auth/signup`,
-        { email, password, full_name: fullName }
+        { email, password, full_name: fullName, user_type: userType }
       );
 
       const { token: authToken, user: userData } = response.data;
       
       await AsyncStorage.setItem('auth_token', authToken);
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
+      await AsyncStorage.setItem('user', JSON.stringify({ ...userData, user_type: userType }));
       
       setToken(authToken);
-      setUser(userData);
+      setUser({ ...userData, user_type: userType });
     } catch (error: any) {
       console.error('Signup error:', error);
       // Fallback to local auth if Base44 fails
       try {
         const localResponse = await axios.post(
           `${Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth/local/signup`,
-          { email, password, full_name: fullName }
+          { email, password, full_name: fullName, user_type: userType }
         );
         const { token: authToken, user: userData } = localResponse.data;
         await AsyncStorage.setItem('auth_token', authToken);
-        await AsyncStorage.setItem('user', JSON.stringify(userData));
+        await AsyncStorage.setItem('user', JSON.stringify({ ...userData, user_type: userType }));
         setToken(authToken);
-        setUser(userData);
+        setUser({ ...userData, user_type: userType });
       } catch (localError) {
         throw error; // Throw original error
       }
