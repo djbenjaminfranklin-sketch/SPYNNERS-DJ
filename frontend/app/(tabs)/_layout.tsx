@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { View, StyleSheet } from 'react-native';
 import { Colors } from '../../src/theme/colors';
 
 export default function TabLayout() {
@@ -12,10 +13,15 @@ export default function TabLayout() {
           backgroundColor: Colors.backgroundCard,
           borderTopColor: Colors.borderAccent,
           borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
+          height: 70,
+          paddingBottom: 10,
+          paddingTop: 5,
         },
         headerShown: false,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500',
+        },
       }}
     >
       <Tabs.Screen
@@ -37,11 +43,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="playlist"
+        name="spyn"
         options={{
-          title: 'Playlist',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list" size={size} color={color} />
+          title: 'SPYN',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.spynButton, focused && styles.spynButtonActive]}>
+              <Ionicons name="radio" size={24} color={focused ? '#fff' : color} />
+            </View>
           ),
         }}
       />
@@ -55,21 +63,24 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="upload"
-        options={{
-          title: 'Upload',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="cloud-upload" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="playlist"
+        options={{
+          href: null, // Accessible from Library
+        }}
+      />
+      <Tabs.Screen
+        name="upload"
+        options={{
+          href: null, // Accessible from Profile
         }}
       />
       <Tabs.Screen
@@ -81,3 +92,24 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  spynButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#E53935',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 5,
+    shadowColor: '#E53935',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  spynButtonActive: {
+    backgroundColor: '#C62828',
+    transform: [{ scale: 1.05 }],
+  },
+});
