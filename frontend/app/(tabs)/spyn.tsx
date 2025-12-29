@@ -18,15 +18,16 @@ import axios from 'axios';
 import { useAuth } from '../../src/contexts/AuthContext';
 import Constants from 'expo-constants';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BUTTON_SIZE = Math.min(SCREEN_WIDTH * 0.28, 110);
-const GLOW_SIZE = BUTTON_SIZE + 20;
+const BUTTON_SIZE = Math.min(SCREEN_WIDTH * 0.38, 150);
 
-// Colors
-const SPYN_COLOR = '#E53935'; // Red
-const RECORD_COLOR = '#EC407A'; // Pink
-const SUCCESS_COLOR = '#4CAF50';
+// Colors matching spynners.com
+const DETECTION_GRADIENT = ['#FF6B6B', '#EE5A5A', '#E53935'];
+const RECORD_GRADIENT = ['#EC407A', '#D81B60', '#AD1457'];
+const CYAN_COLOR = '#5CB3CC';
+const DARK_BG = '#0a0a0a';
 
 // Recognition interval during DJ Set (every 30 seconds)
 const RECOGNITION_INTERVAL = 30000;
@@ -47,7 +48,7 @@ export default function SpynScreen() {
   const [result, setResult] = useState<any>(null);
   const [djSetDuration, setDjSetDuration] = useState(0);
   const [recognizedTracks, setRecognizedTracks] = useState<RecognizedTrack[]>([]);
-  const [isAudioInputConnected, setIsAudioInputConnected] = useState(false);
+  const [isUsbConnected, setIsUsbConnected] = useState(false);
   const [lastRecognitionTime, setLastRecognitionTime] = useState(0);
   
   const { token } = useAuth();
@@ -69,39 +70,36 @@ export default function SpynScreen() {
     // Start glow animations
     const glowLoop1 = Animated.loop(
       Animated.sequence([
-        Animated.timing(glowAnim1, { toValue: 1, duration: 1500, useNativeDriver: false }),
-        Animated.timing(glowAnim1, { toValue: 0, duration: 1500, useNativeDriver: false }),
+        Animated.timing(glowAnim1, { toValue: 1, duration: 2000, useNativeDriver: false }),
+        Animated.timing(glowAnim1, { toValue: 0, duration: 2000, useNativeDriver: false }),
       ])
     );
     
     const glowLoop2 = Animated.loop(
       Animated.sequence([
-        Animated.timing(glowAnim2, { toValue: 1, duration: 1500, useNativeDriver: false }),
-        Animated.timing(glowAnim2, { toValue: 0, duration: 1500, useNativeDriver: false }),
+        Animated.timing(glowAnim2, { toValue: 1, duration: 2000, useNativeDriver: false }),
+        Animated.timing(glowAnim2, { toValue: 0, duration: 2000, useNativeDriver: false }),
       ])
     );
 
     const scaleLoop1 = Animated.loop(
       Animated.sequence([
-        Animated.timing(scaleAnim1, { toValue: 1.05, duration: 1200, useNativeDriver: true }),
-        Animated.timing(scaleAnim1, { toValue: 1, duration: 1200, useNativeDriver: true }),
+        Animated.timing(scaleAnim1, { toValue: 1.03, duration: 1500, useNativeDriver: true }),
+        Animated.timing(scaleAnim1, { toValue: 1, duration: 1500, useNativeDriver: true }),
       ])
     );
 
     const scaleLoop2 = Animated.loop(
       Animated.sequence([
-        Animated.timing(scaleAnim2, { toValue: 1.05, duration: 1400, useNativeDriver: true }),
-        Animated.timing(scaleAnim2, { toValue: 1, duration: 1400, useNativeDriver: true }),
+        Animated.timing(scaleAnim2, { toValue: 1.03, duration: 1700, useNativeDriver: true }),
+        Animated.timing(scaleAnim2, { toValue: 1, duration: 1700, useNativeDriver: true }),
       ])
     );
 
     glowLoop1.start();
-    setTimeout(() => glowLoop2.start(), 750);
+    setTimeout(() => glowLoop2.start(), 1000);
     scaleLoop1.start();
-    setTimeout(() => scaleLoop2.start(), 600);
-
-    // Check for audio input
-    checkAudioInput();
+    setTimeout(() => scaleLoop2.start(), 850);
 
     return () => {
       glowLoop1.stop();
@@ -112,25 +110,6 @@ export default function SpynScreen() {
       if (recognitionIntervalRef.current) clearInterval(recognitionIntervalRef.current);
     };
   }, []);
-
-  // Check if external audio input is connected (mixer cable)
-  const checkAudioInput = async () => {
-    try {
-      // Request audio permissions first
-      const { granted } = await Audio.requestPermissionsAsync();
-      if (!granted) return;
-
-      // On iOS/Android, we can detect audio route changes
-      // This is a simplified check - on real device would use native modules
-      const audioMode = await Audio.getPermissionsAsync();
-      
-      // For now, we'll show the option and let user confirm
-      // In production, use expo-av's audio session to detect input sources
-      setIsAudioInputConnected(false);
-    } catch (error) {
-      console.log('Audio input check error:', error);
-    }
-  };
 
   const startPulse = () => {
     Animated.loop(
@@ -146,8 +125,8 @@ export default function SpynScreen() {
     pulseAnim.setValue(1);
   };
 
-  // ==================== SPYN - Single Track Recognition ====================
-  const startRecording = async () => {
+  // ==================== SPYN DETECTION - Single Track Recognition ====================
+  const startDetection = async () => {
     try {
       const { granted } = await Audio.requestPermissionsAsync();
       if (!granted) {
@@ -169,14 +148,14 @@ export default function SpynScreen() {
       startPulse();
 
       // Auto-stop after 10 seconds
-      setTimeout(() => stopRecording(), 10000);
+      setTimeout(() => stopDetection(), 10000);
     } catch (error) {
       console.error('Recording error:', error);
       Alert.alert('Erreur', 'Impossible de démarrer l\'enregistrement');
     }
   };
 
-  const stopRecording = async () => {
+  const stopDetection = async () => {
     if (!recording) return;
     try {
       await recording.stopAndUnloadAsync();
@@ -223,8 +202,8 @@ export default function SpynScreen() {
     }
   };
 
-  // ==================== DJ SET Recording with Auto-Recognition ====================
-  const startDjSet = async () => {
+  // ==================== SPYN RECORD SET - DJ Set Recording with Auto-Recognition ====================
+  const startRecordSet = async () => {
     try {
       const { granted } = await Audio.requestPermissionsAsync();
       if (!granted) {
@@ -261,8 +240,10 @@ export default function SpynScreen() {
       setTimeout(() => recognizeCurrentTrack(), 5000);
 
       Alert.alert(
-        '🎧 DJ Set Démarré',
-        'Enregistrement en cours...\nLes tracks seront identifiées automatiquement toutes les 30 secondes.',
+        '🎧 SPYN Record Set',
+        isUsbConnected 
+          ? 'Enregistrement USB démarré...\nLes tracks seront identifiées automatiquement.'
+          : 'Enregistrement Micro démarré...\nConnectez un câble USB pour une meilleure qualité.',
         [{ text: 'OK' }]
       );
     } catch (error) {
@@ -276,20 +257,12 @@ export default function SpynScreen() {
     if (!djRecording) return;
     
     try {
-      // Create a temporary short recording for recognition
-      const { granted } = await Audio.requestPermissionsAsync();
-      if (!granted) return;
-
-      // We need to capture a 10-second snippet
-      // Since we can't pause the main recording, we'll use the recognition timestamp
       const currentTime = djSetDuration;
       
       // Avoid duplicate recognitions within 25 seconds
       if (currentTime - lastRecognitionTime < 25) return;
       setLastRecognitionTime(currentTime);
 
-      // For the demo, we'll show that recognition is happening
-      // In production, this would sample the audio input
       console.log(`[DJ Set] Attempting track recognition at ${formatDuration(currentTime)}`);
       
       // Create temp recording for recognition (10 seconds)
@@ -354,7 +327,7 @@ export default function SpynScreen() {
     }
   };
 
-  const stopDjSet = async () => {
+  const stopRecordSet = async () => {
     if (!djRecording) return;
     
     try {
@@ -427,18 +400,18 @@ export default function SpynScreen() {
     }
   };
 
-  // Toggle external audio input mode (for mixer)
-  const toggleAudioInput = () => {
+  // Toggle USB/Mixer connection
+  const toggleUsbConnection = () => {
     Alert.alert(
-      '🎛️ Entrée Audio Externe',
-      isAudioInputConnected 
-        ? 'Déconnecter l\'entrée de la table de mixage?'
-        : 'Pour enregistrer depuis votre table de mixage:\n\n1. Connectez un câble audio de la sortie REC/BOOTH de votre table vers l\'entrée de votre téléphone\n2. Utilisez un adaptateur si nécessaire\n3. L\'app capturera le signal audio direct',
+      '🔌 Connexion USB / Table de Mixage',
+      isUsbConnected 
+        ? 'Déconnecter l\'entrée USB?'
+        : 'Pour enregistrer depuis votre table de mixage:\n\n1. Connectez un câble USB ou audio de la sortie REC/BOOTH\n2. Utilisez un adaptateur Lightning/USB-C si nécessaire\n3. L\'app capturera le signal audio direct\n\nMeilleure qualité qu\'avec le micro!',
       [
         { text: 'Annuler', style: 'cancel' },
         { 
-          text: isAudioInputConnected ? 'Déconnecter' : 'J\'ai connecté le câble',
-          onPress: () => setIsAudioInputConnected(!isAudioInputConnected)
+          text: isUsbConnected ? 'Déconnecter' : 'Câble connecté',
+          onPress: () => setIsUsbConnected(!isUsbConnected)
         }
       ]
     );
@@ -451,90 +424,126 @@ export default function SpynScreen() {
   };
 
   // Animation values
-  const glowOpacity1 = glowAnim1.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.8] });
-  const glowOpacity2 = glowAnim2.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.8] });
-  const glowScale1 = glowAnim1.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] });
-  const glowScale2 = glowAnim2.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] });
+  const glowOpacity1 = glowAnim1.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+  const glowOpacity2 = glowAnim2.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
 
   // ==================== RENDER ====================
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>SPYN</Text>
-        <Text style={styles.headerSubtitle}>Reconnaissance Audio & Enregistrement DJ</Text>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         
-        {/* Audio Input Toggle */}
-        <TouchableOpacity 
-          style={[styles.audioInputButton, isAudioInputConnected && styles.audioInputConnected]}
-          onPress={toggleAudioInput}
-        >
-          <Ionicons 
-            name={isAudioInputConnected ? "radio" : "radio-outline"} 
-            size={18} 
-            color={isAudioInputConnected ? SUCCESS_COLOR : Colors.textMuted} 
-          />
-          <Text style={[
-            styles.audioInputText,
-            isAudioInputConnected && styles.audioInputTextConnected
-          ]}>
-            {isAudioInputConnected ? 'Mixeur Connecté' : 'Entrée Audio'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        {/* Main SPYN Buttons Section */}
+        {!recording && !djRecording && !recognizing && !result && (
+          <View style={styles.spynButtonsSection}>
+            {/* SPYN DETECTION Button */}
+            <View style={styles.spynButtonWrapper}>
+              <Animated.View 
+                style={[
+                  styles.glowRing, 
+                  { 
+                    opacity: glowOpacity1,
+                    borderColor: '#FF6B6B',
+                    shadowColor: '#FF6B6B',
+                  }
+                ]}
+              />
+              <Animated.View style={{ transform: [{ scale: scaleAnim1 }] }}>
+                <TouchableOpacity 
+                  onPress={startDetection} 
+                  activeOpacity={0.85}
+                  style={styles.spynButtonTouchable}
+                >
+                  <LinearGradient
+                    colors={DETECTION_GRADIENT}
+                    style={styles.spynButton}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
+                  >
+                    <Text style={styles.spynText}>SPYN</Text>
+                    <Text style={styles.spynSubtext}>DETECTION</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+              <Text style={styles.spynLabel}>Micro</Text>
+            </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+            {/* SPYN RECORD SET Button */}
+            <View style={styles.spynButtonWrapper}>
+              <Animated.View 
+                style={[
+                  styles.glowRing, 
+                  { 
+                    opacity: glowOpacity2,
+                    borderColor: '#EC407A',
+                    shadowColor: '#EC407A',
+                  }
+                ]}
+              />
+              <Animated.View style={{ transform: [{ scale: scaleAnim2 }] }}>
+                <TouchableOpacity 
+                  onPress={startRecordSet} 
+                  activeOpacity={0.85}
+                  style={styles.spynButtonTouchable}
+                >
+                  <LinearGradient
+                    colors={RECORD_GRADIENT}
+                    style={styles.spynButton}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
+                  >
+                    <Text style={styles.spynText}>SPYN</Text>
+                    <Text style={styles.spynSubtext}>RECORD SET</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+              <TouchableOpacity onPress={toggleUsbConnection}>
+                <Text style={[styles.spynLabel, isUsbConnected && styles.spynLabelActive]}>
+                  {isUsbConnected ? '🔌 USB Connecté' : 'USB + Rec'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Recognition in progress */}
-        {recognizing ? (
+        {recognizing && (
           <View style={styles.statusContainer}>
-            <ActivityIndicator size="large" color={Colors.primary} />
+            <ActivityIndicator size="large" color={CYAN_COLOR} />
             <Text style={styles.statusText}>Analyse ACRCloud...</Text>
             <Text style={styles.statusSubtext}>Identification de la track en cours</Text>
           </View>
-        ) : result ? (
-          /* Recognition Result */
-          <View style={styles.resultContainer}>
-            <Ionicons name="checkmark-circle" size={60} color={SUCCESS_COLOR} />
-            <Text style={styles.resultTitle}>Track Identifiée!</Text>
-            <View style={styles.resultInfo}>
-              <Text style={styles.resultLabel}>Titre</Text>
-              <Text style={styles.resultValue}>{result.title || 'Unknown'}</Text>
-              <Text style={styles.resultLabel}>Artiste</Text>
-              <Text style={styles.resultValue}>{result.artist || 'Unknown'}</Text>
-              {result.album && (
-                <>
-                  <Text style={styles.resultLabel}>Album</Text>
-                  <Text style={styles.resultValue}>{result.album}</Text>
-                </>
-              )}
-              {result.score && (
-                <Text style={styles.confidenceText}>Confiance: {result.score}%</Text>
-              )}
-            </View>
-            <TouchableOpacity style={styles.resetButton} onPress={() => setResult(null)}>
-              <Text style={styles.resetButtonText}>Nouvelle Recherche</Text>
-            </TouchableOpacity>
-          </View>
-        ) : recording ? (
-          /* Single Track Recording */
+        )}
+
+        {/* Single track recording in progress */}
+        {recording && (
           <View style={styles.recordingStatus}>
             <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-              <View style={styles.recordingIndicator}>
-                <Ionicons name="radio" size={60} color={SPYN_COLOR} />
-              </View>
+              <LinearGradient
+                colors={DETECTION_GRADIENT}
+                style={styles.recordingCircle}
+              >
+                <Ionicons name="mic" size={50} color="#fff" />
+              </LinearGradient>
             </Animated.View>
             <Text style={styles.statusText}>Écoute en cours... (10s)</Text>
             <Text style={styles.statusSubtext}>Approchez le téléphone de la source audio</Text>
-            <TouchableOpacity style={styles.cancelButton} onPress={stopRecording}>
+            <TouchableOpacity style={styles.cancelButton} onPress={stopDetection}>
               <Text style={styles.cancelButtonText}>Annuler</Text>
             </TouchableOpacity>
           </View>
-        ) : djRecording ? (
-          /* DJ Set Recording */
+        )}
+
+        {/* DJ Set Recording in progress */}
+        {djRecording && (
           <View style={styles.djSetContainer}>
-            <View style={styles.recordingIndicator}>
+            <View style={styles.recordingHeader}>
               <View style={styles.recordingDot} />
               <Text style={styles.recordingLabel}>REC</Text>
+              {isUsbConnected && (
+                <View style={styles.usbBadge}>
+                  <Text style={styles.usbBadgeText}>USB</Text>
+                </View>
+              )}
             </View>
             
             <Text style={styles.djSetTimer}>{formatDuration(djSetDuration)}</Text>
@@ -561,185 +570,204 @@ export default function SpynScreen() {
               </View>
             )}
             
-            <TouchableOpacity style={styles.stopButton} onPress={stopDjSet}>
-              <Ionicons name="stop" size={32} color="#fff" />
-              <Text style={styles.stopButtonText}>Arrêter</Text>
+            <TouchableOpacity style={styles.stopButton} onPress={stopRecordSet}>
+              <Ionicons name="stop" size={28} color="#fff" />
+              <Text style={styles.stopButtonText}>Arrêter l'enregistrement</Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          /* Main Buttons */
-          <View style={styles.buttonsContainer}>
-            {/* SPYN Button - Single Recognition */}
-            <View style={styles.buttonWrapper}>
-              <Animated.View 
-                style={[
-                  styles.glowRing, 
-                  styles.glowRingPrimary, 
-                  { opacity: glowOpacity1, transform: [{ scale: glowScale1 }] }
-                ]}
-              />
-              <Animated.View style={{ transform: [{ scale: scaleAnim1 }] }}>
-                <TouchableOpacity 
-                  style={[styles.roundButton, styles.roundButtonPrimary]} 
-                  onPress={startRecording} 
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="radio" size={40} color="#fff" />
-                  <Text style={styles.roundButtonText}>SPYN</Text>
-                </TouchableOpacity>
-              </Animated.View>
-              <Text style={styles.buttonLabel}>Identifier une Track</Text>
-            </View>
+        )}
 
-            {/* Record Set Button */}
-            <View style={styles.buttonWrapper}>
-              <Animated.View 
-                style={[
-                  styles.glowRing, 
-                  styles.glowRingSecondary, 
-                  { opacity: glowOpacity2, transform: [{ scale: glowScale2 }] }
-                ]}
-              />
-              <Animated.View style={{ transform: [{ scale: scaleAnim2 }] }}>
-                <TouchableOpacity 
-                  style={[styles.roundButton, styles.roundButtonSecondary]} 
-                  onPress={startDjSet} 
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="mic" size={40} color="#fff" />
-                  <Text style={styles.roundButtonText}>Record</Text>
-                </TouchableOpacity>
-              </Animated.View>
-              <Text style={styles.buttonLabel}>Enregistrer DJ Set</Text>
+        {/* Recognition Result */}
+        {result && (
+          <View style={styles.resultContainer}>
+            <View style={styles.resultIconContainer}>
+              <Ionicons name="checkmark-circle" size={70} color="#4CAF50" />
             </View>
+            <Text style={styles.resultTitle}>Track Identifiée!</Text>
+            <View style={styles.resultCard}>
+              <Text style={styles.resultLabel}>Titre</Text>
+              <Text style={styles.resultValue}>{result.title || 'Unknown'}</Text>
+              <Text style={styles.resultLabel}>Artiste</Text>
+              <Text style={styles.resultValue}>{result.artist || 'Unknown'}</Text>
+              {result.album && (
+                <>
+                  <Text style={styles.resultLabel}>Album</Text>
+                  <Text style={styles.resultValue}>{result.album}</Text>
+                </>
+              )}
+              {result.score && (
+                <Text style={styles.confidenceText}>Confiance: {result.score}%</Text>
+              )}
+            </View>
+            <TouchableOpacity style={styles.resetButton} onPress={() => setResult(null)}>
+              <Text style={styles.resetButtonText}>Nouvelle Recherche</Text>
+            </TouchableOpacity>
           </View>
         )}
 
-        {/* Info Section */}
-        {!recording && !djRecording && !recognizing && !result && (
-          <View style={styles.infoSection}>
-            <View style={styles.infoCard}>
-              <Ionicons name="musical-notes" size={24} color={SPYN_COLOR} />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoTitle}>SPYN</Text>
-                <Text style={styles.infoText}>
-                  Identifie instantanément une track avec ACRCloud
-                </Text>
-              </View>
-            </View>
-            
-            <View style={styles.infoCard}>
-              <Ionicons name="disc" size={24} color={RECORD_COLOR} />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoTitle}>Record Set</Text>
-                <Text style={styles.infoText}>
-                  Enregistre votre DJ set avec identification automatique des tracks toutes les 30s
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.infoCard}>
-              <Ionicons name="hardware-chip" size={24} color={Colors.primary} />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoTitle}>Entrée Mixeur</Text>
-                <Text style={styles.infoText}>
-                  Connectez votre table de mixage pour une meilleure qualité d'enregistrement
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  header: {
-    padding: Spacing.lg,
-    paddingTop: 60,
-    backgroundColor: Colors.backgroundCard,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderAccent,
+  container: { 
+    flex: 1, 
+    backgroundColor: DARK_BG,
   },
-  headerTitle: { fontSize: 32, fontWeight: 'bold', color: Colors.primary },
-  headerSubtitle: { fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
-  audioInputButton: {
+  scrollView: { 
+    flex: 1,
+  },
+  scrollContent: { 
+    padding: Spacing.lg, 
+    paddingTop: 80,
+    alignItems: 'center',
+    minHeight: '100%',
+  },
+  
+  // SPYN Buttons Section
+  spynButtonsSection: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-start',
+    width: '100%',
+    marginBottom: Spacing.xl,
+    paddingHorizontal: 10,
+  },
+  spynButtonWrapper: {
     alignItems: 'center',
-    backgroundColor: Colors.backgroundInput,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginTop: 12,
-    gap: 6,
+    position: 'relative',
   },
-  audioInputConnected: {
-    backgroundColor: '#4CAF5020',
-    borderWidth: 1,
-    borderColor: '#4CAF50',
-  },
-  audioInputText: { fontSize: 12, color: Colors.textMuted },
-  audioInputTextConnected: { color: '#4CAF50', fontWeight: '600' },
-  content: { flex: 1 },
-  contentContainer: { padding: Spacing.lg, alignItems: 'center' },
-  buttonsContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-evenly', 
-    width: '100%', 
-    gap: Spacing.xl,
-    marginTop: Spacing.xl,
-  },
-  buttonWrapper: { alignItems: 'center', position: 'relative' },
   glowRing: {
     position: 'absolute',
-    width: GLOW_SIZE,
-    height: GLOW_SIZE,
-    borderRadius: GLOW_SIZE / 2,
-    backgroundColor: 'transparent',
+    width: BUTTON_SIZE + 20,
+    height: BUTTON_SIZE + 20,
+    borderRadius: (BUTTON_SIZE + 20) / 2,
     borderWidth: 2,
+    top: -10,
+    left: -10,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  glowRingPrimary: { 
-    borderColor: SPYN_COLOR, 
-    shadowColor: SPYN_COLOR, 
-    shadowOffset: { width: 0, height: 0 }, 
-    shadowOpacity: 0.8, 
-    shadowRadius: 15 
+  spynButtonTouchable: {
+    borderRadius: BUTTON_SIZE / 2,
+    overflow: 'hidden',
   },
-  glowRingSecondary: { 
-    borderColor: RECORD_COLOR, 
-    shadowColor: RECORD_COLOR, 
-    shadowOffset: { width: 0, height: 0 }, 
-    shadowOpacity: 0.8, 
-    shadowRadius: 15 
-  },
-  roundButton: {
+  spynButton: {
     width: BUTTON_SIZE,
     height: BUTTON_SIZE,
     borderRadius: BUTTON_SIZE / 2,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 2,
   },
-  roundButtonPrimary: { backgroundColor: SPYN_COLOR },
-  roundButtonSecondary: { backgroundColor: RECORD_COLOR },
-  roundButtonText: { fontSize: 11, fontWeight: 'bold', color: '#fff', textAlign: 'center' },
-  buttonLabel: { marginTop: 16, fontSize: 12, color: Colors.textSecondary, textAlign: 'center' },
-  statusContainer: { alignItems: 'center', gap: 16, marginTop: 60 },
-  statusText: { fontSize: 18, color: Colors.primary, fontWeight: '600' },
-  statusSubtext: { fontSize: 13, color: Colors.textMuted, textAlign: 'center' },
-  recordingStatus: { alignItems: 'center', gap: Spacing.md, marginTop: 40 },
-  recordingIndicator: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  recordingDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#ff4444' },
-  recordingLabel: { fontSize: 18, fontWeight: 'bold', color: '#ff4444' },
-  djSetContainer: { alignItems: 'center', gap: Spacing.md, width: '100%', marginTop: 20 },
-  djSetTimer: { 
-    fontSize: 64, 
+  spynText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    letterSpacing: 2,
+  },
+  spynSubtext: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.85)',
+    letterSpacing: 1,
+    marginTop: 4,
+  },
+  spynLabel: {
+    marginTop: 16,
+    fontSize: 14,
+    color: Colors.textMuted,
+    fontWeight: '500',
+  },
+  spynLabelActive: {
+    color: '#4CAF50',
+  },
+  
+  // Status & Recording
+  statusContainer: { 
+    alignItems: 'center', 
+    gap: 16, 
+    marginTop: 40,
+  },
+  statusText: { 
+    fontSize: 20, 
+    color: CYAN_COLOR, 
+    fontWeight: '600',
+  },
+  statusSubtext: { 
+    fontSize: 14, 
+    color: Colors.textMuted, 
+    textAlign: 'center',
+  },
+  recordingStatus: { 
+    alignItems: 'center', 
+    gap: Spacing.md, 
+    marginTop: 40,
+  },
+  recordingCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: Colors.backgroundCard,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.md,
+    borderWidth: 1,
+    borderColor: CYAN_COLOR,
+  },
+  cancelButtonText: { 
+    color: CYAN_COLOR, 
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  
+  // DJ Set Recording
+  djSetContainer: { 
+    alignItems: 'center', 
+    gap: Spacing.md, 
+    width: '100%', 
+    marginTop: 20,
+  },
+  recordingHeader: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 8,
+  },
+  recordingDot: { 
+    width: 14, 
+    height: 14, 
+    borderRadius: 7, 
+    backgroundColor: '#ff4444',
+  },
+  recordingLabel: { 
+    fontSize: 16, 
     fontWeight: 'bold', 
-    color: Colors.primary, 
-    fontVariant: ['tabular-nums'] 
+    color: '#ff4444',
+  },
+  usbBadge: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  usbBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  djSetTimer: { 
+    fontSize: 72, 
+    fontWeight: 'bold', 
+    color: CYAN_COLOR, 
+    fontVariant: ['tabular-nums'],
   },
   tracklistContainer: {
     width: '100%',
@@ -747,6 +775,8 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     marginTop: Spacing.md,
+    borderWidth: 1,
+    borderColor: CYAN_COLOR + '40',
   },
   tracklistTitle: {
     fontSize: 14,
@@ -764,13 +794,20 @@ const styles = StyleSheet.create({
   },
   tracklistTime: {
     fontSize: 12,
-    color: Colors.primary,
+    color: CYAN_COLOR,
     fontWeight: '600',
     width: 45,
   },
   tracklistInfo: { flex: 1 },
-  tracklistTrackTitle: { fontSize: 13, color: Colors.text, fontWeight: '500' },
-  tracklistArtist: { fontSize: 11, color: Colors.textMuted },
+  tracklistTrackTitle: { 
+    fontSize: 14, 
+    color: Colors.text, 
+    fontWeight: '500',
+  },
+  tracklistArtist: { 
+    fontSize: 12, 
+    color: Colors.textMuted,
+  },
   stopButton: {
     backgroundColor: '#ff4444',
     paddingVertical: Spacing.md,
@@ -781,49 +818,61 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginTop: Spacing.lg,
   },
-  stopButtonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
-  cancelButton: {
-    backgroundColor: Colors.backgroundInput,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    borderRadius: BorderRadius.md,
-    marginTop: Spacing.md,
+  stopButtonText: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: '600',
   },
-  cancelButtonText: { color: Colors.textSecondary, fontSize: 14 },
-  resultContainer: { alignItems: 'center', width: '100%', marginTop: 40 },
-  resultTitle: { fontSize: 24, fontWeight: 'bold', color: Colors.text, marginTop: 16, marginBottom: 24 },
-  resultInfo: {
+  
+  // Result
+  resultContainer: { 
+    alignItems: 'center', 
+    width: '100%', 
+    marginTop: 20,
+  },
+  resultIconContainer: {
+    marginBottom: 16,
+  },
+  resultTitle: { 
+    fontSize: 26, 
+    fontWeight: 'bold', 
+    color: Colors.text, 
+    marginBottom: 24,
+  },
+  resultCard: {
     backgroundColor: Colors.backgroundCard,
     borderRadius: BorderRadius.md,
     padding: Spacing.lg,
     width: '100%',
-    gap: 8,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: CYAN_COLOR + '40',
   },
-  resultLabel: { fontSize: 12, color: Colors.textMuted },
-  resultValue: { fontSize: 18, color: Colors.text, fontWeight: '600', marginBottom: 8 },
-  confidenceText: { fontSize: 12, color: SUCCESS_COLOR, marginTop: 8 },
+  resultLabel: { 
+    fontSize: 12, 
+    color: Colors.textMuted,
+    marginTop: 8,
+  },
+  resultValue: { 
+    fontSize: 18, 
+    color: Colors.text, 
+    fontWeight: '600',
+  },
+  confidenceText: { 
+    fontSize: 13, 
+    color: '#4CAF50', 
+    marginTop: 12,
+  },
   resetButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: CYAN_COLOR,
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     marginTop: 24,
     paddingHorizontal: Spacing.xl,
   },
-  resetButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  infoSection: { 
-    width: '100%', 
-    marginTop: Spacing.xl,
-    gap: Spacing.md,
+  resetButtonText: { 
+    color: '#000', 
+    fontSize: 16, 
+    fontWeight: '600',
   },
-  infoCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    gap: Spacing.md,
-    alignItems: 'flex-start',
-  },
-  infoContent: { flex: 1 },
-  infoTitle: { fontSize: 14, fontWeight: '600', color: Colors.text, marginBottom: 4 },
-  infoText: { fontSize: 12, color: Colors.textMuted, lineHeight: 18 },
 });
