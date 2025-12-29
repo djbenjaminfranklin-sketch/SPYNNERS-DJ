@@ -21,7 +21,17 @@ import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// User types
+const USER_TYPES = [
+  { id: 'dj', label: 'DJ', icon: 'headset', description: 'Je joue de la musique en club/événements' },
+  { id: 'producer', label: 'Producer', icon: 'musical-notes', description: 'Je produis de la musique' },
+  { id: 'dj_producer', label: 'DJ & Producer', icon: 'disc', description: 'Je joue et je produis' },
+  { id: 'label', label: 'Label', icon: 'business', description: 'Je représente un label musical' },
+];
+
 export default function SignupScreen() {
+  const [step, setStep] = useState(1); // 1 = user type, 2 = form
+  const [userType, setUserType] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,6 +40,18 @@ export default function SignupScreen() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const router = useRouter();
   const { signup } = useAuth();
+
+  const handleSelectType = (typeId: string) => {
+    setUserType(typeId);
+  };
+
+  const handleContinue = () => {
+    if (!userType) {
+      Alert.alert('Sélection requise', 'Veuillez choisir votre profil');
+      return;
+    }
+    setStep(2);
+  };
 
   const handleSignup = async () => {
     if (!fullName || !email || !password || !confirmPassword) {
@@ -54,7 +76,7 @@ export default function SignupScreen() {
 
     setLoading(true);
     try {
-      await signup(email, password, fullName);
+      await signup(email, password, fullName, userType);
       router.replace('/(tabs)/home');
     } catch (error: any) {
       Alert.alert('Inscription échouée', error.response?.data?.message || 'Impossible de créer le compte');
@@ -71,24 +93,132 @@ export default function SignupScreen() {
     Linking.openURL('https://spynners.com/privacy');
   };
 
+  // Step 1: User Type Selection
+  if (step === 1) {
+    return (
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color={Colors.text} />
+            </TouchableOpacity>
+            <Image
+              source={require('../../assets/images/spynners-logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+
+          {/* Welcome Text */}
+          <View style={styles.welcomeSection}>
+            <Text style={styles.welcomeTitle}>Bienvenue sur SPYNNERS!</Text>
+            <Text style={styles.welcomeSubtitle}>
+              Rejoignez la plus grande communauté de DJs et producteurs House Music
+            </Text>
+          </View>
+
+          {/* User Type Selection */}
+          <Text style={styles.questionText}>Vous êtes...</Text>
+          
+          <View style={styles.typeContainer}>
+            {USER_TYPES.map((type) => (
+              <TouchableOpacity
+                key={type.id}
+                style={[
+                  styles.typeCard,
+                  userType === type.id && styles.typeCardSelected
+                ]}
+                onPress={() => handleSelectType(type.id)}
+                activeOpacity={0.7}
+              >
+                <View style={[
+                  styles.typeIconContainer,
+                  userType === type.id && styles.typeIconContainerSelected
+                ]}>
+                  <Ionicons 
+                    name={type.icon as any} 
+                    size={28} 
+                    color={userType === type.id ? '#fff' : Colors.primary} 
+                  />
+                </View>
+                <View style={styles.typeInfo}>
+                  <Text style={[
+                    styles.typeLabel,
+                    userType === type.id && styles.typeLabelSelected
+                  ]}>
+                    {type.label}
+                  </Text>
+                  <Text style={styles.typeDescription}>{type.description}</Text>
+                </View>
+                {userType === type.id && (
+                  <Ionicons name="checkmark-circle" size={24} color={Colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Continue Button */}
+          <TouchableOpacity
+            style={[styles.continueButton, !userType && styles.continueButtonDisabled]}
+            onPress={handleContinue}
+            disabled={!userType}
+          >
+            <Text style={styles.continueButtonText}>Continuer</Text>
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
+          </TouchableOpacity>
+
+          {/* Login Link */}
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.linkText}>
+              Déjà un compte ? <Text style={styles.linkTextBold}>Se connecter</Text>
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // Step 2: Registration Form
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header with Logo */}
+        {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => setStep(1)} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={Colors.text} />
           </TouchableOpacity>
           <Image
             source={require('../../assets/images/spynners-logo.png')}
-            style={styles.logo}
+            style={styles.logoSmall}
             resizeMode="contain"
           />
-          <Text style={styles.subtitle}>Rejoignez la communauté SPYNNERS</Text>
         </View>
+
+        {/* Selected Type Badge */}
+        <View style={styles.selectedTypeBadge}>
+          <Ionicons 
+            name={USER_TYPES.find(t => t.id === userType)?.icon as any || 'person'} 
+            size={16} 
+            color={Colors.primary} 
+          />
+          <Text style={styles.selectedTypeText}>
+            {USER_TYPES.find(t => t.id === userType)?.label}
+          </Text>
+          <TouchableOpacity onPress={() => setStep(1)}>
+            <Text style={styles.changeTypeText}>Modifier</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Form Title */}
+        <Text style={styles.formTitle}>Créer votre compte</Text>
+        <Text style={styles.formSubtitle}>Remplissez vos informations pour rejoindre SPYNNERS</Text>
 
         {/* Form */}
         <View style={styles.form}>
@@ -96,7 +226,7 @@ export default function SignupScreen() {
             <Ionicons name="person-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Nom complet"
+              placeholder={userType === 'label' ? 'Nom du label' : 'Nom complet / Nom d\'artiste'}
               placeholderTextColor={Colors.textMuted}
               value={fullName}
               onChangeText={setFullName}
@@ -162,14 +292,17 @@ export default function SignupScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.button, (loading || !acceptedTerms) && styles.buttonDisabled]}
+            style={[styles.signupButton, (loading || !acceptedTerms) && styles.signupButtonDisabled]}
             onPress={handleSignup}
             disabled={loading || !acceptedTerms}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Créer mon compte</Text>
+              <>
+                <Ionicons name="person-add" size={20} color="#fff" />
+                <Text style={styles.signupButtonText}>Créer mon compte</Text>
+              </>
             )}
           </TouchableOpacity>
 
@@ -198,7 +331,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   backButton: {
     marginBottom: 16,
@@ -206,14 +339,132 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: Math.min(SCREEN_WIDTH * 0.6, 240),
-    height: 80,
+    height: 70,
     alignSelf: 'center',
+  },
+  logoSmall: {
+    width: Math.min(SCREEN_WIDTH * 0.4, 160),
+    height: 50,
+    alignSelf: 'center',
+  },
+  welcomeSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  welcomeTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Colors.text,
+    textAlign: 'center',
     marginBottom: 8,
   },
-  subtitle: {
+  welcomeSubtitle: {
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: 'center',
+    lineHeight: 20,
+  },
+  questionText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 16,
+  },
+  typeContainer: {
+    gap: 12,
+    marginBottom: 24,
+  },
+  typeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    gap: 14,
+  },
+  typeCardSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '10',
+  },
+  typeIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Colors.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  typeIconContainerSelected: {
+    backgroundColor: Colors.primary,
+  },
+  typeInfo: {
+    flex: 1,
+  },
+  typeLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  typeLabelSelected: {
+    color: Colors.primary,
+  },
+  typeDescription: {
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
+  continueButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    gap: 8,
+  },
+  continueButtonDisabled: {
+    opacity: 0.5,
+  },
+  continueButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  selectedTypeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: Colors.primary + '20',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 8,
+    marginBottom: 20,
+  },
+  selectedTypeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
+  changeTypeText: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginLeft: 4,
+  },
+  formTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  formSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 24,
   },
   form: {
     gap: 14,
@@ -268,18 +519,20 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: '500',
   },
-  button: {
+  signupButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: Colors.primary,
     height: 52,
     borderRadius: BorderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 8,
+    gap: 10,
   },
-  buttonDisabled: {
+  signupButtonDisabled: {
     opacity: 0.5,
   },
-  buttonText: {
+  signupButtonText: {
     color: '#fff',
     fontSize: 17,
     fontWeight: '600',
