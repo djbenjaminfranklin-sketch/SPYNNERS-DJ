@@ -1,22 +1,38 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "SPYNNERS Live",
+    "slug": "spynners-live-experience",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "frontend",
-    "userInterfaceStyle": "automatic",
+    "scheme": "spynners",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.spynners.live",
+      "associatedDomains": [
+        "applinks:spynners.com",
+        "webcredentials:spynners.com"
+      ],
+      "infoPlist": {
+        "NSCameraUsageDescription": "SPYNNERS a besoin d'accéder à votre caméra pour prendre des photos et vidéos pendant l'événement.",
+        "NSMicrophoneUsageDescription": "SPYNNERS a besoin d'accéder à votre micro pour enregistrer des vidéos.",
+        "NSPhotoLibraryUsageDescription": "SPYNNERS a besoin d'accéder à votre galerie pour sauvegarder vos photos et vidéos.",
+        "NSPhotoLibraryAddUsageDescription": "SPYNNERS a besoin de sauvegarder vos photos et vidéos dans votre galerie.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.spynners.live",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000"
+        "backgroundColor": "#0a0a0a"
       },
-      "edgeToEdgeEnabled": true
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -25,18 +41,16 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#000"
-        }
-      ]
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bdee0bb9-363d-44f9-ba7f-37130ffbef06"
+      }
     }
   }
 }
