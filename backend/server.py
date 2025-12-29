@@ -127,10 +127,6 @@ async def local_signup(request: LocalSignupRequest):
     }
 
 @app.post("/api/auth/local/login")
-        }
-    }
-
-@app.post("/api/auth/local/login")
 async def local_login(request: LocalLoginRequest):
     """Local login fallback when Base44 is unavailable"""
     user = users_collection.find_one({"email": request.email.lower()})
@@ -150,7 +146,8 @@ async def local_login(request: LocalLoginRequest):
         "user": {
             "id": user_id,
             "email": user["email"],
-            "full_name": user.get("full_name", "User")
+            "full_name": user.get("full_name", "User"),
+            "user_type": user.get("user_type", "dj")
         }
     }
 
