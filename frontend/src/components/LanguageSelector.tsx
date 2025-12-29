@@ -1,4 +1,3 @@
-// Language Selector Component
 import React, { useState } from 'react';
 import {
   View,
@@ -6,138 +5,222 @@ import {
   TouchableOpacity,
   StyleSheet,
   Modal,
+  FlatList,
+  Pressable,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useLanguage } from '../contexts/LanguageContext';
-import { Colors, BorderRadius, Spacing } from '../theme/colors';
+import { useLanguage, LANGUAGES, Language } from '../contexts/LanguageContext';
+import { Colors, Spacing, BorderRadius } from '../theme/colors';
 
-export default function LanguageSelector() {
-  const { language, setLanguage, t } = useLanguage();
-  const [showModal, setShowModal] = useState(false);
+interface LanguageSelectorProps {
+  compact?: boolean;
+}
 
-  const languages = [
-    { code: 'en' as const, name: 'English', flag: '🇬🇧' },
-    { code: 'fr' as const, name: 'Français', flag: '🇫🇷' },
-  ];
+export default function LanguageSelector({ compact = false }: LanguageSelectorProps) {
+  const { language, setLanguage, getCurrentFlag } = useLanguage();
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const currentLang = languages.find(l => l.code === language) || languages[0];
+  const handleSelectLanguage = (langCode: Language) => {
+    setLanguage(langCode);
+    setModalVisible(false);
+  };
 
+  if (compact) {
+    // Compact version - just a flag button
+    return (
+      <>
+        <TouchableOpacity 
+          style={styles.flagButton} 
+          onPress={() => setModalVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.flag}>{getCurrentFlag()}</Text>
+        </TouchableOpacity>
+
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <Pressable 
+            style={styles.modalOverlay} 
+            onPress={() => setModalVisible(false)}
+          >
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Select Language</Text>
+              <FlatList
+                data={LANGUAGES}
+                keyExtractor={(item) => item.code}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[
+                      styles.languageItem,
+                      language === item.code && styles.languageItemSelected
+                    ]}
+                    onPress={() => handleSelectLanguage(item.code)}
+                  >
+                    <Text style={styles.languageFlag}>{item.flag}</Text>
+                    <Text style={[
+                      styles.languageName,
+                      language === item.code && styles.languageNameSelected
+                    ]}>
+                      {item.name}
+                    </Text>
+                    {language === item.code && (
+                      <Text style={styles.checkmark}>✓</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          </Pressable>
+        </Modal>
+      </>
+    );
+  }
+
+  // Full version - shows current language with dropdown
   return (
     <>
       <TouchableOpacity 
         style={styles.selector} 
-        onPress={() => setShowModal(true)}
+        onPress={() => setModalVisible(true)}
         activeOpacity={0.7}
       >
-        <Text style={styles.flag}>{currentLang.flag}</Text>
-        <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
+        <Text style={styles.flag}>{getCurrentFlag()}</Text>
+        <Text style={styles.currentLang}>
+          {LANGUAGES.find(l => l.code === language)?.name}
+        </Text>
+        <Text style={styles.arrow}>▼</Text>
       </TouchableOpacity>
 
       <Modal
-        visible={showModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowModal(false)}
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
       >
-        <TouchableOpacity 
-          style={styles.overlay} 
-          activeOpacity={1} 
-          onPress={() => setShowModal(false)}
+        <Pressable 
+          style={styles.modalOverlay} 
+          onPress={() => setModalVisible(false)}
         >
-          <View style={styles.modal}>
-            <Text style={styles.modalTitle}>{t('language')}</Text>
-            
-            {languages.map((lang) => (
-              <TouchableOpacity
-                key={lang.code}
-                style={[
-                  styles.langOption,
-                  language === lang.code && styles.langOptionSelected
-                ]}
-                onPress={() => {
-                  setLanguage(lang.code);
-                  setShowModal(false);
-                }}
-              >
-                <Text style={styles.langFlag}>{lang.flag}</Text>
-                <Text style={[
-                  styles.langName,
-                  language === lang.code && styles.langNameSelected
-                ]}>
-                  {lang.name}
-                </Text>
-                {language === lang.code && (
-                  <Ionicons name="checkmark" size={20} color={Colors.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Language</Text>
+            <FlatList
+              data={LANGUAGES}
+              keyExtractor={(item) => item.code}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.languageItem,
+                    language === item.code && styles.languageItemSelected
+                  ]}
+                  onPress={() => handleSelectLanguage(item.code)}
+                >
+                  <Text style={styles.languageFlag}>{item.flag}</Text>
+                  <Text style={[
+                    styles.languageName,
+                    language === item.code && styles.languageNameSelected
+                  ]}>
+                    {item.name}
+                  </Text>
+                  {language === item.code && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            />
           </View>
-        </TouchableOpacity>
+        </Pressable>
       </Modal>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  selector: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  flagButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.backgroundCard,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: BorderRadius.md,
-    gap: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
   },
   flag: {
-    fontSize: 18,
+    fontSize: 22,
   },
-  overlay: {
+  selector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.backgroundCard,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 8,
+  },
+  currentLang: {
+    color: Colors.text,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  arrow: {
+    color: Colors.textMuted,
+    fontSize: 10,
+    marginLeft: 4,
+  },
+  modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: Spacing.lg,
   },
-  modal: {
+  modalContent: {
     backgroundColor: Colors.backgroundCard,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     width: '100%',
-    maxWidth: 300,
+    maxWidth: 320,
+    maxHeight: 400,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: Colors.text,
-    marginBottom: Spacing.md,
     textAlign: 'center',
+    marginBottom: Spacing.md,
   },
-  langOption: {
+  languageItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
-    marginBottom: 8,
-    backgroundColor: Colors.backgroundInput,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: BorderRadius.sm,
+    marginBottom: 4,
     gap: 12,
   },
-  langOptionSelected: {
+  languageItemSelected: {
     backgroundColor: Colors.primary + '20',
-    borderWidth: 1,
-    borderColor: Colors.primary,
   },
-  langFlag: {
+  languageFlag: {
     fontSize: 24,
   },
-  langName: {
+  languageName: {
+    flex: 1,
     fontSize: 16,
     color: Colors.text,
-    flex: 1,
   },
-  langNameSelected: {
-    fontWeight: '600',
+  languageNameSelected: {
     color: Colors.primary,
+    fontWeight: '600',
+  },
+  checkmark: {
+    fontSize: 18,
+    color: Colors.primary,
+    fontWeight: 'bold',
   },
 });
