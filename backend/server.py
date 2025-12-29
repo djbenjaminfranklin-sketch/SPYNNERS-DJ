@@ -125,29 +125,8 @@ async def local_signup(request: LocalSignupRequest):
             "user_type": request.user_type or "dj"
         }
     }
-    
-    user = {
-        "email": request.email.lower(),
-        "password_hash": password_hash,
-        "full_name": request.full_name,
-        "created_at": datetime.utcnow().isoformat(),
-        "diamonds": 0,
-        "is_vip": False
-    }
-    
-    result = users_collection.insert_one(user)
-    user_id = str(result.inserted_id)
-    
-    # Generate simple token
-    token = base64.b64encode(f"{user_id}:{time.time()}".encode()).decode()
-    
-    return {
-        "success": True,
-        "token": token,
-        "user": {
-            "id": user_id,
-            "email": request.email.lower(),
-            "full_name": request.full_name
+
+@app.post("/api/auth/local/login")
         }
     }
 
