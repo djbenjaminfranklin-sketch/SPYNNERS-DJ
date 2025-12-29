@@ -84,6 +84,7 @@ class LocalSignupRequest(BaseModel):
     email: str
     password: str
     full_name: str
+    user_type: Optional[str] = None  # dj, producer, dj_producer, label
 
 
 # ==================== AUTH ENDPOINTS ====================
@@ -97,6 +98,33 @@ async def local_signup(request: LocalSignupRequest):
     
     # Simple password hash (in production use bcrypt)
     password_hash = hashlib.sha256(request.password.encode()).hexdigest()
+    
+    user = {
+        "email": request.email.lower(),
+        "password_hash": password_hash,
+        "full_name": request.full_name,
+        "user_type": request.user_type or "dj",
+        "created_at": datetime.utcnow().isoformat(),
+        "diamonds": 0,
+        "is_vip": False
+    }
+    
+    result = users_collection.insert_one(user)
+    user_id = str(result.inserted_id)
+    
+    # Generate simple token
+    token = base64.b64encode(f"{user_id}:{time.time()}".encode()).decode()
+    
+    return {
+        "success": True,
+        "token": token,
+        "user": {
+            "id": user_id,
+            "email": request.email.lower(),
+            "full_name": request.full_name,
+            "user_type": request.user_type or "dj"
+        }
+    }
     
     user = {
         "email": request.email.lower(),
