@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
+import LanguageSelector from '../../src/components/LanguageSelector';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 
@@ -25,10 +27,11 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
+  const { t } = useLanguage();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      Alert.alert(t('common.error'), 'Please fill in all fields');
       return;
     }
 
@@ -37,7 +40,7 @@ export default function LoginScreen() {
       await login(email, password);
       router.replace('/(tabs)/home');
     } catch (error: any) {
-      Alert.alert('Connexion échouée', error.response?.data?.message || 'Identifiants invalides');
+      Alert.alert(t('common.error'), error.response?.data?.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
@@ -45,17 +48,17 @@ export default function LoginScreen() {
 
   const handleForgotPassword = () => {
     Alert.alert(
-      'Mot de passe oublié',
-      'Un email de réinitialisation sera envoyé à votre adresse.',
+      t('login.forgotPassword'),
+      'A reset email will be sent to your address.',
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         { 
-          text: 'Réinitialiser', 
+          text: 'Reset', 
           onPress: () => {
             if (email) {
-              Alert.alert('Email envoyé', `Un lien de réinitialisation a été envoyé à ${email}`);
+              Alert.alert(t('common.success'), `A reset link has been sent to ${email}`);
             } else {
-              Alert.alert('Email requis', 'Veuillez d\'abord entrer votre email');
+              Alert.alert(t('common.error'), 'Please enter your email first');
             }
           }
         }
@@ -68,15 +71,20 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
+      {/* Language Selector - Top Right */}
+      <View style={styles.languageContainer}>
+        <LanguageSelector compact />
+      </View>
+
       <View style={styles.content}>
-        {/* Logo */}
+        {/* Logo - 2.5x bigger */}
         <View style={styles.header}>
           <Image
             source={require('../../assets/images/spynners-logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.subtitle}>Free House Music Promo Pool</Text>
+          <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
         </View>
 
         {/* Form */}
@@ -85,7 +93,7 @@ export default function LoginScreen() {
             <Ionicons name="mail-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder={t('login.email')}
               placeholderTextColor={Colors.textMuted}
               value={email}
               onChangeText={setEmail}
@@ -98,7 +106,7 @@ export default function LoginScreen() {
             <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Mot de passe"
+              placeholder={t('login.password')}
               placeholderTextColor={Colors.textMuted}
               value={password}
               onChangeText={setPassword}
@@ -108,7 +116,7 @@ export default function LoginScreen() {
 
           {/* Forgot Password */}
           <TouchableOpacity style={styles.forgotButton} onPress={handleForgotPassword}>
-            <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
+            <Text style={styles.forgotText}>{t('login.forgotPassword')}</Text>
           </TouchableOpacity>
 
           {/* Login Button */}
@@ -120,18 +128,17 @@ export default function LoginScreen() {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Se connecter</Text>
+              <Text style={styles.buttonText}>{t('login.signIn')}</Text>
             )}
           </TouchableOpacity>
 
-          {/* Register link */}
           {/* Sign Up Link */}
           <TouchableOpacity
             style={styles.linkButton}
             onPress={() => router.push('/(auth)/signup')}
           >
             <Text style={styles.linkText}>
-              Pas encore de compte ? <Text style={styles.linkTextBold}>S'inscrire</Text>
+              {t('login.noAccount')} <Text style={styles.linkTextBold}>{t('login.signUp')}</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -145,6 +152,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  languageContainer: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 100,
+  },
   content: {
     flex: 1,
     padding: Spacing.lg,
@@ -155,13 +168,15 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   logo: {
-    width: Math.min(SCREEN_WIDTH * 0.7, 280),
-    height: 100,
-    marginBottom: 12,
+    // 2.5x bigger: original was ~280x100, now ~700x250 (capped by screen width)
+    width: Math.min(SCREEN_WIDTH * 0.9, 700),
+    height: 250,
+    marginBottom: 16,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: Colors.textSecondary,
+    fontWeight: '500',
   },
   form: {
     gap: 14,
@@ -202,70 +217,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   buttonDisabled: {
-    opacity: 0.6,
+    opacity: 0.7,
   },
   buttonText: {
     color: '#fff',
     fontSize: 17,
     fontWeight: '600',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    color: Colors.textMuted,
-    fontSize: 13,
-    marginHorizontal: 16,
-  },
-  socialButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  socialButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 50,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.backgroundCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    gap: 10,
-  },
-  googleIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  googleG: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#4285F4',
-  },
-  socialButtonText: {
-    color: Colors.text,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  appleButton: {
-    backgroundColor: '#000',
-    borderColor: '#000',
-  },
-  appleButtonText: {
-    color: '#fff',
   },
   linkButton: {
     alignItems: 'center',
