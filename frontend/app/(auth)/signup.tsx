@@ -27,8 +27,7 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [appleLoading, setAppleLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const router = useRouter();
   const { signup } = useAuth();
 
@@ -48,6 +47,11 @@ export default function SignupScreen() {
       return;
     }
 
+    if (!acceptedTerms) {
+      Alert.alert('Erreur', 'Veuillez accepter les conditions d\'utilisation');
+      return;
+    }
+
     setLoading(true);
     try {
       await signup(email, password, fullName);
@@ -59,36 +63,12 @@ export default function SignupScreen() {
     }
   };
 
-  const handleGoogleSignup = async () => {
-    setGoogleLoading(true);
-    try {
-      Alert.alert(
-        'Google Sign Up',
-        'L\'inscription Google sera disponible sur l\'app native. Pour l\'instant, utilisez email/mot de passe.',
-        [
-          { text: 'OK' },
-          { text: 'Aller sur le site', onPress: () => Linking.openURL('https://spynners.com') }
-        ]
-      );
-    } finally {
-      setGoogleLoading(false);
-    }
+  const openTerms = () => {
+    Linking.openURL('https://spynners.com/terms');
   };
 
-  const handleAppleSignup = async () => {
-    setAppleLoading(true);
-    try {
-      Alert.alert(
-        'Apple Sign Up',
-        'L\'inscription Apple sera disponible sur l\'app native iOS. Pour l\'instant, utilisez email/mot de passe.',
-        [
-          { text: 'OK' },
-          { text: 'Aller sur le site', onPress: () => Linking.openURL('https://spynners.com') }
-        ]
-      );
-    } finally {
-      setAppleLoading(false);
-    }
+  const openPrivacy = () => {
+    Linking.openURL('https://spynners.com/privacy');
   };
 
   return (
@@ -140,7 +120,7 @@ export default function SignupScreen() {
             <Ionicons name="lock-closed-outline" size={20} color={Colors.textMuted} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Mot de passe"
+              placeholder="Mot de passe (min. 6 caractères)"
               placeholderTextColor={Colors.textMuted}
               value={password}
               onChangeText={setPassword}
@@ -160,61 +140,38 @@ export default function SignupScreen() {
             />
           </View>
 
+          {/* Terms Checkbox */}
+          <TouchableOpacity 
+            style={styles.termsContainer} 
+            onPress={() => setAcceptedTerms(!acceptedTerms)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
+              {acceptedTerms && <Ionicons name="checkmark" size={14} color="#fff" />}
+            </View>
+            <Text style={styles.termsText}>
+              J'accepte les{' '}
+              <Text style={styles.termsLink} onPress={openTerms}>
+                conditions d'utilisation
+              </Text>
+              {' '}et la{' '}
+              <Text style={styles.termsLink} onPress={openPrivacy}>
+                politique de confidentialité
+              </Text>
+            </Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[styles.button, (loading || !acceptedTerms) && styles.buttonDisabled]}
             onPress={handleSignup}
-            disabled={loading}
+            disabled={loading || !acceptedTerms}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>S'inscrire</Text>
+              <Text style={styles.buttonText}>Créer mon compte</Text>
             )}
           </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou continuer avec</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Social Buttons */}
-          <View style={styles.socialButtons}>
-            {/* Google */}
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={handleGoogleSignup}
-              disabled={googleLoading}
-            >
-              {googleLoading ? (
-                <ActivityIndicator color={Colors.text} />
-              ) : (
-                <>
-                  <View style={styles.googleIcon}>
-                    <Text style={styles.googleG}>G</Text>
-                  </View>
-                  <Text style={styles.socialButtonText}>Google</Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* Apple */}
-            <TouchableOpacity
-              style={[styles.socialButton, styles.appleButton]}
-              onPress={handleAppleSignup}
-              disabled={appleLoading}
-            >
-              {appleLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name="logo-apple" size={22} color="#fff" />
-                  <Text style={[styles.socialButtonText, styles.appleButtonText]}>Apple</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
 
           <TouchableOpacity
             style={styles.linkButton}
@@ -279,6 +236,38 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontSize: 16,
   },
+  termsContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginTop: 8,
+    paddingRight: 8,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    backgroundColor: Colors.backgroundCard,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  checkboxChecked: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  termsLink: {
+    color: Colors.primary,
+    fontWeight: '500',
+  },
   button: {
     backgroundColor: Colors.primary,
     height: 52,
@@ -288,70 +277,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   buttonDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   buttonText: {
     color: '#fff',
     fontSize: 17,
     fontWeight: '600',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    color: Colors.textMuted,
-    fontSize: 13,
-    marginHorizontal: 16,
-  },
-  socialButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  socialButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 48,
-    borderRadius: BorderRadius.md,
-    backgroundColor: Colors.backgroundCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    gap: 10,
-  },
-  googleIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  googleG: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#4285F4',
-  },
-  socialButtonText: {
-    color: Colors.text,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  appleButton: {
-    backgroundColor: '#000',
-    borderColor: '#000',
-  },
-  appleButtonText: {
-    color: '#fff',
   },
   linkButton: {
     alignItems: 'center',
