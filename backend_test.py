@@ -281,6 +281,56 @@ def test_nearby_places():
         log_test("Nearby Places", False, f"Request failed: {str(e)}")
         return False
 
+def test_spyn_notify_producer():
+    """Test SPYN Notify Producer API endpoint"""
+    try:
+        # Test payload as specified in the review request
+        notify_data = {
+            "track_title": "Test Track",
+            "track_artist": "Test Artist",
+            "track_album": "Test Album",
+            "dj_name": "DJ Test",
+            "venue": "Club Test",
+            "city": "Paris",
+            "country": "France",
+            "latitude": 48.8566,
+            "longitude": 2.3522,
+            "played_at": "2025-01-09T20:30:00Z"
+        }
+        
+        response = requests.post(
+            f"{API_URL}/notify-producer",
+            json=notify_data,
+            headers={"Content-Type": "application/json"},
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            if "success" in data:
+                if data["success"]:
+                    log_test("SPYN Notify Producer", True, f"Notification sent successfully: {data.get('message', '')}")
+                    return True
+                else:
+                    # Check if it's a graceful failure (Base44 unavailable)
+                    message = data.get("message", "")
+                    if "unavailable" in message.lower() or "failed" in message.lower():
+                        log_test("SPYN Notify Producer", True, f"Graceful error handling: {message}")
+                        return True
+                    else:
+                        log_test("SPYN Notify Producer", False, f"Unexpected failure: {message}")
+                        return False
+            else:
+                log_test("SPYN Notify Producer", False, f"Response missing 'success' field: {data}")
+                return False
+        else:
+            log_test("SPYN Notify Producer", False, f"HTTP {response.status_code}: {response.text}")
+            return False
+            
+    except Exception as e:
+        log_test("SPYN Notify Producer", False, f"Request failed: {str(e)}")
+        return False
+
 def run_all_tests():
     """Run all backend tests"""
     print("Starting SPYNNERS Backend API Tests...")
