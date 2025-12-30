@@ -53,8 +53,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Use Base44 API directly
       const response = await axios.post(
-        `https://api.base44.com/v1/apps/691a4d96d819355b52c063f3/auth/login`,
-        { email, password }
+        `https://api.base44.com/v1/auth/login`,
+        { email, password },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Base44-App-Id': '691a4d96d819355b52c063f3'
+          }
+        }
       );
 
       const { token: authToken, user: userData } = response.data;
