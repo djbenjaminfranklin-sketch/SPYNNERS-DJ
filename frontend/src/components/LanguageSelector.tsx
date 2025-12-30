@@ -183,7 +183,10 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     width: '100%',
     maxWidth: 320,
-    maxHeight: 400,
+    maxHeight: 450,
+  },
+  languageList: {
+    maxHeight: 320,
   },
   modalTitle: {
     fontSize: 18,
