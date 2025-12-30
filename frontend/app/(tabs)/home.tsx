@@ -500,8 +500,8 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   
   // Menu Grid
-  menuGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 10, gap: 6, paddingTop: 50 },
-  menuItem: { width: MENU_ITEM_SIZE, height: MENU_ITEM_SIZE * 0.9, borderRadius: 10, overflow: 'hidden' },
+  menuGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 15, gap: 6, paddingTop: 50 },
+  menuItem: { width: MENU_ITEM_SIZE, height: MENU_ITEM_SIZE, borderRadius: 10, overflow: 'hidden' },
   menuItemHighlight: { borderWidth: 2, borderColor: Colors.primary },
   menuItemGradient: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 4 },
   menuItemLabel: { color: '#fff', fontSize: 9, fontWeight: '600', marginTop: 4, textAlign: 'center' },
