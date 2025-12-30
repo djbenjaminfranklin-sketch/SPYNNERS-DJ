@@ -24,7 +24,7 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const MENU_ITEM_SIZE = (SCREEN_WIDTH - 60) / 5;
+const MENU_ITEM_SIZE = (SCREEN_WIDTH - 50) / 5.5;
 
 // Menu items with colors matching spynners.com
 const USER_MENU_ITEMS = [
