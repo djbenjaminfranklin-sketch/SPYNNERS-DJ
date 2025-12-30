@@ -503,8 +503,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scrollView: { flex: 1 },
   
-  // Menu Grid
-  menuGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 15, gap: 6, paddingTop: 50 },
+  // Menu Horizontal
+  menuScroll: { marginTop: 50 },
+  menuContent: { paddingHorizontal: 12, gap: 8, paddingVertical: 8 },
   menuItem: { width: MENU_ITEM_SIZE, height: MENU_ITEM_SIZE, borderRadius: 10, overflow: 'hidden' },
   menuItemHighlight: { borderWidth: 2, borderColor: Colors.primary },
   menuItemGradient: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 4 },
