@@ -1,0 +1,202 @@
+<analysis>
+<original_problem_statement>
+The user wants to continue the development of their existing Expo/React Native application, Spynners. The initial goal is to prepare the application for submission to the Apple App Store.
+
+The core features of the app are:
+- Audio recognition (Shazam-style) using ACRCloud.
+- Geolocation via Google Places.
+- A music player with playlists.
+- User authentication, chat, and track uploading capabilities.
+
+Throughout the session, the user's requests evolved to focus on achieving feature and design parity with their existing website, . This includes:
+- Synchronizing all data (tracks, users) with the website's backend, which is Base44.
+- Replicating the UI/UX of the website's Home, Upload, and Profile pages.
+- Adding a user-type selection (DJ, Producer, etc.) to the signup flow.
+- Implementing an internationalization (i18n) feature with a language switcher.
+- Implementing an admin panel (requested but not started).
+- Adding a notification feature: when a DJ SPYNs (identifies) a track, an email is sent to the track's producer with details about the play.
+</original_problem_statement>
+
+**User's preferred language**: Français (French)
+
+**what currently exists?**
+The application has been successfully set up in the development environment from a user-provided zip file. A local FastAPI backend has been established to act as a proxy for services like ACRCloud and Google Places, and to provide a local authentication fallback.
+
+The app's UI has been significantly overhauled to match the user's website (). It now connects to the **Base44** backend for core functionalities like user authentication, and listing/uploading tracks, ensuring data is synchronized with the website.
+
+Key implemented features include:
+- A redesigned Home page with a track list, filters, and user menu fetched from Base44.
+- A redesigned Upload page that mirrors the website's form and uploads tracks to Base44.
+- A redesigned Signup page with a user-type selector.
+- A multi-language system with a UI component for switching languages.
+- Configuration for ACRCloud and Google Places APIs.
+- App Store compliance changes (removal of social logins, addition of privacy policy links).
+
+**Last working item**:
+    - Last item agent was working: Implementing a SPYN Notification feature. When a DJ recognizes a track using the SPYN feature, the app should capture the DJ's location and trigger a notification to be sent to the track's producer. The agent updated the frontend file  to include logic for fetching geolocation and calling a new backend endpoint. The work stopped right before creating this corresponding endpoint on the backend.
+    - Status: IN PROGRESS
+    - Agent Testing Done: N
+    - Which testing method agent to use? both. The frontend needs testing to confirm it captures location and calls the backend correctly. The new backend endpoint will need to be created and then tested (e.g., via ) to ensure it processes the notification logic.
+    - User Testing Done: N
+
+**All Pending/In progress Issue list**:
+  - Issue 1: Finish SPYN Notification Feature (P0)
+  - Issue 2: Language Selector UI Bug (P2)
+
+  Issues Detail:
+  - Issue 1:
+     - Attempted fixes: The frontend part has been coded in . No backend work has been done.
+     - Next debug checklist:
+        1.  Create a new endpoint in  (e.g., ).
+        2.  This endpoint should receive , , and  from the frontend.
+        3.  Implement the logic to use the Base44 API (e.g., calling a custom function ) to trigger the email to the producer.
+        4.  Test the new endpoint with .
+        5.  Test the full flow from the app UI.
+     - Why fix this issue and what will be achieved with the fix? This is a key feature requested by the user to add value for producers on the platform.
+     - Status: IN PROGRESS
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? both
+     - Blocked on other issue: None
+
+  - Issue 2:
+     - Description: The language selection modal, implemented in , does not scroll, which prevents the user from seeing and selecting the last option (Chinese).
+     - Attempted fixes: The agent identified the issue but did not attempt a fix.
+     - Next debug checklist:
+        1.  Wrap the list of languages inside the modal in  with a .
+        2.  Ensure the modal's container has a fixed or max height to allow the  to function.
+     - Why fix this issue and what will be achieved with the fix? It will fix a UI bug and make all configured languages accessible to the user.
+     - Status: NOT STARTED
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? frontend
+     - Blocked on other issue: None
+
+**In progress Task List**:
+  - Task 1: Complete the SPYN Notification feature backend implementation. (P0)
+     - Where to resume: In .
+     - What will be achieved with this? A core user-requested feature, spyn notification email, will be functional.
+     - Status: IN PROGRESS
+     - Should Test frontend/backend/both after fix? both
+     - Blocked on something: None
+
+**Upcoming and Future Tasks**
+    Upcoming Tasks:
+    - **Implement Admin Panel (P1):** The user has requested an admin panel similar to the one on . This involves creating a new section in the app and implementing over 20 admin functions (e.g., Users, Downloads, V.I.P. Admin, Bulk Upload) by making calls to the Base44 API.
+    - **Build Out User Menu Pages (P1):** The user profile page contains a menu with links to , , , , , , , and . These pages and their corresponding functionalities need to be created.
+    - **Implement Waveform Track Player (P2):** The user's website features a track player with a waveform. The current app uses a simple play button. This requires integrating a waveform player library and connecting it to the audio tracks.
+
+    Future Tasks:
+    - **Send Track Functionality (P2):** The track list UI includes a Send button. The feature, likely for sending tracks to other users, needs to be designed and implemented.
+    - **Final App Store Preparation (P2):** Once all features are complete and tested by the user, final screenshots must be generated for the App Store listing, and a final build for submission must be prepared.
+
+**Completed work in this session**
+- **Project Initialisation**: Successfully set up the user's project from a Dropbox zip file.
+- **Backend Creation**: Established a FastAPI backend () to serve as a proxy for external services.
+- **Base44 Integration**: Created a dedicated service () and integrated it to synchronize tracks and user data with the user's website backend.
+- **UI/UX Overhaul**: Redesigned the Home, Upload, and Signup pages to match the look and feel of .
+- **Feature Implementation**:
+    - Added a user-type selection dropdown to the signup page ().
+    - Implemented a multi-language switcher with flags ().
+- **API Key Configuration**: Integrated user-provided API keys for ACRCloud and Google Places into the backend.
+- **App Store Compliance**: Removed third-party social logins to comply with Apple's guidelines and added links to the privacy policy.
+
+**Earlier issues found/mentioned but not fixed**
+   - Issue 1: Language selector modal does not scroll, hiding the Chinese language option.
+     - Debug checklist: Edit  to wrap the language list in a  and ensure the container has a constrained height.
+     - Why to solve this issue and what will be achieved with this? To fix a UI bug and allow users to select all available languages.
+     - Should Test frontend/backend/both after fix: frontend
+     - Is recurring issue? N
+
+**Known issue recurrence from previous fork**
+  - None.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+- **Mobile Framework**: Expo (React Native)
+- **Backend Framework**: FastAPI (Python)
+- **Backend-as-a-Service (BaaS)**: Base44 (Primary for Auth and Data)
+- **Database**: MongoDB (Used only for the local FastAPI server's auth fallback)
+- **Routing**: Expo File-Based Routing
+- **External APIs**: ACRCloud (Audio Recognition), Google Places (Geolocation)
+
+**key DB schema**
+  - **Base44 (External)**: The primary data store. The key entity is . The schema is defined on the Base44 platform and was not directly inspected, but includes fields like , , , , , , , etc.
+  - **MongoDB (Local)**:
+     - : { , , ,  } - Used only for the local auth fallback, not the main Base44 user system.
+
+**changes in tech stack**
+  - The project was migrated from an unknown previous state to a structured environment with a clear separation between the Expo frontend and a new FastAPI backend.
+  - The primary data source was clarified and integrated: all core logic now uses **Base44** as the backend, ensuring sync with the user's website.
+
+**All files of reference**
+- : The FastAPI backend server. Created to handle local auth and proxy API calls.
+- : The central service for all communication with the Base44 backend. Critical for data synchronization.
+- : The main screen after login. Overhauled to fetch and display tracks from Base44 and replicate the website's UI.
+- : The track upload screen. Overhauled to match the website's form and post data to Base44.
+- : The audio recognition screen. Modified multiple times, currently holds the in-progress SPYN Notification feature.
+- : The user registration screen. Modified to add a user-type selection field.
+- : A new component created to handle language switching.
+- : A new document created to track App Store submission requirements.
+
+**Areas that need refactoring**:
+- The agent struggled with  for the user menu on the home page and opted for a  as a workaround. The original grid layout could be revisited using a different styling approach if the exact grid is desired.
+
+**key api endpoints**
+- **Local FastAPI Backend:**
+  - : (POST) Handles local user registration.
+  - : (POST) Handles local user login.
+  - : (POST) Proxies audio recognition requests to ACRCloud.
+  - : (GET) Proxies search requests to Google Places.
+- **External Base44 Backend:**
+  - : (GET) Lists all tracks.
+  - : (POST) Creates a new track.
+  - : (GET) Retrieves the current authenticated user's info.
+  - : (POST) Authenticates a user.
+
+**Critical Info for New Agent**
+- The application's source of truth for data is the **Base44** backend, not the local MongoDB. The FastAPI server in  is a helper/proxy for services that are not on Base44 (like ACRCloud).
+- All API calls to Base44 must include the  header. Authentication is handled via a JWT Bearer token obtained from Base44's auth endpoints.
+- The user wants the mobile app to be a close replica of their website, . The user will provide screenshots for UI/UX direction.
+- Do not ask for API keys; the user has provided them for ACRCloud and Google Places. The Base44 integration does not require a secret key, only the public App ID.
+
+**documents created in this job**
+- : A markdown file listing tasks and checks required to ensure the app is ready for App Store submission.
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **Request**: Implement the SPYN notification feature where a track recognition sends an email to the producer. (PENDING)
+2.  **Request**: Replicate the user profile page from the website. (DONE) Asks if agent needs to see the user home page. (Agent requested it).
+3.  **Request**: Clarifies that the app and website must be synchronized via the same backend and asks to implement website features like upload and VIP tracks. (DONE)
+4.  **Request**: Enlarge login logo, add an admin menu, set default language to English, and add a multi-language switcher. (Logo and i18n are DONE, admin menu is PENDING).
+5.  **Request**: Add a user-type selection (DJ, Producer, etc.) to the signup page. (DONE)
+6.  **Request**: Replicate the track upload page from the website. (DONE)
+7.  **Query**: Asks if SPYN buttons are implemented like the website and how to download the project. (Buttons DONE, download link provided).
+8.  **Clarification**: Provides instructions for App Store compliance: use website's privacy URL, remove social logins, asks agent to add keywords. (DONE)
+9.  **Request**: Asks for an audit of things that could cause an App Store rejection and a feature to record a DJ set. (Audit DONE, record feature is a placeholder).
+10. **Info**: Provides API keys for ACRCloud and confirms Base44 auth is already set up. (DONE)
+
+**Project Health Check:**
+- **Functional**: The core application is functional, with major features connected to the production backend (Base44).
+- **Mocked**: No features are currently mocked.
+- **Broken**: The language selector UI has a minor scrolling bug.
+
+**3rd Party Integrations**
+- **Base44**: Backend as a Service for data (tracks, users) and authentication. Requires a public  in headers, no secret key.
+- **ACRCloud**: Audio recognition service. Requires a User-provided API Key & Secret.
+- **Google Places API**: Geolocation service. Requires a User-provided API Key.
+
+**Testing status**
+  - Testing agent used after significant changes: YES
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: []
+  - Known regressions: None
+
+**Credentials to test flow:**
+Local fallback authentication can be tested with any credentials via the UI. The main authentication is against the user's Base44 backend; no test credentials were provided, but the user has an account.
+
+**What agent forgot to execute**
+- The agent identified a UI bug in the language selector modal (not being scrollable) but moved on without fixing it.
+- The agent created placeholder logic for the Record Set and cable detection features requested by the user but never fully implemented or tested them.
+- The agent acknowledged the user's request for an extensive Admin Panel but has not started its implementation.
+
+</analysis>
