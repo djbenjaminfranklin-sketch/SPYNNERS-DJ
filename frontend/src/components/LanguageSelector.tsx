@@ -48,11 +48,10 @@ export default function LanguageSelector({ compact = false }: LanguageSelectorPr
           >
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Select Language</Text>
-              <FlatList
-                data={LANGUAGES}
-                keyExtractor={(item) => item.code}
-                renderItem={({ item }) => (
+              <ScrollView style={styles.languageList} showsVerticalScrollIndicator={true}>
+                {LANGUAGES.map((item) => (
                   <TouchableOpacity
+                    key={item.code}
                     style={[
                       styles.languageItem,
                       language === item.code && styles.languageItemSelected
@@ -70,8 +69,8 @@ export default function LanguageSelector({ compact = false }: LanguageSelectorPr
                       <Text style={styles.checkmark}>✓</Text>
                     )}
                   </TouchableOpacity>
-                )}
-              />
+                ))}
+              </ScrollView>
             </View>
           </Pressable>
         </Modal>
