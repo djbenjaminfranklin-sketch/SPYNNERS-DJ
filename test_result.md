@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the SPYNNERS backend API endpoints for health check, authentication, tracks, chat, and places functionality"
+user_problem_statement: "Test the SPYNNERS backend API endpoints for health check, authentication, tracks, chat, places, and SPYN notification functionality"
 
 backend:
   - task: "Health Check API"
@@ -188,6 +188,18 @@ backend:
       - working: true
         agent: "testing"
         comment: "Nearby places endpoint working correctly. Returns mock data when no Google API key configured, which is expected behavior"
+
+  - task: "SPYN Notify Producer API"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "New endpoint added to notify producer when their track is SPYNed. Calls Base44 sendTrackPlayedEmail cloud function. Accepts track_title, track_artist, dj_name, venue, city, country, latitude, longitude, played_at"
 
 frontend:
   - task: "Authentication Flow - Login Screen"
