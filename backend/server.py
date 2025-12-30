@@ -520,6 +520,101 @@ async def get_nearby_places(lat: float, lng: float, radius: int = 5000, type: st
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ==================== SPYN NOTIFICATION ====================
+
+class SpynNotificationRequest(BaseModel):
+    track_title: str
+    track_artist: str
+    track_album: Optional[str] = None
+    track_cover: Optional[str] = None
+    dj_id: Optional[str] = None
+    dj_name: str
+    venue: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    played_at: Optional[str] = None
+
+@app.post("/api/notify-producer")
+async def notify_producer(request: SpynNotificationRequest, authorization: Optional[str] = Header(None)):
+    """
+    Notify the producer when their track is played (SPYNed) by a DJ.
+    Calls the Base44 sendTrackPlayedEmail cloud function.
+    """
+    try:
+        # Extract Bearer token
+        user_token = ""
+        if authorization and authorization.startswith("Bearer "):
+            user_token = authorization.replace("Bearer ", "")
+        
+        # Base44 API configuration
+        BASE44_APP_ID = "691a4d96d819355b52c063f3"
+        BASE44_FUNCTION_URL = "https://api.base44.com/v1/functions/invoke/sendTrackPlayedEmail"
+        
+        # Prepare payload for Base44 function
+        payload = {
+            "producerId": "",  # Base44 will determine from track info
+            "trackTitle": request.track_title,
+            "djName": request.dj_name,
+            "city": request.city or "Unknown",
+            "country": request.country or "Unknown",
+            "venue": request.venue or "",
+            "trackArtworkUrl": request.track_cover or "",
+            "djAvatar": "",  # Will be fetched by Base44 if needed
+            "playedAt": request.played_at or datetime.utcnow().isoformat() + "Z",
+            "collaborators": []  # Base44 will populate from track data
+        }
+        
+        # Add location coordinates if available
+        if request.latitude and request.longitude:
+            payload["location"] = {
+                "latitude": request.latitude,
+                "longitude": request.longitude
+            }
+        
+        # Call Base44 cloud function
+        headers = {
+            "Content-Type": "application/json",
+            "X-Base44-App-Id": BASE44_APP_ID,
+        }
+        
+        # Add user token if available for authentication
+        if user_token:
+            headers["Authorization"] = f"Bearer {user_token}"
+        
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            response = await http_client.post(
+                BASE44_FUNCTION_URL,
+                json=payload,
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                return {
+                    "success": True,
+                    "message": "Producer notification sent successfully",
+                    "details": result
+                }
+            else:
+                # Log the error but don't fail the SPYN operation
+                print(f"Base44 notification error: {response.status_code} - {response.text}")
+                return {
+                    "success": False,
+                    "message": "Notification service unavailable",
+                    "status_code": response.status_code
+                }
+                
+    except Exception as e:
+        # Don't fail the entire SPYN operation if notification fails
+        print(f"Producer notification error: {e}")
+        return {
+            "success": False,
+            "message": f"Notification failed: {str(e)}"
+        }
+
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/api/health")
