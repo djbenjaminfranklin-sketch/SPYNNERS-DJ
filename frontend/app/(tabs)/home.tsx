@@ -282,8 +282,13 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
         contentContainerStyle={{ paddingBottom: currentTrack ? 120 : 20 }}
       >
-        {/* User Menu Grid */}
-        <View style={styles.menuGrid}>
+        {/* User Menu - Horizontal Scroll */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.menuScroll}
+          contentContainerStyle={styles.menuContent}
+        >
           {USER_MENU_ITEMS.map((item) => (
             <TouchableOpacity
               key={item.id}
@@ -292,12 +297,12 @@ export default function HomeScreen() {
               activeOpacity={0.8}
             >
               <LinearGradient colors={item.colors} style={styles.menuItemGradient}>
-                <Ionicons name={item.icon as any} size={22} color="#fff" />
+                <Ionicons name={item.icon as any} size={20} color="#fff" />
                 <Text style={styles.menuItemLabel}>{item.label}</Text>
               </LinearGradient>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         {/* Search & Filters */}
         <View style={styles.searchSection}>
