@@ -364,6 +364,10 @@ def run_all_tests():
     test_nearby_places()
     print()
     
+    # Test 8: SPYN Notify Producer (NEW)
+    test_spyn_notify_producer()
+    print()
+    
     # Summary
     print("=" * 60)
     print("TEST SUMMARY")
