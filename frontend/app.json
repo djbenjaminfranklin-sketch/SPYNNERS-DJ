@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "spynners",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.spynners.live",
@@ -42,7 +42,8 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.FOREGROUND_SERVICE"
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "web": {
@@ -70,7 +71,9 @@
         {
           "photosPermission": "SPYNNERS accède à vos photos pour les pochettes d'album et votre profil."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
@@ -78,8 +81,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "bdee0bb9-363d-44f9-ba7f-37130ffbef06"
+        "projectId": "bb56295f-5394-4059-91ff-6d45e96eba63"
       }
-    }
+    },
+    "owner": "spynners"
   }
 }
