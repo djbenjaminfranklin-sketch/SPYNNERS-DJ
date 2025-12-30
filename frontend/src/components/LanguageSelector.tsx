@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Modal,
-  FlatList,
+  ScrollView,
   Pressable,
 } from 'react-native';
 import { useLanguage, LANGUAGES, Language } from '../contexts/LanguageContext';
