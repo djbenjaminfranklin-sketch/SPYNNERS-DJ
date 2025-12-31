@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "spynners",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.spynners.live",
@@ -70,7 +70,8 @@
         {
           "photosPermission": "SPYNNERS accède à vos photos pour les pochettes d'album et votre profil."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
