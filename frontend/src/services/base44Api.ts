@@ -111,20 +111,36 @@ export const base44Tracks = {
     sort?: string;
     limit?: number;
     is_vip?: boolean;
-  }) {
+  }): Promise<Track[]> {
     try {
-      const params = new URLSearchParams();
-      if (filters?.genre) params.append('genre', filters.genre);
-      if (filters?.energy_level) params.append('energy_level', filters.energy_level);
-      if (filters?.sort) params.append('sort', filters.sort);
-      if (filters?.limit) params.append('limit', filters.limit.toString());
-      if (filters?.is_vip !== undefined) params.append('is_vip', filters.is_vip.toString());
+      console.log('[Tracks] Fetching tracks with filters:', filters);
+      
+      // Build query object for Base44 API
+      const queryParams: Record<string, string> = {};
+      if (filters?.genre) queryParams.genre = filters.genre;
+      if (filters?.energy_level) queryParams.energy_level = filters.energy_level;
+      if (filters?.sort) queryParams.sort = filters.sort;
+      if (filters?.limit) queryParams.limit = filters.limit.toString();
+      if (filters?.is_vip !== undefined) queryParams.is_vip = filters.is_vip.toString();
 
-      const response = await base44Api.get(`/apps/${APP_ID}/entities/tracks?${params.toString()}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching tracks:', error);
-      throw error;
+      const queryString = new URLSearchParams(queryParams).toString();
+      const url = `/apps/${APP_ID}/entities/Track${queryString ? `?${queryString}` : ''}`;
+      
+      console.log('[Tracks] API URL:', url);
+      
+      const response = await base44Api.get(url);
+      console.log('[Tracks] Response data:', JSON.stringify(response.data).substring(0, 500));
+      
+      // Base44 returns either { items: [...] } or directly [...]
+      const tracks = response.data?.items || response.data || [];
+      console.log('[Tracks] Parsed tracks count:', tracks.length);
+      
+      return Array.isArray(tracks) ? tracks : [];
+    } catch (error: any) {
+      console.error('[Tracks] Error fetching tracks:', error?.response?.status, error?.message);
+      console.error('[Tracks] Error details:', error?.response?.data);
+      // Return empty array on error, let the UI show demo tracks
+      return [];
     }
   },
 
@@ -135,63 +151,92 @@ export const base44Tracks = {
 
   // Get single track
   async get(trackId: string) {
-    const response = await base44Api.get(`/apps/${APP_ID}/entities/tracks/${trackId}`);
-    return response.data;
+    try {
+      const response = await base44Api.get(`/apps/${APP_ID}/entities/Track/${trackId}`);
+      return response.data;
+    } catch (error) {
+      console.error('[Tracks] Error getting track:', error);
+      throw error;
+    }
   },
 
   // Create new track
   async create(track: Track) {
-    const response = await base44Api.post(`/apps/${APP_ID}/entities/tracks`, track);
+    const response = await base44Api.post(`/apps/${APP_ID}/entities/Track`, track);
     return response.data;
   },
 
   // Update track
   async update(trackId: string, updates: Partial<Track>) {
-    const response = await base44Api.put(`/apps/${APP_ID}/entities/tracks/${trackId}`, updates);
+    const response = await base44Api.put(`/apps/${APP_ID}/entities/Track/${trackId}`, updates);
     return response.data;
   },
 
   // Delete track
   async delete(trackId: string) {
-    const response = await base44Api.delete(`/apps/${APP_ID}/entities/tracks/${trackId}`);
+    const response = await base44Api.delete(`/apps/${APP_ID}/entities/Track/${trackId}`);
     return response.data;
   },
 
   // Search tracks
   async search(query: string) {
-    const response = await base44Api.get(`/apps/${APP_ID}/entities/tracks?search=${encodeURIComponent(query)}`);
-    return response.data;
+    try {
+      const response = await base44Api.get(`/apps/${APP_ID}/entities/Track?search=${encodeURIComponent(query)}`);
+      const tracks = response.data?.items || response.data || [];
+      return Array.isArray(tracks) ? tracks : [];
+    } catch (error) {
+      console.error('[Tracks] Search error:', error);
+      return [];
+    }
   },
 
   // Get my uploads
   async myUploads(userId: string) {
-    const response = await base44Api.get(`/apps/${APP_ID}/entities/tracks?uploaded_by=${userId}`);
-    return response.data;
+    try {
+      const response = await base44Api.get(`/apps/${APP_ID}/entities/Track?uploaded_by=${userId}`);
+      const tracks = response.data?.items || response.data || [];
+      return Array.isArray(tracks) ? tracks : [];
+    } catch (error) {
+      console.error('[Tracks] Error getting my uploads:', error);
+      return [];
+    }
   },
 
   // Rate a track
   async rate(trackId: string, rating: number) {
-    const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/rate_track`, {
-      track_id: trackId,
-      rating,
-    });
-    return response.data;
+    try {
+      const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/rate_track`, {
+        track_id: trackId,
+        rating,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('[Tracks] Error rating track:', error);
+    }
   },
 
   // Increment download count
   async download(trackId: string) {
-    const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/download_track`, {
-      track_id: trackId,
-    });
-    return response.data;
+    try {
+      const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/download_track`, {
+        track_id: trackId,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('[Tracks] Error recording download:', error);
+    }
   },
 
   // Increment play count
   async play(trackId: string) {
-    const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/play_track`, {
-      track_id: trackId,
-    });
-    return response.data;
+    try {
+      const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/play_track`, {
+        track_id: trackId,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('[Tracks] Error recording play:', error);
+    }
   },
 };
 
