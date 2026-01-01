@@ -17,21 +17,23 @@ export const base44 = createClient({
 const AUTH_TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user';
 
-// Initialize auth from storage
+// Initialize auth from storage (called explicitly, not on module load)
 export const initializeAuth = async () => {
   try {
     const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
     if (token) {
       console.log('[Base44] Restoring auth token from storage');
       base44.auth.setToken(token);
+      return true;
     }
+    return false;
   } catch (error) {
     console.error('[Base44] Error initializing auth:', error);
+    return false;
   }
 };
 
-// Call this on app start
-initializeAuth();
+// Don't call initializeAuth on module load - it will be called by AuthContext
 
 // ==================== TRACK TYPE ====================
 
