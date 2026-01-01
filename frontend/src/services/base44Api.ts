@@ -1,74 +1,39 @@
 /**
  * Base44 API Service for SPYNNERS
- * Handles all API calls to Base44 backend
+ * Using official @base44/sdk for all API calls
  */
 
-import axios, { AxiosError } from 'axios';
+import { createClient } from '@base44/sdk';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'https://api.base44.com/v1';
 const APP_ID = '691a4d96d819355b52c063f3';
 
-// Create axios instance with Base44 configuration
-const base44Api = axios.create({
-  baseURL: BASE_URL,
-  timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json',
-    'X-Base44-App-Id': APP_ID,
-  },
+// Create Base44 client instance
+export const base44 = createClient({
+  appId: APP_ID,
 });
 
-// Add auth token to requests
-base44Api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem('auth_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Storage keys
+const AUTH_TOKEN_KEY = 'auth_token';
+const USER_KEY = 'user';
+
+// Initialize auth from storage
+export const initializeAuth = async () => {
+  try {
+    const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+    if (token) {
+      console.log('[Base44] Restoring auth token from storage');
+      base44.auth.setToken(token);
+    }
+  } catch (error) {
+    console.error('[Base44] Error initializing auth:', error);
   }
-  console.log('[Base44 API] Request:', config.method?.toUpperCase(), config.url);
-  return config;
-});
-
-// Log responses and errors
-base44Api.interceptors.response.use(
-  (response) => {
-    console.log('[Base44 API] Response:', response.status, response.config.url);
-    return response;
-  },
-  (error: AxiosError) => {
-    console.error('[Base44 API] Error:', error.response?.status, error.message, error.config?.url);
-    return Promise.reject(error);
-  }
-);
-
-// ==================== AUTH ====================
-
-export const base44Auth = {
-  async login(email: string, password: string) {
-    const response = await base44Api.post(`/apps/${APP_ID}/auth/login`, {
-      email,
-      password,
-    });
-    return response.data;
-  },
-
-  async signup(email: string, password: string, fullName: string, userType?: string) {
-    const response = await base44Api.post(`/apps/${APP_ID}/auth/signup`, {
-      email,
-      password,
-      full_name: fullName,
-      user_type: userType,
-    });
-    return response.data;
-  },
-
-  async me() {
-    const response = await base44Api.get(`/apps/${APP_ID}/auth/me`);
-    return response.data;
-  },
 };
 
-// ==================== TRACKS ====================
+// Call this on app start
+initializeAuth();
+
+// ==================== TRACK TYPE ====================
 
 export interface Track {
   id?: string;
@@ -103,6 +68,8 @@ export interface Track {
   status?: string;
 }
 
+// ==================== TRACKS SERVICE ====================
+
 export const base44Tracks = {
   // Get all tracks with optional filters
   async list(filters?: {
@@ -115,74 +82,102 @@ export const base44Tracks = {
     try {
       console.log('[Tracks] Fetching tracks with filters:', filters);
       
-      // Build query object for Base44 API
-      const queryParams: Record<string, string> = {};
-      if (filters?.genre) queryParams.genre = filters.genre;
-      if (filters?.energy_level) queryParams.energy_level = filters.energy_level;
-      if (filters?.sort) queryParams.sort = filters.sort;
-      if (filters?.limit) queryParams.limit = filters.limit.toString();
-      if (filters?.is_vip !== undefined) queryParams.is_vip = filters.is_vip.toString();
+      // Build filter options for SDK
+      const options: any = {
+        limit: filters?.limit || 50,
+        sort: filters?.sort || '-created_date',
+      };
+      
+      // Build filter object
+      const filterObj: any = {};
+      if (filters?.genre && filters.genre !== 'All Genres') {
+        filterObj.genre = filters.genre;
+      }
+      if (filters?.energy_level && filters.energy_level !== 'All Energy Levels') {
+        filterObj.energy_level = filters.energy_level.toLowerCase().replace(' ', '_');
+      }
+      if (filters?.is_vip !== undefined) {
+        filterObj.is_vip = filters.is_vip;
+      }
+      
+      if (Object.keys(filterObj).length > 0) {
+        options.filter = filterObj;
+      }
 
-      const queryString = new URLSearchParams(queryParams).toString();
-      const url = `/apps/${APP_ID}/entities/Track${queryString ? `?${queryString}` : ''}`;
+      console.log('[Tracks] SDK options:', JSON.stringify(options));
       
-      console.log('[Tracks] API URL:', url);
+      // Use Base44 SDK to fetch tracks
+      const tracks = await base44.entities.Track.list(options);
       
-      const response = await base44Api.get(url);
-      console.log('[Tracks] Response data:', JSON.stringify(response.data).substring(0, 500));
-      
-      // Base44 returns either { items: [...] } or directly [...]
-      const tracks = response.data?.items || response.data || [];
-      console.log('[Tracks] Parsed tracks count:', tracks.length);
+      console.log('[Tracks] Fetched tracks count:', tracks?.length || 0);
+      if (tracks?.length > 0) {
+        console.log('[Tracks] First track:', JSON.stringify(tracks[0]).substring(0, 300));
+      }
       
       return Array.isArray(tracks) ? tracks : [];
     } catch (error: any) {
-      console.error('[Tracks] Error fetching tracks:', error?.response?.status, error?.message);
-      console.error('[Tracks] Error details:', error?.response?.data);
-      // Return empty array on error, let the UI show demo tracks
+      console.error('[Tracks] Error fetching tracks:', error?.message || error);
+      // Return empty array, the UI will show demo tracks
       return [];
     }
   },
 
   // Get VIP tracks only
-  async listVIP() {
+  async listVIP(): Promise<Track[]> {
     return this.list({ is_vip: true });
   },
 
   // Get single track
-  async get(trackId: string) {
+  async get(trackId: string): Promise<Track | null> {
     try {
-      const response = await base44Api.get(`/apps/${APP_ID}/entities/Track/${trackId}`);
-      return response.data;
+      const track = await base44.entities.Track.get(trackId);
+      return track;
     } catch (error) {
       console.error('[Tracks] Error getting track:', error);
-      throw error;
+      return null;
     }
   },
 
   // Create new track
-  async create(track: Track) {
-    const response = await base44Api.post(`/apps/${APP_ID}/entities/Track`, track);
-    return response.data;
+  async create(track: Partial<Track>): Promise<Track | null> {
+    try {
+      const newTrack = await base44.entities.Track.create(track);
+      return newTrack;
+    } catch (error) {
+      console.error('[Tracks] Error creating track:', error);
+      throw error;
+    }
   },
 
   // Update track
-  async update(trackId: string, updates: Partial<Track>) {
-    const response = await base44Api.put(`/apps/${APP_ID}/entities/Track/${trackId}`, updates);
-    return response.data;
+  async update(trackId: string, updates: Partial<Track>): Promise<Track | null> {
+    try {
+      const updatedTrack = await base44.entities.Track.update(trackId, updates);
+      return updatedTrack;
+    } catch (error) {
+      console.error('[Tracks] Error updating track:', error);
+      throw error;
+    }
   },
 
   // Delete track
-  async delete(trackId: string) {
-    const response = await base44Api.delete(`/apps/${APP_ID}/entities/Track/${trackId}`);
-    return response.data;
+  async delete(trackId: string): Promise<boolean> {
+    try {
+      await base44.entities.Track.delete(trackId);
+      return true;
+    } catch (error) {
+      console.error('[Tracks] Error deleting track:', error);
+      return false;
+    }
   },
 
   // Search tracks
-  async search(query: string) {
+  async search(query: string): Promise<Track[]> {
     try {
-      const response = await base44Api.get(`/apps/${APP_ID}/entities/Track?search=${encodeURIComponent(query)}`);
-      const tracks = response.data?.items || response.data || [];
+      const tracks = await base44.entities.Track.list({
+        filter: { $text: { $search: query } },
+        limit: 50,
+      });
       return Array.isArray(tracks) ? tracks : [];
     } catch (error) {
       console.error('[Tracks] Search error:', error);
@@ -191,10 +186,12 @@ export const base44Tracks = {
   },
 
   // Get my uploads
-  async myUploads(userId: string) {
+  async myUploads(userId: string): Promise<Track[]> {
     try {
-      const response = await base44Api.get(`/apps/${APP_ID}/entities/Track?uploaded_by=${userId}`);
-      const tracks = response.data?.items || response.data || [];
+      const tracks = await base44.entities.Track.list({
+        filter: { uploaded_by: userId },
+        sort: '-created_date',
+      });
       return Array.isArray(tracks) ? tracks : [];
     } catch (error) {
       console.error('[Tracks] Error getting my uploads:', error);
@@ -202,45 +199,45 @@ export const base44Tracks = {
     }
   },
 
-  // Rate a track
-  async rate(trackId: string, rating: number) {
+  // Rate a track (via function invoke)
+  async rate(trackId: string, rating: number): Promise<any> {
     try {
-      const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/rate_track`, {
+      const result = await base44.functions.invoke('rate_track', {
         track_id: trackId,
         rating,
       });
-      return response.data;
+      return result;
     } catch (error) {
       console.error('[Tracks] Error rating track:', error);
     }
   },
 
-  // Increment download count
-  async download(trackId: string) {
+  // Increment download count (via function invoke)
+  async download(trackId: string): Promise<any> {
     try {
-      const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/download_track`, {
+      const result = await base44.functions.invoke('download_track', {
         track_id: trackId,
       });
-      return response.data;
+      return result;
     } catch (error) {
       console.error('[Tracks] Error recording download:', error);
     }
   },
 
-  // Increment play count
-  async play(trackId: string) {
+  // Increment play count (via function invoke)
+  async play(trackId: string): Promise<any> {
     try {
-      const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/play_track`, {
+      const result = await base44.functions.invoke('play_track', {
         track_id: trackId,
       });
-      return response.data;
+      return result;
     } catch (error) {
       console.error('[Tracks] Error recording play:', error);
     }
   },
 };
 
-// ==================== USERS ====================
+// ==================== USER TYPE ====================
 
 export interface User {
   id?: string;
@@ -254,30 +251,61 @@ export interface User {
   is_vip?: boolean;
 }
 
+// ==================== USERS SERVICE ====================
+
 export const base44Users = {
-  async list(filters?: { user_type?: string; search?: string }) {
-    const params = new URLSearchParams();
-    if (filters?.user_type) params.append('user_type', filters.user_type);
-    if (filters?.search) params.append('search', filters.search);
-
-    const response = await base44Api.get(`/apps/${APP_ID}/entities/users?${params.toString()}`);
-    return response.data;
+  async list(filters?: { user_type?: string; search?: string }): Promise<User[]> {
+    try {
+      const options: any = { limit: 50 };
+      const filterObj: any = {};
+      
+      if (filters?.user_type) {
+        filterObj.user_type = filters.user_type;
+      }
+      if (filters?.search) {
+        filterObj.$text = { $search: filters.search };
+      }
+      
+      if (Object.keys(filterObj).length > 0) {
+        options.filter = filterObj;
+      }
+      
+      const users = await base44.entities.User.list(options);
+      return Array.isArray(users) ? users : [];
+    } catch (error) {
+      console.error('[Users] Error listing users:', error);
+      return [];
+    }
   },
 
-  async get(userId: string) {
-    const response = await base44Api.get(`/apps/${APP_ID}/entities/users/${userId}`);
-    return response.data;
+  async get(userId: string): Promise<User | null> {
+    try {
+      const user = await base44.entities.User.get(userId);
+      return user;
+    } catch (error) {
+      console.error('[Users] Error getting user:', error);
+      return null;
+    }
   },
 
-  async searchProducersAndLabels(query: string) {
-    const response = await base44Api.get(
-      `/apps/${APP_ID}/entities/users?search=${encodeURIComponent(query)}&user_type_in=producer,label,dj_producer`
-    );
-    return response.data;
+  async searchProducersAndLabels(query: string): Promise<User[]> {
+    try {
+      const users = await base44.entities.User.list({
+        filter: {
+          $text: { $search: query },
+          user_type: { $in: ['producer', 'label', 'dj_producer'] },
+        },
+        limit: 20,
+      });
+      return Array.isArray(users) ? users : [];
+    } catch (error) {
+      console.error('[Users] Error searching producers/labels:', error);
+      return [];
+    }
   },
 };
 
-// ==================== PLAYLISTS ====================
+// ==================== PLAYLIST TYPE ====================
 
 export interface Playlist {
   id?: string;
@@ -289,112 +317,228 @@ export interface Playlist {
   created_at?: string;
 }
 
+// ==================== PLAYLISTS SERVICE ====================
+
 export const base44Playlists = {
-  async list(userId: string) {
-    const response = await base44Api.get(`/apps/${APP_ID}/entities/playlists?user_id=${userId}`);
-    return response.data;
+  async list(userId: string): Promise<Playlist[]> {
+    try {
+      const playlists = await base44.entities.Playlist.list({
+        filter: { user_id: userId },
+      });
+      return Array.isArray(playlists) ? playlists : [];
+    } catch (error) {
+      console.error('[Playlists] Error listing playlists:', error);
+      return [];
+    }
   },
 
-  async create(playlist: Playlist) {
-    const response = await base44Api.post(`/apps/${APP_ID}/entities/playlists`, playlist);
-    return response.data;
+  async create(playlist: Partial<Playlist>): Promise<Playlist | null> {
+    try {
+      const newPlaylist = await base44.entities.Playlist.create(playlist);
+      return newPlaylist;
+    } catch (error) {
+      console.error('[Playlists] Error creating playlist:', error);
+      throw error;
+    }
   },
 
-  async addTrack(playlistId: string, trackId: string) {
-    const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/add_to_playlist`, {
-      playlist_id: playlistId,
-      track_id: trackId,
-    });
-    return response.data;
+  async addTrack(playlistId: string, trackId: string): Promise<any> {
+    try {
+      const result = await base44.functions.invoke('add_to_playlist', {
+        playlist_id: playlistId,
+        track_id: trackId,
+      });
+      return result;
+    } catch (error) {
+      console.error('[Playlists] Error adding track to playlist:', error);
+      throw error;
+    }
   },
 
-  async removeTrack(playlistId: string, trackId: string) {
-    const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/remove_from_playlist`, {
-      playlist_id: playlistId,
-      track_id: trackId,
-    });
-    return response.data;
+  async removeTrack(playlistId: string, trackId: string): Promise<any> {
+    try {
+      const result = await base44.functions.invoke('remove_from_playlist', {
+        playlist_id: playlistId,
+        track_id: trackId,
+      });
+      return result;
+    } catch (error) {
+      console.error('[Playlists] Error removing track from playlist:', error);
+      throw error;
+    }
   },
 };
 
-// ==================== FILE UPLOAD ====================
+// ==================== FILES SERVICE ====================
 
 export const base44Files = {
   // Upload file to Base44 storage
-  async upload(fileUri: string, fileName: string, mimeType: string) {
-    const formData = new FormData();
-    formData.append('file', {
-      uri: fileUri,
-      name: fileName,
-      type: mimeType,
-    } as any);
-
-    const response = await base44Api.post(`/apps/${APP_ID}/storage/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
+  async upload(fileUri: string, fileName: string, _mimeType: string): Promise<any> {
+    try {
+      // Note: File upload via SDK may need special handling for React Native
+      // This is a placeholder - actual implementation may vary
+      const result = await base44.storage.upload(fileUri, { filename: fileName });
+      return result;
+    } catch (error) {
+      console.error('[Files] Error uploading file:', error);
+      throw error;
+    }
   },
 
   // Get file URL
-  getUrl(fileId: string) {
-    return `${BASE_URL}/apps/${APP_ID}/storage/files/${fileId}`;
+  getUrl(fileId: string): string {
+    return `https://api.base44.com/v1/apps/${APP_ID}/storage/files/${fileId}`;
   },
 };
 
-// ==================== ADMIN FUNCTIONS ====================
+// ==================== ADMIN SERVICE ====================
 
 export const base44Admin = {
   // Get pending tracks for approval
-  async getPendingTracks() {
-    const response = await base44Api.get(`/apps/${APP_ID}/entities/tracks?status=pending`);
-    return response.data;
+  async getPendingTracks(): Promise<Track[]> {
+    try {
+      const tracks = await base44.entities.Track.list({
+        filter: { status: 'pending' },
+      });
+      return Array.isArray(tracks) ? tracks : [];
+    } catch (error) {
+      console.error('[Admin] Error getting pending tracks:', error);
+      return [];
+    }
   },
 
   // Approve track
-  async approveTrack(trackId: string) {
-    const response = await base44Api.put(`/apps/${APP_ID}/entities/tracks/${trackId}`, {
-      status: 'approved',
-      is_approved: true,
-    });
-    return response.data;
+  async approveTrack(trackId: string): Promise<Track | null> {
+    try {
+      const track = await base44.entities.Track.update(trackId, {
+        status: 'approved',
+        is_approved: true,
+      });
+      return track;
+    } catch (error) {
+      console.error('[Admin] Error approving track:', error);
+      throw error;
+    }
   },
 
   // Reject track
-  async rejectTrack(trackId: string, reason?: string) {
-    const response = await base44Api.put(`/apps/${APP_ID}/entities/tracks/${trackId}`, {
-      status: 'rejected',
-      rejection_reason: reason,
-    });
-    return response.data;
+  async rejectTrack(trackId: string, reason?: string): Promise<Track | null> {
+    try {
+      const track = await base44.entities.Track.update(trackId, {
+        status: 'rejected',
+        rejection_reason: reason,
+      });
+      return track;
+    } catch (error) {
+      console.error('[Admin] Error rejecting track:', error);
+      throw error;
+    }
   },
 
   // Get all users (admin only)
-  async getAllUsers() {
-    const response = await base44Api.get(`/apps/${APP_ID}/entities/users`);
-    return response.data;
+  async getAllUsers(): Promise<User[]> {
+    try {
+      const users = await base44.entities.User.list({ limit: 100 });
+      return Array.isArray(users) ? users : [];
+    } catch (error) {
+      console.error('[Admin] Error getting all users:', error);
+      return [];
+    }
   },
 
-  // Get analytics
-  async getAnalytics() {
-    const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/get_analytics`);
-    return response.data;
+  // Get analytics (via function invoke)
+  async getAnalytics(): Promise<any> {
+    try {
+      const result = await base44.functions.invoke('get_analytics');
+      return result;
+    } catch (error) {
+      console.error('[Admin] Error getting analytics:', error);
+      return null;
+    }
   },
 
-  // Get download stats
-  async getDownloadStats() {
-    const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/get_download_stats`);
-    return response.data;
+  // Get download stats (via function invoke)
+  async getDownloadStats(): Promise<any> {
+    try {
+      const result = await base44.functions.invoke('get_download_stats');
+      return result;
+    } catch (error) {
+      console.error('[Admin] Error getting download stats:', error);
+      return null;
+    }
+  },
+};
+
+// ==================== SPYN NOTIFICATION ====================
+
+export const base44Notifications = {
+  // Send track played notification email to producer
+  async sendTrackPlayedEmail(params: {
+    track_id: string;
+    track_title: string;
+    artist_name: string;
+    dj_name: string;
+    club_name?: string;
+    location?: string;
+    played_at?: string;
+  }): Promise<any> {
+    try {
+      console.log('[Notifications] Sending track played email:', params);
+      const result = await base44.functions.invoke('sendTrackPlayedEmail', params);
+      console.log('[Notifications] Email sent successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('[Notifications] Error sending track played email:', error);
+      throw error;
+    }
+  },
+};
+
+// ==================== AUTH HELPERS ====================
+
+export const base44AuthHelpers = {
+  // Save auth state to storage
+  async saveAuth(token: string, user: User): Promise<void> {
+    try {
+      await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
+      await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+      base44.auth.setToken(token);
+    } catch (error) {
+      console.error('[Auth] Error saving auth:', error);
+    }
+  },
+
+  // Clear auth state
+  async clearAuth(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+      await AsyncStorage.removeItem(USER_KEY);
+      base44.auth.setToken(null);
+    } catch (error) {
+      console.error('[Auth] Error clearing auth:', error);
+    }
+  },
+
+  // Get stored user
+  async getStoredUser(): Promise<User | null> {
+    try {
+      const userJson = await AsyncStorage.getItem(USER_KEY);
+      return userJson ? JSON.parse(userJson) : null;
+    } catch (error) {
+      console.error('[Auth] Error getting stored user:', error);
+      return null;
+    }
   },
 };
 
 // Export default api object
 export default {
-  auth: base44Auth,
+  client: base44,
   tracks: base44Tracks,
   users: base44Users,
   playlists: base44Playlists,
   files: base44Files,
   admin: base44Admin,
+  notifications: base44Notifications,
+  auth: base44AuthHelpers,
 };
