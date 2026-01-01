@@ -1,26 +1,38 @@
 /**
  * Base44 API Service for SPYNNERS
- * Simple axios-based API calls to Base44 backend
+ * Uses backend proxy to avoid CORS issues
  */
 
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-const BASE_URL = 'https://api.base44.com/v1';
-const APP_ID = '691a4d96d819355b52c063f3';
+// Get backend URL from environment
+const getBackendUrl = () => {
+  // For web preview, use relative URL
+  if (typeof window !== 'undefined') {
+    return '';  // Use relative URLs which will go through the proxy
+  }
+  // For mobile, use the configured backend URL
+  return Constants.expoConfig?.extra?.backendUrl || 
+         process.env.EXPO_PUBLIC_BACKEND_URL || 
+         'https://trackhub-20.preview.emergentagent.com';
+};
+
+const BACKEND_URL = getBackendUrl();
+const BASE44_APP_ID = '691a4d96d819355b52c063f3';
 
 // Storage keys
 const AUTH_TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user';
 
-// Create axios instance with Base44 configuration
+// Create axios instance
 const createApi = (): AxiosInstance => {
   const api = axios.create({
-    baseURL: BASE_URL,
-    timeout: 15000,
+    baseURL: BACKEND_URL,
+    timeout: 30000,
     headers: {
       'Content-Type': 'application/json',
-      'X-Base44-App-Id': APP_ID,
     },
   });
 
@@ -34,18 +46,18 @@ const createApi = (): AxiosInstance => {
     } catch (e) {
       // Ignore storage errors (SSR)
     }
-    console.log('[Base44 API] Request:', config.method?.toUpperCase(), config.url);
+    console.log('[API] Request:', config.method?.toUpperCase(), config.url);
     return config;
   });
 
   // Log responses and errors
   api.interceptors.response.use(
     (response) => {
-      console.log('[Base44 API] Response:', response.status, response.config.url);
+      console.log('[API] Response:', response.status, response.config.url);
       return response;
     },
     (error: AxiosError) => {
-      console.error('[Base44 API] Error:', error.response?.status, error.message);
+      console.error('[API] Error:', error.response?.status, error.message);
       return Promise.reject(error);
     }
   );
@@ -53,7 +65,7 @@ const createApi = (): AxiosInstance => {
   return api;
 };
 
-const base44Api = createApi();
+const api = createApi();
 
 // ==================== TRACK TYPE ====================
 
