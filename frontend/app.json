@@ -70,8 +70,7 @@
         {
           "photosPermission": "SPYNNERS accède à vos photos pour les pochettes d'album et votre profil."
         }
-      ],
-      "expo-secure-store"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
