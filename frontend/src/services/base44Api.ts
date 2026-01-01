@@ -284,8 +284,8 @@ export interface User {
 export const base44Auth = {
   async login(email: string, password: string): Promise<{ token: string; user: User }> {
     try {
-      console.log('[Auth] Logging in:', email);
-      const response = await base44Api.post(`/apps/${APP_ID}/auth/login`, {
+      console.log('[Auth] Logging in via proxy:', email);
+      const response = await api.post('/api/base44/auth/login', {
         email,
         password,
       });
@@ -302,14 +302,14 @@ export const base44Auth = {
       return response.data;
     } catch (error: any) {
       console.error('[Auth] Login error:', error?.response?.data || error?.message);
-      throw new Error(error?.response?.data?.message || 'Login failed');
+      throw new Error(error?.response?.data?.detail || error?.response?.data?.message || 'Login failed');
     }
   },
 
   async signup(email: string, password: string, fullName: string, userType?: string): Promise<{ token: string; user: User }> {
     try {
-      console.log('[Auth] Signing up:', email);
-      const response = await base44Api.post(`/apps/${APP_ID}/auth/signup`, {
+      console.log('[Auth] Signing up via proxy:', email);
+      const response = await api.post('/api/base44/auth/signup', {
         email,
         password,
         full_name: fullName,
@@ -328,13 +328,13 @@ export const base44Auth = {
       return response.data;
     } catch (error: any) {
       console.error('[Auth] Signup error:', error?.response?.data || error?.message);
-      throw new Error(error?.response?.data?.message || 'Signup failed');
+      throw new Error(error?.response?.data?.detail || error?.response?.data?.message || 'Signup failed');
     }
   },
 
   async me(): Promise<User | null> {
     try {
-      const response = await base44Api.get(`/apps/${APP_ID}/auth/me`);
+      const response = await api.get('/api/base44/auth/me');
       return response.data;
     } catch (error) {
       console.error('[Auth] Error getting current user:', error);
