@@ -30,17 +30,23 @@ export default function LoginScreen() {
   const { t } = useLanguage();
 
   const handleLogin = async () => {
+    console.log('[LoginScreen] handleLogin called');
+    console.log('[LoginScreen] Email:', email, 'Password length:', password?.length);
+    
     if (!email || !password) {
       Alert.alert(t('common.error'), 'Please fill in all fields');
       return;
     }
 
     setLoading(true);
+    console.log('[LoginScreen] Starting login...');
     try {
       await login(email, password);
+      console.log('[LoginScreen] Login successful, navigating to home');
       router.replace('/(tabs)/home');
     } catch (error: any) {
-      Alert.alert(t('common.error'), error.response?.data?.message || 'Invalid credentials');
+      console.error('[LoginScreen] Login error:', error);
+      Alert.alert(t('common.error'), error?.message || error?.response?.data?.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
