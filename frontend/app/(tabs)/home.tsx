@@ -103,23 +103,33 @@ export default function HomeScreen() {
   const loadTracks = async () => {
     try {
       setLoading(true);
+      console.log('[Home] Loading tracks...');
+      
       const filters: any = { limit: 50 };
       if (selectedGenre !== 'All Genres') filters.genre = selectedGenre;
       if (selectedEnergy !== 'All Energy Levels') filters.energy_level = selectedEnergy.toLowerCase().replace(' ', '_');
       if (showVIPOnly) filters.is_vip = true;
       
       const sortMap: Record<string, string> = {
-        'Recently Added': '-created_at',
+        'Recently Added': '-created_date',
         'Most Downloaded': '-download_count',
         'Top Rated': '-rating',
-        'Oldest': 'created_at',
+        'Oldest': 'created_date',
       };
-      filters.sort = sortMap[selectedSort] || '-created_at';
+      filters.sort = sortMap[selectedSort] || '-created_date';
 
       const result = await base44Tracks.list(filters);
-      setTracks(result || getDemoTracks());
+      console.log('[Home] Tracks loaded:', result?.length || 0);
+      
+      // Use real tracks if available, otherwise show demo tracks
+      if (result && result.length > 0) {
+        setTracks(result);
+      } else {
+        console.log('[Home] No tracks from API, showing demo tracks');
+        setTracks(getDemoTracks());
+      }
     } catch (error) {
-      console.error('Error loading tracks:', error);
+      console.error('[Home] Error loading tracks:', error);
       setTracks(getDemoTracks());
     } finally {
       setLoading(false);
