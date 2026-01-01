@@ -498,14 +498,67 @@ export default function HomeScreen() {
   );
 }
 
-// Demo tracks
+// Demo tracks with cover images for testing
 function getDemoTracks(): Track[] {
   return [
-    { id: '1', title: '80', artist_name: 'dj Konik', genre: 'Techno (Peak Time)', bpm: 128, rating: 3.5, is_vip: false },
-    { id: '2', title: 'PRAY FOR TOMORROW', artist_name: 'Benjamin Franklin', genre: 'Deep House', bpm: 124, rating: 5, is_vip: true },
-    { id: '3', title: 'Sunset Groove', artist_name: 'DJ Solar', genre: 'Afro House', bpm: 122, rating: 4, is_vip: true },
-    { id: '4', title: 'Deep Connection', artist_name: 'House Masters', genre: 'Deep House', bpm: 118, rating: 5 },
-    { id: '5', title: 'Tech Warrior', artist_name: 'Techno Force', genre: 'Tech House', bpm: 128, rating: 4 },
+    { 
+      id: '1', 
+      title: '80', 
+      artist_name: 'dj Konik', 
+      genre: 'Techno (Peak Time)', 
+      bpm: 128, 
+      rating: 3.5, 
+      is_vip: false,
+      cover_image: 'https://picsum.photos/seed/track1/200/200',
+    },
+    { 
+      id: '2', 
+      title: 'PRAY FOR TOMORROW', 
+      artist_name: 'Benjamin Franklin', 
+      genre: 'Deep House', 
+      bpm: 124, 
+      rating: 5, 
+      is_vip: true,
+      cover_image: 'https://picsum.photos/seed/track2/200/200',
+    },
+    { 
+      id: '3', 
+      title: 'Sunset Groove', 
+      artist_name: 'DJ Solar', 
+      genre: 'Afro House', 
+      bpm: 122, 
+      rating: 4, 
+      is_vip: true,
+      cover_image: 'https://picsum.photos/seed/track3/200/200',
+    },
+    { 
+      id: '4', 
+      title: 'Deep Connection', 
+      artist_name: 'House Masters', 
+      genre: 'Deep House', 
+      bpm: 118, 
+      rating: 5,
+      cover_image: 'https://picsum.photos/seed/track4/200/200',
+    },
+    { 
+      id: '5', 
+      title: 'Tech Warrior', 
+      artist_name: 'Techno Force', 
+      genre: 'Tech House', 
+      bpm: 128, 
+      rating: 4,
+      cover_image: 'https://picsum.photos/seed/track5/200/200',
+    },
+    { 
+      id: '6', 
+      title: 'Night Drive', 
+      artist_name: 'Midnight Club', 
+      genre: 'Melodic House & Techno', 
+      bpm: 122, 
+      rating: 4.5,
+      is_vip: true,
+      cover_image: 'https://picsum.photos/seed/track6/200/200',
+    },
   ];
 }
 
