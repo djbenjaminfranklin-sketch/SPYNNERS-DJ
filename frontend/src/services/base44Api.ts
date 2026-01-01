@@ -3,7 +3,7 @@
  * Handles all API calls to Base44 backend
  */
 
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = 'https://api.base44.com/v1';
@@ -12,6 +12,7 @@ const APP_ID = '691a4d96d819355b52c063f3';
 // Create axios instance with Base44 configuration
 const base44Api = axios.create({
   baseURL: BASE_URL,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
     'X-Base44-App-Id': APP_ID,
@@ -24,8 +25,21 @@ base44Api.interceptors.request.use(async (config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  console.log('[Base44 API] Request:', config.method?.toUpperCase(), config.url);
   return config;
 });
+
+// Log responses and errors
+base44Api.interceptors.response.use(
+  (response) => {
+    console.log('[Base44 API] Response:', response.status, response.config.url);
+    return response;
+  },
+  (error: AxiosError) => {
+    console.error('[Base44 API] Error:', error.response?.status, error.message, error.config?.url);
+    return Promise.reject(error);
+  }
+);
 
 // ==================== AUTH ====================
 
