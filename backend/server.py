@@ -615,6 +615,180 @@ async def notify_producer(request: SpynNotificationRequest, authorization: Optio
         }
 
 
+# ==================== BASE44 PROXY ====================
+
+BASE44_API_URL = "https://api.base44.com/v1"
+BASE44_APP_ID = "691a4d96d819355b52c063f3"
+
+class Base44LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class Base44SignupRequest(BaseModel):
+    email: str
+    password: str
+    full_name: str
+    user_type: Optional[str] = None
+
+@app.post("/api/base44/auth/login")
+async def base44_login(request: Base44LoginRequest):
+    """Proxy login request to Base44 to avoid CORS issues"""
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            response = await http_client.post(
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/auth/login",
+                json={"email": request.email, "password": request.password},
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Base44-App-Id": BASE44_APP_ID
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=response.json().get("message", "Login failed")
+                )
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"Base44 service unavailable: {str(e)}")
+
+@app.post("/api/base44/auth/signup")
+async def base44_signup(request: Base44SignupRequest):
+    """Proxy signup request to Base44 to avoid CORS issues"""
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            response = await http_client.post(
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/auth/signup",
+                json={
+                    "email": request.email,
+                    "password": request.password,
+                    "full_name": request.full_name,
+                    "user_type": request.user_type
+                },
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Base44-App-Id": BASE44_APP_ID
+                }
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=response.json().get("message", "Signup failed")
+                )
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"Base44 service unavailable: {str(e)}")
+
+@app.get("/api/base44/auth/me")
+async def base44_me(authorization: Optional[str] = Header(None)):
+    """Proxy me request to Base44"""
+    try:
+        headers = {
+            "Content-Type": "application/json",
+            "X-Base44-App-Id": BASE44_APP_ID
+        }
+        if authorization:
+            headers["Authorization"] = authorization
+            
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/auth/me",
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise HTTPException(status_code=response.status_code, detail="Auth failed")
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"Base44 service unavailable: {str(e)}")
+
+@app.get("/api/base44/entities/{entity_name}")
+async def base44_list_entities(
+    entity_name: str,
+    authorization: Optional[str] = Header(None),
+    limit: int = 50,
+    sort: Optional[str] = None,
+    genre: Optional[str] = None,
+    energy_level: Optional[str] = None,
+    is_vip: Optional[str] = None,
+    search: Optional[str] = None
+):
+    """Proxy entity list request to Base44"""
+    try:
+        headers = {
+            "Content-Type": "application/json",
+            "X-Base44-App-Id": BASE44_APP_ID
+        }
+        if authorization:
+            headers["Authorization"] = authorization
+        
+        # Build query params
+        params = {"limit": limit}
+        if sort:
+            params["sort"] = sort
+        if genre:
+            params["genre"] = genre
+        if energy_level:
+            params["energy_level"] = energy_level
+        if is_vip:
+            params["is_vip"] = is_vip
+        if search:
+            params["search"] = search
+            
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/{entity_name}",
+                headers=headers,
+                params=params
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"Base44 entity error: {response.status_code} - {response.text}")
+                return []
+    except httpx.RequestError as e:
+        print(f"Base44 request error: {e}")
+        return []
+
+@app.post("/api/base44/functions/invoke/{function_name}")
+async def base44_invoke_function(
+    function_name: str,
+    request_body: dict = {},
+    authorization: Optional[str] = Header(None)
+):
+    """Proxy function invocation to Base44"""
+    try:
+        headers = {
+            "Content-Type": "application/json",
+            "X-Base44-App-Id": BASE44_APP_ID
+        }
+        if authorization:
+            headers["Authorization"] = authorization
+            
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            response = await http_client.post(
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/functions/invoke/{function_name}",
+                json=request_body,
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Function invocation failed: {response.text}"
+                )
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"Base44 service unavailable: {str(e)}")
+
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/api/health")
