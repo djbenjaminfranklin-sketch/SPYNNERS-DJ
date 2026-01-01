@@ -647,9 +647,17 @@ async def base44_login(request: Base44LoginRequest):
             if response.status_code == 200:
                 return response.json()
             else:
+                # Try to parse error message
+                error_message = "Login failed"
+                try:
+                    error_data = response.json()
+                    error_message = error_data.get("message") or error_data.get("detail") or error_message
+                except:
+                    error_message = response.text or f"Login failed with status {response.status_code}"
+                
                 raise HTTPException(
                     status_code=response.status_code,
-                    detail=response.json().get("message", "Login failed")
+                    detail=error_message
                 )
     except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Base44 service unavailable: {str(e)}")
