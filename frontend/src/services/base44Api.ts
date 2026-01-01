@@ -114,7 +114,7 @@ export const base44Tracks = {
     is_vip?: boolean;
   }): Promise<Track[]> {
     try {
-      console.log('[Tracks] Fetching tracks with filters:', filters);
+      console.log('[Tracks] Fetching tracks via proxy with filters:', filters);
       
       // Build query parameters
       const params = new URLSearchParams();
@@ -124,10 +124,10 @@ export const base44Tracks = {
       if (filters?.energy_level) params.append('energy_level', filters.energy_level);
       if (filters?.is_vip !== undefined) params.append('is_vip', filters.is_vip.toString());
 
-      const url = `/apps/${APP_ID}/entities/Track${params.toString() ? `?${params.toString()}` : ''}`;
+      const url = `/api/base44/entities/Track${params.toString() ? `?${params.toString()}` : ''}`;
       console.log('[Tracks] API URL:', url);
       
-      const response = await base44Api.get(url);
+      const response = await api.get(url);
       console.log('[Tracks] Response data type:', typeof response.data);
       
       // Handle different response formats
@@ -158,7 +158,7 @@ export const base44Tracks = {
   // Get single track
   async get(trackId: string): Promise<Track | null> {
     try {
-      const response = await base44Api.get(`/apps/${APP_ID}/entities/Track/${trackId}`);
+      const response = await api.get(`/api/base44/entities/Track/${trackId}`);
       return response.data;
     } catch (error) {
       console.error('[Tracks] Error getting track:', error);
@@ -169,7 +169,7 @@ export const base44Tracks = {
   // Create new track
   async create(track: Partial<Track>): Promise<Track | null> {
     try {
-      const response = await base44Api.post(`/apps/${APP_ID}/entities/Track`, track);
+      const response = await api.post(`/api/base44/entities/Track`, track);
       return response.data;
     } catch (error) {
       console.error('[Tracks] Error creating track:', error);
@@ -180,7 +180,7 @@ export const base44Tracks = {
   // Update track
   async update(trackId: string, updates: Partial<Track>): Promise<Track | null> {
     try {
-      const response = await base44Api.put(`/apps/${APP_ID}/entities/Track/${trackId}`, updates);
+      const response = await api.put(`/api/base44/entities/Track/${trackId}`, updates);
       return response.data;
     } catch (error) {
       console.error('[Tracks] Error updating track:', error);
@@ -191,7 +191,7 @@ export const base44Tracks = {
   // Delete track
   async delete(trackId: string): Promise<boolean> {
     try {
-      await base44Api.delete(`/apps/${APP_ID}/entities/Track/${trackId}`);
+      await api.delete(`/api/base44/entities/Track/${trackId}`);
       return true;
     } catch (error) {
       console.error('[Tracks] Error deleting track:', error);
@@ -202,7 +202,7 @@ export const base44Tracks = {
   // Search tracks
   async search(query: string): Promise<Track[]> {
     try {
-      const response = await base44Api.get(`/apps/${APP_ID}/entities/Track?search=${encodeURIComponent(query)}`);
+      const response = await api.get(`/api/base44/entities/Track?search=${encodeURIComponent(query)}`);
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -216,7 +216,7 @@ export const base44Tracks = {
   // Get my uploads
   async myUploads(userId: string): Promise<Track[]> {
     try {
-      const response = await base44Api.get(`/apps/${APP_ID}/entities/Track?uploaded_by=${userId}`);
+      const response = await api.get(`/api/base44/entities/Track?uploaded_by=${userId}`);
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -230,7 +230,7 @@ export const base44Tracks = {
   // Rate a track (via function invoke)
   async rate(trackId: string, rating: number): Promise<any> {
     try {
-      const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/rate_track`, {
+      const response = await api.post(`/api/base44/functions/invoke/rate_track`, {
         track_id: trackId,
         rating,
       });
@@ -243,7 +243,7 @@ export const base44Tracks = {
   // Increment download count (via function invoke)
   async download(trackId: string): Promise<any> {
     try {
-      const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/download_track`, {
+      const response = await api.post(`/api/base44/functions/invoke/download_track`, {
         track_id: trackId,
       });
       return response.data;
@@ -255,7 +255,7 @@ export const base44Tracks = {
   // Increment play count (via function invoke)
   async play(trackId: string): Promise<any> {
     try {
-      const response = await base44Api.post(`/apps/${APP_ID}/functions/invoke/play_track`, {
+      const response = await api.post(`/api/base44/functions/invoke/play_track`, {
         track_id: trackId,
       });
       return response.data;
