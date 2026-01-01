@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import Constants from 'expo-constants';
+import { base44, base44AuthHelpers } from '../services/base44Api';
 
 interface User {
   id: string;
   email: string;
   full_name: string;
   user_type?: string; // dj, producer, dj_producer, label
+  avatar?: string;
+  is_admin?: boolean;
+  is_vip?: boolean;
 }
 
 interface AuthContextType {
@@ -26,24 +28,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const BASE44_API_URL = Constants.expoConfig?.extra?.base44ApiUrl || '';
-  const BASE44_APP_ID = Constants.expoConfig?.extra?.base44AppId || '';
-
   useEffect(() => {
     loadStoredAuth();
   }, []);
 
   const loadStoredAuth = async () => {
     try {
+      console.log('[Auth] Loading stored auth...');
       const storedToken = await AsyncStorage.getItem('auth_token');
       const storedUser = await AsyncStorage.getItem('user');
       
       if (storedToken && storedUser) {
+        console.log('[Auth] Found stored auth, restoring session');
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
+        
+        // Set token in Base44 SDK
+        base44.auth.setToken(storedToken);
+        
+        // Verify token is still valid by fetching current user
+        try {
+          const currentUser = await base44.auth.me();
+          if (currentUser) {
+            console.log('[Auth] Token verified, user:', currentUser.email);
+            setUser(currentUser);
+            await AsyncStorage.setItem('user', JSON.stringify(currentUser));
+          }
+        } catch (verifyError) {
+          console.log('[Auth] Token verification failed, keeping stored user');
+        }
+      } else {
+        console.log('[Auth] No stored auth found');
       }
     } catch (error) {
-      console.error('Error loading auth:', error);
+      console.error('[Auth] Error loading auth:', error);
     } finally {
       setLoading(false);
     }
@@ -51,92 +69,92 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      // Use Base44 API directly
-      const response = await axios.post(
-        `https://api.base44.com/v1/auth/login`,
-        { email, password },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Base44-App-Id': '691a4d96d819355b52c063f3'
-          }
-        }
-      );
-
-      const { token: authToken, user: userData } = response.data;
+      console.log('[Auth] Attempting login for:', email);
       
+      // Use Base44 SDK for login
+      const result = await base44.auth.loginViaEmailPassword(email, password);
+      
+      console.log('[Auth] Login successful');
+      
+      const authToken = result.token || result.access_token;
+      const userData = result.user || result;
+      
+      if (!authToken) {
+        throw new Error('No token received from login');
+      }
+      
+      // Save auth state
       await AsyncStorage.setItem('auth_token', authToken);
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       
+      // Set token in SDK for subsequent requests
+      base44.auth.setToken(authToken);
+      
       setToken(authToken);
       setUser(userData);
+      
+      console.log('[Auth] Auth state saved, user:', userData.email);
     } catch (error: any) {
-      console.error('Login error:', error);
-      // Fallback to local auth if Base44 fails
-      try {
-        const localResponse = await axios.post(
-          `${Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth/local/login`,
-          { email, password }
-        );
-        const { token: authToken, user: userData } = localResponse.data;
-        await AsyncStorage.setItem('auth_token', authToken);
-        await AsyncStorage.setItem('user', JSON.stringify(userData));
-        setToken(authToken);
-        setUser(userData);
-      } catch (localError) {
-        throw error; // Throw original error
-      }
+      console.error('[Auth] Login error:', error?.message || error);
+      throw new Error(error?.message || 'Login failed. Please check your credentials.');
     }
   };
 
   const signup = async (email: string, password: string, fullName: string, userType?: string) => {
     try {
-      // Use Base44 API directly
-      const response = await axios.post(
-        `https://api.base44.com/v1/auth/signup`,
-        { email, password, full_name: fullName, user_type: userType },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Base44-App-Id': '691a4d96d819355b52c063f3'
-          }
-        }
-      );
-
-      const { token: authToken, user: userData } = response.data;
+      console.log('[Auth] Attempting signup for:', email);
       
+      // Use Base44 SDK for registration
+      const result = await base44.auth.register({
+        email,
+        password,
+        full_name: fullName,
+        user_type: userType,
+      });
+      
+      console.log('[Auth] Signup successful');
+      
+      const authToken = result.token || result.access_token;
+      const userData = { ...result.user, user_type: userType } || { ...result, user_type: userType };
+      
+      if (!authToken) {
+        throw new Error('No token received from signup');
+      }
+      
+      // Save auth state
       await AsyncStorage.setItem('auth_token', authToken);
-      await AsyncStorage.setItem('user', JSON.stringify({ ...userData, user_type: userType }));
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
+      
+      // Set token in SDK for subsequent requests
+      base44.auth.setToken(authToken);
       
       setToken(authToken);
-      setUser({ ...userData, user_type: userType });
+      setUser(userData);
+      
+      console.log('[Auth] Auth state saved for new user:', userData.email);
     } catch (error: any) {
-      console.error('Signup error:', error);
-      // Fallback to local auth if Base44 fails
-      try {
-        const localResponse = await axios.post(
-          `${Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth/local/signup`,
-          { email, password, full_name: fullName, user_type: userType }
-        );
-        const { token: authToken, user: userData } = localResponse.data;
-        await AsyncStorage.setItem('auth_token', authToken);
-        await AsyncStorage.setItem('user', JSON.stringify({ ...userData, user_type: userType }));
-        setToken(authToken);
-        setUser({ ...userData, user_type: userType });
-      } catch (localError) {
-        throw error; // Throw original error
-      }
+      console.error('[Auth] Signup error:', error?.message || error);
+      throw new Error(error?.message || 'Signup failed. Please try again.');
     }
   };
 
   const logout = async () => {
     try {
+      console.log('[Auth] Logging out...');
+      
+      // Clear stored auth
       await AsyncStorage.removeItem('auth_token');
       await AsyncStorage.removeItem('user');
+      
+      // Clear SDK token
+      base44.auth.setToken(null);
+      
       setToken(null);
       setUser(null);
+      
+      console.log('[Auth] Logged out successfully');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('[Auth] Logout error:', error);
     }
   };
 
