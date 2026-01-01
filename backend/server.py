@@ -617,7 +617,7 @@ async def notify_producer(request: SpynNotificationRequest, authorization: Optio
 
 # ==================== BASE44 PROXY ====================
 
-BASE44_API_URL = "https://api.base44.com/v1"
+BASE44_API_URL = "https://app.base44.com/api"
 BASE44_APP_ID = "691a4d96d819355b52c063f3"
 
 class Base44LoginRequest(BaseModel):
