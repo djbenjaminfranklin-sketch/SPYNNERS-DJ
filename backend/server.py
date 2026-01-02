@@ -713,15 +713,106 @@ async def base44_signup(request: Base44SignupRequest):
 
 # ==================== MP3 METADATA EXTRACTION ====================
 
+async def detect_bpm_with_acrcloud(audio_data: bytes) -> dict:
+    """
+    Use ACRCloud to detect BPM and other audio features.
+    This is more accurate than librosa for electronic music.
+    """
+    if not ACRCLOUD_ACCESS_KEY or not ACRCLOUD_ACCESS_SECRET:
+        print("[ACRCloud BPM] ACRCloud not configured")
+        return {}
+    
+    try:
+        # ACRCloud API parameters
+        http_method = "POST"
+        http_uri = "/v1/identify"
+        data_type = "audio"
+        signature_version = "1"
+        timestamp = str(int(time.time()))
+        
+        # Generate signature
+        signature = generate_acrcloud_signature(
+            http_method, http_uri, ACRCLOUD_ACCESS_KEY,
+            data_type, signature_version, timestamp, ACRCLOUD_ACCESS_SECRET
+        )
+        
+        # Prepare request - send first 30 seconds of audio for faster processing
+        # ACRCloud can identify from a small sample
+        sample_size = min(len(audio_data), 30 * 44100 * 2)  # ~30 sec at 44.1kHz stereo
+        audio_sample = audio_data[:sample_size] if len(audio_data) > sample_size else audio_data
+        
+        files = {
+            'sample': ('audio.mp3', BytesIO(audio_sample), 'audio/mpeg')
+        }
+        
+        data = {
+            'access_key': ACRCLOUD_ACCESS_KEY,
+            'sample_bytes': len(audio_sample),
+            'timestamp': timestamp,
+            'signature': signature,
+            'data_type': data_type,
+            'signature_version': signature_version
+        }
+        
+        print(f"[ACRCloud BPM] Sending {len(audio_sample)} bytes for analysis...")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"https://{ACRCLOUD_HOST}{http_uri}",
+                data=data,
+                files=files
+            )
+        
+        result = response.json()
+        print(f"[ACRCloud BPM] Response status: {result.get('status', {})}")
+        
+        extracted = {}
+        
+        if result.get("status", {}).get("code") == 0:
+            # Successfully identified
+            music = result.get("metadata", {}).get("music", [])
+            if music:
+                track = music[0]
+                
+                # Extract BPM if available
+                if track.get("bpm"):
+                    extracted["bpm"] = int(track.get("bpm"))
+                    print(f"[ACRCloud BPM] Detected BPM: {extracted['bpm']}")
+                
+                # Extract genre if available
+                genres = track.get("genres", [])
+                if genres:
+                    extracted["genre"] = genres[0].get("name", "")
+                    print(f"[ACRCloud BPM] Detected genre: {extracted['genre']}")
+                
+                # Also get title/artist as fallback
+                if track.get("title"):
+                    extracted["title"] = track.get("title")
+                if track.get("artists"):
+                    artists = track.get("artists", [])
+                    if artists:
+                        extracted["artist"] = ", ".join([a.get("name", "") for a in artists])
+        else:
+            print(f"[ACRCloud BPM] Track not recognized: {result.get('status', {}).get('msg', 'Unknown error')}")
+        
+        return extracted
+        
+    except Exception as e:
+        print(f"[ACRCloud BPM] Error: {e}")
+        return {}
+
+
 @app.post("/api/extract-mp3-metadata")
 async def extract_mp3_metadata(file: UploadFile = File(...)):
-    """Extract metadata from MP3 file including cover art, BPM, genre"""
+    """Extract metadata from MP3 file including cover art, BPM, genre using ACRCloud"""
     if not MUTAGEN_AVAILABLE:
         raise HTTPException(status_code=503, detail="MP3 metadata extraction not available")
     
     try:
-        # Save file temporarily
+        # Read file content
         content = await file.read()
+        
+        # Save file temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as tmp_file:
             tmp_file.write(content)
             tmp_path = tmp_file.name
@@ -737,7 +828,7 @@ async def extract_mp3_metadata(file: UploadFile = File(...)):
         }
         
         try:
-            # Try to read MP3 metadata
+            # Try to read MP3 metadata from ID3 tags
             audio = MP3(tmp_path)
             
             # Get duration
@@ -816,12 +907,27 @@ async def extract_mp3_metadata(file: UploadFile = File(...)):
             except Exception as easy_error:
                 print(f"EasyID3 error: {easy_error}")
             
-            print(f"[MP3 Metadata] Extracted from tags: title={result['title']}, artist={result['artist']}, genre={result['genre']}, bpm={result['bpm']}, has_cover={result['cover_image'] is not None}")
+            print(f"[MP3 Metadata] Extracted from ID3 tags: title={result['title']}, artist={result['artist']}, genre={result['genre']}, bpm={result['bpm']}, has_cover={result['cover_image'] is not None}")
             
-            # If BPM not found in tags, try automatic detection with librosa
+            # ========== ACRCloud Detection for BPM (Primary Method) ==========
+            # Use ACRCloud if BPM not found in tags - this is more accurate for electronic music
+            if result["bpm"] is None:
+                print(f"[MP3 Metadata] BPM not in tags, trying ACRCloud detection...")
+                acr_result = await detect_bpm_with_acrcloud(content)
+                
+                if acr_result.get("bpm"):
+                    result["bpm"] = acr_result["bpm"]
+                    print(f"[MP3 Metadata] ACRCloud detected BPM: {result['bpm']}")
+                
+                # Also use ACRCloud genre if not found in tags
+                if not result["genre"] and acr_result.get("genre"):
+                    result["genre"] = acr_result["genre"]
+                    print(f"[MP3 Metadata] ACRCloud detected genre: {result['genre']}")
+            
+            # ========== Fallback to librosa if ACRCloud didn't find BPM ==========
             if result["bpm"] is None and LIBROSA_AVAILABLE:
                 try:
-                    print(f"[MP3 Metadata] Attempting automatic BPM detection with librosa...")
+                    print(f"[MP3 Metadata] Fallback: Attempting BPM detection with librosa...")
                     # Load audio file (first 60 seconds for faster processing)
                     y, sr = librosa.load(tmp_path, sr=None, duration=60)
                     # Detect tempo (BPM)
@@ -833,9 +939,9 @@ async def extract_mp3_metadata(file: UploadFile = File(...)):
                         else:
                             bpm_value = float(tempo)
                         result["bpm"] = int(round(bpm_value))
-                        print(f"[MP3 Metadata] Auto-detected BPM: {result['bpm']}")
+                        print(f"[MP3 Metadata] Librosa detected BPM: {result['bpm']}")
                 except Exception as bpm_error:
-                    print(f"[MP3 Metadata] BPM detection error: {bpm_error}")
+                    print(f"[MP3 Metadata] Librosa BPM detection error: {bpm_error}")
                 
         finally:
             # Clean up temp file
