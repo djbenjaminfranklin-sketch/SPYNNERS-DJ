@@ -4,10 +4,11 @@ import { Colors } from '../../src/theme/colors';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 
 export default function TabLayout() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
   return (
     <Tabs
+      key={`tabs-${language}`}
       screenOptions={{
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.textMuted,
