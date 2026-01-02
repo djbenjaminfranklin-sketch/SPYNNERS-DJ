@@ -277,12 +277,12 @@ export default function EditProfileScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
+        <Text style={styles.headerTitle}>{t('edit.title')}</Text>
         <TouchableOpacity onPress={handleSave} disabled={saving}>
           {saving ? (
             <ActivityIndicator color={Colors.primary} />
           ) : (
-            <Text style={styles.saveButton}>Save</Text>
+            <Text style={styles.saveButton}>{t('edit.saveChanges')}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -307,66 +307,66 @@ export default function EditProfileScreen() {
         </View>
 
         {/* Profile Type - DJ / Producer / Both / Label / Music Lover */}
-        <Text style={styles.sectionTitle}>I am a...</Text>
+        <Text style={styles.sectionTitle}>{t('edit.iAmA')}</Text>
         <View style={styles.profileTypeGrid}>
           <TouchableOpacity 
             style={[styles.profileTypeButton, profileType === 'dj' && styles.profileTypeActive]}
             onPress={() => setProfileType('dj')}
           >
             <Ionicons name="headset" size={24} color={profileType === 'dj' ? '#fff' : Colors.textMuted} />
-            <Text style={[styles.profileTypeText, profileType === 'dj' && styles.profileTypeTextActive]}>DJ</Text>
+            <Text style={[styles.profileTypeText, profileType === 'dj' && styles.profileTypeTextActive]}>{t('edit.dj')}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.profileTypeButton, profileType === 'producer' && styles.profileTypeActive]}
             onPress={() => setProfileType('producer')}
           >
             <Ionicons name="musical-notes" size={24} color={profileType === 'producer' ? '#fff' : Colors.textMuted} />
-            <Text style={[styles.profileTypeText, profileType === 'producer' && styles.profileTypeTextActive]}>Producer</Text>
+            <Text style={[styles.profileTypeText, profileType === 'producer' && styles.profileTypeTextActive]}>{t('edit.producer')}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.profileTypeButton, profileType === 'both' && styles.profileTypeActive]}
             onPress={() => setProfileType('both')}
           >
             <Ionicons name="disc" size={24} color={profileType === 'both' ? '#fff' : Colors.textMuted} />
-            <Text style={[styles.profileTypeText, profileType === 'both' && styles.profileTypeTextActive]}>Both</Text>
+            <Text style={[styles.profileTypeText, profileType === 'both' && styles.profileTypeTextActive]}>{t('edit.both')}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.profileTypeButton, profileType === 'label' && styles.profileTypeActive]}
             onPress={() => setProfileType('label')}
           >
             <Ionicons name="business" size={24} color={profileType === 'label' ? '#fff' : Colors.textMuted} />
-            <Text style={[styles.profileTypeText, profileType === 'label' && styles.profileTypeTextActive]}>Label</Text>
+            <Text style={[styles.profileTypeText, profileType === 'label' && styles.profileTypeTextActive]}>{t('edit.label')}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.profileTypeButton, profileType === 'music_lover' && styles.profileTypeActive]}
             onPress={() => setProfileType('music_lover')}
           >
             <Ionicons name="heart" size={24} color={profileType === 'music_lover' ? '#fff' : Colors.textMuted} />
-            <Text style={[styles.profileTypeText, profileType === 'music_lover' && styles.profileTypeTextActive]}>Music Lover</Text>
+            <Text style={[styles.profileTypeText, profileType === 'music_lover' && styles.profileTypeTextActive]}>{t('edit.musicLover')}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Basic Info */}
-        <Text style={styles.sectionTitle}>Basic Information</Text>
+        <Text style={styles.sectionTitle}>{t('edit.basicInfo')}</Text>
         
-        <Text style={styles.label}>Full Name *</Text>
+        <Text style={styles.label}>{t('edit.fullName')} *</Text>
         <TextInput
           style={styles.input}
           value={fullName}
           onChangeText={setFullName}
-          placeholder="Your full name"
+          placeholder={t('edit.fullName')}
           placeholderTextColor={Colors.textMuted}
         />
 
         {/* Show DJ Name only for DJ or Both */}
         {(profileType === 'dj' || profileType === 'both') && (
           <>
-            <Text style={styles.label}>DJ Name</Text>
+            <Text style={styles.label}>{t('edit.djName')}</Text>
         <TextInput
           style={styles.input}
           value={djName}
           onChangeText={setDjName}
-          placeholder="Your DJ alias"
+          placeholder={t('edit.djName')}
           placeholderTextColor={Colors.textMuted}
         />
           </>
@@ -375,7 +375,7 @@ export default function EditProfileScreen() {
         {/* Show Producer Name only for Producer or Both */}
         {(profileType === 'producer' || profileType === 'both') && (
           <>
-            <Text style={styles.label}>Producer Name</Text>
+            <Text style={styles.label}>{t('edit.producerName')}</Text>
             <TextInput
               style={styles.input}
               value={producerName}
