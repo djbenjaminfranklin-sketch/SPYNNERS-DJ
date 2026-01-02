@@ -168,56 +168,12 @@ export default function HomeScreen() {
     }
   };
 
-  // Play track
-  const playTrack = async (track: Track) => {
-    try {
-      // Stop current
-      if (sound) {
-        await sound.stopAsync();
-        await sound.unloadAsync();
-      }
-      
-      if (track.audio_url || track.audio_file) {
-        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: true });
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          { uri: track.audio_url || track.audio_file || '' },
-          { shouldPlay: true },
-          onPlaybackStatusUpdate
-        );
-        setSound(newSound);
-        setCurrentTrack(track);
-        setIsPlaying(true);
-        
-        // Track play count
-        try { await base44Tracks.play(track.id || track._id || ''); } catch {}
-      } else {
-        Alert.alert('No Audio', 'This track does not have an audio file');
-      }
-    } catch (error) {
-      console.error('Playback error:', error);
-      Alert.alert('Error', 'Could not play this track');
-    }
+  // Use the global player function
+  const handlePlayTrack = async (track: Track) => {
+    await globalPlayTrack(track);
+    // Try to record play count
+    try { await base44Tracks.play(track.id || track._id || ''); } catch {}
   };
-
-  const onPlaybackStatusUpdate = (status: any) => {
-    if (status.isLoaded) {
-      setPlaybackPosition(status.positionMillis || 0);
-      setPlaybackDuration(status.durationMillis || 0);
-      if (status.didJustFinish) {
-        setIsPlaying(false);
-      }
-    }
-  };
-
-  const togglePlayPause = async () => {
-    if (!sound) return;
-    if (isPlaying) {
-      await sound.pauseAsync();
-      setIsPlaying(false);
-    } else {
-      await sound.playAsync();
-      setIsPlaying(true);
-    }
   };
 
   const closePlayer = async () => {
