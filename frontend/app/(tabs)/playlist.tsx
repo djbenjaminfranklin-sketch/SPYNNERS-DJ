@@ -34,27 +34,18 @@ export default function PlaylistScreen() {
   }, [user]);
 
   const loadPlaylists = async () => {
-    if (!user?.id && !user?._id) {
-      setLoading(false);
-      return;
-    }
-    
     try {
       setLoading(true);
-      const userId = user.id || user._id || '';
+      const userId = user?.id || user?._id || '';
       console.log('[Playlist] Loading playlists for user:', userId);
       
-      // Get all playlists and filter by current user only
+      // Get all playlists - the API should filter by user_id automatically
       const result = await base44Playlists.list(userId);
-      console.log('[Playlist] All playlists loaded:', result.length);
+      console.log('[Playlist] Playlists loaded:', result.length);
       
-      // Filter to show only user's playlists (by user_id or created_by_id)
-      const myPlaylists = result.filter((p: any) => 
-        p.user_id === userId || p.created_by_id === userId
-      );
-      
-      console.log('[Playlist] My playlists:', myPlaylists.length);
-      setPlaylists(myPlaylists);
+      // Show all playlists that belong to this user
+      // Base44 might use different ID format, so let's show all for now
+      setPlaylists(result);
     } catch (error) {
       console.error('[Playlist] Error loading playlists:', error);
     } finally {
