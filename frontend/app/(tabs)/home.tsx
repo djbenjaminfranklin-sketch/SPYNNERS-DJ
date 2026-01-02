@@ -15,9 +15,9 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import { usePlayer } from '../../src/contexts/PlayerContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { base44Tracks, base44Playlists, Track } from '../../src/services/base44Api';
 import { useRouter } from 'expo-router';
