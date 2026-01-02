@@ -720,13 +720,18 @@ async def base44_list_entities(
     entity_name: str,
     authorization: Optional[str] = Header(None),
     limit: int = 50,
+    offset: int = 0,
     sort: Optional[str] = None,
     genre: Optional[str] = None,
     energy_level: Optional[str] = None,
     is_vip: Optional[str] = None,
     search: Optional[str] = None,
     status: Optional[str] = None,
-    uploaded_by: Optional[str] = None
+    uploaded_by: Optional[str] = None,
+    user_id: Optional[str] = None,
+    receiver_id: Optional[str] = None,
+    sender_id: Optional[str] = None,
+    read: Optional[str] = None
 ):
     """Proxy entity list request to Base44"""
     try:
@@ -739,6 +744,8 @@ async def base44_list_entities(
         
         # Build query params
         params = {"limit": limit}
+        if offset > 0:
+            params["offset"] = offset
         if sort:
             params["sort"] = sort
         if genre:
@@ -753,6 +760,14 @@ async def base44_list_entities(
             params["status"] = status
         if uploaded_by:
             params["uploaded_by"] = uploaded_by
+        if user_id:
+            params["user_id"] = user_id
+        if receiver_id:
+            params["receiver_id"] = receiver_id
+        if sender_id:
+            params["sender_id"] = sender_id
+        if read:
+            params["read"] = read
             
         async with httpx.AsyncClient(timeout=30.0) as http_client:
             response = await http_client.get(
