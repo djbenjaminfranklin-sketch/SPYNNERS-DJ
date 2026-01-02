@@ -331,7 +331,7 @@ export default function PlaylistScreen() {
               <TouchableOpacity style={styles.detailActionButton} onPress={playAllTracks}>
                 <LinearGradient colors={[Colors.primary, '#7B1FA2']} style={styles.detailActionGradient}>
                   <Ionicons name="play" size={24} color="#fff" />
-                  <Text style={styles.detailActionText}>Play All</Text>
+                  <Text style={styles.detailActionText}>{t('common.playAll')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
               
@@ -343,7 +343,7 @@ export default function PlaylistScreen() {
               }}>
                 <View style={styles.detailActionOutline}>
                   <Ionicons name="shuffle" size={24} color={Colors.primary} />
-                  <Text style={[styles.detailActionText, { color: Colors.primary }]}>Shuffle</Text>
+                  <Text style={[styles.detailActionText, { color: Colors.primary }]}>{t('common.shuffle')}</Text>
                 </View>
               </TouchableOpacity>
             </View>
