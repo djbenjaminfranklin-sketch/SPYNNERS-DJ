@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -26,6 +27,7 @@ export default function PlaylistScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
 
   useEffect(() => {
     loadPlaylists();
@@ -42,9 +44,17 @@ export default function PlaylistScreen() {
       const userId = user.id || user._id || '';
       console.log('[Playlist] Loading playlists for user:', userId);
       
+      // Get all playlists and filter by current user only
       const result = await base44Playlists.list(userId);
-      console.log('[Playlist] Playlists loaded:', result.length);
-      setPlaylists(result);
+      console.log('[Playlist] All playlists loaded:', result.length);
+      
+      // Filter to show only user's playlists (by user_id or created_by_id)
+      const myPlaylists = result.filter((p: any) => 
+        p.user_id === userId || p.created_by_id === userId
+      );
+      
+      console.log('[Playlist] My playlists:', myPlaylists.length);
+      setPlaylists(myPlaylists);
     } catch (error) {
       console.error('[Playlist] Error loading playlists:', error);
     } finally {
@@ -83,36 +93,64 @@ export default function PlaylistScreen() {
     }
   };
 
-  const renderPlaylist = ({ item }: { item: Playlist }) => (
-    <TouchableOpacity 
-      style={styles.playlistCard}
-      onPress={() => {/* Navigate to playlist detail */}}
-      activeOpacity={0.7}
-    >
-      <View style={styles.playlistIcon}>
-        <Ionicons name="musical-notes" size={28} color={Colors.primary} />
-      </View>
-      
-      <View style={styles.playlistInfo}>
-        <Text style={styles.playlistName}>{item.name}</Text>
-        <Text style={styles.playlistCount}>
-          {item.tracks?.length || 0} tracks
-        </Text>
-      </View>
+  const openPlaylist = (playlist: Playlist) => {
+    setSelectedPlaylist(playlist);
+    // TODO: Navigate to playlist detail page
+    Alert.alert(
+      playlist.name,
+      `${(playlist as any).track_ids?.length || playlist.tracks?.length || 0} tracks\n\nPlaylist detail page coming soon!`,
+      [{ text: 'OK' }]
+    );
+  };
 
-      <View style={styles.playlistMeta}>
-        {item.is_public ? (
-          <Ionicons name="globe-outline" size={16} color={Colors.textMuted} />
-        ) : (
-          <Ionicons name="lock-closed-outline" size={16} color={Colors.textMuted} />
-        )}
-      </View>
+  const renderPlaylist = ({ item }: { item: any }) => {
+    const trackCount = item.track_ids?.length || item.tracks?.length || 0;
+    const coverUrl = item.cover_url;
+    
+    return (
+      <TouchableOpacity 
+        style={styles.playlistCard}
+        onPress={() => openPlaylist(item)}
+        activeOpacity={0.7}
+      >
+        {/* Cover Image */}
+        <View style={styles.playlistCover}>
+          {coverUrl ? (
+            <Image source={{ uri: coverUrl }} style={styles.coverImage} />
+          ) : (
+            <View style={styles.coverPlaceholder}>
+              <Ionicons name="musical-notes" size={28} color={Colors.textMuted} />
+            </View>
+          )}
+        </View>
+        
+        <View style={styles.playlistInfo}>
+          <Text style={styles.playlistName} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.playlistCount}>
+            {trackCount} {trackCount === 1 ? 'track' : 'tracks'}
+          </Text>
+          {item.description ? (
+            <Text style={styles.playlistDesc} numberOfLines={1}>{item.description}</Text>
+          ) : null}
+        </View>
 
-      <TouchableOpacity style={styles.playButton}>
-        <Ionicons name="play" size={24} color="#fff" />
+        <View style={styles.playlistMeta}>
+          {item.is_public ? (
+            <Ionicons name="globe-outline" size={16} color={Colors.textMuted} />
+          ) : (
+            <Ionicons name="lock-closed-outline" size={16} color={Colors.textMuted} />
+          )}
+        </View>
+
+        <TouchableOpacity 
+          style={styles.playButton}
+          onPress={() => openPlaylist(item)}
+        >
+          <Ionicons name="play" size={24} color="#fff" />
+        </TouchableOpacity>
       </TouchableOpacity>
-    </TouchableOpacity>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -130,7 +168,10 @@ export default function PlaylistScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Playlists</Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>My Playlists</Text>
+          <Text style={styles.headerSubtitle}>{playlists.length} playlists</Text>
+        </View>
         <TouchableOpacity 
           style={styles.addButton}
           onPress={() => setShowCreateModal(true)}
@@ -224,7 +265,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.text },
+  headerSubtitle: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
   addButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 12 },
   playlistCard: {
@@ -232,23 +275,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.backgroundCard,
     borderRadius: 12,
-    padding: 12,
+    padding: 10,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  playlistIcon: {
-    width: 56,
-    height: 56,
+  playlistCover: {
+    width: 70,
+    height: 70,
     borderRadius: 8,
+    overflow: 'hidden',
+    marginRight: 12,
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  coverPlaceholder: {
+    width: '100%',
+    height: '100%',
     backgroundColor: Colors.primary + '20',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   playlistInfo: { flex: 1 },
   playlistName: { fontSize: 16, fontWeight: '600', color: Colors.text },
-  playlistCount: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  playlistCount: { fontSize: 12, color: Colors.primary, marginTop: 2 },
+  playlistDesc: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
   playlistMeta: { marginRight: 12 },
   playButton: {
     width: 44,
