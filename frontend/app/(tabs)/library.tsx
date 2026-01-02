@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { usePlayer } from '../../src/contexts/PlayerContext';
 import { base44Tracks, Track } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,6 +20,8 @@ import { useRouter } from 'expo-router';
 export default function LibraryScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { playTrack, currentTrack, isPlaying, togglePlayPause } = usePlayer();
+  
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -38,19 +41,18 @@ export default function LibraryScreen() {
       const userId = user.id || user._id || '';
       console.log('[Library] Loading uploads for user:', userId);
       
-      // Get all tracks and filter by user AND approved status
-      const allTracks = await base44Tracks.list({ limit: 100 });
-      const myApprovedTracks = allTracks.filter((track: Track) => 
-        // Filter by user
-        (track.created_by_id === userId || 
-         track.producer_id === userId ||
-         track.uploaded_by === userId) &&
-        // Filter approved only
-        track.status === 'approved'
+      // Get ALL tracks with higher limit to make sure we get all user's tracks
+      const allTracks = await base44Tracks.list({ limit: 500 });
+      
+      // Filter by user - show ALL user's tracks (approved + pending)
+      const myTracks = allTracks.filter((track: Track) => 
+        track.created_by_id === userId || 
+        track.producer_id === userId ||
+        track.uploaded_by === userId
       );
       
-      console.log('[Library] My approved uploads:', myApprovedTracks.length);
-      setTracks(myApprovedTracks);
+      console.log('[Library] My uploads (all statuses):', myTracks.length);
+      setTracks(myTracks);
     } catch (e) {
       console.error('[Library] fetch error', e);
     } finally {
@@ -82,11 +84,39 @@ export default function LibraryScreen() {
     return track.producer_name || track.artist_name || 'Unknown Artist';
   };
 
+  // Get status badge color
+  const getStatusColor = (status?: string): string => {
+    switch (status) {
+      case 'approved': return '#4CAF50';
+      case 'pending': return '#FF9800';
+      case 'rejected': return '#F44336';
+      default: return Colors.textMuted;
+    }
+  };
+
   const renderTrack = ({ item }: { item: Track }) => {
     const coverUrl = getCoverImageUrl(item);
+    const trackId = item.id || item._id || '';
+    const isCurrentTrack = currentTrack && (currentTrack.id || currentTrack._id) === trackId;
     
     return (
-      <View style={styles.trackCard}>
+      <TouchableOpacity 
+        style={[styles.trackCard, isCurrentTrack && styles.trackCardActive]}
+        onPress={() => playTrack(item)}
+        activeOpacity={0.7}
+      >
+        {/* Play Button */}
+        <TouchableOpacity 
+          style={styles.playButton} 
+          onPress={() => isCurrentTrack ? togglePlayPause() : playTrack(item)}
+        >
+          <Ionicons 
+            name={isCurrentTrack && isPlaying ? 'pause' : 'play'} 
+            size={20} 
+            color="#fff" 
+          />
+        </TouchableOpacity>
+
         {/* Cover Image */}
         <View style={styles.trackCover}>
           {coverUrl ? (
@@ -100,7 +130,9 @@ export default function LibraryScreen() {
 
         {/* Track Info */}
         <View style={styles.trackInfo}>
-          <Text style={styles.trackTitle} numberOfLines={1}>{item.title}</Text>
+          <Text style={[styles.trackTitle, isCurrentTrack && styles.trackTitleActive]} numberOfLines={1}>
+            {item.title}
+          </Text>
           <Text style={styles.trackArtist} numberOfLines={1}>{getArtistName(item)}</Text>
           <View style={styles.trackMeta}>
             <Text style={styles.trackGenre}>{item.genre}</Text>
@@ -108,18 +140,28 @@ export default function LibraryScreen() {
           </View>
         </View>
 
-        {/* Stats */}
-        <View style={styles.trackStats}>
-          <View style={styles.statItem}>
-            <Ionicons name="play" size={14} color={Colors.textMuted} />
-            <Text style={styles.statText}>{item.play_count || 0}</Text>
+        {/* Status Badge */}
+        <View style={styles.statusContainer}>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
+            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
+            <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+              {item.status || 'unknown'}
+            </Text>
           </View>
-          <View style={styles.statItem}>
-            <Ionicons name="download" size={14} color={Colors.textMuted} />
-            <Text style={styles.statText}>{item.download_count || 0}</Text>
+          
+          {/* Stats */}
+          <View style={styles.trackStats}>
+            <View style={styles.statItem}>
+              <Ionicons name="play" size={12} color={Colors.textMuted} />
+              <Text style={styles.statText}>{item.play_count || 0}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Ionicons name="download" size={12} color={Colors.textMuted} />
+              <Text style={styles.statText}>{item.download_count || 0}</Text>
+            </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -137,12 +179,15 @@ export default function LibraryScreen() {
       {/* Header */}
       <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
         <Text style={styles.headerTitle}>My Uploads</Text>
-        <TouchableOpacity 
-          style={styles.uploadButton}
-          onPress={() => router.push('/(tabs)/upload')}
-        >
-          <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <Text style={styles.trackCount}>{tracks.length} tracks</Text>
+          <TouchableOpacity 
+            style={styles.uploadButton}
+            onPress={() => router.push('/(tabs)/upload')}
+          >
+            <Ionicons name="add" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       {/* Track List */}
@@ -204,6 +249,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.text,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  trackCount: {
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
   uploadButton: {
     width: 44,
     height: 44,
@@ -214,23 +268,36 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 12,
+    paddingBottom: 100, // Space for global player
   },
   trackCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.backgroundCard,
     borderRadius: 12,
-    padding: 12,
+    padding: 10,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: Colors.border,
+    gap: 10,
+  },
+  trackCardActive: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '10',
+  },
+  playButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   trackCover: {
-    width: 60,
-    height: 60,
+    width: 50,
+    height: 50,
     borderRadius: 8,
     overflow: 'hidden',
-    marginRight: 12,
   },
   coverImage: {
     width: '100%',
@@ -245,42 +312,67 @@ const styles = StyleSheet.create({
   },
   trackInfo: {
     flex: 1,
-    marginRight: 10,
+    minWidth: 0,
   },
   trackTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: Colors.text,
-    marginBottom: 2,
+  },
+  trackTitleActive: {
+    color: Colors.primary,
   },
   trackArtist: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.primary,
-    marginBottom: 4,
+    marginTop: 2,
   },
   trackMeta: {
     flexDirection: 'row',
     gap: 8,
+    marginTop: 4,
   },
   trackGenre: {
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.textMuted,
   },
   trackBpm: {
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.textMuted,
   },
-  trackStats: {
+  statusContainer: {
     alignItems: 'flex-end',
+    gap: 6,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
     gap: 4,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  trackStats: {
+    flexDirection: 'row',
+    gap: 8,
   },
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
   },
   statText: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.textMuted,
   },
   emptyContainer: {
