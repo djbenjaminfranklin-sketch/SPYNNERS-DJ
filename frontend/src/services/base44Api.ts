@@ -16,7 +16,7 @@ const getBackendUrl = () => {
   // For mobile, use the configured backend URL
   return Constants.expoConfig?.extra?.backendUrl || 
          process.env.EXPO_PUBLIC_BACKEND_URL || 
-         'https://music-share-16.preview.emergentagent.com';
+         'https://translate-fix-7.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();
