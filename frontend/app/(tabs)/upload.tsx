@@ -166,39 +166,67 @@ export default function UploadScreen() {
         try {
           console.log('[Upload] Extracting metadata via backend...');
           
-          // Create form data
-          const formData = new FormData();
-          formData.append('file', {
-            uri: file.uri,
-            name: file.name,
-            type: 'audio/mpeg',
-          } as any);
-          
-          const response = await fetch('/api/extract-mp3-metadata', {
-            method: 'POST',
-            body: formData,
-          });
-          
-          if (response.ok) {
-            const metadata = await response.json();
-            console.log('[Upload] Extracted metadata:', metadata);
+          // For web: fetch the file blob and send it
+          if (Platform.OS === 'web') {
+            const fileResponse = await fetch(file.uri);
+            const blob = await fileResponse.blob();
             
-            // Auto-fill fields with extracted metadata
-            if (metadata.title && !title) {
-              setTitle(metadata.title);
+            const formData = new FormData();
+            formData.append('file', blob, file.name);
+            
+            const response = await fetch('/api/extract-mp3-metadata', {
+              method: 'POST',
+              body: formData,
+            });
+            
+            if (response.ok) {
+              const metadata = await response.json();
+              console.log('[Upload] Extracted metadata:', metadata);
+              
+              // Auto-fill fields with extracted metadata
+              if (metadata.title) {
+                setTitle(metadata.title);
+              }
+              if (metadata.artist) {
+                setArtistName(metadata.artist);
+              }
+              if (metadata.genre) {
+                setGenre(metadata.genre);
+              }
+              if (metadata.bpm) {
+                setBpm(metadata.bpm.toString());
+              }
+              if (metadata.cover_image) {
+                setCoverImage(metadata.cover_image);
+                Alert.alert('Info', t('upload.coverExtracted') || 'Cover art extracted from MP3 file');
+              }
+            } else {
+              console.log('[Upload] Metadata extraction failed:', await response.text());
             }
-            if (metadata.artist && !artistName) {
-              setArtistName(metadata.artist);
-            }
-            if (metadata.genre) {
-              setGenre(metadata.genre);
-            }
-            if (metadata.bpm) {
-              setBpm(metadata.bpm.toString());
-            }
-            if (metadata.cover_image && !coverImage) {
-              setCoverImage(metadata.cover_image);
-              Alert.alert('Info', 'Cover art extracted from MP3 file');
+          } else {
+            // For native: use different approach
+            const formData = new FormData();
+            formData.append('file', {
+              uri: file.uri,
+              name: file.name,
+              type: 'audio/mpeg',
+            } as any);
+            
+            const response = await fetch('/api/extract-mp3-metadata', {
+              method: 'POST',
+              body: formData,
+            });
+            
+            if (response.ok) {
+              const metadata = await response.json();
+              if (metadata.title) setTitle(metadata.title);
+              if (metadata.artist) setArtistName(metadata.artist);
+              if (metadata.genre) setGenre(metadata.genre);
+              if (metadata.bpm) setBpm(metadata.bpm.toString());
+              if (metadata.cover_image) {
+                setCoverImage(metadata.cover_image);
+                Alert.alert('Info', 'Cover art extracted from MP3 file');
+              }
             }
           }
         } catch (metadataError) {
