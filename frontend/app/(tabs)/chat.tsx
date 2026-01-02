@@ -56,93 +56,48 @@ export default function ChatScreen() {
   const loadMembers = async () => {
     try {
       setLoading(true);
-      console.log('[Chat] Loading all members...');
+      console.log('[Chat] Loading all members via nativeGetAllUsers...');
       
       const userId = user?.id || user?._id || '';
       
-      // Try multiple approaches to get users
-      let allUsers: any[] = [];
+      // Fetch all users using the nativeGetAllUsers function with pagination
+      let allUsers: User[] = [];
+      let offset = 0;
+      const pageSize = 100;
+      let hasMore = true;
       
-      // Approach 1: Try the Base44 SDK nativeGetAllUsers function
-      try {
-        console.log('[Chat] Trying SDK nativeGetAllUsers...');
-        let offset = 0;
-        const pageSize = 100;
-        let hasMore = true;
+      while (hasMore && offset < 2000) {
+        console.log(`[Chat] Fetching users batch at offset ${offset}...`);
+        const users = await base44Users.nativeGetAllUsers({
+          search: '',
+          limit: pageSize,
+          offset: offset,
+        });
         
-        while (hasMore && offset < 2000) {
-          const result = await invokeBase44Function('nativeGetAllUsers', {
-            search: '',
-            limit: pageSize,
-            offset: offset,
-          });
-          
-          // Handle different response formats
-          let users: any[] = [];
-          if (result?.data?.users) {
-            users = result.data.users;
-          } else if (result?.users) {
-            users = result.users;
-          } else if (Array.isArray(result)) {
-            users = result;
-          } else if (result?.data && Array.isArray(result.data)) {
-            users = result.data;
-          }
-          
-          console.log(`[Chat] SDK: Got ${users.length} users at offset ${offset}`);
-          
-          if (users.length > 0) {
-            allUsers.push(...users);
-            offset += pageSize;
-            if (users.length < pageSize) hasMore = false;
-          } else {
+        console.log(`[Chat] Got ${users.length} users at offset ${offset}`);
+        
+        if (users.length > 0) {
+          allUsers = [...allUsers, ...users];
+          offset += pageSize;
+          if (users.length < pageSize) {
             hasMore = false;
           }
-        }
-      } catch (sdkError) {
-        console.log('[Chat] SDK approach failed, will use fallback:', sdkError);
-      }
-      
-      // Approach 2: If SDK didn't work well, try extracting from tracks
-      if (allUsers.length < 50) {
-        console.log('[Chat] Using tracks fallback to get more users...');
-        try {
-          const tracksResponse = await base44Tracks.list({ limit: 500 });
-          const trackUsers = new Map<string, any>();
-          
-          tracksResponse.forEach((track: any) => {
-            const producerId = track.producer_id || track.created_by_id || track.uploaded_by || '';
-            const producerName = track.producer_name || track.artist_name || 'Unknown';
-            
-            if (producerId && !trackUsers.has(producerId)) {
-              trackUsers.set(producerId, {
-                id: producerId,
-                _id: producerId,
-                full_name: producerName,
-                user_type: 'producer',
-              });
-            }
-          });
-          
-          // Merge with SDK results
-          trackUsers.forEach((user, id) => {
-            if (!allUsers.find((u: any) => (u.id || u._id) === id)) {
-              allUsers.push(user);
-            }
-          });
-          
-          console.log(`[Chat] After tracks fallback: ${allUsers.length} total users`);
-        } catch (tracksError) {
-          console.error('[Chat] Tracks fallback error:', tracksError);
+        } else {
+          hasMore = false;
         }
       }
       
-      console.log('[Chat] Total users found:', allUsers.length);
+      console.log('[Chat] Total users fetched:', allUsers.length);
       
       // Get user's messages to find recent conversations
-      const userMessages = await base44Messages.list({ receiver_id: userId });
-      const sentMessages = await base44Messages.list({ sender_id: userId });
-      const allMessages = [...userMessages, ...sentMessages];
+      let allMessages: Message[] = [];
+      try {
+        const userMessages = await base44Messages.list({ receiver_id: userId });
+        const sentMessages = await base44Messages.list({ sender_id: userId });
+        allMessages = [...userMessages, ...sentMessages];
+      } catch (msgError) {
+        console.log('[Chat] Could not load messages:', msgError);
+      }
       
       // Create a map of last messages per user
       const lastMessageMap = new Map<string, { message: string; unread: number }>();
@@ -159,41 +114,38 @@ export default function ChatScreen() {
         }
       });
       
-      // Build member map from users
-      const memberMap = new Map<string, Member>();
+      // Build member list from users
+      const membersList: Member[] = [];
       
-      // Add all users from nativeGetAllUsers
-      allUsers.forEach((userData: any) => {
+      allUsers.forEach((userData: User) => {
         const memberId = userData.id || userData._id || '';
-        const memberName = userData.full_name || userData.name || userData.email?.split('@')[0] || 'Unknown';
+        const memberName = userData.full_name || (userData as any).name || userData.email?.split('@')[0] || 'Unknown';
         
-        if (memberId && memberId !== userId && !memberMap.has(memberId)) {
+        if (memberId && memberId !== userId) {
           const msgInfo = lastMessageMap.get(memberId);
           const userType = (userData.user_type || '').toLowerCase();
           
-          memberMap.set(memberId, {
+          membersList.push({
             id: memberId,
             name: memberName,
             type: (userType === 'dj' ? 'DJ' : userType === 'producer' ? 'Producer' : 'Both') as any,
             isOnline: Math.random() > 0.7, // TODO: implement real online status
-            trackCount: userData.track_count || 0,
-            avatar: userData.avatar || userData.profile_image,
+            trackCount: (userData as any).track_count || 0,
+            avatar: userData.avatar || (userData as any).avatar_url || (userData as any).profile_image,
             lastMessage: msgInfo?.message,
             unreadCount: msgInfo?.unread || 0,
           });
         }
       });
       
-      // Convert to array and sort
-      const membersList = Array.from(memberMap.values())
-        .sort((a, b) => {
-          // Sort by unread first, then online, then by name
-          if ((a.unreadCount || 0) > 0 && (b.unreadCount || 0) === 0) return -1;
-          if ((b.unreadCount || 0) > 0 && (a.unreadCount || 0) === 0) return 1;
-          if (a.isOnline && !b.isOnline) return -1;
-          if (!a.isOnline && b.isOnline) return 1;
-          return a.name.localeCompare(b.name);
-        });
+      // Sort: unread first, then online, then by name
+      membersList.sort((a, b) => {
+        if ((a.unreadCount || 0) > 0 && (b.unreadCount || 0) === 0) return -1;
+        if ((b.unreadCount || 0) > 0 && (a.unreadCount || 0) === 0) return 1;
+        if (a.isOnline && !b.isOnline) return -1;
+        if (!a.isOnline && b.isOnline) return 1;
+        return a.name.localeCompare(b.name);
+      });
       
       console.log('[Chat] Final members list count:', membersList.length);
       setMembers(membersList);
