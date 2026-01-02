@@ -56,6 +56,7 @@ const KEYS = [
 export default function UploadScreen() {
   const { user, token } = useAuth();
   const { t } = useLanguage();
+  const router = useRouter();
   
   // Form state
   const [uploading, setUploading] = useState(false);
