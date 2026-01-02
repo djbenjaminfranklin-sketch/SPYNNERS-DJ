@@ -321,7 +321,7 @@ export default function HomeScreen() {
     </View>
   );
 
-  // Render menu item
+  // Render menu item with translation
   const renderMenuItem = (item: any) => (
     <TouchableOpacity
       key={item.id}
@@ -331,7 +331,7 @@ export default function HomeScreen() {
     >
       <LinearGradient colors={item.colors} style={styles.menuItemGradient}>
         <Ionicons name={item.icon as any} size={18} color="#fff" />
-        <Text style={styles.menuItemLabel} numberOfLines={1}>{item.label}</Text>
+        <Text style={styles.menuItemLabel} numberOfLines={1}>{t(item.labelKey)}</Text>
       </LinearGradient>
     </TouchableOpacity>
   );
