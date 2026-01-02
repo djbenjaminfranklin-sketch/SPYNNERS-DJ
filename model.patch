@@ -1,298 +1,316 @@
-diff --git a/frontend/app/(tabs)/home.tsx b/frontend/app/(tabs)/home.tsx
-index eedd924..3d28e07 100644
---- a/frontend/app/(tabs)/home.tsx
-+++ b/frontend/app/(tabs)/home.tsx
-@@ -22,6 +22,7 @@ import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
- import { base44Tracks, base44Playlists, base44Notifications2, Track, Notification } from '../../src/services/base44Api';
- import { useRouter } from 'expo-router';
- import { LinearGradient } from 'expo-linear-gradient';
-+import NotificationModal from '../../src/components/NotificationModal';
- 
- const { width: SCREEN_WIDTH } = Dimensions.get('window');
- const MENU_ITEM_SIZE = (SCREEN_WIDTH - 24 - 40) / 5; // 5 items per row with spacing
+diff --git a/frontend/app/(tabs)/chat.tsx b/frontend/app/(tabs)/chat.tsx
+index 524a2a1..b6b572e 100644
+--- a/frontend/app/(tabs)/chat.tsx
++++ b/frontend/app/(tabs)/chat.tsx
+@@ -141,7 +141,7 @@ export default function ChatScreen() {
+       });
+       
+       // Convert to array and sort
+-      const membersList = Array.from(producerMap.values())
++      const membersList = Array.from(memberMap.values())
+         .sort((a, b) => {
+           // Sort by unread first, then online, then track count
+           if ((a.unreadCount || 0) > 0 && (b.unreadCount || 0) === 0) return -1;
 diff --git a/model.patch b/model.patch
-index a340ecc..e69de29 100644
+index 1bc80d2..e69de29 100644
 --- a/model.patch
 +++ b/model.patch
-@@ -1,281 +0,0 @@
+@@ -1,298 +0,0 @@
+-diff --git a/frontend/app/(tabs)/home.tsx b/frontend/app/(tabs)/home.tsx
+-index eedd924..3d28e07 100644
+---- a/frontend/app/(tabs)/home.tsx
+-+++ b/frontend/app/(tabs)/home.tsx
+-@@ -22,6 +22,7 @@ import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
+- import { base44Tracks, base44Playlists, base44Notifications2, Track, Notification } from '../../src/services/base44Api';
+- import { useRouter } from 'expo-router';
+- import { LinearGradient } from 'expo-linear-gradient';
+-+import NotificationModal from '../../src/components/NotificationModal';
+- 
+- const { width: SCREEN_WIDTH } = Dimensions.get('window');
+- const MENU_ITEM_SIZE = (SCREEN_WIDTH - 24 - 40) / 5; // 5 items per row with spacing
 -diff --git a/model.patch b/model.patch
--index 85866ec..e69de29 100644
+-index a340ecc..e69de29 100644
 ---- a/model.patch
 -+++ b/model.patch
--@@ -1,276 +0,0 @@
+-@@ -1,281 +0,0 @@
 --diff --git a/model.patch b/model.patch
---index 3bbba98..e69de29 100644
+--index 85866ec..e69de29 100644
 ----- a/model.patch
 --+++ b/model.patch
---@@ -1,271 +0,0 @@
+--@@ -1,276 +0,0 @@
 ---diff --git a/model.patch b/model.patch
----index a5c6577..e69de29 100644
+---index 3bbba98..e69de29 100644
 ------ a/model.patch
 ---+++ b/model.patch
----@@ -1,231 +0,0 @@
+---@@ -1,271 +0,0 @@
 ----diff --git a/model.patch b/model.patch
-----index 75816d8..e69de29 100644
+----index a5c6577..e69de29 100644
 ------- a/model.patch
 ----+++ b/model.patch
-----@@ -1,119 +0,0 @@
+----@@ -1,231 +0,0 @@
+-----diff --git a/model.patch b/model.patch
+-----index 75816d8..e69de29 100644
+-------- a/model.patch
+-----+++ b/model.patch
+-----@@ -1,119 +0,0 @@
+------diff --git a/test_result.md b/test_result.md
+------index 187cba4..9b348d5 100644
+--------- a/test_result.md
+------+++ b/test_result.md
+------@@ -100,4 +100,111 @@
+------ 
+------ #====================================================================================================
+------ # Testing Data - Main Agent and testing sub agent both should log testing data below this section
+-------#====================================================================================================
+------\ No newline at end of file
+------+#====================================================================================================
+------+
+------+user_problem_statement: "Test the SPYNNERS backend API endpoints for health check, authentication, tracks, chat, and places functionality"
+------+
+------+backend:
+------+  - task: "Health Check API"
+------+    implemented: true
+------+    working: true
+------+    file: "backend/server.py"
+------+    stuck_count: 0
+------+    priority: "high"
+------+    needs_retesting: false
+------+    status_history:
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Health check endpoint working correctly. Returns status 'healthy' and acrcloud_configured: true"
+------+
+------+  - task: "Local Auth Signup API"
+------+    implemented: true
+------+    working: true
+------+    file: "backend/server.py"
+------+    stuck_count: 0
+------+    priority: "high"
+------+    needs_retesting: false
+------+    status_history:
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Local signup working correctly. Successfully creates user with email, password, and full_name. Returns token and user object"
+------+
+------+  - task: "Local Auth Login API"
+------+    implemented: true
+------+    working: true
+------+    file: "backend/server.py"
+------+    stuck_count: 0
+------+    priority: "high"
+------+    needs_retesting: false
+------+    status_history:
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Local login working correctly. Validates credentials and returns token and user object"
+------+
+------+  - task: "Get Tracks API"
+------+    implemented: true
+------+    working: true
+------+    file: "backend/server.py"
+------+    stuck_count: 0
+------+    priority: "medium"
+------+    needs_retesting: false
+------+    status_history:
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Get tracks endpoint working correctly. Returns success with tracks array (currently empty but functional)"
+------+
+------+  - task: "Chat Messages API"
+------+    implemented: true
+------+    working: true
+------+    file: "backend/server.py"
+------+    stuck_count: 0
+------+    priority: "medium"
+------+    needs_retesting: false
+------+    status_history:
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Chat messages endpoint working correctly. Returns success with messages array for given user_id and contact_id"
+------+
+------+  - task: "Send Message API"
+------+    implemented: true
+------+    working: true
+------+    file: "backend/server.py"
+------+    stuck_count: 0
+------+    priority: "medium"
+------+    needs_retesting: false
+------+    status_history:
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Send message endpoint working correctly. Successfully stores message and returns message object with proper fields"
+------+
+------+  - task: "Nearby Places API"
+------+    implemented: true
+------+    working: true
+------+    file: "backend/server.py"
+------+    stuck_count: 0
+------+    priority: "low"
+------+    needs_retesting: false
+------+    status_history:
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Nearby places endpoint working correctly. Returns mock data when no Google API key configured, which is expected behavior"
+------+
+------+frontend:
+------+  # Frontend testing not performed as per instructions
+------+
+------+metadata:
+------+  created_by: "testing_agent"
+------+  version: "1.0"
+------+  test_sequence: 1
+------+  run_ui: false
+------+
+------+test_plan:
+------+  current_focus:
+------+    - "All backend API endpoints tested successfully"
+------+  stuck_tasks: []
+------+  test_all: true
+------+  test_priority: "high_first"
+------+
+------+agent_communication:
+------+  - agent: "testing"
+------+    message: "Completed comprehensive backend API testing. All 7 endpoints tested successfully: Health Check, Local Signup, Local Login, Get Tracks, Chat Messages, Send Message, and Nearby Places. All APIs are working correctly with proper JSON responses. ACRCloud is configured, Google Places API returns mock data (expected when no API key). Backend is fully functional."
+------\ No newline at end of file
 -----diff --git a/test_result.md b/test_result.md
------index 187cba4..9b348d5 100644
+-----index 9b348d5..94158ff 100644
 -------- a/test_result.md
 -----+++ b/test_result.md
------@@ -100,4 +100,111 @@
+-----@@ -190,7 +190,101 @@ backend:
+-----         comment: "Nearby places endpoint working correctly. Returns mock data when no Google API key configured, which is expected behavior"
 ----- 
------ #====================================================================================================
------ # Testing Data - Main Agent and testing sub agent both should log testing data below this section
-------#====================================================================================================
------\ No newline at end of file
------+#====================================================================================================
------+
------+user_problem_statement: "Test the SPYNNERS backend API endpoints for health check, authentication, tracks, chat, and places functionality"
------+
------+backend:
------+  - task: "Health Check API"
+----- frontend:
+------  # Frontend testing not performed as per instructions
+-----+  - task: "Authentication Flow - Login Screen"
 -----+    implemented: true
------+    working: true
------+    file: "backend/server.py"
+-----+    working: "NA"
+-----+    file: "frontend/app/(auth)/login.tsx"
 -----+    stuck_count: 0
 -----+    priority: "high"
------+    needs_retesting: false
+-----+    needs_retesting: true
 -----+    status_history:
------+      - working: true
+-----+      - working: "NA"
 -----+        agent: "testing"
------+        comment: "Health check endpoint working correctly. Returns status 'healthy' and acrcloud_configured: true"
+-----+        comment: "Ready to test login screen with SPYNNERS logo, email/password fields, and signup navigation"
 -----+
------+  - task: "Local Auth Signup API"
+-----+  - task: "Authentication Flow - Signup Screen"
 -----+    implemented: true
------+    working: true
------+    file: "backend/server.py"
+-----+    working: "NA"
+-----+    file: "frontend/app/(auth)/signup.tsx"
 -----+    stuck_count: 0
 -----+    priority: "high"
------+    needs_retesting: false
+-----+    needs_retesting: true
 -----+    status_history:
------+      - working: true
+-----+      - working: "NA"
 -----+        agent: "testing"
------+        comment: "Local signup working correctly. Successfully creates user with email, password, and full_name. Returns token and user object"
+-----+        comment: "Ready to test signup form with all fields (Nom complet, Email, Mot de passe, Confirmer) and login navigation"
 -----+
------+  - task: "Local Auth Login API"
+-----+  - task: "Authentication Flow - Demo Login"
 -----+    implemented: true
------+    working: true
------+    file: "backend/server.py"
+-----+    working: "NA"
+-----+    file: "frontend/src/contexts/AuthContext.tsx"
 -----+    stuck_count: 0
 -----+    priority: "high"
------+    needs_retesting: false
+-----+    needs_retesting: true
 -----+    status_history:
------+      - working: true
+-----+      - working: "NA"
 -----+        agent: "testing"
------+        comment: "Local login working correctly. Validates credentials and returns token and user object"
+-----+        comment: "Ready to test login with demo credentials: email 'demo@spynners.com', password 'demo123'"
 -----+
------+  - task: "Get Tracks API"
+-----+  - task: "Tab Navigation Layout"
 -----+    implemented: true
------+    working: true
------+    file: "backend/server.py"
+-----+    working: "NA"
+-----+    file: "frontend/app/(tabs)/_layout.tsx"
+-----+    stuck_count: 0
+-----+    priority: "high"
+-----+    needs_retesting: true
+-----+    status_history:
+-----+      - working: "NA"
+-----+        agent: "testing"
+-----+        comment: "Ready to test 5 tabs: Home, Library, SPYN (red button), Chat, Profile with proper navigation"
+-----+
+-----+  - task: "SPYN Screen - Music Recognition"
+-----+    implemented: true
+-----+    working: "NA"
+-----+    file: "frontend/app/(tabs)/spyn.tsx"
+-----+    stuck_count: 0
+-----+    priority: "high"
+-----+    needs_retesting: true
+-----+    status_history:
+-----+      - working: "NA"
+-----+        agent: "testing"
+-----+        comment: "Ready to test SPYN screen with two main buttons: 'SPYN' (recognize) and 'Record Set' with animations"
+-----+
+-----+  - task: "Profile Screen - User Info and Menu"
+-----+    implemented: true
+-----+    working: "NA"
+-----+    file: "frontend/app/(tabs)/profile.tsx"
+-----+    stuck_count: 0
+-----+    priority: "high"
+-----+    needs_retesting: true
+-----+    status_history:
+-----+      - working: "NA"
+-----+        agent: "testing"
+-----+        comment: "Ready to test profile screen with user info, menu items, and language selector (FR/EN toggle)"
+-----+
+-----+  - task: "Chat Screen - Members List"
+-----+    implemented: true
+-----+    working: "NA"
+-----+    file: "frontend/app/(tabs)/chat.tsx"
+-----+    stuck_count: 0
+-----+    priority: "high"
+-----+    needs_retesting: true
+-----+    status_history:
+-----+      - working: "NA"
+-----+        agent: "testing"
+-----+        comment: "Ready to test chat screen with members list, search bar, and empty state handling"
+-----+
+-----+  - task: "UI/UX Theme - Dark Theme and Colors"
+-----+    implemented: true
+-----+    working: "NA"
+-----+    file: "frontend/src/theme/colors.ts"
 -----+    stuck_count: 0
 -----+    priority: "medium"
------+    needs_retesting: false
+-----+    needs_retesting: true
 -----+    status_history:
------+      - working: true
+-----+      - working: "NA"
 -----+        agent: "testing"
------+        comment: "Get tracks endpoint working correctly. Returns success with tracks array (currently empty but functional)"
------+
------+  - task: "Chat Messages API"
------+    implemented: true
------+    working: true
------+    file: "backend/server.py"
------+    stuck_count: 0
------+    priority: "medium"
------+    needs_retesting: false
------+    status_history:
------+      - working: true
------+        agent: "testing"
------+        comment: "Chat messages endpoint working correctly. Returns success with messages array for given user_id and contact_id"
------+
------+  - task: "Send Message API"
------+    implemented: true
------+    working: true
------+    file: "backend/server.py"
------+    stuck_count: 0
------+    priority: "medium"
------+    needs_retesting: false
------+    status_history:
------+      - working: true
------+        agent: "testing"
------+        comment: "Send message endpoint working correctly. Successfully stores message and returns message object with proper fields"
------+
------+  - task: "Nearby Places API"
------+    implemented: true
------+    working: true
------+    file: "backend/server.py"
------+    stuck_count: 0
------+    priority: "low"
------+    needs_retesting: false
------+    status_history:
------+      - working: true
------+        agent: "testing"
------+        comment: "Nearby places endpoint working correctly. Returns mock data when no Google API key configured, which is expected behavior"
------+
------+frontend:
------+  # Frontend testing not performed as per instructions
------+
------+metadata:
------+  created_by: "testing_agent"
------+  version: "1.0"
------+  test_sequence: 1
------+  run_ui: false
------+
------+test_plan:
------+  current_focus:
------+    - "All backend API endpoints tested successfully"
------+  stuck_tasks: []
------+  test_all: true
------+  test_priority: "high_first"
------+
------+agent_communication:
------+  - agent: "testing"
------+    message: "Completed comprehensive backend API testing. All 7 endpoints tested successfully: Health Check, Local Signup, Local Login, Get Tracks, Chat Messages, Send Message, and Nearby Places. All APIs are working correctly with proper JSON responses. ACRCloud is configured, Google Places API returns mock data (expected when no API key). Backend is fully functional."
------\ No newline at end of file
+-----+        comment: "Ready to test dark theme (#0a0a0a background), primary cyan color (#5CB3CC), and text readability"
+----- 
+----- metadata:
+-----   created_by: "testing_agent"
 ----diff --git a/test_result.md b/test_result.md
-----index 9b348d5..94158ff 100644
+----index 5c3310e..9ec3582 100644
 ------- a/test_result.md
 ----+++ b/test_result.md
-----@@ -190,7 +190,101 @@ backend:
-----         comment: "Nearby places endpoint working correctly. Returns mock data when no Google API key configured, which is expected behavior"
+----@@ -191,15 +191,18 @@ backend:
+---- 
+----   - task: "SPYN Notify Producer API"
+----     implemented: true
+-----    working: "NA"
+----+    working: true
+----     file: "backend/server.py"
+----     stuck_count: 0
+----     priority: "high"
+-----    needs_retesting: true
+----+    needs_retesting: false
+----     status_history:
+----       - working: "NA"
+----         agent: "main"
+----         comment: "New endpoint added to notify producer when their track is SPYNed. Calls Base44 sendTrackPlayedEmail cloud function. Accepts track_title, track_artist, dj_name, venue, city, country, latitude, longitude, played_at"
+----+      - working: true
+----+        agent: "testing"
+----+        comment: "SPYN Notify Producer API tested successfully. Endpoint accepts JSON payload correctly, returns proper JSON response with success field. Gracefully handles Base44 service unavailability (404 error) without crashing. Returns success: false with message 'Notification service unavailable' and status_code: 404, which is expected behavior when Base44 cloud function is not accessible. Endpoint is working correctly."
 ---- 
 ---- frontend:
------  # Frontend testing not performed as per instructions
-----+  - task: "Authentication Flow - Login Screen"
-----+    implemented: true
-----+    working: "NA"
-----+    file: "frontend/app/(auth)/login.tsx"
-----+    stuck_count: 0
-----+    priority: "high"
-----+    needs_retesting: true
-----+    status_history:
-----+      - working: "NA"
-----+        agent: "testing"
-----+        comment: "Ready to test login screen with SPYNNERS logo, email/password fields, and signup navigation"
-----+
-----+  - task: "Authentication Flow - Signup Screen"
-----+    implemented: true
-----+    working: "NA"
-----+    file: "frontend/app/(auth)/signup.tsx"
-----+    stuck_count: 0
-----+    priority: "high"
-----+    needs_retesting: true
-----+    status_history:
-----+      - working: "NA"
-----+        agent: "testing"
-----+        comment: "Ready to test signup form with all fields (Nom complet, Email, Mot de passe, Confirmer) and login navigation"
-----+
-----+  - task: "Authentication Flow - Demo Login"
-----+    implemented: true
-----+    working: "NA"
-----+    file: "frontend/src/contexts/AuthContext.tsx"
-----+    stuck_count: 0
-----+    priority: "high"
-----+    needs_retesting: true
-----+    status_history:
-----+      - working: "NA"
-----+        agent: "testing"
-----+        comment: "Ready to test login with demo credentials: email 'demo@spynners.com', password 'demo123'"
-----+
-----+  - task: "Tab Navigation Layout"
-----+    implemented: true
-----+    working: "NA"
-----+    file: "frontend/app/(tabs)/_layout.tsx"
-----+    stuck_count: 0
-----+    priority: "high"
-----+    needs_retesting: true
-----+    status_history:
-----+      - working: "NA"
-----+        agent: "testing"
-----+        comment: "Ready to test 5 tabs: Home, Library, SPYN (red button), Chat, Profile with proper navigation"
-----+
-----+  - task: "SPYN Screen - Music Recognition"
-----+    implemented: true
-----+    working: "NA"
-----+    file: "frontend/app/(tabs)/spyn.tsx"
-----+    stuck_count: 0
-----+    priority: "high"
-----+    needs_retesting: true
-----+    status_history:
-----+      - working: "NA"
-----+        agent: "testing"
-----+        comment: "Ready to test SPYN screen with two main buttons: 'SPYN' (recognize) and 'Record Set' with animations"
-----+
-----+  - task: "Profile Screen - User Info and Menu"
-----+    implemented: true
-----+    working: "NA"
-----+    file: "frontend/app/(tabs)/profile.tsx"
-----+    stuck_count: 0
-----+    priority: "high"
-----+    needs_retesting: true
-----+    status_history:
-----+      - working: "NA"
-----+        agent: "testing"
-----+        comment: "Ready to test profile screen with user info, menu items, and language selector (FR/EN toggle)"
-----+
-----+  - task: "Chat Screen - Members List"
-----+    implemented: true
-----+    working: "NA"
-----+    file: "frontend/app/(tabs)/chat.tsx"
-----+    stuck_count: 0
-----+    priority: "high"
-----+    needs_retesting: true
-----+    status_history:
-----+      - working: "NA"
-----+        agent: "testing"
-----+        comment: "Ready to test chat screen with members list, search bar, and empty state handling"
-----+
-----+  - task: "UI/UX Theme - Dark Theme and Colors"
-----+    implemented: true
-----+    working: "NA"
-----+    file: "frontend/src/theme/colors.ts"
-----+    stuck_count: 0
-----+    priority: "medium"
-----+    needs_retesting: true
-----+    status_history:
-----+      - working: "NA"
-----+        agent: "testing"
-----+        comment: "Ready to test dark theme (#0a0a0a background), primary cyan color (#5CB3CC), and text readability"
+----   - task: "Authentication Flow - Login Screen"
+----@@ -313,4 +316,6 @@ test_plan:
 ---- 
----- metadata:
-----   created_by: "testing_agent"
----diff --git a/test_result.md b/test_result.md
----index 5c3310e..9ec3582 100644
------- a/test_result.md
----+++ b/test_result.md
----@@ -191,15 +191,18 @@ backend:
---- 
----   - task: "SPYN Notify Producer API"
----     implemented: true
-----    working: "NA"
----+    working: true
----     file: "backend/server.py"
----     stuck_count: 0
----     priority: "high"
-----    needs_retesting: true
----+    needs_retesting: false
----     status_history:
----       - working: "NA"
----         agent: "main"
----         comment: "New endpoint added to notify producer when their track is SPYNed. Calls Base44 sendTrackPlayedEmail cloud function. Accepts track_title, track_artist, dj_name, venue, city, country, latitude, longitude, played_at"
----+      - working: true
----+        agent: "testing"
----+        comment: "SPYN Notify Producer API tested successfully. Endpoint accepts JSON payload correctly, returns proper JSON response with success field. Gracefully handles Base44 service unavailability (404 error) without crashing. Returns success: false with message 'Notification service unavailable' and status_code: 404, which is expected behavior when Base44 cloud function is not accessible. Endpoint is working correctly."
---- 
---- frontend:
----   - task: "Authentication Flow - Login Screen"
----@@ -313,4 +316,6 @@ test_plan:
---- 
---- agent_communication:
----   - agent: "testing"
-----    message: "Completed comprehensive backend API testing. All 7 endpoints tested successfully: Health Check, Local Signup, Local Login, Get Tracks, Chat Messages, Send Message, and Nearby Places. All APIs are working correctly with proper JSON responses. ACRCloud is configured, Google Places API returns mock data (expected when no API key). Backend is fully functional."
----\ No newline at end of file
----+    message: "Completed comprehensive backend API testing. All 7 endpoints tested successfully: Health Check, Local Signup, Local Login, Get Tracks, Chat Messages, Send Message, and Nearby Places. All APIs are working correctly with proper JSON responses. ACRCloud is configured, Google Places API returns mock data (expected when no API key). Backend is fully functional."
----+  - agent: "testing"
----+    message: "SPYN Notify Producer API testing completed successfully. Endpoint POST /api/notify-producer accepts JSON payload correctly, returns proper JSON response with success field. Gracefully handles Base44 service unavailability (404 error) without crashing. Returns success: false with message 'Notification service unavailable' and status_code: 404, which is expected behavior when Base44 cloud function is not accessible. All backend APIs are now tested and working correctly."
----\ No newline at end of file
+---- agent_communication:
+----   - agent: "testing"
+-----    message: "Completed comprehensive backend API testing. All 7 endpoints tested successfully: Health Check, Local Signup, Local Login, Get Tracks, Chat Messages, Send Message, and Nearby Places. All APIs are working correctly with proper JSON responses. ACRCloud is configured, Google Places API returns mock data (expected when no API key). Backend is fully functional."
+----\ No newline at end of file
+----+    message: "Completed comprehensive backend API testing. All 7 endpoints tested successfully: Health Check, Local Signup, Local Login, Get Tracks, Chat Messages, Send Message, and Nearby Places. All APIs are working correctly with proper JSON responses. ACRCloud is configured, Google Places API returns mock data (expected when no API key). Backend is fully functional."
+----+  - agent: "testing"
+----+    message: "SPYN Notify Producer API testing completed successfully. Endpoint POST /api/notify-producer accepts JSON payload correctly, returns proper JSON response with success field. Gracefully handles Base44 service unavailability (404 error) without crashing. Returns success: false with message 'Notification service unavailable' and status_code: 404, which is expected behavior when Base44 cloud function is not accessible. All backend APIs are now tested and working correctly."
+----\ No newline at end of file
