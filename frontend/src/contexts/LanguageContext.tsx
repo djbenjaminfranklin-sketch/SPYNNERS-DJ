@@ -561,6 +561,13 @@ const translations: Record<Language, Record<string, string>> = {
     'diamonds.tracksBeforeEveryone': 'Tracks avant tout le monde',
     'diamonds.supportArtists': 'Soutien aux artistes',
     'diamonds.supportProducers': 'Soutenez les producteurs',
+    'diamonds.selectionRequired': 'Sélection requise',
+    'diamonds.chooseAPack': 'Choisissez un pack de diamonds',
+    'diamonds.confirmPurchase': 'Acheter {amount} Black Diamonds pour {price}?\n\nVous serez redirigé vers spynners.com pour finaliser l\'achat.',
+    'diamonds.purchaseComplete': 'Achat terminé! 💎',
+    'diamonds.diamondsAdded': '{amount} Black Diamonds ajoutés à votre compte!',
+    'diamonds.purchaseError': 'Impossible d\'ouvrir la page d\'achat. Veuillez réessayer.',
+    'diamonds.continue': 'Continuer',
     
     // Analytics
     'analytics.title': 'Mes Statistiques',
