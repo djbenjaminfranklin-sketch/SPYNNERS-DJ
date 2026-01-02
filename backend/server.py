@@ -785,6 +785,82 @@ async def base44_list_entities(
         print(f"Base44 request error: {e}")
         return []
 
+@app.post("/api/base44/entities/{entity_name}")
+async def base44_create_entity(
+    entity_name: str,
+    request_body: dict = {},
+    authorization: Optional[str] = Header(None)
+):
+    """Proxy entity creation to Base44"""
+    try:
+        headers = {
+            "Content-Type": "application/json",
+            "X-Base44-App-Id": BASE44_APP_ID
+        }
+        if authorization:
+            headers["Authorization"] = authorization
+        
+        print(f"[Base44] Creating entity {entity_name}")
+        print(f"[Base44] Data keys: {list(request_body.keys())}")
+        
+        async with httpx.AsyncClient(timeout=60.0) as http_client:
+            response = await http_client.post(
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/{entity_name}",
+                headers=headers,
+                json=request_body
+            )
+            
+            print(f"[Base44] Create response: {response.status_code}")
+            
+            if response.status_code in [200, 201]:
+                return response.json()
+            else:
+                print(f"Base44 create error: {response.status_code} - {response.text[:500]}")
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Failed to create entity: {response.text}"
+                )
+    except httpx.RequestError as e:
+        print(f"Base44 request error: {e}")
+        raise HTTPException(status_code=503, detail=f"Base44 service unavailable: {str(e)}")
+
+@app.put("/api/base44/entities/{entity_name}/{entity_id}")
+async def base44_update_entity(
+    entity_name: str,
+    entity_id: str,
+    request_body: dict = {},
+    authorization: Optional[str] = Header(None)
+):
+    """Proxy entity update to Base44"""
+    try:
+        headers = {
+            "Content-Type": "application/json",
+            "X-Base44-App-Id": BASE44_APP_ID
+        }
+        if authorization:
+            headers["Authorization"] = authorization
+        
+        print(f"[Base44] Updating entity {entity_name}/{entity_id}")
+        
+        async with httpx.AsyncClient(timeout=60.0) as http_client:
+            response = await http_client.put(
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/{entity_name}/{entity_id}",
+                headers=headers,
+                json=request_body
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"Base44 update error: {response.status_code} - {response.text[:500]}")
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"Failed to update entity: {response.text}"
+                )
+    except httpx.RequestError as e:
+        print(f"Base44 request error: {e}")
+        raise HTTPException(status_code=503, detail=f"Base44 service unavailable: {str(e)}")
+
 @app.post("/api/base44/functions/invoke/{function_name}")
 async def base44_invoke_function(
     function_name: str,
