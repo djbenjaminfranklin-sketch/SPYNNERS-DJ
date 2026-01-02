@@ -107,9 +107,131 @@ export default function PlaylistScreen() {
     }
   };
 
-  const openPlaylist = (playlist: any) => {
+  // Load tracks for a specific playlist
+  const loadPlaylistTracks = async (playlist: any) => {
+    try {
+      setLoadingTracks(true);
+      const trackIds = playlist.track_ids || playlist.tracks || [];
+      
+      console.log('[Playlist] Loading tracks for playlist:', playlist.name, '- Track IDs:', trackIds.length);
+      
+      if (trackIds.length === 0) {
+        setPlaylistTracks([]);
+        return;
+      }
+      
+      // Fetch all tracks and filter by IDs in the playlist
+      const allTracks = await base44Tracks.list({ limit: 200 });
+      const filteredTracks = allTracks.filter((track: Track) => {
+        const trackId = track.id || track._id || '';
+        return trackIds.includes(trackId);
+      });
+      
+      console.log('[Playlist] Loaded tracks:', filteredTracks.length);
+      setPlaylistTracks(filteredTracks);
+    } catch (error) {
+      console.error('[Playlist] Error loading playlist tracks:', error);
+      setPlaylistTracks([]);
+    } finally {
+      setLoadingTracks(false);
+    }
+  };
+
+  const openPlaylist = async (playlist: any) => {
     setSelectedPlaylist(playlist);
     setShowDetailModal(true);
+    await loadPlaylistTracks(playlist);
+  };
+
+  // Audio playback functions
+  const playTrack = async (track: Track) => {
+    try {
+      // Stop current sound if playing
+      if (sound) {
+        await sound.stopAsync();
+        await sound.unloadAsync();
+      }
+      
+      const audioUrl = track.audio_url || track.audio_file;
+      if (!audioUrl) {
+        Alert.alert('No Audio', 'This track does not have an audio file');
+        return;
+      }
+      
+      await Audio.setAudioModeAsync({ 
+        playsInSilentModeIOS: true, 
+        staysActiveInBackground: true 
+      });
+      
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: audioUrl },
+        { shouldPlay: true },
+        (status: any) => {
+          if (status.isLoaded) {
+            if (status.didJustFinish) {
+              setIsPlaying(false);
+              setCurrentPlayingTrack(null);
+            }
+          }
+        }
+      );
+      
+      setSound(newSound);
+      setCurrentPlayingTrack(track);
+      setIsPlaying(true);
+      
+      // Record play count
+      try { 
+        await base44Tracks.play(track.id || track._id || ''); 
+      } catch {}
+      
+    } catch (error) {
+      console.error('[Playlist] Playback error:', error);
+      Alert.alert('Error', 'Could not play this track');
+    }
+  };
+
+  const togglePlayPause = async () => {
+    if (!sound) return;
+    if (isPlaying) {
+      await sound.pauseAsync();
+      setIsPlaying(false);
+    } else {
+      await sound.playAsync();
+      setIsPlaying(true);
+    }
+  };
+
+  const stopPlayback = async () => {
+    if (sound) {
+      await sound.stopAsync();
+      await sound.unloadAsync();
+      setSound(null);
+    }
+    setCurrentPlayingTrack(null);
+    setIsPlaying(false);
+  };
+
+  // Play all tracks in playlist
+  const playAllTracks = async () => {
+    if (playlistTracks.length > 0) {
+      await playTrack(playlistTracks[0]);
+    }
+  };
+
+  // Get cover image URL
+  const getCoverImageUrl = (track: Track): string | null => {
+    const url = track.artwork_url || track.cover_image;
+    if (url) {
+      if (url.startsWith('http')) return url;
+      return `https://base44.app/api/apps/691a4d96d819355b52c063f3/files/public/691a4d96d819355b52c063f3/${url}`;
+    }
+    return null;
+  };
+
+  // Get artist name
+  const getArtistName = (track: Track): string => {
+    return track.producer_name || track.artist_name || 'Unknown Artist';
   };
 
   const renderPlaylist = ({ item }: { item: any }) => {
