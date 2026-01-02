@@ -40,7 +40,6 @@ const USER_MENU_ITEMS_ROW2 = [
   { id: 'rankings', label: 'Rankings', icon: 'trending-up', colors: ['#E91E63', '#C2185B'], route: '/profile/rankings' },
   { id: 'live-radar', label: 'Live Radar', icon: 'radio', colors: ['#3F51B5', '#303F9F'], route: '/profile/radar' },
   { id: 'vip', label: 'V.I.P.', icon: 'diamond', colors: ['#7C4DFF', '#651FFF'], route: '/profile/vip', highlight: true },
-  { id: 'clubs', label: 'Clubs', icon: 'location', colors: ['#E040FB', '#AA00FF'], route: '/profile/clubs' },
 ];
 
 // Genres and filters
