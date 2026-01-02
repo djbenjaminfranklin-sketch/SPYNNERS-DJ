@@ -16,10 +16,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { useLanguage } from '../../src/contexts/LanguageContext';
+import { useLanguage, LANGUAGES, Language } from '../../src/contexts/LanguageContext';
 import { usePlayer } from '../../src/contexts/PlayerContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
-import { base44Tracks, base44Playlists, Track } from '../../src/services/base44Api';
+import { base44Tracks, base44Playlists, base44Notifications2, Track, Notification } from '../../src/services/base44Api';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
