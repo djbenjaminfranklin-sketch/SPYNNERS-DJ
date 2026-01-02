@@ -140,7 +140,7 @@ export default function ClubsScreen() {
   const [showPartnerOnly, setShowPartnerOnly] = useState(false);
 
   // Get unique countries
-  const countries = ['All', ...new Set(CLUBS_DATA.map(c => c.country))];
+  const countries = [t('clubs.all'), ...new Set(CLUBS_DATA.map(c => c.country))];
 
   useEffect(() => {
     loadClubs();
