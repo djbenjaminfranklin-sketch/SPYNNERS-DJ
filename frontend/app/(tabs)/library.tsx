@@ -184,7 +184,7 @@ export default function LibraryScreen() {
       <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
         <Text style={styles.headerTitle}>{t('page.myUploads')}</Text>
         <View style={styles.headerRight}>
-          <Text style={styles.trackCount}>{tracks.length} tracks</Text>
+          <Text style={styles.trackCount}>{tracks.length} {t('common.tracks')}</Text>
           <TouchableOpacity 
             style={styles.uploadButton}
             onPress={() => router.push('/(tabs)/upload')}
