@@ -327,17 +327,29 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
-  // Get cover image URL with fallback
+  // Get cover image URL - use artwork_url from Base44
   const getCoverImageUrl = (track: Track): string | null => {
-    if (track.cover_image) {
+    // Use artwork_url (Base44 field) or cover_image (legacy field)
+    const url = track.artwork_url || track.cover_image;
+    if (url) {
       // If it's already a full URL, use it
-      if (track.cover_image.startsWith('http')) {
-        return track.cover_image;
+      if (url.startsWith('http')) {
+        return url;
       }
       // If it's a Base44 file reference, construct the URL
-      return `https://app.base44.com/api/apps/691a4d96d819355b52c063f3/storage/files/${track.cover_image}`;
+      return `https://base44.app/api/apps/691a4d96d819355b52c063f3/files/public/691a4d96d819355b52c063f3/${url}`;
     }
     return null;
+  };
+
+  // Get artist name - use producer_name from Base44 or artist_name (legacy)
+  const getArtistName = (track: Track): string => {
+    return track.producer_name || track.artist_name || 'Unknown Artist';
+  };
+
+  // Get rating value
+  const getRating = (track: Track): number => {
+    return track.average_rating || track.rating || 0;
   };
 
   return (
