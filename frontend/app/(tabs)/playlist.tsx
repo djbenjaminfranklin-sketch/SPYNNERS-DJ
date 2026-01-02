@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { usePlayer } from '../../src/contexts/PlayerContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 import { base44Playlists, base44Tracks, Playlist, Track } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,6 +25,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function PlaylistScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { t } = useLanguage();
   const { playTrack, currentTrack, isPlaying, togglePlayPause } = usePlayer();
   
   const [playlists, setPlaylists] = useState<any[]>([]);
