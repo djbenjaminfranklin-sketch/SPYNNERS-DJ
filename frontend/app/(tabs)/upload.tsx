@@ -277,11 +277,16 @@ export default function UploadScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        {/* Header with Back Button */}
         <View style={styles.header}>
-          <Ionicons name="cloud-upload" size={32} color={Colors.primary} />
-          <Text style={styles.headerTitle}>Upload Track</Text>
-          <Text style={styles.headerSubtitle}>Share your music with the SPYNNERS community</Text>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color={Colors.text} />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Ionicons name="cloud-upload" size={32} color={Colors.primary} />
+            <Text style={styles.headerTitle}>Upload Track</Text>
+            <Text style={styles.headerSubtitle}>Share your music with the SPYNNERS community</Text>
+          </View>
         </View>
 
         {/* Upload for another user */}
