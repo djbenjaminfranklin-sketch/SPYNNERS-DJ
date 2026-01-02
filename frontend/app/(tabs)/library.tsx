@@ -105,11 +105,6 @@ export default function LibraryScreen() {
           </View>
         </View>
 
-        {/* Status Badge */}
-        <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
-          <Text style={styles.statusText}>{status.toUpperCase()}</Text>
-        </View>
-
         {/* Stats */}
         <View style={styles.trackStats}>
           <View style={styles.statItem}>
