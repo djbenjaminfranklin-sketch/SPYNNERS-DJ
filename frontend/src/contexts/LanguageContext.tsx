@@ -215,6 +215,16 @@ const translations: Record<Language, Record<string, string>> = {
     'page.noReceivedTracks': 'Aucun track reçu',
     'page.createPlaylist': 'Créer une Playlist',
     'page.playlistName': 'Nom de la Playlist',
+    'page.createPlaylistHint': 'Créez votre première playlist pour organiser vos tracks préférés',
+    
+    // Upload
+    'upload.selectAudio': 'Sélectionner un fichier audio',
+    'upload.selectCover': 'Sélectionner une pochette',
+    'upload.coverExtracted': 'Pochette extraite du MP3',
+    'upload.submit': 'Uploader le Track',
+    'upload.uploading': 'Upload en cours...',
+    'upload.success': 'Track uploadé avec succès !',
+    'upload.error': 'Échec de l\'upload',
     
     // SPYN
     'spyn.detection': 'DETECTION',
