@@ -22,12 +22,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function PlaylistScreen() {
   const { user } = useAuth();
   const router = useRouter();
-  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [playlists, setPlaylists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
-  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<any | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   useEffect(() => {
     loadPlaylists();
@@ -39,13 +40,17 @@ export default function PlaylistScreen() {
       const userId = user?.id || user?._id || '';
       console.log('[Playlist] Loading playlists for user:', userId);
       
-      // Get all playlists - the API should filter by user_id automatically
-      const result = await base44Playlists.list(userId);
-      console.log('[Playlist] Playlists loaded:', result.length);
+      // Get all playlists
+      const allPlaylists = await base44Playlists.list();
+      console.log('[Playlist] All playlists loaded:', allPlaylists.length);
       
-      // Show all playlists that belong to this user
-      // Base44 might use different ID format, so let's show all for now
-      setPlaylists(result);
+      // Filter to show only MY playlists
+      const myPlaylists = allPlaylists.filter((p: any) => 
+        p.user_id === userId || p.created_by_id === userId
+      );
+      
+      console.log('[Playlist] My playlists:', myPlaylists.length);
+      setPlaylists(myPlaylists);
     } catch (error) {
       console.error('[Playlist] Error loading playlists:', error);
     } finally {
@@ -84,14 +89,9 @@ export default function PlaylistScreen() {
     }
   };
 
-  const openPlaylist = (playlist: Playlist) => {
+  const openPlaylist = (playlist: any) => {
     setSelectedPlaylist(playlist);
-    // TODO: Navigate to playlist detail page
-    Alert.alert(
-      playlist.name,
-      `${(playlist as any).track_ids?.length || playlist.tracks?.length || 0} tracks\n\nPlaylist detail page coming soon!`,
-      [{ text: 'OK' }]
-    );
+    setShowDetailModal(true);
   };
 
   const renderPlaylist = ({ item }: { item: any }) => {
@@ -120,9 +120,6 @@ export default function PlaylistScreen() {
           <Text style={styles.playlistCount}>
             {trackCount} {trackCount === 1 ? 'track' : 'tracks'}
           </Text>
-          {item.description ? (
-            <Text style={styles.playlistDesc} numberOfLines={1}>{item.description}</Text>
-          ) : null}
         </View>
 
         <View style={styles.playlistMeta}>
@@ -133,12 +130,9 @@ export default function PlaylistScreen() {
           )}
         </View>
 
-        <TouchableOpacity 
-          style={styles.playButton}
-          onPress={() => openPlaylist(item)}
-        >
-          <Ionicons name="play" size={24} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.chevron}>
+          <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+        </View>
       </TouchableOpacity>
     );
   };
@@ -147,7 +141,7 @@ export default function PlaylistScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading playlists...</Text>
+        <Text style={styles.loadingText}>Loading your playlists...</Text>
       </View>
     );
   }
@@ -239,6 +233,56 @@ export default function PlaylistScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Playlist Detail Modal */}
+      <Modal visible={showDetailModal} transparent animationType="slide">
+        <View style={styles.detailModalOverlay}>
+          <View style={styles.detailModalContent}>
+            <View style={styles.detailModalHeader}>
+              <TouchableOpacity onPress={() => setShowDetailModal(false)}>
+                <Ionicons name="close" size={28} color={Colors.text} />
+              </TouchableOpacity>
+              <Text style={styles.detailModalTitle}>{selectedPlaylist?.name}</Text>
+              <View style={{ width: 28 }} />
+            </View>
+
+            {selectedPlaylist?.cover_url ? (
+              <Image source={{ uri: selectedPlaylist.cover_url }} style={styles.detailCover} />
+            ) : (
+              <View style={[styles.detailCover, styles.detailCoverPlaceholder]}>
+                <Ionicons name="musical-notes" size={60} color={Colors.textMuted} />
+              </View>
+            )}
+
+            <View style={styles.detailInfo}>
+              <Text style={styles.detailTrackCount}>
+                {selectedPlaylist?.track_ids?.length || selectedPlaylist?.tracks?.length || 0} tracks
+              </Text>
+              {selectedPlaylist?.description && (
+                <Text style={styles.detailDescription}>{selectedPlaylist.description}</Text>
+              )}
+            </View>
+
+            <View style={styles.detailActions}>
+              <TouchableOpacity style={styles.detailActionButton}>
+                <LinearGradient colors={[Colors.primary, '#7B1FA2']} style={styles.detailActionGradient}>
+                  <Ionicons name="play" size={24} color="#fff" />
+                  <Text style={styles.detailActionText}>Play All</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.detailActionButton}>
+                <View style={styles.detailActionOutline}>
+                  <Ionicons name="shuffle" size={24} color={Colors.primary} />
+                  <Text style={[styles.detailActionText, { color: Colors.primary }]}>Shuffle</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.comingSoon}>Track list coming soon...</Text>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -272,8 +316,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   playlistCover: {
-    width: 70,
-    height: 70,
+    width: 60,
+    height: 60,
     borderRadius: 8,
     overflow: 'hidden',
     marginRight: 12,
@@ -292,16 +336,8 @@ const styles = StyleSheet.create({
   playlistInfo: { flex: 1 },
   playlistName: { fontSize: 16, fontWeight: '600', color: Colors.text },
   playlistCount: { fontSize: 12, color: Colors.primary, marginTop: 2 },
-  playlistDesc: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
-  playlistMeta: { marginRight: 12 },
-  playButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  playlistMeta: { marginRight: 8 },
+  chevron: { marginLeft: 4 },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -356,4 +392,41 @@ const styles = StyleSheet.create({
   modalCreateButton: { flex: 1, borderRadius: 10, overflow: 'hidden' },
   modalCreateGradient: { padding: 14, alignItems: 'center' },
   modalCreateText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  // Detail Modal
+  detailModalOverlay: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  detailModalContent: {
+    flex: 1,
+    paddingTop: 50,
+  },
+  detailModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  detailModalTitle: { fontSize: 20, fontWeight: '700', color: Colors.text },
+  detailCover: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+    alignSelf: 'center',
+  },
+  detailCoverPlaceholder: {
+    backgroundColor: Colors.backgroundCard,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  detailInfo: { alignItems: 'center', marginTop: 20 },
+  detailTrackCount: { fontSize: 16, color: Colors.textMuted },
+  detailDescription: { fontSize: 14, color: Colors.text, marginTop: 8, textAlign: 'center', paddingHorizontal: 20 },
+  detailActions: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, marginTop: 24 },
+  detailActionButton: { flex: 1, borderRadius: 12, overflow: 'hidden' },
+  detailActionGradient: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 14, gap: 8 },
+  detailActionOutline: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 14, gap: 8, borderWidth: 1, borderColor: Colors.primary, borderRadius: 12 },
+  detailActionText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  comingSoon: { textAlign: 'center', color: Colors.textMuted, marginTop: 30, fontSize: 14 },
 });
