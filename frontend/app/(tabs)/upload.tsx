@@ -139,7 +139,7 @@ export default function UploadScreen() {
     }
   };
 
-  // Pick audio file and extract metadata
+  // Pick audio file
   const pickAudioFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -156,41 +156,10 @@ export default function UploadScreen() {
         }
         setAudioFile({ uri: file.uri, name: file.name });
         
-        // Try to extract metadata from MP3
-        try {
-          console.log('[Upload] Extracting metadata from:', file.uri);
-          const metadata = await MusicInfo.getMusicInfoAsync(file.uri, {
-            title: true,
-            artist: true,
-            album: true,
-            picture: true,
-          });
-          
-          console.log('[Upload] Extracted metadata:', metadata);
-          
-          if (metadata) {
-            // Auto-fill title if available
-            if (metadata.title && !title) {
-              setTitle(metadata.title);
-            }
-            // Auto-fill artist if available
-            if (metadata.artist && !artistName) {
-              setArtistName(metadata.artist);
-            }
-            // Auto-fill label/album if available
-            if (metadata.album && !labelName) {
-              setLabelName(metadata.album);
-            }
-            // Extract cover art if available
-            if (metadata.picture && metadata.picture.pictureData && !coverImage) {
-              console.log('[Upload] Found embedded cover art');
-              setCoverImage(metadata.picture.pictureData);
-              Alert.alert('Info', 'Cover art extracted from MP3 file');
-            }
-          }
-        } catch (metadataError) {
-          console.log('[Upload] Could not extract metadata:', metadataError);
-          // Not critical, continue without metadata
+        // Try to extract title from filename
+        if (!title && file.name) {
+          const nameWithoutExt = file.name.replace(/\.(mp3|wav|m4a|aac)$/i, '');
+          setTitle(nameWithoutExt);
         }
       }
     } catch (error) {
