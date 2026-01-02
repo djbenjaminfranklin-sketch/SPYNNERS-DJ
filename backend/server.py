@@ -724,7 +724,9 @@ async def base44_list_entities(
     genre: Optional[str] = None,
     energy_level: Optional[str] = None,
     is_vip: Optional[str] = None,
-    search: Optional[str] = None
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    uploaded_by: Optional[str] = None
 ):
     """Proxy entity list request to Base44"""
     try:
@@ -747,6 +749,10 @@ async def base44_list_entities(
             params["is_vip"] = is_vip
         if search:
             params["search"] = search
+        if status:
+            params["status"] = status
+        if uploaded_by:
+            params["uploaded_by"] = uploaded_by
             
         async with httpx.AsyncClient(timeout=30.0) as http_client:
             response = await http_client.get(
