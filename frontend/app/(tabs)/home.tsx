@@ -360,8 +360,28 @@ export default function HomeScreen() {
   };
 
   // Notification state
-  const [hasNotifications, setHasNotifications] = React.useState(true);
-  const [notificationCount, setNotificationCount] = React.useState(3);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  
+  // Load notifications count
+  useEffect(() => {
+    loadNotifications();
+  }, [user]);
+
+  const loadNotifications = async () => {
+    try {
+      const userId = user?.id || user?._id || '';
+      if (userId) {
+        const count = await base44Notifications2.getUnreadCount(userId);
+        setNotificationCount(count);
+      }
+    } catch (error) {
+      console.error('[Home] Error loading notifications:', error);
+    }
+  };
+
+  // Get current language info
+  const currentLang = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
 
   return (
     <View style={styles.container}>
@@ -375,14 +395,11 @@ export default function HomeScreen() {
           {/* Language Selector */}
           <TouchableOpacity 
             style={styles.langButton}
-            onPress={() => {
-              // Toggle language
-              const newLang = t('language') === 'FR' ? 'en' : 'fr';
-              // Language change handled by context
-            }}
+            onPress={() => setShowLanguageModal(true)}
           >
-            <Ionicons name="language" size={20} color={Colors.text} />
-            <Text style={styles.langText}>{t('language') === 'FR' ? 'FR' : 'EN'}</Text>
+            <Text style={styles.langFlag}>{currentLang.flag}</Text>
+            <Text style={styles.langText}>{currentLang.code.toUpperCase()}</Text>
+            <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
           </TouchableOpacity>
           
           {/* Notification Bell */}
@@ -391,7 +408,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/(tabs)/received')}
           >
             <Ionicons name="notifications-outline" size={24} color={Colors.text} />
-            {hasNotifications && notificationCount > 0 && (
+            {notificationCount > 0 && (
               <View style={styles.notificationBadge}>
                 <Text style={styles.notificationBadgeText}>
                   {notificationCount > 9 ? '9+' : notificationCount}
