@@ -199,6 +199,8 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'Succès',
     'common.search': 'Rechercher',
     'common.noResults': 'Aucun résultat',
+    'common.language': 'Langue',
+    'common.selectLanguage': 'Sélectionnez votre langue',
     
     // Menu items
     'menu.myUploads': 'Mes Uploads',
