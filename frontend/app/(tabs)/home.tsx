@@ -24,19 +24,21 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const MENU_ITEM_SIZE = 64;
+const MENU_ITEM_SIZE = (SCREEN_WIDTH - 24 - 40) / 5; // 5 items per row with spacing
 
-// Menu items with colors matching spynners.com
-const USER_MENU_ITEMS = [
+// Menu items with colors matching spynners.com - 2 rows
+const USER_MENU_ITEMS_ROW1 = [
   { id: 'my-uploads', label: 'My Uploads', icon: 'cloud-upload', colors: ['#9C27B0', '#7B1FA2'], route: '/(tabs)/library' },
   { id: 'profile', label: 'Profile', icon: 'person', colors: ['#9C27B0', '#7B1FA2'], route: '/(tabs)/profile' },
   { id: 'chat', label: 'Chat', icon: 'chatbubbles', colors: ['#673AB7', '#512DA8'], route: '/(tabs)/chat' },
   { id: 'received', label: 'Received', icon: 'mail', colors: ['#2196F3', '#1976D2'], route: '/(tabs)/received' },
   { id: 'playlists', label: 'Playlists', icon: 'list', colors: ['#4CAF50', '#388E3C'], route: '/(tabs)/playlist' },
+];
+
+const USER_MENU_ITEMS_ROW2 = [
   { id: 'analytics', label: 'Analytics', icon: 'bar-chart', colors: ['#FF9800', '#F57C00'], route: '/profile/analytics' },
   { id: 'rankings', label: 'Rankings', icon: 'trending-up', colors: ['#E91E63', '#C2185B'], route: '/profile/rankings' },
   { id: 'live-radar', label: 'Live Radar', icon: 'radio', colors: ['#3F51B5', '#303F9F'], route: '/profile/radar' },
-  { id: 'forum', label: 'Forum', icon: 'people', colors: ['#9C27B0', '#7B1FA2'], route: '/profile/forum' },
   { id: 'vip', label: 'V.I.P.', icon: 'diamond', colors: ['#7C4DFF', '#651FFF'], route: '/profile/vip', highlight: true },
   { id: 'clubs', label: 'Clubs', icon: 'location', colors: ['#E040FB', '#AA00FF'], route: '/profile/clubs' },
 ];
@@ -121,9 +123,20 @@ export default function HomeScreen() {
       const result = await base44Tracks.list(filters);
       console.log('[Home] Tracks loaded:', result?.length || 0);
       
-      // Use real tracks if available, otherwise show demo tracks
+      // Filter only approved tracks and use real tracks if available
       if (result && result.length > 0) {
-        setTracks(result);
+        // Filter approved tracks only
+        const approvedTracks = result.filter((track: Track) => 
+          track.is_approved === true || track.status === 'approved'
+        );
+        console.log('[Home] Approved tracks:', approvedTracks.length);
+        
+        if (approvedTracks.length > 0) {
+          setTracks(approvedTracks);
+        } else {
+          // If no approved tracks, show all tracks (fallback)
+          setTracks(result);
+        }
       } else {
         console.log('[Home] No tracks from API, showing demo tracks');
         setTracks(getDemoTracks());
@@ -147,7 +160,11 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       const result = await base44Tracks.search(searchQuery);
-      setTracks(result || []);
+      // Filter approved tracks only
+      const approvedTracks = (result || []).filter((track: Track) => 
+        track.is_approved === true || track.status === 'approved'
+      );
+      setTracks(approvedTracks.length > 0 ? approvedTracks : result || []);
     } catch (error) {
       console.error('Search error:', error);
     } finally {
@@ -242,6 +259,16 @@ export default function HomeScreen() {
     ]);
   };
 
+  // Navigate to SPYN Detection
+  const handleSpynDetection = () => {
+    router.push('/(tabs)/spyn');
+  };
+
+  // Navigate to SPYN Record
+  const handleSpynRecord = () => {
+    router.push('/(tabs)/spyn');
+  };
+
   // Render star rating
   const renderRating = (rating: number = 0) => {
     const stars = [];
@@ -285,6 +312,34 @@ export default function HomeScreen() {
     </View>
   );
 
+  // Render menu item
+  const renderMenuItem = (item: any) => (
+    <TouchableOpacity
+      key={item.id}
+      style={[styles.menuItem, item.highlight && styles.menuItemHighlight]}
+      onPress={() => router.push(item.route as any)}
+      activeOpacity={0.8}
+    >
+      <LinearGradient colors={item.colors} style={styles.menuItemGradient}>
+        <Ionicons name={item.icon as any} size={18} color="#fff" />
+        <Text style={styles.menuItemLabel} numberOfLines={1}>{item.label}</Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+
+  // Get cover image URL with fallback
+  const getCoverImageUrl = (track: Track): string | null => {
+    if (track.cover_image) {
+      // If it's already a full URL, use it
+      if (track.cover_image.startsWith('http')) {
+        return track.cover_image;
+      }
+      // If it's a Base44 file reference, construct the URL
+      return `https://app.base44.com/api/apps/691a4d96d819355b52c063f3/storage/files/${track.cover_image}`;
+    }
+    return null;
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -292,27 +347,34 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
         contentContainerStyle={{ paddingBottom: currentTrack ? 120 : 20 }}
       >
-        {/* User Menu - Horizontal Scroll */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.menuScroll}
-          contentContainerStyle={styles.menuContent}
-        >
-          {USER_MENU_ITEMS.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.menuItem, item.highlight && styles.menuItemHighlight]}
-              onPress={() => router.push(item.route as any)}
-              activeOpacity={0.8}
-            >
-              <LinearGradient colors={item.colors} style={styles.menuItemGradient}>
-                <Ionicons name={item.icon as any} size={20} color="#fff" />
-                <Text style={styles.menuItemLabel}>{item.label}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        {/* SPYN Buttons - Two round buttons */}
+        <View style={styles.spynButtonsContainer}>
+          <TouchableOpacity style={styles.spynButton} onPress={handleSpynDetection} activeOpacity={0.8}>
+            <LinearGradient colors={['#9C27B0', '#7B1FA2']} style={styles.spynButtonGradient}>
+              <Ionicons name="radio" size={28} color="#fff" />
+              <Text style={styles.spynButtonText}>SPYN</Text>
+              <Text style={styles.spynButtonSubtext}>Détection</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.spynButton} onPress={handleSpynRecord} activeOpacity={0.8}>
+            <LinearGradient colors={['#E91E63', '#C2185B']} style={styles.spynButtonGradient}>
+              <Ionicons name="mic" size={28} color="#fff" />
+              <Text style={styles.spynButtonText}>SPYN</Text>
+              <Text style={styles.spynButtonSubtext}>Record</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        {/* User Menu - Two Rows Grid */}
+        <View style={styles.menuContainer}>
+          <View style={styles.menuRow}>
+            {USER_MENU_ITEMS_ROW1.map(renderMenuItem)}
+          </View>
+          <View style={styles.menuRow}>
+            {USER_MENU_ITEMS_ROW2.map(renderMenuItem)}
+          </View>
+        </View>
 
         {/* Search & Filters */}
         <View style={styles.searchSection}>
@@ -340,7 +402,7 @@ export default function HomeScreen() {
           >
             <LinearGradient colors={['#FF9800', '#F57C00']} style={styles.vipButtonGradient}>
               <Ionicons name="diamond" size={14} color="#fff" />
-              <Text style={styles.vipButtonText}>TRACK V.I.P.</Text>
+              <Text style={styles.vipButtonText}>V.I.P.</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -350,10 +412,6 @@ export default function HomeScreen() {
           <FilterDropdown value={selectedGenre} options={GENRES} show={showGenreFilter} setShow={setShowGenreFilter} onSelect={setSelectedGenre} />
           <FilterDropdown value={selectedEnergy} options={ENERGY_LEVELS} show={showEnergyFilter} setShow={setShowEnergyFilter} onSelect={setSelectedEnergy} />
           <FilterDropdown value={selectedSort} options={SORT_OPTIONS} show={showSortFilter} setShow={setShowSortFilter} onSelect={setSelectedSort} />
-          <TouchableOpacity style={styles.rankingsButton}>
-            <Ionicons name="trophy" size={16} color={Colors.primary} />
-            <Text style={styles.rankingsText}>Rankings</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Track List */}
@@ -371,6 +429,7 @@ export default function HomeScreen() {
           tracks.map((track) => {
             const trackId = track.id || track._id || '';
             const isCurrentTrack = currentTrack && (currentTrack.id || currentTrack._id) === trackId;
+            const coverUrl = getCoverImageUrl(track);
             
             return (
               <View key={trackId} style={[styles.trackCard, isCurrentTrack && styles.trackCardActive]}>
@@ -380,8 +439,13 @@ export default function HomeScreen() {
                 </TouchableOpacity>
                 
                 <View style={styles.trackCover}>
-                  {track.cover_image ? (
-                    <Image source={{ uri: track.cover_image }} style={styles.coverImage} />
+                  {coverUrl ? (
+                    <Image 
+                      source={{ uri: coverUrl }} 
+                      style={styles.coverImage}
+                      defaultSource={require('../../assets/images/default-cover.png')}
+                      onError={(e) => console.log('[Cover] Error loading:', coverUrl, e.nativeEvent.error)}
+                    />
                   ) : (
                     <View style={styles.coverPlaceholder}>
                       <Ionicons name="musical-notes" size={20} color={Colors.textMuted} />
@@ -430,8 +494,8 @@ export default function HomeScreen() {
           <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.playerGradient}>
             {/* Track Info */}
             <View style={styles.playerLeft}>
-              {currentTrack.cover_image ? (
-                <Image source={{ uri: currentTrack.cover_image }} style={styles.playerCover} />
+              {getCoverImageUrl(currentTrack) ? (
+                <Image source={{ uri: getCoverImageUrl(currentTrack)! }} style={styles.playerCover} />
               ) : (
                 <View style={[styles.playerCover, styles.playerCoverPlaceholder]}>
                   <Ionicons name="musical-notes" size={20} color={Colors.textMuted} />
@@ -509,6 +573,7 @@ function getDemoTracks(): Track[] {
       bpm: 128, 
       rating: 3.5, 
       is_vip: false,
+      is_approved: true,
       cover_image: 'https://picsum.photos/seed/track1/200/200',
     },
     { 
@@ -519,6 +584,7 @@ function getDemoTracks(): Track[] {
       bpm: 124, 
       rating: 5, 
       is_vip: true,
+      is_approved: true,
       cover_image: 'https://picsum.photos/seed/track2/200/200',
     },
     { 
@@ -529,6 +595,7 @@ function getDemoTracks(): Track[] {
       bpm: 122, 
       rating: 4, 
       is_vip: true,
+      is_approved: true,
       cover_image: 'https://picsum.photos/seed/track3/200/200',
     },
     { 
@@ -538,6 +605,7 @@ function getDemoTracks(): Track[] {
       genre: 'Deep House', 
       bpm: 118, 
       rating: 5,
+      is_approved: true,
       cover_image: 'https://picsum.photos/seed/track4/200/200',
     },
     { 
@@ -547,6 +615,7 @@ function getDemoTracks(): Track[] {
       genre: 'Tech House', 
       bpm: 128, 
       rating: 4,
+      is_approved: true,
       cover_image: 'https://picsum.photos/seed/track5/200/200',
     },
     { 
@@ -557,6 +626,7 @@ function getDemoTracks(): Track[] {
       bpm: 122, 
       rating: 4.5,
       is_vip: true,
+      is_approved: true,
       cover_image: 'https://picsum.photos/seed/track6/200/200',
     },
   ];
@@ -566,13 +636,66 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   scrollView: { flex: 1 },
   
-  // Menu Horizontal
-  menuScroll: { marginTop: 50 },
-  menuContent: { paddingHorizontal: 12, gap: 8, paddingVertical: 8 },
-  menuItem: { width: MENU_ITEM_SIZE, height: MENU_ITEM_SIZE, borderRadius: 10, overflow: 'hidden' },
+  // SPYN Buttons
+  spynButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+  },
+  spynButton: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    overflow: 'hidden',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  spynButtonGradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 10,
+  },
+  spynButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  spynButtonSubtext: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  
+  // Menu Grid - Two Rows
+  menuContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  menuRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  menuItem: { 
+    flex: 1,
+    aspectRatio: 1,
+    maxWidth: MENU_ITEM_SIZE, 
+    borderRadius: 10, 
+    overflow: 'hidden' 
+  },
   menuItemHighlight: { borderWidth: 2, borderColor: Colors.primary },
   menuItemGradient: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 4 },
-  menuItemLabel: { color: '#fff', fontSize: 9, fontWeight: '600', marginTop: 4, textAlign: 'center' },
+  menuItemLabel: { color: '#fff', fontSize: 8, fontWeight: '600', marginTop: 3, textAlign: 'center' },
   
   // Search
   searchSection: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 10, gap: 10 },
@@ -593,8 +716,6 @@ const styles = StyleSheet.create({
   filterOptionSelected: { backgroundColor: Colors.primary + '20' },
   filterOptionText: { color: Colors.text, fontSize: 12 },
   filterOptionTextSelected: { color: Colors.primary, fontWeight: '600' },
-  rankingsButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.backgroundCard, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 10, gap: 4, borderWidth: 1, borderColor: Colors.primary },
-  rankingsText: { color: Colors.text, fontSize: 11 },
   
   // Loading/Empty
   loadingContainer: { padding: 60, alignItems: 'center' },
@@ -606,7 +727,7 @@ const styles = StyleSheet.create({
   trackCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 12, marginBottom: 10, padding: 10, backgroundColor: Colors.backgroundCard, borderRadius: 12, borderWidth: 1, borderColor: Colors.primary + '40', gap: 10 },
   trackCardActive: { borderColor: Colors.primary, backgroundColor: Colors.primary + '10' },
   playButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
-  trackCover: { width: 50, height: 50, borderRadius: 8, overflow: 'hidden' },
+  trackCover: { width: 50, height: 50, borderRadius: 8, overflow: 'hidden', backgroundColor: Colors.border },
   coverImage: { width: '100%', height: '100%' },
   coverPlaceholder: { width: '100%', height: '100%', backgroundColor: Colors.border, justifyContent: 'center', alignItems: 'center' },
   trackInfo: { flex: 1, minWidth: 0 },
