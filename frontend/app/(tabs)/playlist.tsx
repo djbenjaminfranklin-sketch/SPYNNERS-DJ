@@ -350,18 +350,18 @@ export default function PlaylistScreen() {
 
             {/* Track List */}
             <View style={styles.trackListContainer}>
-              <Text style={styles.trackListTitle}>Tracks</Text>
+              <Text style={styles.trackListTitle}>{t('playlist.tracks')}</Text>
               
               {loadingTracks ? (
                 <View style={styles.trackListLoading}>
                   <ActivityIndicator size="small" color={Colors.primary} />
-                  <Text style={styles.trackListLoadingText}>Loading tracks...</Text>
+                  <Text style={styles.trackListLoadingText}>{t('playlist.loadingTracks')}</Text>
                 </View>
               ) : playlistTracks.length === 0 ? (
                 <View style={styles.trackListEmpty}>
                   <Ionicons name="musical-notes-outline" size={40} color={Colors.textMuted} />
-                  <Text style={styles.trackListEmptyText}>No tracks in this playlist</Text>
-                  <Text style={styles.trackListEmptySubtext}>Add tracks from the home screen</Text>
+                  <Text style={styles.trackListEmptyText}>{t('playlist.noTracksInPlaylist')}</Text>
+                  <Text style={styles.trackListEmptySubtext}>{t('playlist.addTracksHint')}</Text>
                 </View>
               ) : (
                 <ScrollView style={styles.trackList} showsVerticalScrollIndicator={false}>
