@@ -784,7 +784,46 @@ async def base44_invoke_function(
         }
         if authorization:
             headers["Authorization"] = authorization
+        
+        # For backend functions like nativeGetAllUsers, use the app's domain
+        # instead of the platform API
+        if function_name in ["nativeGetAllUsers", "listUsers"]:
+            # Try calling via the app's subdomain
+            app_function_url = f"https://spynners.com/api/{function_name}"
             
+            async with httpx.AsyncClient(timeout=30.0) as http_client:
+                response = await http_client.post(
+                    app_function_url,
+                    json=request_body,
+                    headers=headers
+                )
+                
+                if response.status_code == 200:
+                    return response.json()
+                # If POST doesn't work, try GET with query params
+                elif response.status_code in [405, 404]:
+                    # Try GET request
+                    params = {}
+                    if request_body.get("search"):
+                        params["search"] = request_body["search"]
+                    if request_body.get("limit"):
+                        params["limit"] = request_body["limit"]
+                    if request_body.get("offset"):
+                        params["offset"] = request_body["offset"]
+                    
+                    response = await http_client.get(
+                        app_function_url,
+                        params=params,
+                        headers=headers
+                    )
+                    
+                    if response.status_code == 200:
+                        return response.json()
+                    else:
+                        # Fall through to standard API call
+                        pass
+        
+        # Standard Base44 function invocation
         async with httpx.AsyncClient(timeout=30.0) as http_client:
             response = await http_client.post(
                 f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/functions/invoke/{function_name}",
