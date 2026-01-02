@@ -800,11 +800,13 @@ async def base44_invoke_function(
         if authorization:
             headers["Authorization"] = authorization
         
-        # For backend functions like nativeGetAllUsers, use the app's domain
-        # instead of the platform API
+        # For backend functions like nativeGetAllUsers, use the app's functions endpoint
         if function_name in ["nativeGetAllUsers", "listUsers"]:
-            # Try calling via the app's subdomain
-            app_function_url = f"https://spynners.com/api/{function_name}"
+            # Use the correct Base44 app functions URL
+            app_function_url = f"https://{BASE44_APP_ID}.app.base44.com/functions/{function_name}"
+            print(f"[Base44] Calling function URL: {app_function_url}")
+            print(f"[Base44] Request body: {request_body}")
+            print(f"[Base44] Auth header present: {bool(authorization)}")
             
             async with httpx.AsyncClient(timeout=30.0) as http_client:
                 response = await http_client.post(
@@ -813,32 +815,17 @@ async def base44_invoke_function(
                     headers=headers
                 )
                 
+                print(f"[Base44] Response status: {response.status_code}")
+                
                 if response.status_code == 200:
-                    return response.json()
-                # If POST doesn't work, try GET with query params
-                elif response.status_code in [405, 404]:
-                    # Try GET request
-                    params = {}
-                    if request_body.get("search"):
-                        params["search"] = request_body["search"]
-                    if request_body.get("limit"):
-                        params["limit"] = request_body["limit"]
-                    if request_body.get("offset"):
-                        params["offset"] = request_body["offset"]
-                    
-                    response = await http_client.get(
-                        app_function_url,
-                        params=params,
-                        headers=headers
-                    )
-                    
-                    if response.status_code == 200:
-                        return response.json()
-                    else:
-                        # Fall through to standard API call
-                        pass
+                    result = response.json()
+                    print(f"[Base44] Success! Got response with keys: {list(result.keys()) if isinstance(result, dict) else 'array'}")
+                    return result
+                else:
+                    print(f"[Base44] Function error: {response.status_code} - {response.text[:500]}")
+                    # Fall through to try standard API
         
-        # Standard Base44 function invocation
+        # Standard Base44 function invocation via platform API
         async with httpx.AsyncClient(timeout=30.0) as http_client:
             response = await http_client.post(
                 f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/functions/invoke/{function_name}",
