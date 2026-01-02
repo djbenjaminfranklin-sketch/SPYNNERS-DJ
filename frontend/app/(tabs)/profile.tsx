@@ -316,6 +316,7 @@ const styles = StyleSheet.create({
   },
   name: { fontSize: 24, fontWeight: 'bold', color: Colors.text, marginBottom: 4 },
   email: { fontSize: 14, color: Colors.textSecondary },
+  userType: { fontSize: 12, color: Colors.primary, marginTop: 4, textTransform: 'capitalize' },
   adminLabel: {
     marginTop: 8,
     fontSize: 12,
