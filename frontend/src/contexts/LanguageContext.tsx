@@ -180,16 +180,31 @@ const translations: Record<Language, Record<string, string>> = {
     'userType.producer': 'Producteur',
     'userType.producerDesc': 'Je produis de la musique',
     'userType.djProducer': 'DJ & Producteur',
-    'userType.djProducerDesc': 'Je joue et je produis',
+    'userType.djProducerDesc': 'Je joue et produis',
     'userType.label': 'Label',
     'userType.labelDesc': 'Je représente un label musical',
     
     // Navigation
     'nav.home': 'Accueil',
-    'nav.library': 'Bibliothèque',
+    'nav.library': 'Mes Uploads',
+    'nav.playlist': 'Playlists',
+    'nav.received': 'Reçus',
     'nav.spyn': 'SPYN',
     'nav.chat': 'Chat',
     'nav.profile': 'Profil',
+    'nav.upload': 'Uploader un Track',
+    
+    // Page titles
+    'page.myUploads': 'Mes Uploads',
+    'page.myPlaylists': 'Mes Playlists', 
+    'page.receivedTracks': 'Tracks Reçus',
+    'page.chat': 'Messages',
+    'page.uploadTrack': 'Uploader un Track',
+    'page.noTracks': 'Aucun track',
+    'page.noPlaylists': 'Aucune playlist',
+    'page.noReceivedTracks': 'Aucun track reçu',
+    'page.createPlaylist': 'Créer une Playlist',
+    'page.playlistName': 'Nom de la Playlist',
     
     // SPYN
     'spyn.detection': 'DETECTION',
