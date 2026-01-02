@@ -35,7 +35,6 @@
     "expo-linking": "~7.1.7",
     "expo-location": "^19.0.8",
     "expo-media-library": "^18.2.1",
-    "expo-music-info": "^1.0.1",
     "expo-router": "~5.1.4",
     "expo-secure-store": "^15.0.8",
     "expo-sharing": "^14.0.8",
