@@ -199,7 +199,7 @@ export default function LibraryScreen() {
         <View style={styles.emptyContainer}>
           <Ionicons name="cloud-upload-outline" size={80} color={Colors.textMuted} />
           <Text style={styles.emptyTitle}>{t('page.noTracks')}</Text>
-          <Text style={styles.emptySubtitle}>{t('upload.firstTrackHint') || 'Upload your first track to get started'}</Text>
+          <Text style={styles.emptySubtitle}>{t('upload.firstTrackHint')}</Text>
           <TouchableOpacity 
             style={styles.emptyButton}
             onPress={() => router.push('/(tabs)/upload')}
