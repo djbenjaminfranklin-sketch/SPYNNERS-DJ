@@ -618,6 +618,31 @@ export const base44Notifications = {
       throw error;
     }
   },
+
+  async getLiveTrackPlays(producerId?: string): Promise<any[]> {
+    try {
+      console.log('[LiveRadar] Fetching live track plays for producer:', producerId || 'all');
+      const response = await api.post('/api/base44/functions/invoke/getLiveTrackPlays', {
+        producerId: producerId || null,
+      });
+      console.log('[LiveRadar] Live plays fetched:', response.data);
+      
+      // Handle different response formats
+      if (Array.isArray(response.data)) {
+        return response.data;
+      }
+      if (response.data?.plays) {
+        return response.data.plays;
+      }
+      if (response.data?.data) {
+        return response.data.data;
+      }
+      return [];
+    } catch (error) {
+      console.error('[LiveRadar] Error fetching live track plays:', error);
+      return [];
+    }
+  },
 };
 
 // Export default api object
