@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import { base44Tracks, base44Messages, base44Users, Track, Message } from '../../src/services/base44Api';
+import { base44Messages, base44Users, Message } from '../../src/services/base44Api';
 import { useAuth } from '../../src/contexts/AuthContext';
 
 interface Member {
