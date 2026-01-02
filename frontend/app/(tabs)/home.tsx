@@ -294,35 +294,6 @@ export default function HomeScreen() {
     return <View style={styles.ratingContainer}>{stars}</View>;
   };
 
-  // Seek to position - improved with logging
-  const seekToPosition = async (event: any) => {
-    if (!sound || playbackDuration === 0) {
-      console.log('[Player] Cannot seek - no sound or duration');
-      return;
-    }
-    
-    const { locationX } = event.nativeEvent;
-    const progressBarWidth = 80;
-    const percentage = Math.max(0, Math.min(1, locationX / progressBarWidth));
-    const newPosition = Math.floor(percentage * playbackDuration);
-    
-    console.log('[Player] Seeking to:', newPosition, 'ms (', Math.round(percentage * 100), '%)');
-    
-    try {
-      await sound.setPositionAsync(newPosition);
-      setPlaybackPosition(newPosition);
-    } catch (error) {
-      console.error('[Player] Seek error:', error);
-    }
-  };
-
-  const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  };
-
   // Filter dropdown
   const FilterDropdown = ({ value, options, show, setShow, onSelect }: any) => (
     <View style={styles.filterDropdown}>
