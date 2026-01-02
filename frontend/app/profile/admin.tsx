@@ -19,6 +19,7 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 
 type PendingTrack = {
   id: string;
