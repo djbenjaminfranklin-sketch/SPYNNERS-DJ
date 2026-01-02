@@ -37,6 +37,14 @@ except ImportError:
     MUTAGEN_AVAILABLE = False
     print("Warning: mutagen not available, MP3 metadata extraction disabled")
 
+# For automatic BPM detection
+try:
+    import librosa
+    LIBROSA_AVAILABLE = True
+except ImportError:
+    LIBROSA_AVAILABLE = False
+    print("Warning: librosa not available, automatic BPM detection disabled")
+
 load_dotenv()
 
 app = FastAPI(title="SPYNNERS API", version="1.0.0")
