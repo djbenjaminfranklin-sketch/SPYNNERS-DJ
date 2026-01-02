@@ -161,7 +161,7 @@ export default function LiveRadarScreen() {
             <View style={styles.liveDot} />
             <Text style={styles.liveText}>LIVE</Text>
           </View>
-          <Text style={styles.headerTitle}>Live Radar</Text>
+          <Text style={styles.headerTitle}>{t('radar.title')}</Text>
         </View>
         <View style={{ width: 40 }} />
       </LinearGradient>
