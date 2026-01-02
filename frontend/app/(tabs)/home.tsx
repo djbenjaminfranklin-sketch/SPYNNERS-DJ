@@ -443,8 +443,7 @@ export default function HomeScreen() {
                     <Image 
                       source={{ uri: coverUrl }} 
                       style={styles.coverImage}
-                      defaultSource={require('../../assets/images/default-cover.png')}
-                      onError={(e) => console.log('[Cover] Error loading:', coverUrl, e.nativeEvent.error)}
+                      onError={(e) => console.log('[Cover] Error loading:', coverUrl)}
                     />
                   ) : (
                     <View style={styles.coverPlaceholder}>
