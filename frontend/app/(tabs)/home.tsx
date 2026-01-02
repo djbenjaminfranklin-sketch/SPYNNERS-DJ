@@ -52,6 +52,19 @@ export default function HomeScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   
+  // Use global player context
+  const { 
+    currentTrack, 
+    isPlaying, 
+    playbackPosition, 
+    playbackDuration, 
+    playTrack: globalPlayTrack, 
+    togglePlayPause, 
+    seekTo,
+    closePlayer,
+    isLoading: playerLoading 
+  } = usePlayer();
+  
   // State
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,13 +82,6 @@ export default function HomeScreen() {
   const [showEnergyFilter, setShowEnergyFilter] = useState(false);
   const [showSortFilter, setShowSortFilter] = useState(false);
   
-  // Audio player
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [playbackPosition, setPlaybackPosition] = useState(0);
-  const [playbackDuration, setPlaybackDuration] = useState(0);
-  
   // Modals
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [selectedTrackForPlaylist, setSelectedTrackForPlaylist] = useState<Track | null>(null);
@@ -87,11 +93,6 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadTracks();
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
   }, []);
 
   useEffect(() => {
