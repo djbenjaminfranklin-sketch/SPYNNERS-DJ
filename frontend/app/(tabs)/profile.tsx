@@ -300,6 +300,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
   },
   avatarText: { fontSize: 36, fontWeight: 'bold', color: '#fff' },
+  avatarImage: { width: 84, height: 84, borderRadius: 42 },
   adminBadge: {
     position: 'absolute',
     bottom: 0,
