@@ -141,7 +141,7 @@ export default function ChatScreen() {
       });
       
       // Convert to array and sort
-      const membersList = Array.from(producerMap.values())
+      const membersList = Array.from(memberMap.values())
         .sort((a, b) => {
           // Sort by unread first, then online, then track count
           if ((a.unreadCount || 0) > 0 && (b.unreadCount || 0) === 0) return -1;
