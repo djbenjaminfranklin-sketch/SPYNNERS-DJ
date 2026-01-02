@@ -133,7 +133,7 @@ export default function VIPScreen() {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Ionicons name="diamond" size={28} color="#FFD700" />
-          <Text style={styles.headerTitle}>V.I.P. Zone</Text>
+          <Text style={styles.headerTitle}>{t('vip.title')}</Text>
         </View>
         <View style={{ width: 40 }} />
       </LinearGradient>
@@ -143,19 +143,19 @@ export default function VIPScreen() {
         <View style={styles.statItem}>
           <Ionicons name="gift" size={20} color={Colors.primary} />
           <Text style={styles.statValue}>{promos.length}</Text>
-          <Text style={styles.statLabel}>Promos</Text>
+          <Text style={styles.statLabel}>{t('vip.promos')}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Ionicons name="musical-notes" size={20} color="#FFD700" />
           <Text style={styles.statValue}>{vipTracks.length}</Text>
-          <Text style={styles.statLabel}>VIP Tracks</Text>
+          <Text style={styles.statLabel}>{t('vip.vipTracks')}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
           <Text style={styles.statValue}>{myPurchases.length}</Text>
-          <Text style={styles.statLabel}>Purchased</Text>
+          <Text style={styles.statLabel}>{t('vip.purchased')}</Text>
         </View>
       </View>
 
@@ -167,7 +167,7 @@ export default function VIPScreen() {
         >
           <Ionicons name="gift" size={18} color={activeTab === 'promos' ? '#FFD700' : Colors.textMuted} />
           <Text style={[styles.tabText, activeTab === 'promos' && styles.tabTextActive]}>
-            VIP Promos
+            {t('vip.promos')}
           </Text>
         </TouchableOpacity>
         
@@ -177,7 +177,7 @@ export default function VIPScreen() {
         >
           <Ionicons name="musical-notes" size={18} color={activeTab === 'tracks' ? '#FFD700' : Colors.textMuted} />
           <Text style={[styles.tabText, activeTab === 'tracks' && styles.tabTextActive]}>
-            VIP Tracks
+            {t('vip.vipTracks')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -192,15 +192,15 @@ export default function VIPScreen() {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FFD700" />
-            <Text style={styles.loadingText}>Loading VIP content...</Text>
+            <Text style={styles.loadingText}>{t('vip.loadingVip')}</Text>
           </View>
         ) : activeTab === 'promos' ? (
           // Promos Tab
           promos.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="gift-outline" size={60} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>No VIP promos available</Text>
-              <Text style={styles.emptySubtext}>Check back later for exclusive offers</Text>
+              <Text style={styles.emptyText}>{t('vip.noPromos')}</Text>
+              <Text style={styles.emptySubtext}>{t('vip.checkBack')}</Text>
             </View>
           ) : (
             promos.map((promo) => {
