@@ -849,6 +849,107 @@ export const base44Messages = {
   },
 };
 
+// ==================== NOTIFICATION SERVICE ====================
+
+export interface Notification {
+  id?: string;
+  _id?: string;
+  user_id: string;
+  type: 'track_played' | 'message' | 'follow' | 'download' | 'vip' | 'system' | string;
+  message: string;
+  read: boolean;
+  track_id?: string;
+  track_title?: string;
+  dj_id?: string;
+  dj_name?: string;
+  sender_id?: string;
+  sender_name?: string;
+  created_at?: string;
+}
+
+export const base44Notifications2 = {
+  async list(userId: string): Promise<Notification[]> {
+    try {
+      const response = await api.get(`/api/base44/entities/Notification?user_id=${userId}&limit=50`);
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      if (data?.items) return data.items;
+      return [];
+    } catch (error) {
+      console.error('[Notifications] Error listing notifications:', error);
+      return [];
+    }
+  },
+
+  async getUnread(userId: string): Promise<Notification[]> {
+    try {
+      const response = await api.get(`/api/base44/entities/Notification?user_id=${userId}&read=false&limit=50`);
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      if (data?.items) return data.items;
+      return [];
+    } catch (error) {
+      console.error('[Notifications] Error getting unread notifications:', error);
+      return [];
+    }
+  },
+
+  async getUnreadCount(userId: string): Promise<number> {
+    try {
+      const notifications = await this.getUnread(userId);
+      return notifications.length;
+    } catch (error) {
+      console.error('[Notifications] Error getting unread count:', error);
+      return 0;
+    }
+  },
+
+  async markAsRead(notificationId: string): Promise<Notification | null> {
+    try {
+      const response = await api.put(`/api/base44/entities/Notification/${notificationId}`, {
+        read: true,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('[Notifications] Error marking notification as read:', error);
+      return null;
+    }
+  },
+
+  async markAllAsRead(userId: string): Promise<void> {
+    try {
+      const unread = await this.getUnread(userId);
+      await Promise.all(unread.map(n => this.markAsRead(n.id || n._id || '')));
+    } catch (error) {
+      console.error('[Notifications] Error marking all as read:', error);
+    }
+  },
+
+  async delete(notificationId: string): Promise<boolean> {
+    try {
+      await api.delete(`/api/base44/entities/Notification/${notificationId}`);
+      return true;
+    } catch (error) {
+      console.error('[Notifications] Error deleting notification:', error);
+      return false;
+    }
+  },
+
+  async create(notification: Partial<Notification>): Promise<Notification | null> {
+    try {
+      const response = await api.post('/api/base44/entities/Notification', {
+        ...notification,
+        read: false,
+        created_at: new Date().toISOString(),
+      });
+      return response.data;
+    } catch (error) {
+      console.error('[Notifications] Error creating notification:', error);
+      return null;
+    }
+  },
+};
+
 // Export default api object
 export default {
   auth: base44Auth,
@@ -858,4 +959,5 @@ export default {
   files: base44Files,
   admin: base44Admin,
   notifications: base44Notifications,
+  notifications2: base44Notifications2,
 };
