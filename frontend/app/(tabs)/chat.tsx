@@ -57,19 +57,21 @@ export default function ChatScreen() {
   const loadMembers = async () => {
     try {
       setLoading(true);
-      console.log('[Chat] Loading all members using Base44 SDK nativeGetAllUsers...');
+      console.log('[Chat] Loading all members...');
       
       const userId = user?.id || user?._id || '';
       
-      // Use the Base44 SDK to invoke nativeGetAllUsers function directly
+      // Try multiple approaches to get users
       let allUsers: any[] = [];
-      let offset = 0;
-      const pageSize = 100;
-      let hasMore = true;
       
-      while (hasMore) {
-        try {
-          console.log(`[Chat] Fetching users batch at offset ${offset}...`);
+      // Approach 1: Try the Base44 SDK nativeGetAllUsers function
+      try {
+        console.log('[Chat] Trying SDK nativeGetAllUsers...');
+        let offset = 0;
+        const pageSize = 100;
+        let hasMore = true;
+        
+        while (hasMore && offset < 2000) {
           const result = await invokeBase44Function('nativeGetAllUsers', {
             search: '',
             limit: pageSize,
@@ -88,31 +90,55 @@ export default function ChatScreen() {
             users = result.data;
           }
           
-          console.log(`[Chat] Got ${users.length} users at offset ${offset}`);
+          console.log(`[Chat] SDK: Got ${users.length} users at offset ${offset}`);
           
           if (users.length > 0) {
             allUsers.push(...users);
             offset += pageSize;
-            
-            // If we got less than page size, we're done
-            if (users.length < pageSize) {
-              hasMore = false;
-            }
-            
-            // Safety limit - max 2000 users
-            if (offset >= 2000) {
-              hasMore = false;
-            }
+            if (users.length < pageSize) hasMore = false;
           } else {
             hasMore = false;
           }
-        } catch (err) {
-          console.error('[Chat] Error fetching users batch:', err);
-          hasMore = false;
+        }
+      } catch (sdkError) {
+        console.log('[Chat] SDK approach failed, will use fallback:', sdkError);
+      }
+      
+      // Approach 2: If SDK didn't work well, try extracting from tracks
+      if (allUsers.length < 50) {
+        console.log('[Chat] Using tracks fallback to get more users...');
+        try {
+          const tracksResponse = await base44Tracks.list({ limit: 500 });
+          const trackUsers = new Map<string, any>();
+          
+          tracksResponse.forEach((track: any) => {
+            const producerId = track.producer_id || track.created_by_id || track.uploaded_by || '';
+            const producerName = track.producer_name || track.artist_name || 'Unknown';
+            
+            if (producerId && !trackUsers.has(producerId)) {
+              trackUsers.set(producerId, {
+                id: producerId,
+                _id: producerId,
+                full_name: producerName,
+                user_type: 'producer',
+              });
+            }
+          });
+          
+          // Merge with SDK results
+          trackUsers.forEach((user, id) => {
+            if (!allUsers.find((u: any) => (u.id || u._id) === id)) {
+              allUsers.push(user);
+            }
+          });
+          
+          console.log(`[Chat] After tracks fallback: ${allUsers.length} total users`);
+        } catch (tracksError) {
+          console.error('[Chat] Tracks fallback error:', tracksError);
         }
       }
       
-      console.log('[Chat] Total users fetched via SDK:', allUsers.length);
+      console.log('[Chat] Total users found:', allUsers.length);
       
       // Get user's messages to find recent conversations
       const userMessages = await base44Messages.list({ receiver_id: userId });
