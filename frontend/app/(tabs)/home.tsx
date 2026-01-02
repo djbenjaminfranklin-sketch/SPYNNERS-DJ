@@ -930,11 +930,11 @@ const styles = StyleSheet.create({
   vipButtonText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   
   // Filters
-  filtersRow: { flexDirection: 'row', paddingHorizontal: 12, paddingBottom: 10, gap: 8 },
-  filterDropdown: { flex: 1, position: 'relative', zIndex: 100 },
+  filtersRow: { flexDirection: 'row', paddingHorizontal: 12, paddingBottom: 10, gap: 8, zIndex: 1000, elevation: 1000 },
+  filterDropdown: { flex: 1, position: 'relative', zIndex: 1000 },
   filterButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.backgroundCard, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 10, borderWidth: 1, borderColor: Colors.primary },
   filterButtonText: { color: Colors.text, fontSize: 11, flex: 1 },
-  filterDropdownList: { position: 'absolute', top: 42, left: 0, right: 0, backgroundColor: Colors.backgroundCard, borderRadius: 6, borderWidth: 1, borderColor: Colors.primary, zIndex: 1000, elevation: 10 },
+  filterDropdownList: { position: 'absolute', top: 42, left: 0, right: 0, backgroundColor: Colors.backgroundCard, borderRadius: 6, borderWidth: 1, borderColor: Colors.primary, zIndex: 2000, elevation: 2000, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   filterOption: { padding: 10, borderBottomWidth: 1, borderBottomColor: Colors.border },
   filterOptionSelected: { backgroundColor: Colors.primary + '20' },
   filterOptionText: { color: Colors.text, fontSize: 12 },
