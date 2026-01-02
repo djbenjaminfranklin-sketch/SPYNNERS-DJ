@@ -44,15 +44,32 @@ const USER_MENU_ITEMS_ROW2 = [
   { id: 'vip', labelKey: 'menu.vip', icon: 'diamond', colors: ['#7C4DFF', '#651FFF'], route: '/profile/vip', highlight: true },
 ];
 
-// Genres and filters
-const GENRES = ['All Genres', 'Afro House', 'Tech House', 'Deep House', 'Melodic House & Techno', 'Progressive House', 'Minimal / Deep Tech', 'Bass House', 'Hard Techno', 'Techno (Peak Time)', 'Funky House'];
-const ENERGY_LEVELS = ['All Energy Levels', 'Low', 'Medium', 'High', 'Very High'];
-const SORT_OPTIONS = ['Recently Added', 'Most Downloaded', 'Top Rated', 'Oldest'];
+// Genres (these are API values, keep in English for filtering)
+const GENRE_VALUES = ['All Genres', 'Afro House', 'Tech House', 'Deep House', 'Melodic House & Techno', 'Progressive House', 'Minimal / Deep Tech', 'Bass House', 'Hard Techno', 'Techno (Peak Time)', 'Funky House'];
+const ENERGY_VALUES = ['All Energy Levels', 'Low', 'Medium', 'High', 'Very High'];
+const SORT_VALUES = ['Recently Added', 'Most Downloaded', 'Top Rated', 'Oldest'];
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const { t, language, setLanguage } = useLanguage();
   const router = useRouter();
+  
+  // Translated filter options
+  const getTranslatedValue = (value: string): string => {
+    const translations: Record<string, string> = {
+      'All Genres': t('filter.allGenres'),
+      'All Energy Levels': t('filter.allEnergy'),
+      'Low': t('filter.low'),
+      'Medium': t('filter.medium'),
+      'High': t('filter.high'),
+      'Very High': t('filter.high') + '+',
+      'Recently Added': t('filter.recentlyAdded'),
+      'Most Downloaded': t('filter.topRated'),
+      'Top Rated': t('filter.topRated'),
+      'Oldest': t('filter.aToZ'),
+    };
+    return translations[value] || value;
+  };
   
   // Use global player context
   const { 
