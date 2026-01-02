@@ -118,7 +118,7 @@ export default function BlackDiamondsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('blackDiamonds')}</Text>
+        <Text style={styles.headerTitle}>{t('profile.blackDiamonds')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -127,7 +127,7 @@ export default function BlackDiamondsScreen() {
         <View style={styles.balanceCard}>
           <Ionicons name="diamond" size={48} color="#FFD700" />
           <Text style={styles.balanceLabel}>
-            {isEnglish ? 'Your balance' : 'Votre solde'}
+            {t('diamonds.yourBalance')}
           </Text>
           <Text style={styles.balanceAmount}>
             {fetchingBalance ? '...' : balance}
@@ -139,15 +139,13 @@ export default function BlackDiamondsScreen() {
         <View style={styles.infoBox}>
           <Ionicons name="information-circle" size={20} color={Colors.primary} />
           <Text style={styles.infoText}>
-            {isEnglish
-              ? 'Black Diamonds allow downloading exclusive VIP tracks and accessing premium content.'
-              : 'Les Black Diamonds permettent de télécharger des tracks VIP exclusives et d\'accéder à du contenu premium.'}
+            {t('diamonds.info')}
           </Text>
         </View>
 
         {/* Packs */}
         <Text style={styles.sectionTitle}>
-          {isEnglish ? 'Buy Diamonds' : 'Acheter des Diamonds'}
+          {t('diamonds.buyDiamonds')}
         </Text>
         
         <View style={styles.packsGrid}>
@@ -164,7 +162,7 @@ export default function BlackDiamondsScreen() {
               {pack.popular && (
                 <View style={styles.popularBadge}>
                   <Text style={styles.popularBadgeText}>
-                    {isEnglish ? 'POPULAR' : 'POPULAIRE'}
+                    {t('diamonds.popular')}
                   </Text>
                 </View>
               )}
@@ -193,14 +191,14 @@ export default function BlackDiamondsScreen() {
           )}
           <Text style={styles.purchaseButtonText}>
             {loading 
-              ? (isEnglish ? 'Processing...' : 'Traitement...') 
-              : (isEnglish ? 'Buy Now' : 'Acheter maintenant')}
+              ? t('diamonds.processing') 
+              : t('diamonds.buyNow')}
           </Text>
         </TouchableOpacity>
 
         {/* Features */}
         <Text style={styles.sectionTitle}>
-          {isEnglish ? 'VIP Benefits' : 'Avantages VIP'}
+          {t('diamonds.vipBenefits')}
         </Text>
         
         <View style={styles.featuresList}>
@@ -208,10 +206,10 @@ export default function BlackDiamondsScreen() {
             <Ionicons name="download" size={24} color={Colors.primary} />
             <View style={styles.featureText}>
               <Text style={styles.featureTitle}>
-                {isEnglish ? 'VIP Downloads' : 'Téléchargements VIP'}
+                {t('diamonds.vipDownloads')}
               </Text>
               <Text style={styles.featureDesc}>
-                {isEnglish ? 'Access exclusive tracks' : 'Accédez aux tracks exclusives'}
+                {t('diamonds.accessExclusive')}
               </Text>
             </View>
           </View>
@@ -220,10 +218,10 @@ export default function BlackDiamondsScreen() {
             <Ionicons name="star" size={24} color={Colors.primary} />
             <View style={styles.featureText}>
               <Text style={styles.featureTitle}>
-                {isEnglish ? 'Premium Content' : 'Contenu Premium'}
+                {t('diamonds.premiumContent')}
               </Text>
               <Text style={styles.featureDesc}>
-                {isEnglish ? 'Tracks before everyone' : 'Tracks avant tout le monde'}
+                {t('diamonds.tracksBeforeEveryone')}
               </Text>
             </View>
           </View>
@@ -232,10 +230,10 @@ export default function BlackDiamondsScreen() {
             <Ionicons name="heart" size={24} color={Colors.primary} />
             <View style={styles.featureText}>
               <Text style={styles.featureTitle}>
-                {isEnglish ? 'Support Artists' : 'Soutien aux artistes'}
+                {t('diamonds.supportArtists')}
               </Text>
               <Text style={styles.featureDesc}>
-                {isEnglish ? 'Support producers' : 'Soutenez les producteurs'}
+                {t('diamonds.supportProducers')}
               </Text>
             </View>
           </View>
