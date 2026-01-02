@@ -114,6 +114,7 @@ const translations: Record<Language, Record<string, string>> = {
     'upload.legalAgreements': 'Legal Agreements',
     'upload.rightsConfirm': 'I confirm that I own or have the rights to upload this track',
     'upload.freeDownload': 'I authorize free download for promotional purposes on SPYNNERS',
+    'upload.firstTrackHint': 'Upload your first track to get started',
     
     // SPYN
     'spyn.detection': 'DETECTION',
