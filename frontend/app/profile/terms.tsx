@@ -23,7 +23,7 @@ export default function TermsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('termsOfUse')}</Text>
+        <Text style={styles.headerTitle}>{t('terms.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
