@@ -90,6 +90,13 @@ export default function HomeScreen() {
   const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   
+  // Send track modal states
+  const [showSendTrackModal, setShowSendTrackModal] = useState(false);
+  const [selectedTrackForSend, setSelectedTrackForSend] = useState<Track | null>(null);
+  const [membersList, setMembersList] = useState<any[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  
   // Animation for player
   const playerAnim = useRef(new Animated.Value(0)).current;
 
