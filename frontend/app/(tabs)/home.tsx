@@ -606,7 +606,7 @@ export default function HomeScreen() {
           />
           <FilterDropdown 
             value={selectedEnergy} 
-            options={ENERGY_LEVELS} 
+            options={ENERGY_VALUES} 
             show={showEnergyFilter} 
             setShow={setShowEnergyFilter} 
             onSelect={setSelectedEnergy}
