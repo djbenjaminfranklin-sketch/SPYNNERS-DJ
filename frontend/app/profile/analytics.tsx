@@ -27,32 +27,20 @@ export default function AnalyticsScreen() {
   const loadAnalytics = async () => {
     try {
       setLoading(true);
-      const userId = user?.id || user?._id || '';
       
-      if (!userId) {
-        setLoading(false);
-        return;
-      }
-
-      // Get all tracks
+      // Get all approved tracks
       const allTracks = await base44Tracks.list({ limit: 200 });
       
-      // Filter to get user's tracks
-      const myTracks = allTracks.filter((track: Track) => 
-        track.created_by_id === userId || 
-        track.producer_id === userId ||
-        track.uploaded_by === userId
-      );
+      // Filter only approved tracks
+      const approvedTracks = allTracks.filter((track: any) => track.status === 'approved');
 
-      // Calculate stats
+      // Calculate stats for ALL approved tracks
       let totalPlays = 0;
       let totalDownloads = 0;
       let totalRating = 0;
       let ratingCount = 0;
-      let approvedCount = 0;
-      let pendingCount = 0;
 
-      myTracks.forEach((track: any) => {
+      approvedTracks.forEach((track: any) => {
         totalPlays += track.play_count || 0;
         totalDownloads += track.download_count || 0;
         
@@ -60,21 +48,18 @@ export default function AnalyticsScreen() {
           totalRating += track.average_rating || track.rating || 0;
           ratingCount++;
         }
-
-        if (track.status === 'approved') {
-          approvedCount++;
-        } else if (track.status === 'pending') {
-          pendingCount++;
-        }
       });
 
+      // Count by status
+      const pendingTracks = allTracks.filter((t: any) => t.status === 'pending').length;
+
       setStats({
-        totalTracks: myTracks.length,
+        totalTracks: approvedTracks.length,
         totalPlays,
         totalDownloads,
         averageRating: ratingCount > 0 ? Math.round((totalRating / ratingCount) * 10) / 10 : 0,
-        approvedTracks: approvedCount,
-        pendingTracks: pendingCount,
+        approvedTracks: approvedTracks.length,
+        pendingTracks: pendingTracks,
       });
     } catch (error) {
       console.error('[Analytics] Error loading:', error);
