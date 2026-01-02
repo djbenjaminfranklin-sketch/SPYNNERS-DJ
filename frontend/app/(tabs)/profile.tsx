@@ -192,7 +192,7 @@ export default function ProfileScreen() {
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={24} color="#fff" />
-          <Text style={styles.logoutButtonText}>{t('logout')}</Text>
+          <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
         </TouchableOpacity>
 
         <Text style={styles.version}>Version 1.0.0 • SPYNNERS</Text>
