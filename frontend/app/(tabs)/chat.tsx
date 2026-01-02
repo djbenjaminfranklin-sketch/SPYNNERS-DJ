@@ -404,7 +404,7 @@ export default function ChatScreen() {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.messageInput}
-              placeholder="Type a message..."
+              placeholder={t('chat.typeMessage')}
               placeholderTextColor={Colors.textMuted}
               value={newMessage}
               onChangeText={setNewMessage}
