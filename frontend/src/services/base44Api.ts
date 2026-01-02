@@ -440,9 +440,10 @@ export const base44Users = {
 // ==================== PLAYLISTS SERVICE ====================
 
 export const base44Playlists = {
-  async list(userId: string): Promise<Playlist[]> {
+  async list(userId?: string): Promise<Playlist[]> {
     try {
-      const response = await api.get(`/api/base44/entities/Playlist?user_id=${userId}`);
+      // Get all playlists (don't filter by user_id as it might not work correctly)
+      const response = await api.get('/api/base44/entities/Playlist?limit=100');
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
