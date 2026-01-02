@@ -681,8 +681,8 @@ export default function HomeScreen() {
       <Modal visible={showLanguageModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{t('language')}</Text>
-            <Text style={styles.modalSubtitle}>Select your language</Text>
+            <Text style={styles.modalTitle}>{t('common.language')}</Text>
+            <Text style={styles.modalSubtitle}>{t('common.selectLanguage')}</Text>
             
             {LANGUAGES.map((lang) => (
               <TouchableOpacity 
@@ -692,6 +692,7 @@ export default function HomeScreen() {
                   language === lang.code && styles.langOptionActive
                 ]}
                 onPress={() => {
+                  console.log('[Language] Changing language to:', lang.code);
                   setLanguage(lang.code);
                   setShowLanguageModal(false);
                 }}
@@ -710,7 +711,7 @@ export default function HomeScreen() {
             ))}
             
             <TouchableOpacity style={styles.modalCancel} onPress={() => setShowLanguageModal(false)}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
+              <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
