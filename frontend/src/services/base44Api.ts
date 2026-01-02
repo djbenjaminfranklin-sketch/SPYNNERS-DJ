@@ -332,11 +332,34 @@ export const base44Tracks = {
 
   async search(query: string): Promise<Track[]> {
     try {
-      const response = await api.get(`/api/base44/entities/Track?search=${encodeURIComponent(query)}`);
+      console.log('[Tracks] Searching for:', query);
+      // Base44 doesn't have a global search, so we fetch all tracks and filter client-side
+      const response = await api.get(`/api/base44/entities/Track?limit=500`);
       const data = response.data;
-      if (Array.isArray(data)) return data;
-      if (data?.items) return data.items;
-      return [];
+      let tracks: Track[] = [];
+      
+      if (Array.isArray(data)) {
+        tracks = data;
+      } else if (data?.items) {
+        tracks = data.items;
+      }
+      
+      // Filter tracks by query (title, artist, genre, producer)
+      const queryLower = query.toLowerCase();
+      const filtered = tracks.filter((track: Track) => {
+        const title = (track.title || '').toLowerCase();
+        const artist = (track.artist_name || track.producer_name || '').toLowerCase();
+        const genre = (track.genre || '').toLowerCase();
+        const producer = (track.producer_name || '').toLowerCase();
+        
+        return title.includes(queryLower) || 
+               artist.includes(queryLower) || 
+               genre.includes(queryLower) ||
+               producer.includes(queryLower);
+      });
+      
+      console.log('[Tracks] Search results:', filtered.length, 'tracks found');
+      return filtered;
     } catch (error) {
       console.error('[Tracks] Search error:', error);
       return [];
