@@ -614,7 +614,7 @@ export default function HomeScreen() {
           />
           <FilterDropdown 
             value={selectedSort} 
-            options={SORT_OPTIONS} 
+            options={SORT_VALUES} 
             show={showSortFilter} 
             setShow={setShowSortFilter} 
             onSelect={setSelectedSort}
