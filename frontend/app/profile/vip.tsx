@@ -17,11 +17,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { base44VIP, base44Tracks, Track, VIPPromo } from '../../src/services/base44Api';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { usePlayer } from '../../src/contexts/PlayerContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 
 export default function VIPScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { playTrack, currentTrack, isPlaying, togglePlayPause } = usePlayer();
+  const { t } = useLanguage();
   
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
