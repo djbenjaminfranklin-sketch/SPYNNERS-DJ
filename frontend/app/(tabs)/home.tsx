@@ -648,18 +648,47 @@ export default function HomeScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Add to Playlist</Text>
             <Text style={styles.modalSubtitle}>"{selectedTrackForPlaylist?.title}"</Text>
-            <TouchableOpacity style={styles.modalOption}>
-              <Ionicons name="add-circle" size={20} color={Colors.primary} />
-              <Text style={styles.modalOptionText}>Create New Playlist</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalOption}>
-              <Ionicons name="heart" size={20} color="#E91E63" />
-              <Text style={styles.modalOptionText}>Favorites</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalOption}>
-              <Ionicons name="musical-notes" size={20} color={Colors.primary} />
-              <Text style={styles.modalOptionText}>DJ Sets</Text>
-            </TouchableOpacity>
+            
+            {loadingPlaylists ? (
+              <View style={styles.playlistLoading}>
+                <ActivityIndicator size="small" color={Colors.primary} />
+                <Text style={styles.playlistLoadingText}>Loading playlists...</Text>
+              </View>
+            ) : userPlaylists.length === 0 ? (
+              <View style={styles.playlistEmpty}>
+                <Ionicons name="list-outline" size={40} color={Colors.textMuted} />
+                <Text style={styles.playlistEmptyText}>No playlists yet</Text>
+                <TouchableOpacity 
+                  style={styles.createPlaylistBtn}
+                  onPress={() => {
+                    setShowPlaylistModal(false);
+                    router.push('/(tabs)/playlist');
+                  }}
+                >
+                  <Text style={styles.createPlaylistText}>Create Playlist</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <ScrollView style={styles.playlistList}>
+                {userPlaylists.map((playlist: any) => (
+                  <TouchableOpacity 
+                    key={playlist.id || playlist._id}
+                    style={styles.modalOption}
+                    onPress={() => addToPlaylist(playlist.id || playlist._id)}
+                  >
+                    <Ionicons name="musical-notes" size={20} color={Colors.primary} />
+                    <View style={styles.playlistOptionInfo}>
+                      <Text style={styles.modalOptionText}>{playlist.name}</Text>
+                      <Text style={styles.playlistTrackCount}>
+                        {(playlist.track_ids || playlist.tracks || []).length} tracks
+                      </Text>
+                    </View>
+                    <Ionicons name="add-circle-outline" size={24} color={Colors.primary} />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+            
             <TouchableOpacity style={styles.modalCancel} onPress={() => setShowPlaylistModal(false)}>
               <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>
