@@ -14,28 +14,20 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { base44Tracks, Track } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 
 interface Member {
-  id?: string;
-  _id?: string;
-  email: string;
-  full_name?: string;
-  user_type?: string;
-  avatar?: string;
-  isOnline?: boolean;
+  id: string;
+  name: string;
+  type: string;
+  isOnline: boolean;
+  trackCount: number;
 }
 
-const getBackendUrl = () => {
-  if (typeof window !== 'undefined') return '';
-  return 'https://trackhub-20.preview.emergentagent.com';
-};
-
 export default function ChatScreen() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,63 +36,49 @@ export default function ChatScreen() {
 
   useEffect(() => {
     loadMembers();
-  }, [token]);
+  }, []);
 
   const loadMembers = async () => {
     try {
       setLoading(true);
-      console.log('[Chat] Loading all members...');
+      console.log('[Chat] Loading members from tracks...');
       
-      // Get auth token from storage
-      const authToken = token || await AsyncStorage.getItem('auth_token');
+      // Get all tracks to extract unique producers
+      const allTracks = await base44Tracks.list({ limit: 200 });
       
-      if (!authToken) {
-        console.log('[Chat] No auth token, cannot load members');
-        setLoading(false);
-        return;
-      }
+      // Extract unique producers from tracks
+      const producerMap = new Map<string, Member>();
       
-      // Make authenticated request to get users
-      const response = await axios.get(
-        `${getBackendUrl()}/api/base44/entities/User`,
-        {
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
-          },
-          params: { limit: 100 }
+      allTracks.forEach((track: Track) => {
+        const producerId = track.producer_id || track.created_by_id || '';
+        const producerName = track.producer_name || track.artist_name || 'Unknown';
+        
+        if (producerId && !producerMap.has(producerId)) {
+          producerMap.set(producerId, {
+            id: producerId,
+            name: producerName,
+            type: 'Producer',
+            isOnline: Math.random() > 0.7, // 30% online for demo
+            trackCount: 1,
+          });
+        } else if (producerId) {
+          const existing = producerMap.get(producerId)!;
+          existing.trackCount++;
         }
-      );
-      
-      const allUsers = response.data || [];
-      console.log('[Chat] Members loaded:', allUsers.length);
-      
-      if (allUsers.length === 0) {
-        setMembers([]);
-        setLoading(false);
-        return;
-      }
-      
-      // Sort: online users first (simulated - in real app would use presence system)
-      const membersWithStatus = allUsers.map((u: Member) => ({
-        ...u,
-        isOnline: Math.random() > 0.7, // 30% chance of being "online" for demo
-      }));
-      
-      // Sort online first
-      membersWithStatus.sort((a: Member, b: Member) => {
-        if (a.isOnline && !b.isOnline) return -1;
-        if (!a.isOnline && b.isOnline) return 1;
-        return 0;
       });
       
-      setMembers(membersWithStatus);
-    } catch (error: any) {
-      console.error('[Chat] Error loading members:', error?.response?.data || error?.message);
-      // Show error message if auth failed
-      if (error?.response?.status === 401) {
-        Alert.alert('Authentication Required', 'Please log in to view members');
-      }
+      // Convert to array and sort by online status then by track count
+      const membersList = Array.from(producerMap.values())
+        .sort((a, b) => {
+          if (a.isOnline && !b.isOnline) return -1;
+          if (!a.isOnline && b.isOnline) return 1;
+          return b.trackCount - a.trackCount;
+        });
+      
+      console.log('[Chat] Found', membersList.length, 'unique producers');
+      setMembers(membersList);
+    } catch (error) {
+      console.error('[Chat] Error loading members:', error);
     } finally {
       setLoading(false);
     }
@@ -114,30 +92,15 @@ export default function ChatScreen() {
 
   const filteredMembers = members.filter((m: Member) => {
     if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      m.full_name?.toLowerCase().includes(query) ||
-      m.email?.toLowerCase().includes(query) ||
-      m.user_type?.toLowerCase().includes(query)
-    );
+    return m.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const onlineCount = members.filter((m: Member) => m.isOnline).length;
 
-  const getUserTypeLabel = (type?: string) => {
-    switch (type) {
-      case 'dj': return 'DJ';
-      case 'producer': return 'Producer';
-      case 'dj_producer': return 'DJ / Producer';
-      case 'label': return 'Label';
-      default: return 'Member';
-    }
-  };
-
   const startChat = (member: Member) => {
     Alert.alert(
-      `Chat with ${member.full_name || 'User'}`,
-      'Direct messaging coming soon!',
+      `Chat with ${member.name}`,
+      `${member.trackCount} tracks uploaded\n\nDirect messaging coming soon!`,
       [{ text: 'OK' }]
     );
   };
@@ -149,21 +112,17 @@ export default function ChatScreen() {
       activeOpacity={0.7}
     >
       <View style={styles.avatarContainer}>
-        {item.avatar ? (
-          <Image source={{ uri: item.avatar }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
-            <Text style={styles.avatarText}>
-              {(item.full_name || item.email || 'U').charAt(0).toUpperCase()}
-            </Text>
-          </View>
-        )}
+        <View style={[styles.avatar, styles.avatarPlaceholder]}>
+          <Text style={styles.avatarText}>
+            {item.name.charAt(0).toUpperCase()}
+          </Text>
+        </View>
         {item.isOnline && <View style={styles.onlineDot} />}
       </View>
       
       <View style={styles.memberInfo}>
-        <Text style={styles.memberName}>{item.full_name || item.email?.split('@')[0] || 'Unknown'}</Text>
-        <Text style={styles.memberType}>{getUserTypeLabel(item.user_type)}</Text>
+        <Text style={styles.memberName}>{item.name}</Text>
+        <Text style={styles.memberType}>{item.type} • {item.trackCount} tracks</Text>
       </View>
 
       <TouchableOpacity style={styles.messageButton} onPress={() => startChat(item)}>
@@ -186,7 +145,7 @@ export default function ChatScreen() {
       {/* Header */}
       <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
         <Text style={styles.headerTitle}>Chat</Text>
-        <Text style={styles.headerSubtitle}>{members.length} members</Text>
+        <Text style={styles.headerSubtitle}>{members.length} producers</Text>
       </LinearGradient>
 
       {/* Search */}
@@ -194,7 +153,7 @@ export default function ChatScreen() {
         <Ionicons name="search" size={20} color={Colors.textMuted} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search members..."
+          placeholder="Search producers..."
           placeholderTextColor={Colors.textMuted}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -218,10 +177,7 @@ export default function ChatScreen() {
       {members.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="people-outline" size={60} color={Colors.textMuted} />
-          <Text style={styles.emptyText}>No members found</Text>
-          <Text style={styles.emptySubtext}>
-            Members will appear here once available
-          </Text>
+          <Text style={styles.emptyText}>No producers found</Text>
           <TouchableOpacity style={styles.retryButton} onPress={loadMembers}>
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
@@ -229,7 +185,7 @@ export default function ChatScreen() {
       ) : (
         <FlatList
           data={filteredMembers}
-          keyExtractor={(item) => item.id || item._id || item.email || Math.random().toString()}
+          keyExtractor={(item) => item.id}
           renderItem={renderMember}
           contentContainerStyle={styles.listContent}
           refreshControl={
@@ -322,7 +278,6 @@ const styles = StyleSheet.create({
   },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
   emptyText: { color: Colors.text, fontSize: 18, fontWeight: '600', marginTop: 16 },
-  emptySubtext: { color: Colors.textMuted, fontSize: 14, marginTop: 8, textAlign: 'center', paddingHorizontal: 40 },
   retryButton: { marginTop: 20, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: Colors.primary, borderRadius: 8 },
   retryText: { color: '#fff', fontWeight: '600' },
 });
