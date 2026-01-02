@@ -557,7 +557,7 @@ export default function UploadScreen() {
 
           {/* Energy Level */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Energy Level</Text>
+            <Text style={styles.inputLabel}>{t('upload.energyLevel')}</Text>
             <View style={styles.energyButtons}>
               {ENERGY_LEVELS.map((level) => (
                 <TouchableOpacity
@@ -576,7 +576,7 @@ export default function UploadScreen() {
 
           {/* Mood */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Mood</Text>
+            <Text style={styles.inputLabel}>{t('upload.mood')}</Text>
             <View style={styles.moodTags}>
               {MOODS.map((m) => (
                 <TouchableOpacity
@@ -593,10 +593,10 @@ export default function UploadScreen() {
 
         {/* Additional Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Additional Information</Text>
+          <Text style={styles.sectionTitle}>{t('upload.additionalInfo')}</Text>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Release Date</Text>
+            <Text style={styles.inputLabel}>{t('upload.releaseDate')}</Text>
             <TextInput
               style={styles.input}
               placeholder="YYYY-MM-DD"
@@ -630,10 +630,10 @@ export default function UploadScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Description</Text>
+            <Text style={styles.inputLabel}>{t('upload.description')}</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="Tell us about this track..."
+              placeholder={t('upload.description')}
               placeholderTextColor={Colors.textMuted}
               value={description}
               onChangeText={setDescription}
@@ -645,12 +645,12 @@ export default function UploadScreen() {
 
         {/* Options */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Options</Text>
+          <Text style={styles.sectionTitle}>{t('upload.options')}</Text>
 
           <View style={styles.switchRow}>
             <View style={styles.switchInfo}>
-              <Text style={styles.switchLabel}>🆕 Unreleased Track</Text>
-              <Text style={styles.switchDescription}>This track hasn't been released yet</Text>
+              <Text style={styles.switchLabel}>🆕 {t('upload.unreleased')}</Text>
+              <Text style={styles.switchDescription}>{t('upload.unreleasedDesc')}</Text>
             </View>
             <Switch
               value={isUnreleased}
@@ -662,8 +662,8 @@ export default function UploadScreen() {
 
           <View style={styles.switchRow}>
             <View style={styles.switchInfo}>
-              <Text style={styles.switchLabel}>💎 V.I.P. Track Request</Text>
-              <Text style={styles.switchDescription}>Request to add this track to V.I.P. collection</Text>
+              <Text style={styles.switchLabel}>💎 {t('upload.vipRequest')}</Text>
+              <Text style={styles.switchDescription}>{t('upload.vipRequestDesc')}</Text>
             </View>
             <Switch
               value={isVipRequest}
@@ -676,7 +676,7 @@ export default function UploadScreen() {
 
         {/* Legal */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Legal Agreements</Text>
+          <Text style={styles.sectionTitle}>{t('upload.legalAgreements')}</Text>
 
           <TouchableOpacity style={styles.checkboxRow} onPress={() => setRightsConfirmed(!rightsConfirmed)}>
             <View style={[styles.checkbox, rightsConfirmed && styles.checkboxChecked]}>
