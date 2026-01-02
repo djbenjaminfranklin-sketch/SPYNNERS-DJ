@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { base44Notifications, base44Tracks, Track } from '../../src/services/base44Api';
 import { useAuth } from '../../src/contexts/AuthContext';
