@@ -411,6 +411,73 @@ export const base44Users = {
     }
   },
 
+  // Native function to get all users with pagination (for chat/members list)
+  async nativeGetAllUsers(params?: { search?: string; limit?: number; offset?: number }): Promise<User[]> {
+    try {
+      console.log('[Users] Fetching all users via nativeGetAllUsers:', params);
+      const response = await api.post('/api/base44/functions/invoke/nativeGetAllUsers', {
+        search: params?.search || '',
+        limit: params?.limit || 100,
+        offset: params?.offset || 0,
+      });
+      
+      const data = response.data;
+      console.log('[Users] nativeGetAllUsers response:', data);
+      
+      // Handle different response formats
+      if (Array.isArray(data)) return data;
+      if (data?.users) return data.users;
+      if (data?.items) return data.items;
+      if (data?.data) return data.data;
+      return [];
+    } catch (error) {
+      console.error('[Users] Error in nativeGetAllUsers:', error);
+      return [];
+    }
+  },
+
+  // Fetch all users with pagination (fetches multiple pages)
+  async fetchAllUsersWithPagination(searchQuery?: string): Promise<User[]> {
+    try {
+      console.log('[Users] Fetching all users with pagination...');
+      const allUsers: User[] = [];
+      const pageSize = 100;
+      let offset = 0;
+      let hasMore = true;
+      
+      while (hasMore) {
+        const users = await this.nativeGetAllUsers({
+          search: searchQuery || '',
+          limit: pageSize,
+          offset,
+        });
+        
+        if (users.length > 0) {
+          allUsers.push(...users);
+          offset += pageSize;
+          
+          // If we got less than the page size, we're done
+          if (users.length < pageSize) {
+            hasMore = false;
+          }
+          
+          // Safety limit to prevent infinite loops (max 2000 users)
+          if (offset >= 2000) {
+            hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
+      }
+      
+      console.log('[Users] Total users fetched:', allUsers.length);
+      return allUsers;
+    } catch (error) {
+      console.error('[Users] Error fetching all users with pagination:', error);
+      return [];
+    }
+  },
+
   async get(userId: string): Promise<User | null> {
     try {
       const response = await api.get(`/api/base44/entities/User/${userId}`);
