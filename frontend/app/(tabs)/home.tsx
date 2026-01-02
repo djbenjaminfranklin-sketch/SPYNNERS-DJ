@@ -297,9 +297,15 @@ export default function HomeScreen() {
   };
 
   // Filter dropdown
-  const FilterDropdown = ({ value, options, show, setShow, onSelect }: any) => (
+  const FilterDropdown = ({ value, options, show, setShow, onSelect, closeOthers }: any) => (
     <View style={styles.filterDropdown}>
-      <TouchableOpacity style={styles.filterButton} onPress={() => { setShow(!show); setShowGenreFilter(false); setShowEnergyFilter(false); setShowSortFilter(false); setShow(!show); }}>
+      <TouchableOpacity 
+        style={styles.filterButton} 
+        onPress={() => { 
+          closeOthers?.();
+          setShow(!show); 
+        }}
+      >
         <Text style={styles.filterButtonText} numberOfLines={1}>{value}</Text>
         <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
       </TouchableOpacity>
@@ -310,7 +316,12 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={option}
                 style={[styles.filterOption, value === option && styles.filterOptionSelected]}
-                onPress={() => { onSelect(option); setShow(false); setTimeout(loadTracks, 100); }}
+                onPress={() => { 
+                  onSelect(option); 
+                  setShow(false); 
+                  // Trigger reload after filter change
+                  setTimeout(loadTracks, 100); 
+                }}
               >
                 <Text style={[styles.filterOptionText, value === option && styles.filterOptionTextSelected]}>{option}</Text>
               </TouchableOpacity>
