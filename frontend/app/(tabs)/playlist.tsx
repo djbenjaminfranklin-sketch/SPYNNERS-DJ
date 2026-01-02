@@ -40,7 +40,6 @@ export default function PlaylistScreen() {
 
   useEffect(() => {
     loadPlaylists();
-    };
   }, [user]);
 
   const loadPlaylists = async () => {
@@ -133,75 +132,6 @@ export default function PlaylistScreen() {
     setSelectedPlaylist(playlist);
     setShowDetailModal(true);
     await loadPlaylistTracks(playlist);
-  };
-
-  // Audio playback functions
-  const playTrack = async (track: Track) => {
-    try {
-      // Stop current sound if playing
-      if (sound) {
-        await sound.stopAsync();
-        await sound.unloadAsync();
-      }
-      
-      const audioUrl = track.audio_url || track.audio_file;
-      if (!audioUrl) {
-        Alert.alert('No Audio', 'This track does not have an audio file');
-        return;
-      }
-      
-      await Audio.setAudioModeAsync({ 
-        playsInSilentModeIOS: true, 
-        staysActiveInBackground: true 
-      });
-      
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: audioUrl },
-        { shouldPlay: true },
-        (status: any) => {
-          if (status.isLoaded) {
-            if (status.didJustFinish) {
-              setIsPlaying(false);
-              setCurrentPlayingTrack(null);
-            }
-          }
-        }
-      );
-      
-      setSound(newSound);
-      setCurrentPlayingTrack(track);
-      setIsPlaying(true);
-      
-      // Record play count
-      try { 
-        await base44Tracks.play(track.id || track._id || ''); 
-      } catch {}
-      
-    } catch (error) {
-      console.error('[Playlist] Playback error:', error);
-      Alert.alert('Error', 'Could not play this track');
-    }
-  };
-
-  const togglePlayPause = async () => {
-    if (!sound) return;
-    if (isPlaying) {
-      await sound.pauseAsync();
-      setIsPlaying(false);
-    } else {
-      await sound.playAsync();
-      setIsPlaying(true);
-    }
-  };
-
-  const stopPlayback = async () => {
-    if (sound) {
-      await sound.stopAsync();
-      await sound.unloadAsync();
-      setSound(null);
-    }
-    setCurrentPlayingTrack(null);
-    setIsPlaying(false);
   };
 
   // Play all tracks in playlist
@@ -371,10 +301,7 @@ export default function PlaylistScreen() {
         <View style={styles.detailModalOverlay}>
           <View style={styles.detailModalContent}>
             <View style={styles.detailModalHeader}>
-              <TouchableOpacity onPress={() => {
-                setShowDetailModal(false);
-                stopPlayback();
-              }}>
+              <TouchableOpacity onPress={() => setShowDetailModal(false)}>
                 <Ionicons name="close" size={28} color={Colors.text} />
               </TouchableOpacity>
               <Text style={styles.detailModalTitle}>{selectedPlaylist?.name}</Text>
@@ -438,7 +365,7 @@ export default function PlaylistScreen() {
                 <ScrollView style={styles.trackList} showsVerticalScrollIndicator={false}>
                   {playlistTracks.map((track, index) => {
                     const trackId = track.id || track._id || '';
-                    const isCurrentTrack = currentPlayingTrack && (currentPlayingTrack.id || currentPlayingTrack._id) === trackId;
+                    const isCurrentTrack = currentTrack && (currentTrack.id || currentTrack._id) === trackId;
                     const coverUrl = getCoverImageUrl(track);
                     
                     return (
@@ -630,7 +557,6 @@ const styles = StyleSheet.create({
   detailActionGradient: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 14, gap: 8 },
   detailActionOutline: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 14, gap: 8, borderWidth: 1, borderColor: Colors.primary, borderRadius: 12 },
   detailActionText: { fontSize: 16, fontWeight: '600', color: '#fff' },
-  comingSoon: { textAlign: 'center', color: Colors.textMuted, marginTop: 30, fontSize: 14 },
   // Track list styles
   trackListContainer: { flex: 1, marginTop: 20, paddingHorizontal: 16 },
   trackListTitle: { fontSize: 18, fontWeight: '600', color: Colors.text, marginBottom: 12 },
