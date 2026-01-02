@@ -31,6 +31,7 @@ import httpx
 try:
     from mutagen.mp3 import MP3
     from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB, TCON, TBPM
+    from mutagen.easyid3 import EasyID3
     MUTAGEN_AVAILABLE = True
 except ImportError:
     MUTAGEN_AVAILABLE = False
