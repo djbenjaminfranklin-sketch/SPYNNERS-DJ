@@ -510,7 +510,7 @@ export default function HomeScreen() {
               )}
               <View style={styles.playerInfo}>
                 <Text style={styles.playerTitle} numberOfLines={1}>{currentTrack.title}</Text>
-                <Text style={styles.playerArtist} numberOfLines={1}>{currentTrack.artist_name}</Text>
+                <Text style={styles.playerArtist} numberOfLines={1}>{getArtistName(currentTrack)}</Text>
               </View>
             </View>
 
