@@ -514,9 +514,30 @@ export default function HomeScreen() {
 
         {/* Filters Row */}
         <View style={styles.filtersRow}>
-          <FilterDropdown value={selectedGenre} options={GENRES} show={showGenreFilter} setShow={setShowGenreFilter} onSelect={setSelectedGenre} />
-          <FilterDropdown value={selectedEnergy} options={ENERGY_LEVELS} show={showEnergyFilter} setShow={setShowEnergyFilter} onSelect={setSelectedEnergy} />
-          <FilterDropdown value={selectedSort} options={SORT_OPTIONS} show={showSortFilter} setShow={setShowSortFilter} onSelect={setSelectedSort} />
+          <FilterDropdown 
+            value={selectedGenre} 
+            options={GENRES} 
+            show={showGenreFilter} 
+            setShow={setShowGenreFilter} 
+            onSelect={setSelectedGenre}
+            closeOthers={() => { setShowEnergyFilter(false); setShowSortFilter(false); }}
+          />
+          <FilterDropdown 
+            value={selectedEnergy} 
+            options={ENERGY_LEVELS} 
+            show={showEnergyFilter} 
+            setShow={setShowEnergyFilter} 
+            onSelect={setSelectedEnergy}
+            closeOthers={() => { setShowGenreFilter(false); setShowSortFilter(false); }}
+          />
+          <FilterDropdown 
+            value={selectedSort} 
+            options={SORT_OPTIONS} 
+            show={showSortFilter} 
+            setShow={setShowSortFilter} 
+            onSelect={setSelectedSort}
+            closeOthers={() => { setShowGenreFilter(false); setShowEnergyFilter(false); }}
+          />
         </View>
 
         {/* Track List */}
