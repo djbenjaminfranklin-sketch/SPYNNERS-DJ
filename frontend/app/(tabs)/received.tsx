@@ -97,7 +97,7 @@ export default function ReceivedScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading received tracks...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -109,7 +109,7 @@ export default function ReceivedScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Received Tracks</Text>
+        <Text style={styles.headerTitle}>{t('page.receivedTracks')}</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
@@ -117,9 +117,9 @@ export default function ReceivedScreen() {
       {tracks.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="mail-outline" size={80} color={Colors.textMuted} />
-          <Text style={styles.emptyTitle}>No Received Tracks</Text>
+          <Text style={styles.emptyTitle}>{t('page.noReceivedTracks')}</Text>
           <Text style={styles.emptySubtitle}>
-            Tracks sent to you by other members will appear here
+            {t('page.receivedTracksHint') || 'Tracks sent to you by other members will appear here'}
           </Text>
         </View>
       ) : (
