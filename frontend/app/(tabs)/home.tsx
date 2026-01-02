@@ -383,6 +383,9 @@ export default function HomeScreen() {
 
   // Get current language info
   const currentLang = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
+  
+  // Notification modal state
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -403,10 +406,10 @@ export default function HomeScreen() {
             <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
           </TouchableOpacity>
           
-          {/* Notification Bell */}
+          {/* Notification Bell - Opens Modal */}
           <TouchableOpacity 
             style={styles.notificationButton}
-            onPress={() => router.push('/(tabs)/received')}
+            onPress={() => setShowNotificationModal(true)}
           >
             <Ionicons name="notifications-outline" size={24} color={Colors.text} />
             {notificationCount > 0 && (
