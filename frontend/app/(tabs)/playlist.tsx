@@ -205,7 +205,7 @@ export default function PlaylistScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading your playlists...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -218,7 +218,7 @@ export default function PlaylistScreen() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>My Playlists</Text>
+          <Text style={styles.headerTitle}>{t('page.myPlaylists')}</Text>
           <Text style={styles.headerSubtitle}>{playlists.length} playlists</Text>
         </View>
         <TouchableOpacity 
@@ -233,9 +233,9 @@ export default function PlaylistScreen() {
       {playlists.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="list-outline" size={80} color={Colors.textMuted} />
-          <Text style={styles.emptyTitle}>No Playlists Yet</Text>
+          <Text style={styles.emptyTitle}>{t('page.noPlaylists')}</Text>
           <Text style={styles.emptySubtitle}>
-            Create your first playlist to organize your favorite tracks
+            {t('page.createPlaylistHint') || 'Create your first playlist to organize your favorite tracks'}
           </Text>
           <TouchableOpacity 
             style={styles.createButton}
@@ -243,7 +243,7 @@ export default function PlaylistScreen() {
           >
             <LinearGradient colors={[Colors.primary, '#7B1FA2']} style={styles.createButtonGradient}>
               <Ionicons name="add" size={20} color="#fff" />
-              <Text style={styles.createButtonText}>Create Playlist</Text>
+              <Text style={styles.createButtonText}>{t('page.createPlaylist')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -263,11 +263,11 @@ export default function PlaylistScreen() {
       <Modal visible={showCreateModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create Playlist</Text>
+            <Text style={styles.modalTitle}>{t('page.createPlaylist')}</Text>
             
             <TextInput
               style={styles.modalInput}
-              placeholder="Playlist name"
+              placeholder={t('page.playlistName')}
               placeholderTextColor={Colors.textMuted}
               value={newPlaylistName}
               onChangeText={setNewPlaylistName}
