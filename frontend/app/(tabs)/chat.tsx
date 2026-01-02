@@ -41,6 +41,7 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { t } = useLanguage();
   
   // Conversation modal
   const [showConversation, setShowConversation] = useState(false);
