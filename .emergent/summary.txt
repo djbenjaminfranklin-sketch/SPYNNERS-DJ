@@ -1,203 +1,292 @@
 <analysis>
-
 **original_problem_statement:**
-The user wants to continue developing their Expo/React Native application, Spynners. The main goal is to add features to bring the app to parity with the  website and prepare it for the App Store.
+The user wants to continue developing their Expo/React Native application, Spynners. The primary goal is to fix a long list of bugs and implement new features to bring the app to parity with the  website.
 
-During this session, the focus has been on fixing a multitude of UI, data fetching, and functionality bugs across the application, including authentication, the home screen, player, chat, playlists, and analytics pages.
+Recent user requests include:
+- Fixing a broken login flow.
+- Implementing a global audio player to prevent multiple tracks from playing simultaneously.
+- Fixing and implementing functionality for the Playlist, Chat, My Uploads, VIP, Ranking, and Live Radar pages.
+- Correcting UI layout issues on the home page (reordering elements, adding notification bell, language selector, and an upload button).
+- Fixing regressions where features like add to playlist stopped working.
+- Ensuring the chat page shows all members, not a small, limited subset.
+- Making the language switching functional across the app, including menus.
 
 **User's preferred language**: Français (French)
 
 **what currently exists?**
-The project consists of a React Native/Expo frontend and a FastAPI backend. The backend's primary role is to act as a proxy for all API calls to the Base44 service. This was implemented to resolve a critical CORS (Cross-Origin Resource Sharing) issue that prevented the web preview from making direct API calls.
+The application consists of a React Native/Expo frontend and a FastAPI proxy backend. A major architectural change was the introduction of a global  and a  component to manage audio playback across all screens, intended to fix an issue where multiple tracks could play at once.
 
-The authentication flow is now functional via this proxy. The user can log in. The home page layout has been corrected (2-line menu, SPYN buttons added), and it now correctly fetches and displays approved tracks using the proper data fields (, ). Placeholder pages have been created for previously missing routes (Analytics, Ranking, etc.). Several other pages like Chat, Playlists, and My Uploads have been worked on but remain buggy.
+The home screen () has been heavily refactored to include a new header with a notification bell icon and a language selector. Its layout has been reordered to place menus above the SPYN buttons, and a new UPLOAD TRACK button has been added. New API services for Notifications, VIP features, and Chat have been added to . Placeholder pages for , , , etc., have been replaced with more developed, API-connected versions, though they still have issues.
 
 **Last working item**:
-    - Last item agent was working: The agent was addressing a long list of user-reported bugs. The most recent actions were to correct the data filtering logic. The user clarified they want to see *their own* data on pages like Analytics and Playlists, not global data. The agent had just finished rewriting the  page to filter tracks by the logged-in user's ID and was about to apply the same logic to the Playlists page.
+    - Last item agent was working: The agent was addressing a large batch of user-reported issues. The most recent work involved refactoring the home screen to use the translation context for its menu items, adding missing translation keys to , and adding an UPLOAD TRACK button below the SPYN buttons.
     - Status: IN PROGRESS
     - Agent Testing Done: N
-    - Which testing method agent to use? The agent should continue development and rely on the user testing via Expo Go for validation. For API data issues,  against the backend proxy is effective.
+    - Which testing method agent to use? The next agent should restart the expo server and then perform manual testing of the Home screen's language switching and the new upload button's navigation. For the Chat issue,  on the backend proxy should be used to test the  endpoint to confirm the 401 error.
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Fix Playlists Page (P0)
-  - Issue 2: Fix Chat Page Functionality (P1)
-  - Issue 3: Fix Player Seek Bar and Performance (P1)
-  - Issue 4: Fix My Uploads Page Functionality (P2)
-  - Issue 5: Implement Received Page (P2)
-  - Issue 6: Unmatched Route/Navigation Issues (P3)
+  - Issue 1: Chat page does not show all members (P0)
+  - Issue 2: Language selection does not translate app content (P1)
+  - Issue 3: The Add to Playlist modal is broken (Regression) (P1)
+  - Issue 4: The internal track sharing button is not functional (P2)
+  - Issue 5: Global player does not appear on the Playlist page (P2)
+  - Issue 6: Notification bell modal needs full implementation (P3)
+  - Issue 7: Player seek bar is not intuitive and has performance issues (P3)
 
   Issues Detail:
-  - Issue 1:
-     - Description: The My Playlists page currently shows all playlists from every user, not just the logged-in user's. Additionally, the playlist cover art is missing, and tapping on a playlist does nothing.
-     - Attempted fixes: The agent previously removed filtering, causing all playlists to show. The plan is now to re-implement correct filtering.
+  - Issue 1: 
+     - Description: The Chat page only displays ~30 members, while the user expects over 775.
+     - Attempted fixes: The agent initially fetched a list of tracks and extracted unique producers, which was limiting. The agent then switched to calling the  API endpoint. However, this call fails with a  error, as regular users are not permitted to list all other users. The current implementation is therefore broken.
      - Next debug checklist:
-        1.  Open .
-        2.  Ensure  fetches the logged-in user's ID from the .
-        3.  Modify the API call in  or filter the results in  to only show playlists where  matches the current user's ID.
-        4.  Implement the  handler for each playlist item to navigate to a new Playlist Detail screen (which will also need to be created).
-        5.  Use the  field from the playlist data to display the cover image.
-     - Why fix this issue and what will be achieved with the fix? This will provide the user with a core, personalized feature of the app.
-     - Status: IN PROGRESS
+        1.  Revert the changes in  that use .
+        2.  Return to the previous strategy of fetching members from the  list, but investigate API parameters for pagination or increasing the  on the  call in  to retrieve more tracks, and thus more unique producers.
+        3.  Confirm with the user if there's another endpoint or method to get a complete member list that doesn't require admin privileges.
+     - Why fix this issue and what will be achieved with the fix? This is critical for the app's social functionality.
+     - Status:  IN PROGRESS
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? frontend
      - Blocked on other issue: None
 
   - Issue 2:
-     - Description: The Chat page now displays a list of music producers (as a workaround for not being able to fetch all users), but tapping on a user does nothing. The user also wants to see all members, not just a subset, with an online status indicator.
-     - Attempted fixes: The agent switched from trying to fetch a Users entity (which failed due to auth) to fetching producers from the tracks list.
+     - Description: The user-facing language does not change when a new language is selected from the language modal on the home screen.
+     - Attempted fixes: The agent correctly identified that menu items in  were using hardcoded strings. The agent added the necessary translation keys to  and updated the  menu rendering to use the  translation function.
      - Next debug checklist:
-        1.  Re-investigate fetching the 'Users' or 'Members' list from Base44 via the backend proxy, ensuring the user's auth token is correctly passed in the headers.
-        2.  In , implement the  handler for each user item to navigate to a chat conversation screen.
-        3.  Implement logic to display an online status indicator (this may require API support from Base44).
-     - Why fix this issue and what will be achieved with the fix? This enables the social interaction features of the app.
-     - Status: IN PROGRESS
+        1.  Verify the implementation in  is correctly using the  hook and applying the  function to all relevant text elements (menu items, buttons, etc.).
+        2.  Test the feature on Expo Go to confirm that changing the language in the modal updates the UI text.
+     - Why fix this issue and what will be achieved with the fix? It will make the app accessible to a wider audience as intended.
+     - Status:  IN PROGRESS
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? frontend
+     - Blocked on other issue: None
 
   - Issue 3:
-     - Description: The audio player's seek bar is not working correctly. The user reports that touching the bar makes the track jump to the end. Additionally, playback is slow to start.
-     - Attempted fixes: The agent has made several attempts to fix the seek logic in  by manipulating the  object from . These have been unsuccessful.
+     - Description: The modal for adding a track to a playlist, which previously worked, now incorrectly tells the user they have no playlists. This is a regression.
+     - Attempted fixes: The  file was heavily refactored. The  function or the state management for playlists was likely broken during these changes.
      - Next debug checklist:
-        1.  Review the  function in . The calculation for  is likely incorrect.
-        2.  Ensure the  call is being made with the correct millisecond value.
-        3.  For the slow start, check the  call. Consider adding  and  for better performance. Pre-loading or buffering might be necessary.
-     - Why fix this issue and what will be achieved with the fix? A functional music player is critical for a music promo app.
-     - Status: IN PROGRESS
+        1.  Examine the  function inside .
+        2.  Add  statements to check the data being returned from the  API call and the state of the  variable.
+        3.  Ensure the  component is receiving the  prop correctly.
+     - Why fix this issue and what will be achieved with the fix? Restores a core user feature.
+     - Status:  IN PROGRESS
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? frontend
      - Blocked on other issue: None
 
   - Issue 4:
-     - Description: On the My Uploads () page, users cannot play tracks by tapping on them. The user also mentioned not all their tracks are visible.
-     - Attempted fixes: The page was rewritten to fetch data, but the play functionality was not implemented.
+     - Description: The button for sharing a track internally (likely the Send to Received button) is not functional.
+     - Attempted fixes: The agent implemented  using  for external sharing, but the internal send functionality was not implemented.
      - Next debug checklist:
-        1.  In , implement an  handler for track items.
-        2.  This handler should call the global player context/function (likely from  or a new shared context) to start playback of the selected track.
-        3.  Investigate the API call in  for  to see if there is a limit or pagination parameter that is causing not all tracks to be loaded.
-     - Why fix this issue and what will be achieved with the fix? Allows producers to review their own uploaded content.
-     - Status: IN PROGRESS
+        1.  Locate the  (or similarly named) function in .
+        2.  This function needs to call a backend/Base44 API to create a received track entry or a notification for another user. This may involve the  API.
+        3.  Implement the API call and provide user feedback (e.g., a toast message).
+     - Why fix this issue and what will be achieved with the fix? Enables track sharing within the Spynners ecosystem.
+     - Status:  NOT STARTED
      - Is recurring issue? N
      - Should Test frontend/backend/both after fix? frontend
      - Blocked on other issue: None
 
   - Issue 5:
-     - Description: The Received page shows an infinite loading spinner and never displays any content.
-     - Attempted fixes: The agent created a placeholder file with basic loading logic, but it's not functional.
+     - Description: After the  was implemented, the  component does not appear at the bottom of the screen when a track is played from the Playlists page.
+     - Attempted fixes: None. The agent noted the  was correctly included in the root layout, but did not debug why it's not visible.
      - Next debug checklist:
-        1.  Determine what data the Received page is supposed to show (e.g., tracks sent to the user).
-        2.  Implement the corresponding API call in .
-        3.  Connect the  page to this API call and render the results.
-     - Why fix this issue and what will be achieved with the fix? Implements a currently-broken section of the app.
-     - Status: NOT STARTED
+        1.  Check  to ensure the  handler for a track correctly calls the  function from the  context.
+        2.  Inspect . The visibility is tied to . Add logging inside the  to see if  is being set correctly when a track is played from the playlist page.
+        3.  Check for styling conflicts or layout issues that might be hiding the player.
+     - Why fix this issue and what will be achieved with the fix? A visible, functional player is essential for a music app.
+     - Status:  IN PROGRESS
      - Is recurring issue? N
      - Should Test frontend/backend/both after fix? frontend
      - Blocked on other issue: None
 
-  - Issue 6:
-     - Description: User reported that navigating from My Profile to Upload leaves them with no way to go back. Also, several pages (Analytics, Ranking, VIP, etc.) were showing an Unmatched route error.
-     - Attempted fixes: The agent created placeholder files for the missing routes, which should fix the Unmatched route error. A back button was added to the header of .
+  - Issue 6: 
+     - Description: The user wants the notification bell to open a modal that categorizes notifications (e.g., Track Received: 0, Chat Message: 1).
+     - Attempted fixes: The agent created a new component  and hooked it up to the bell icon in . However, the modal is just a placeholder and does not contain the categorization logic.
      - Next debug checklist:
-        1.  Verify if the added back button in  solves the user's navigation problem. The issue might be related to how the page is presented (e.g., as a modal vs. push navigation). The  hook from  should be used for navigation.
-     - Why fix this issue and what will be achieved with the fix? Ensures basic navigation works as expected.
-     - Status: IN PROGRESS
+        1.  Flesh out .
+        2.  Inside the modal, fetch different types of notifications (e.g., , ).
+        3.  Render the data in categorized sections as requested by the user.
+     - Why fix this issue and what will be achieved with the fix? Implements a key part of the user-requested notification system.
+     - Status:  IN PROGRESS
      - Is recurring issue? N
      - Should Test frontend/backend/both after fix? frontend
      - Blocked on other issue: None
+
+  - Issue 7:
+     - Description: The audio player's seek bar is not working correctly. Touching the bar makes the track jump to the end. Playback is slow to start.
+     - Attempted fixes: A major refactor was done to centralize player logic in  and . However, the underlying  seeking logic inside the  component may still be flawed.
+     - Next debug checklist:
+        1. Review the  (or pan handler) logic inside .
+        2. Ensure the calculation for  based on the gesture's  location is correct relative to the slider's width.
+        3. Ensure  is being called correctly.
+     - Why fix this issue and what will be achieved with the fix? A functional music player is critical for a music promo app.
+     - Status: IN PROGRESS
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? frontend
 
 **In progress Task List**:
-  - Task 1: Fix data filtering and functionality for user-specific pages (P0)
-     - Where to resume: 
-     - What will be achieved with this? Correctly display user's own playlists, making the page functional. This is a direct continuation of the last action.
-     - Status: IN PROGRESS
+  - Task 1:  Fix Home Page UI and Functionality (P0)
+     - Where to resume:  and .
+     - What will be achieved with this? This will fix the non-translating menus, the broken add to playlist modal, and add the Upload Track button, addressing several of the user's most recent complaints.
+     - Status:  IN PROGRESS
      - Should Test frontend/backend/both after fix? frontend
-     - Blocked on something: None
+     - Blocked on something: No.
 
 **Upcoming and Future Tasks**
-    Upcoming Tasks:
-    - **Implement Playlist Detail page (P1):** Create a new screen that shows the tracks within a selected playlist.
-    - **Implement Chat Conversation page (P1):** Create a screen for viewing messages between two users.
-    - **Implement SPYN Notification Feature (P1):** The user confirmed that  is the correct approach. This needs to be implemented in the frontend, calling the corresponding proxy endpoint in the backend.
-    - **Implement full functionality for placeholder pages (P2):** The , , , and  pages are currently empty placeholders and need to be built out.
+    - **Upload Feature: Admin-only Upload For Account (P2):** The upload page needs to be modified to hide or disable the upload for account of feature for non-admin users. This will likely require checking the user's role from .
+    - **Upload Feature: Automatic BPM Detection (P3):** This is a complex feature. It may require a third-party library on the frontend or a new microservice on the backend to analyze the audio file during the upload process.
+    - **Real-time Website Updates (P3):** The user wants actions in the app (uploads, profile edits) to be reflected instantly on the website. This suggests the need for a real-time communication layer (like WebSockets) or a refetching/cache-invalidation strategy on the website, which is outside the scope of the mobile app's codebase but needs to be considered architecturally.
+    - **Implement Chat Conversation View (P2):** The current chat screen is only a list of members. A new screen needs to be created to display the actual conversation with a selected user, using the  API.
+    - **Implement Full VIP Page Functionality (P2):** The VIP page has been created, but it needs to be fully built out to allow users to create, view, and manage VIP promos and see download stats, using the , , and  APIs.
 
 **Completed work in this session**
-- **Resolved CORS with Backend Proxy:** Architected and implemented a FastAPI backend to proxy all requests to Base44, fixing a critical blocker for web-preview development.
-- **Fixed Authentication:** Successfully debugged and fixed the entire login flow using the new backend proxy after discovering the correct Base44 API endpoint ().
-- **Fixed Home Screen UI & Data:**
-    - Corrected the layout to have a 2-line menu and added the Spin Détection and Spin Record buttons.
-    - Fixed broken track cover images by using the correct data field ().
-    - Filtered the home page list to show only approved tracks.
-- **Cleaned up Navigation:** Removed the non-functional SPYN button from the main tab bar and created placeholder files for all missing routes to prevent Unmatched route errors.
-- **Partially Implemented Core Pages:**
-    - **Analytics:** Rewritten to calculate and display stats for the logged-in user's tracks.
-    - **My Uploads ():** Rewritten to use the correct API service and display track data correctly, including cover art and filtering for approved tracks.
-    - **Chat:** Implemented a workaround to display a list of producers as members.
-- **Abandoned SDK Approach:** Attempted to integrate  but ran into a Service token is required error. Made a strategic decision to revert to a robust  + proxy architecture, which is now the established pattern.
+- **Global Player Architecture:** Implemented a  and  component to centralize audio playback logic and state, resolving an issue where multiple tracks could play at once.
+- **Major Home Screen Refactor:**
+    - Reordered layout to place menus before SPYN buttons.
+    - Added a new header containing a notification bell and a language selection modal.
+    - Added an UPLOAD TRACK button.
+    - Refactored menu rendering to use the translation context (fix in progress).
+- **Login/Backend Stability:** Diagnosed and fixed a critical login failure caused by the backend service being stopped. Identified and resolved a port conflict that was preventing the Expo server from starting correctly.
+- **API Service Expansion:** Added new API service functions in  for Notifications, VIP entities (, , ), and Messages.
+- **Page Implementations & Fixes:**
+    - **Live Radar:** Updated to use the correct  function.
+    - **My Uploads:** Filtered out rejected tracks.
+    -**Clubs:** Removed the Clubs item from the tab bar as requested.
+- **Troubleshooting:** Successfully used the  to diagnose and fix a persistent Expo Go connection error.
+
+**Earlier issues found/mentioned but not fixed**
+- The user mentioned the buttons for **download** and **share** were not working. The agent implemented a fix for these in  using  and , but the user has not confirmed if these fixes are working. This should be re-verified.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Architecture**: Frontend (Expo/React Native) -> Backend Proxy (FastAPI) -> External API (Base44).
-- **API Communication**: All frontend API calls are made with  to the internal FastAPI proxy (e.g., to ) to bypass browser CORS restrictions.
-- **Authentication**: A JWT token received from Base44 upon login is stored using  and managed by . This token is sent in the  header for all authenticated requests via the proxy.
-- **Data Fetching**: Centralized in .
-- **UI Framework**: React Native with Expo Router for file-based routing.
+- **Global State Management:** The most significant new concept is the use of React Context () to manage a global state for the audio player, accessible via the  hook. This is a crucial pattern for solving state synchronization issues across different screens.
+- **API Proxy:** The FastAPI backend continues to be the mandatory proxy for all Base44 API calls to avoid CORS issues.
+- **Component-Based UI:** New features like the notification modal and global player were encapsulated in their own components (, ).
+- **Internationalization (i18n):** The app uses a  and a  hook with JSON files for handling multiple languages.
 
 **key DB schema**
-  - All data is managed by the external Base44 service. Key entities discovered through API responses include:
-      - **Track**: 
-      - **Playlist**: 
-      - **User**: The schema is not fully known, but it has a . Fetching users requires authentication.
-
-**changes in tech stack**
-- Abandoned the  in favor of a custom -based API service.
-- Introduced a FastAPI backend to act as a proxy layer.
+  - All data is managed by the external Base44 service. Newly discovered/utilized entities:
+      - **Notification**: 
+      - **Message**: 
+      - **VIPPromo**, **VIPPurchase**, **VIPDownload**: Entities related to the VIP feature set.
 
 **All files of reference**
-- : The proxy server. Contains the routing logic and the correct Base44 API base URL.
-- : The heart of the frontend's data layer. All API function definitions are here.
-- : Manages the user's authentication state and token.
-- : The main screen, containing the track list and the broken audio player.
-- : The next file to be fixed.
-- : The chat screen that needs fixing.
-- : The My Uploads screen.
+- : The most heavily modified file. Contains the new header, reordered layout, new buttons, and integration with multiple contexts (Player, Language, Auth).
+- : Core of the new global player logic.
+- : The UI for the global player.
+- : The central API service file, updated with many new functions.
+- : The source of the recurring member list issue. The current implementation is broken.
+- : Updated with new translation keys. Needs to be verified that the UI uses it correctly everywhere.
+- : The root layout where the  is injected.
 
 **Critical Info for New Agent**
-- **Proxy is Mandatory:** Do not attempt to call the Base44 API directly from the frontend. All calls must go through the local FastAPI proxy at .
-- **User-Specific Data is Key:** The user has explicitly stated that pages like Analytics and Playlists should show *their own* data, not global data. Use the  from the  to filter data.
-- **Data Schema Mismatches:** Be aware that the frontend code often has outdated assumptions about data field names (e.g.,  vs. ). Always verify the actual API response structure (using  on the proxy is a good way) before writing display logic.
-- **Player is Fragile:** The  player logic, especially seeking, has been a recurring point of failure. Approach fixes to 's player with caution and small, incremental changes.
-- **User Language:** The user is French. All communication must be in French.
+- **Chat API Limitation:** **DO NOT** use . It requires admin permissions and will fail with a 401 error for regular users. The only known way to get a list of members is to derive them from a list of tracks. You must investigate how to get a *larger* list of tracks (e.g., pagination) to solve the user's problem.
+- **Global Player is Buggy:** The  is the correct architectural pattern, but its implementation has bugs. The user reported it doesn't appear on the playlist page. You must debug the context's state and the  component's rendering logic. All local player implementations (like the old one in ) have been removed and should not be re-introduced.
+- **Regressions are present:** The Add to Playlist modal is broken. This was likely caused by the extensive refactoring of . Be careful when modifying this file and test related features.
+- **Expo Server Stability:** If the app fails to connect on Expo Go with a generic Something went wrong error, a likely cause is a zombie  process occupying port 3000. The fix is to kill all node processes () and restart the 
+  Usage: expo [command] [options]
+
+  Options:
+  
+    -V, --version                     output the version number
+    --non-interactive                 Fail, if an interactive prompt would be required to continue.
+    -h, --help                        output usage information
+  
+  Commands:
+
+    init [name]                       Create a new Expo project
+    start [path]                      Start a local dev server for the app
+    start:web [path]                  Start a Webpack dev server for the web app
+    export [path]                     Export the static files of the app for hosting it on a web server
+    install [packages...]             Install a module or other package to a project
+    run:android [path]                Run the Android app binary locally
+    run:ios [path]                    Run the iOS app binary locally
+    send [path]                       Share the project's URL to an email address
+
+    login                             Login to an Expo account
+    logout                            Logout of an Expo account
+    register                          Sign up for a new Expo account
+    whoami                            Return the currently authenticated account
+
+    client:install:ios                Install Expo Go for iOS on the simulator
+    client:install:android            Install Expo Go for Android on a connected device or emulator
+
+    config [path]                     Show the project config
+    doctor [path]                     Diagnose issues with the project
+    upgrade [sdk-version]             Upgrade the project packages and config for the given SDK version
+
+    customize:web [path]              Eject the default web files for customization
+    prebuild [path]                   Create native iOS and Android project files before building natively.
+                                      Learn more: https://docs.expo.dev/workflow/customizing/
+
+    build:web [path]                  Build the web app for production
+
+    credentials:manager [path]        Superseded by eas credentials in eas-cli
+
+    url [path]                        Log a URL for opening the project in Expo Go
+    url:ipa [path]                    Log the download URL for the standalone iOS binary
+    url:apk [path]                    Log the download URL for the standalone Android binary
+
+    webhooks [path]                   List all webhooks for a project
+    webhooks:add [path]               Add a webhook to a project
+    webhooks:remove [path]            Delete a webhook
+    webhooks:update [path]            Update an existing webhook
+
+    build:ios [path]                  Superseded by eas build in eas-cli
+    build:android [path]              Superseded by eas build in eas-cli
+    build:status [path]               Superseded by eas build:list in eas-cli
+    eject [path]                      Superseded by expo prebuild
+    fetch:ios:certs [path]            Superseded by eas credentials in eas-cli
+    fetch:android:keystore [path]     Superseded by eas credentials in eas-cli
+    fetch:android:hashes [path]       Superseded by eas credentials in eas-cli
+    fetch:android:upload-cert [path]  Superseded by eas credentials in eas-cli
+    publish [path]                    Superseded by eas update in eas-cli
+    publish:set [path]                Superseded by eas update:republish in eas-cli
+    publish:rollback [path]           Superseded by eas update:republish in eas-cli
+    publish:history [path]            Superseded by eas update:list in eas-cli
+    publish:details [path]            Superseded by eas update:view in eas-cli
+    push:android:upload [path]        Superseded by eas credentials in eas-cli
+    push:android:show [path]          Superseded by eas credentials in eas-cli
+    push:android:clear [path]         Superseded by eas credentials in eas-cli
+    upload:android [path]             Superseded by eas submit in eas-cli
+    upload:ios [path]                 Superseded by eas submit in eas-cli
+    client:ios [path]                 Superseded by Expo Dev Clients
+
+[12:17:31]   Run a command with --help for more info 💡
+[12:17:31]     $ expo start --help
+[12:17:31] service via supervisor (expo: ERROR (not running)
+expo: started).
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Feedback:** Analytics shows global stats (wants personal), Playlists show everyone's (wants personal & clickable), Chat shows people but isn't clickable. (PENDING)
-2.  **Feedback:** Analytics has wrong numbers, Playlists are empty, Chat is empty. (PARTIALLY ADDRESSED)
-3.  **Feedback:** Analytics/Chat/Playlist issues, plus screenshots. (PARTIALLY ADDRESSED)
-4.  **Feedback:** Analytics missing data, Chat shows Zero, Playlists shows playlists that aren't the user's, aren't clickable, and have no covers. (PARTIALLY ADDRESSED)
-5.  **Feedback:** Unmatched route errors, no back button from upload, Chat empty, Received infinite loading, Playlists empty. (PARTIALLY ADDRESSED)
-6.  **Feedback:** Seek bar jumps to end, slow playback, My Uploads tracks not all visible and not playable. (PARTIALLY ADDRESSED)
-7.  **Confirmation:** Acknowledges the summary of fixes. (DONE)
-8.  **Feedback:** Seek bar still not working, slow playback, My Uploads wants approved tracks only and covers don't show. (PARTIALLY ADDRESSED)
-9.  **Confirmation:** Acknowledges the summary of fixes. (DONE)
-10. **Feedback:** Player seek doesn't work, remove SPYN tab, My Uploads looks weird. (PARTIALLY ADDRESSED)
+1.  **Feedback (Latest):** Playlists OK, internal share broken, language not changing, wants UPLOAD button on home, chat still limited to 30 members. (PARTIALLY ADDRESSED)
+2.  **Feedback:** Provides API info for uploads, wants BPM detection, upload for account to be admin-only, and real-time updates with the website. (NOT STARTED)
+3.  **Feedback:** Notification bell should be for all notifications (chat, plays) with categories, chat has 30 members, language not changing, add to playlist is broken. (PARTIALLY ADDRESSED)
+4.  **Feedback:** Provides API info for notifications and languages. (ADDRESSED)
+5.  **Feedback:** VIP page unchanged, chat has 8 people, player doesn't appear on playlist page, send to received broken, wants home page UI reordered/changed. (PARTIALLY ADDRESSED)
+6.  **Report:** Still getting the same connection error on Expo Go. (RESOLVED)
+7.  **Report:** Provides screenshot of Expo Go connection error. (ADDRESSED)
+8.  **Report:** Provides another screenshot of the same error. (ADDRESSED)
+9.  **Feedback:** Don't show rejected tracks in 'My Uploads', provides API info for VIP/Chat, delete 'Clubs' menu, reports that two tracks play at the same time. (ADDRESSED)
+10. **Feedback:** Playing track in playlist should show bottom player, chat/uploads lists incomplete, player seek/performance bad, download/share/send buttons broken, 'add to playlist' shows incomplete list. (PARTIALLY ADDRESSED)
 
 **Project Health Check:**
-- **Broken**: Player seek functionality, Chat interactivity, Playlist interactivity, Received page.
-- **Mocked**: None. The app is connected to the live Base44 backend.
+- **Broken**: Chat member listing, Language switching, Add to Playlist modal, Internal track sharing, Global Player visibility on certain pages.
+- **Mocked**: None.
 
 **3rd Party Integrations**
 - **Base44**: Backend as a Service, accessed via a custom FastAPI proxy.
 
 **Testing status**
   - Testing agent used after significant changes: NO
-  - Troubleshoot agent used after agent stuck in loop: YES (implicitly, when the agent got stuck and decided to change approaches from SDK to proxy).
+  - Troubleshoot agent used after agent stuck in loop: YES, successfully diagnosed and provided a solution for the Expo Go connection issue.
   - Test files created: None.
-  - Known regressions: The playlist page was showing *some* data, but after an attempted fix, it showed *nothing*. This needs to be resolved.
+  - Known regressions: The Add to Playlist functionality is confirmed broken.
 
 **What agent forgot to execute**
-- The agent has not yet implemented the click-to-play functionality on the My Uploads page ().
-- The agent has not created the detail pages that  and  items should navigate to.
-- The core SPYN Notification feature () has been discussed but not implemented.
-
+- The agent implemented an incorrect fix for the Chat member list that is guaranteed to fail due to permissions.
+- The agent created the  component but did not implement the categorization logic requested by the user.
+- The agent did not address the regression with the Add to Playlist modal.
+- The agent did not implement the send to received functionality.
 </analysis>
