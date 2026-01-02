@@ -6,12 +6,20 @@
 import { createClient } from '@base44/sdk';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import Constants from 'expo-constants';
 
 // Base44 App ID for SPYNNERS
 const BASE44_APP_ID = '691a4d96d819355b52c063f3';
 
-// Direct Base44 Functions URL
-const BASE44_FUNCTIONS_URL = `https://${BASE44_APP_ID}.app.base44.com/functions`;
+// Backend proxy URL (to avoid CORS issues)
+const getBackendUrl = () => {
+  if (typeof window !== 'undefined') {
+    return ''; // Relative URL for web (uses proxy)
+  }
+  return Constants.expoConfig?.extra?.backendUrl || 
+         process.env.EXPO_PUBLIC_BACKEND_URL || 
+         'https://spynners-fix.preview.emergentagent.com';
+};
 
 // Storage key for auth token
 const AUTH_TOKEN_KEY = 'auth_token';
@@ -55,19 +63,21 @@ export const getBase44ClientSync = () => {
   return base44Client;
 };
 
-// Wrapper for functions.invoke using direct HTTP call
+// Wrapper for functions.invoke - uses backend proxy to avoid CORS
 export const invokeBase44Function = async <T = any>(
   functionName: string,
   params: Record<string, any> = {}
 ): Promise<T> => {
   try {
     const token = await getStoredToken();
-    console.log(`[Base44Client] Invoking function: ${functionName}`, params);
+    const backendUrl = getBackendUrl();
+    
+    console.log(`[Base44Client] Invoking function via proxy: ${functionName}`, params);
     console.log(`[Base44Client] Token available: ${!!token}`);
     
-    // Use direct HTTP call to Base44 functions endpoint
-    const url = `${BASE44_FUNCTIONS_URL}/${functionName}`;
-    console.log(`[Base44Client] Calling URL: ${url}`);
+    // Use backend proxy to avoid CORS issues
+    const url = `${backendUrl}/api/base44/functions/invoke/${functionName}`;
+    console.log(`[Base44Client] Proxy URL: ${url}`);
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
