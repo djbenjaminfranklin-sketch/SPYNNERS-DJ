@@ -379,7 +379,10 @@ export default function PlaylistScreen() {
         <View style={styles.detailModalOverlay}>
           <View style={styles.detailModalContent}>
             <View style={styles.detailModalHeader}>
-              <TouchableOpacity onPress={() => setShowDetailModal(false)}>
+              <TouchableOpacity onPress={() => {
+                setShowDetailModal(false);
+                stopPlayback();
+              }}>
                 <Ionicons name="close" size={28} color={Colors.text} />
               </TouchableOpacity>
               <Text style={styles.detailModalTitle}>{selectedPlaylist?.name}</Text>
@@ -396,7 +399,7 @@ export default function PlaylistScreen() {
 
             <View style={styles.detailInfo}>
               <Text style={styles.detailTrackCount}>
-                {selectedPlaylist?.track_ids?.length || selectedPlaylist?.tracks?.length || 0} tracks
+                {playlistTracks.length} tracks
               </Text>
               {selectedPlaylist?.description && (
                 <Text style={styles.detailDescription}>{selectedPlaylist.description}</Text>
@@ -404,14 +407,19 @@ export default function PlaylistScreen() {
             </View>
 
             <View style={styles.detailActions}>
-              <TouchableOpacity style={styles.detailActionButton}>
+              <TouchableOpacity style={styles.detailActionButton} onPress={playAllTracks}>
                 <LinearGradient colors={[Colors.primary, '#7B1FA2']} style={styles.detailActionGradient}>
                   <Ionicons name="play" size={24} color="#fff" />
                   <Text style={styles.detailActionText}>Play All</Text>
                 </LinearGradient>
               </TouchableOpacity>
               
-              <TouchableOpacity style={styles.detailActionButton}>
+              <TouchableOpacity style={styles.detailActionButton} onPress={() => {
+                if (playlistTracks.length > 0) {
+                  const randomIndex = Math.floor(Math.random() * playlistTracks.length);
+                  playTrack(playlistTracks[randomIndex]);
+                }
+              }}>
                 <View style={styles.detailActionOutline}>
                   <Ionicons name="shuffle" size={24} color={Colors.primary} />
                   <Text style={[styles.detailActionText, { color: Colors.primary }]}>Shuffle</Text>
@@ -419,7 +427,69 @@ export default function PlaylistScreen() {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.comingSoon}>Track list coming soon...</Text>
+            {/* Track List */}
+            <View style={styles.trackListContainer}>
+              <Text style={styles.trackListTitle}>Tracks</Text>
+              
+              {loadingTracks ? (
+                <View style={styles.trackListLoading}>
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                  <Text style={styles.trackListLoadingText}>Loading tracks...</Text>
+                </View>
+              ) : playlistTracks.length === 0 ? (
+                <View style={styles.trackListEmpty}>
+                  <Ionicons name="musical-notes-outline" size={40} color={Colors.textMuted} />
+                  <Text style={styles.trackListEmptyText}>No tracks in this playlist</Text>
+                  <Text style={styles.trackListEmptySubtext}>Add tracks from the home screen</Text>
+                </View>
+              ) : (
+                <ScrollView style={styles.trackList} showsVerticalScrollIndicator={false}>
+                  {playlistTracks.map((track, index) => {
+                    const trackId = track.id || track._id || '';
+                    const isCurrentTrack = currentPlayingTrack && (currentPlayingTrack.id || currentPlayingTrack._id) === trackId;
+                    const coverUrl = getCoverImageUrl(track);
+                    
+                    return (
+                      <TouchableOpacity 
+                        key={trackId} 
+                        style={[styles.trackItem, isCurrentTrack && styles.trackItemActive]}
+                        onPress={() => playTrack(track)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.trackNumber}>{index + 1}</Text>
+                        
+                        <View style={styles.trackItemCover}>
+                          {coverUrl ? (
+                            <Image source={{ uri: coverUrl }} style={styles.trackItemCoverImage} />
+                          ) : (
+                            <View style={styles.trackItemCoverPlaceholder}>
+                              <Ionicons name="musical-notes" size={16} color={Colors.textMuted} />
+                            </View>
+                          )}
+                        </View>
+                        
+                        <View style={styles.trackItemInfo}>
+                          <Text style={[styles.trackItemTitle, isCurrentTrack && styles.trackItemTitleActive]} numberOfLines={1}>
+                            {track.title}
+                          </Text>
+                          <Text style={styles.trackItemArtist} numberOfLines={1}>
+                            {getArtistName(track)} • {track.bpm || '—'} BPM
+                          </Text>
+                        </View>
+                        
+                        {isCurrentTrack && isPlaying ? (
+                          <TouchableOpacity onPress={togglePlayPause}>
+                            <Ionicons name="pause-circle" size={32} color={Colors.primary} />
+                          </TouchableOpacity>
+                        ) : (
+                          <Ionicons name="play-circle-outline" size={32} color={Colors.textMuted} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              )}
+            </View>
           </View>
         </View>
       </Modal>
