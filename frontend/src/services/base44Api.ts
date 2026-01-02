@@ -72,33 +72,55 @@ export interface Track {
   id?: string;
   _id?: string;
   title: string;
-  artist_name: string;
-  label_name?: string;
+  // Old fields (for compatibility)
+  artist_name?: string;
+  cover_image?: string;
+  audio_file?: string;
+  // New Base44 fields
+  producer_id?: string;
+  producer_name?: string;
   collaborators?: string[];
   genre: string;
   bpm?: number;
   key?: string;
   energy_level?: string;
   mood?: string;
+  description?: string;
+  artwork_url?: string;
+  email_artwork_url?: string;
+  audio_url?: string;
+  duration?: number;
+  isrc?: string;
+  iswc?: string;
+  status?: string; // 'approved', 'pending', 'rejected'
+  play_count?: number;
+  download_count?: number;
+  average_rating?: number;
+  rating_count?: number;
   release_date?: string;
+  free_download_agreement?: boolean;
+  acrcloud_id?: string;
+  needs_label?: boolean;
+  is_vip?: boolean;
+  vip_requested?: boolean;
+  vip_preview_start?: number;
+  vip_preview_end?: number;
+  created_date?: string;
+  updated_date?: string;
+  created_by_id?: string;
+  is_sample?: boolean;
+  // Legacy fields
+  label_name?: string;
   isrc_code?: string;
   iswc_code?: string;
-  description?: string;
-  cover_image?: string;
-  audio_file?: string;
-  audio_url?: string;
   is_unreleased?: boolean;
-  is_vip?: boolean;
   is_approved?: boolean;
   rights_confirmed?: boolean;
   free_download_authorized?: boolean;
   uploaded_by?: string;
   uploaded_for?: string;
   rating?: number;
-  download_count?: number;
-  play_count?: number;
   created_at?: string;
-  status?: string;
 }
 
 // ==================== USER TYPE ====================
