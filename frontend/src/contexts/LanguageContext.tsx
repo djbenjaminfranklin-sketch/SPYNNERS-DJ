@@ -230,6 +230,18 @@ const translations: Record<Language, Record<string, string>> = {
     'action.share': 'Partager',
     'action.addToPlaylist': 'Ajouter à la Playlist',
     'action.sendTrack': 'Envoyer le Track',
+    
+    // Filters
+    'filter.allGenres': 'Tous les Genres',
+    'filter.allEnergy': 'Tous les Niveaux',
+    'filter.recentlyAdded': 'Récemment Ajoutés',
+    'filter.aToZ': 'A à Z',
+    'filter.topRated': 'Mieux Notés',
+    'filter.low': 'Bas',
+    'filter.medium': 'Moyen',
+    'filter.high': 'Haut',
+    'filter.vipOnly': 'VIP Seulement',
+    'filter.searchPlaceholder': 'Rechercher des tracks...',
   },
   
   es: {
