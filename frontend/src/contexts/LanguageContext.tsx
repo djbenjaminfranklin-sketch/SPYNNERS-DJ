@@ -127,6 +127,7 @@ const translations: Record<Language, Record<string, string>> = {
     'filter.medium': 'Medium',
     'filter.high': 'High',
     'filter.vipOnly': 'VIP Only',
+    'filter.searchPlaceholder': 'Search tracks...',
   },
   
   fr: {
