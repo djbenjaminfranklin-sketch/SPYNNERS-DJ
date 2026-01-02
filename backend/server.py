@@ -800,10 +800,10 @@ async def base44_invoke_function(
         if authorization:
             headers["Authorization"] = authorization
         
-        # For backend functions like nativeGetAllUsers, use the app's functions endpoint
+        # For backend functions like nativeGetAllUsers, use the app's domain
         if function_name in ["nativeGetAllUsers", "listUsers"]:
-            # Use the correct Base44 app functions URL
-            app_function_url = f"https://{BASE44_APP_ID}.app.base44.com/functions/{function_name}"
+            # Use spynners.com domain for app functions
+            app_function_url = f"https://spynners.com/api/functions/{function_name}"
             print(f"[Base44] Calling function URL: {app_function_url}")
             print(f"[Base44] Request body: {request_body}")
             print(f"[Base44] Auth header present: {bool(authorization)}")
@@ -819,7 +819,7 @@ async def base44_invoke_function(
                 
                 if response.status_code == 200:
                     result = response.json()
-                    print(f"[Base44] Success! Got response with keys: {list(result.keys()) if isinstance(result, dict) else 'array'}")
+                    print(f"[Base44] Success! Got response")
                     return result
                 else:
                     print(f"[Base44] Function error: {response.status_code} - {response.text[:500]}")
