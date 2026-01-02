@@ -43,8 +43,8 @@ export default function ChatScreen() {
       setLoading(true);
       console.log('[Chat] Loading members from tracks...');
       
-      // Get all tracks to extract unique producers
-      const allTracks = await base44Tracks.list({ limit: 200 });
+      // Get ALL tracks to extract unique producers
+      const allTracks = await base44Tracks.list({ limit: 500 });
       
       // Extract unique producers from tracks
       const producerMap = new Map<string, Member>();
