@@ -781,6 +781,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>('en'); // Default to English
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     loadLanguage();
@@ -789,15 +790,19 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const loadLanguage = async () => {
     try {
       const savedLang = await AsyncStorage.getItem('app_language');
+      console.log('[Language] Loaded language from storage:', savedLang);
       if (savedLang && LANGUAGES.some(l => l.code === savedLang)) {
         setLanguageState(savedLang as Language);
       }
     } catch (error) {
       console.error('Error loading language:', error);
+    } finally {
+      setIsLoaded(true);
     }
   };
 
   const setLanguage = async (lang: Language) => {
+    console.log('[Language] Setting language to:', lang);
     try {
       await AsyncStorage.setItem('app_language', lang);
       setLanguageState(lang);
@@ -806,16 +811,26 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const t = (key: string): string => {
-    return translations[language]?.[key] || translations['en']?.[key] || key;
-  };
+  // Use useMemo to create translation function that updates when language changes
+  const t = React.useCallback((key: string): string => {
+    const result = translations[language]?.[key] || translations['en']?.[key] || key;
+    return result;
+  }, [language]);
 
-  const getCurrentFlag = (): string => {
+  const getCurrentFlag = React.useCallback((): string => {
     return LANGUAGES.find(l => l.code === language)?.flag || '🇬🇧';
-  };
+  }, [language]);
+
+  // Create context value with useMemo to prevent unnecessary re-renders
+  const contextValue = React.useMemo(() => ({
+    language,
+    setLanguage,
+    t,
+    getCurrentFlag,
+  }), [language, t, getCurrentFlag]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, getCurrentFlag }}>
+    <LanguageContext.Provider value={contextValue}>
       {children}
     </LanguageContext.Provider>
   );
