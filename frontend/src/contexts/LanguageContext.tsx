@@ -96,6 +96,24 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'Success',
     'common.search': 'Search',
     'common.noResults': 'No results',
+    
+    // Menu items
+    'menu.myUploads': 'My Uploads',
+    'menu.profile': 'Profile',
+    'menu.chat': 'Chat',
+    'menu.received': 'Received',
+    'menu.playlists': 'Playlists',
+    'menu.analytics': 'Analytics',
+    'menu.rankings': 'Rankings',
+    'menu.liveRadar': 'Live Radar',
+    'menu.vip': 'V.I.P.',
+    'menu.uploadTrack': 'Upload Track',
+    
+    // Actions
+    'action.download': 'Download',
+    'action.share': 'Share',
+    'action.addToPlaylist': 'Add to Playlist',
+    'action.sendTrack': 'Send Track',
   },
   
   fr: {
