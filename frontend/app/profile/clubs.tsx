@@ -242,7 +242,7 @@ export default function ClubsScreen() {
             styles.partnerFilterText,
             showPartnerOnly && styles.partnerFilterTextActive
           ]}>
-            Partners Only
+            {t('clubs.partnersOnly')}
           </Text>
         </TouchableOpacity>
       </View>
