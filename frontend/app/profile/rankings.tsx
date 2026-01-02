@@ -12,39 +12,104 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { base44Tracks, Track } from '../../src/services/base44Api';
 
-// Genre filters
-const GENRES = [
-  'All Genres',
-  'Afro House',
-  'Tech House',
-  'Deep House',
-  'Melodic House & Techno',
-  'Progressive House',
-  'Minimal / Deep Tech',
-  'Bass House',
-  'Hard Techno',
-  'Techno (Peak Time)',
-  'Funky House',
-];
-
-// Ranking tabs
-const RANKING_TABS = [
-  { id: 'downloads', label: 'Top Downloads', icon: 'download' },
-  { id: 'rated', label: 'Top Rated', icon: 'star' },
-  { id: 'recent', label: 'New Releases', icon: 'time' },
-];
-
 export default function RankingsScreen() {
   const router = useRouter();
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState('downloads');
-  const [selectedGenre, setSelectedGenre] = useState('All Genres');
+  const [selectedGenre, setSelectedGenre] = useState('all');
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showGenreFilter, setShowGenreFilter] = useState(false);
+
+  // Translated genre filters
+  const GENRES: Record<string, { value: string; label: string }[]> = {
+    en: [
+      { value: 'all', label: 'All Genres' },
+      { value: 'Afro House', label: 'Afro House' },
+      { value: 'Tech House', label: 'Tech House' },
+      { value: 'Deep House', label: 'Deep House' },
+      { value: 'Melodic House & Techno', label: 'Melodic House & Techno' },
+      { value: 'Progressive House', label: 'Progressive House' },
+      { value: 'Minimal / Deep Tech', label: 'Minimal / Deep Tech' },
+      { value: 'Bass House', label: 'Bass House' },
+      { value: 'Hard Techno', label: 'Hard Techno' },
+      { value: 'Techno (Peak Time)', label: 'Techno (Peak Time)' },
+      { value: 'Funky House', label: 'Funky House' },
+    ],
+    fr: [
+      { value: 'all', label: 'Tous les Genres' },
+      { value: 'Afro House', label: 'Afro House' },
+      { value: 'Tech House', label: 'Tech House' },
+      { value: 'Deep House', label: 'Deep House' },
+      { value: 'Melodic House & Techno', label: 'Melodic House & Techno' },
+      { value: 'Progressive House', label: 'Progressive House' },
+      { value: 'Minimal / Deep Tech', label: 'Minimal / Deep Tech' },
+      { value: 'Bass House', label: 'Bass House' },
+      { value: 'Hard Techno', label: 'Hard Techno' },
+      { value: 'Techno (Peak Time)', label: 'Techno (Peak Time)' },
+      { value: 'Funky House', label: 'Funky House' },
+    ],
+    es: [
+      { value: 'all', label: 'Todos los Géneros' },
+      { value: 'Afro House', label: 'Afro House' },
+      { value: 'Tech House', label: 'Tech House' },
+      { value: 'Deep House', label: 'Deep House' },
+      { value: 'Melodic House & Techno', label: 'Melodic House & Techno' },
+      { value: 'Progressive House', label: 'Progressive House' },
+      { value: 'Minimal / Deep Tech', label: 'Minimal / Deep Tech' },
+      { value: 'Bass House', label: 'Bass House' },
+      { value: 'Hard Techno', label: 'Hard Techno' },
+      { value: 'Techno (Peak Time)', label: 'Techno (Peak Time)' },
+      { value: 'Funky House', label: 'Funky House' },
+    ],
+    it: [
+      { value: 'all', label: 'Tutti i Generi' },
+      { value: 'Afro House', label: 'Afro House' },
+      { value: 'Tech House', label: 'Tech House' },
+      { value: 'Deep House', label: 'Deep House' },
+      { value: 'Melodic House & Techno', label: 'Melodic House & Techno' },
+      { value: 'Progressive House', label: 'Progressive House' },
+      { value: 'Minimal / Deep Tech', label: 'Minimal / Deep Tech' },
+      { value: 'Bass House', label: 'Bass House' },
+      { value: 'Hard Techno', label: 'Hard Techno' },
+      { value: 'Techno (Peak Time)', label: 'Techno (Peak Time)' },
+      { value: 'Funky House', label: 'Funky House' },
+    ],
+    de: [
+      { value: 'all', label: 'Alle Genres' },
+      { value: 'Afro House', label: 'Afro House' },
+      { value: 'Tech House', label: 'Tech House' },
+      { value: 'Deep House', label: 'Deep House' },
+      { value: 'Melodic House & Techno', label: 'Melodic House & Techno' },
+      { value: 'Progressive House', label: 'Progressive House' },
+      { value: 'Minimal / Deep Tech', label: 'Minimal / Deep Tech' },
+      { value: 'Bass House', label: 'Bass House' },
+      { value: 'Hard Techno', label: 'Hard Techno' },
+      { value: 'Techno (Peak Time)', label: 'Techno (Peak Time)' },
+      { value: 'Funky House', label: 'Funky House' },
+    ],
+    zh: [
+      { value: 'all', label: '所有流派' },
+      { value: 'Afro House', label: 'Afro House' },
+      { value: 'Tech House', label: 'Tech House' },
+      { value: 'Deep House', label: 'Deep House' },
+      { value: 'Melodic House & Techno', label: 'Melodic House & Techno' },
+      { value: 'Progressive House', label: 'Progressive House' },
+      { value: 'Minimal / Deep Tech', label: 'Minimal / Deep Tech' },
+      { value: 'Bass House', label: 'Bass House' },
+      { value: 'Hard Techno', label: 'Hard Techno' },
+      { value: 'Techno (Peak Time)', label: 'Techno (Peak Time)' },
+      { value: 'Funky House', label: 'Funky House' },
+    ],
+  };
+
+  const currentGenres = GENRES[language] || GENRES['en'];
+  const selectedGenreLabel = currentGenres.find(g => g.value === selectedGenre)?.label || t('filter.allGenres');
 
   useEffect(() => {
     loadTracks();
