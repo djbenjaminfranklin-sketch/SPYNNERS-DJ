@@ -894,11 +894,21 @@ const styles = StyleSheet.create({
   
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalContent: { backgroundColor: Colors.backgroundCard, borderRadius: 16, padding: 20, width: '100%', maxWidth: 320 },
+  modalContent: { backgroundColor: Colors.backgroundCard, borderRadius: 16, padding: 20, width: '100%', maxWidth: 320, maxHeight: '70%' },
   modalTitle: { fontSize: 18, fontWeight: '600', color: Colors.text, textAlign: 'center' },
   modalSubtitle: { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginTop: 4, marginBottom: 20 },
   modalOption: { flexDirection: 'row', alignItems: 'center', padding: 14, backgroundColor: Colors.background, borderRadius: 10, marginBottom: 8, gap: 12 },
-  modalOptionText: { color: Colors.text, fontSize: 14 },
+  modalOptionText: { color: Colors.text, fontSize: 14, flex: 1 },
   modalCancel: { padding: 14, alignItems: 'center', marginTop: 8 },
   modalCancelText: { color: Colors.textMuted, fontSize: 14 },
+  // Playlist modal additions
+  playlistLoading: { alignItems: 'center', paddingVertical: 30 },
+  playlistLoadingText: { color: Colors.textMuted, marginTop: 8, fontSize: 14 },
+  playlistEmpty: { alignItems: 'center', paddingVertical: 20 },
+  playlistEmptyText: { color: Colors.textMuted, marginTop: 8, fontSize: 14 },
+  createPlaylistBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: Colors.primary, borderRadius: 8 },
+  createPlaylistText: { color: '#fff', fontWeight: '600' },
+  playlistList: { maxHeight: 250 },
+  playlistOptionInfo: { flex: 1 },
+  playlistTrackCount: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
 });
