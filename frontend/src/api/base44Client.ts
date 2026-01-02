@@ -5,9 +5,13 @@
 
 import { createClient } from '@base44/sdk';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 // Base44 App ID for SPYNNERS
 const BASE44_APP_ID = '691a4d96d819355b52c063f3';
+
+// Direct Base44 Functions URL
+const BASE44_FUNCTIONS_URL = `https://${BASE44_APP_ID}.app.base44.com/functions`;
 
 // Storage key for auth token
 const AUTH_TOKEN_KEY = 'auth_token';
@@ -51,22 +55,39 @@ export const getBase44ClientSync = () => {
   return base44Client;
 };
 
-// Wrapper for functions.invoke
+// Wrapper for functions.invoke using direct HTTP call
 export const invokeBase44Function = async <T = any>(
   functionName: string,
   params: Record<string, any> = {}
 ): Promise<T> => {
   try {
-    const client = await getBase44Client();
+    const token = await getStoredToken();
     console.log(`[Base44Client] Invoking function: ${functionName}`, params);
+    console.log(`[Base44Client] Token available: ${!!token}`);
     
-    // The SDK provides functions.invoke method
-    const result = await (client as any).functions.invoke(functionName, params);
-    console.log(`[Base44Client] Function ${functionName} result:`, result);
+    // Use direct HTTP call to Base44 functions endpoint
+    const url = `${BASE44_FUNCTIONS_URL}/${functionName}`;
+    console.log(`[Base44Client] Calling URL: ${url}`);
     
-    return result;
-  } catch (error) {
-    console.error(`[Base44Client] Error invoking ${functionName}:`, error);
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await axios.post(url, params, { 
+      headers,
+      timeout: 30000 
+    });
+    
+    console.log(`[Base44Client] Function ${functionName} response status:`, response.status);
+    console.log(`[Base44Client] Function ${functionName} result:`, response.data);
+    
+    return response.data;
+  } catch (error: any) {
+    console.error(`[Base44Client] Error invoking ${functionName}:`, error?.response?.data || error?.message || error);
     throw error;
   }
 };
