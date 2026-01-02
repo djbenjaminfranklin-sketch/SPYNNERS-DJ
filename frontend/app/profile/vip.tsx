@@ -257,8 +257,8 @@ export default function VIPScreen() {
           vipTracks.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="musical-notes-outline" size={60} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>No VIP tracks available</Text>
-              <Text style={styles.emptySubtext}>Purchase a promo to access exclusive tracks</Text>
+              <Text style={styles.emptyText}>{t('vip.noVipTracks')}</Text>
+              <Text style={styles.emptySubtext}>{t('vip.purchasePromo')}</Text>
             </View>
           ) : (
             vipTracks.map((track) => {
