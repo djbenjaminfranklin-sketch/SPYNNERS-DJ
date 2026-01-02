@@ -781,8 +781,8 @@ const styles = StyleSheet.create({
   playerPlayBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
   playerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   playerTime: { color: Colors.textMuted, fontSize: 11 },
-  progressBar: { width: 60, height: 4, backgroundColor: Colors.border, borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: Colors.primary },
+  progressBar: { width: 80, height: 20, backgroundColor: Colors.border, borderRadius: 4, overflow: 'hidden', justifyContent: 'center' },
+  progressFill: { height: 6, backgroundColor: Colors.primary, borderRadius: 3, position: 'absolute', left: 0, top: 7 },
   
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: 20 },
