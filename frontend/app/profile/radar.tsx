@@ -14,19 +14,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import { base44Tracks, Track } from '../../src/services/base44Api';
+import { base44Notifications, base44Tracks, Track } from '../../src/services/base44Api';
 import { useAuth } from '../../src/contexts/AuthContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Simulated live radar data
+// Live radar play data structure
 interface RadarPlay {
   id: string;
-  track: Track;
+  track_id: string;
+  track_title: string;
+  track_artwork?: string;
+  producer_name: string;
   dj_name: string;
-  location: string;
-  club_name: string;
-  country: string;
+  location?: string;
+  club_name?: string;
+  country?: string;
   played_at: string;
   is_live: boolean;
 }
@@ -37,35 +40,57 @@ export default function LiveRadarScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [recentPlays, setRecentPlays] = useState<RadarPlay[]>([]);
-  const [myTracks, setMyTracks] = useState<Track[]>([]);
+  const [myTracksCount, setMyTracksCount] = useState(0);
   const [activeTab, setActiveTab] = useState<'global' | 'my_tracks'>('global');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [activeTab]);
 
   const loadData = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Load all approved tracks
-      const allTracks = await base44Tracks.list({ limit: 50 });
-      const approvedTracks = allTracks.filter((t: Track) => t.status === 'approved');
-      
-      // Filter for user's tracks
       const userId = user?.id || user?._id || '';
-      const userTracks = approvedTracks.filter((t: Track) => 
-        t.producer_id === userId || t.created_by_id === userId || t.uploaded_by === userId
-      );
-      setMyTracks(userTracks);
       
-      // Generate simulated recent plays for demo
-      // In production, this would come from a real-time API
-      const simulatedPlays = generateSimulatedPlays(approvedTracks.slice(0, 15));
-      setRecentPlays(simulatedPlays);
+      // Fetch live track plays from Base44 function
+      // If on "my_tracks" tab, pass producer ID to filter
+      const producerId = activeTab === 'my_tracks' ? userId : undefined;
       
-    } catch (error) {
-      console.error('[LiveRadar] Error loading data:', error);
+      console.log('[LiveRadar] Fetching plays for:', activeTab, producerId);
+      const plays = await base44Notifications.getLiveTrackPlays(producerId);
+      
+      // Transform the data to our format
+      const formattedPlays: RadarPlay[] = plays.map((play: any, index: number) => ({
+        id: play.id || play._id || `play-${index}`,
+        track_id: play.track_id || play.trackId || '',
+        track_title: play.track_title || play.trackTitle || 'Unknown Track',
+        track_artwork: play.track_artwork || play.trackArtwork || play.artwork_url || '',
+        producer_name: play.producer_name || play.producerName || play.artist_name || 'Unknown',
+        dj_name: play.dj_name || play.djName || 'Unknown DJ',
+        location: play.location || play.city || '',
+        club_name: play.club_name || play.clubName || play.venue || '',
+        country: play.country || getCountryFlag(play.location || play.city),
+        played_at: play.played_at || play.playedAt || play.created_at || new Date().toISOString(),
+        is_live: isPlayLive(play.played_at || play.playedAt || play.created_at),
+      }));
+      
+      setRecentPlays(formattedPlays);
+      
+      // Count user's tracks for stats
+      if (userId) {
+        const userTracks = await base44Tracks.list({ limit: 100 });
+        const myTracks = userTracks.filter((t: Track) => 
+          t.producer_id === userId || t.created_by_id === userId || t.uploaded_by === userId
+        );
+        setMyTracksCount(myTracks.length);
+      }
+      
+    } catch (err: any) {
+      console.error('[LiveRadar] Error loading data:', err);
+      setError('Unable to load live plays. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -77,53 +102,39 @@ export default function LiveRadarScreen() {
     setRefreshing(false);
   };
 
-  // Generate simulated plays for demo
-  const generateSimulatedPlays = (tracks: Track[]): RadarPlay[] => {
-    const clubs = [
-      { name: 'Berghain', location: 'Berlin', country: '🇩🇪' },
-      { name: 'Fabric', location: 'London', country: '🇬🇧' },
-      { name: 'Amnesia', location: 'Ibiza', country: '🇪🇸' },
-      { name: 'Rex Club', location: 'Paris', country: '🇫🇷' },
-      { name: 'Tresor', location: 'Berlin', country: '🇩🇪' },
-      { name: 'DC-10', location: 'Ibiza', country: '🇪🇸' },
-      { name: 'Watergate', location: 'Berlin', country: '🇩🇪' },
-      { name: 'Concrete', location: 'Paris', country: '🇫🇷' },
-      { name: 'Shelter', location: 'Amsterdam', country: '🇳🇱' },
-      { name: 'Output', location: 'New York', country: '🇺🇸' },
-    ];
-    
-    const djNames = [
-      'DJ Storm', 'Tech Master', 'House Queen', 'Bass Driver', 
-      'Rhythm King', 'Groove Master', 'Vibe Controller', 'Night Rider'
-    ];
-    
-    return tracks.map((track, index) => {
-      const club = clubs[index % clubs.length];
-      const minutesAgo = Math.floor(Math.random() * 120);
-      const playedAt = new Date(Date.now() - minutesAgo * 60000);
-      
-      return {
-        id: `play-${index}`,
-        track,
-        dj_name: djNames[index % djNames.length],
-        location: club.location,
-        club_name: club.name,
-        country: club.country,
-        played_at: playedAt.toISOString(),
-        is_live: minutesAgo < 10,
-      };
-    });
+  // Check if a play is considered "live" (within last 15 minutes)
+  const isPlayLive = (dateString: string): boolean => {
+    if (!dateString) return false;
+    const now = new Date();
+    const playTime = new Date(dateString);
+    const diffMs = now.getTime() - playTime.getTime();
+    const diffMins = diffMs / 60000;
+    return diffMins < 15;
   };
 
-  // Get cover image URL
-  const getCoverImageUrl = (track: Track): string | null => {
-    const url = track.artwork_url || track.cover_image;
-    if (url && url.startsWith('http')) return url;
-    return null;
+  // Get country flag emoji from location
+  const getCountryFlag = (location: string): string => {
+    const countryFlags: Record<string, string> = {
+      'berlin': '🇩🇪', 'germany': '🇩🇪', 'munich': '🇩🇪',
+      'london': '🇬🇧', 'uk': '🇬🇧', 'manchester': '🇬🇧',
+      'paris': '🇫🇷', 'france': '🇫🇷', 'lyon': '🇫🇷',
+      'ibiza': '🇪🇸', 'spain': '🇪🇸', 'madrid': '🇪🇸', 'barcelona': '🇪🇸',
+      'amsterdam': '🇳🇱', 'netherlands': '🇳🇱',
+      'new york': '🇺🇸', 'usa': '🇺🇸', 'los angeles': '🇺🇸', 'miami': '🇺🇸',
+      'tokyo': '🇯🇵', 'japan': '🇯🇵',
+      'sydney': '🇦🇺', 'australia': '🇦🇺',
+    };
+    
+    const loc = (location || '').toLowerCase();
+    for (const [key, flag] of Object.entries(countryFlags)) {
+      if (loc.includes(key)) return flag;
+    }
+    return '🌍';
   };
 
   // Format time ago
   const formatTimeAgo = (dateString: string): string => {
+    if (!dateString) return 'Unknown';
     const now = new Date();
     const played = new Date(dateString);
     const diffMs = now.getTime() - played.getTime();
@@ -135,21 +146,6 @@ export default function LiveRadarScreen() {
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${Math.floor(diffHours / 24)}d ago`;
   };
-
-  // Get artist name
-  const getArtistName = (track: Track): string => {
-    return track.producer_name || track.artist_name || 'Unknown Artist';
-  };
-
-  // Filter plays based on active tab
-  const displayedPlays = activeTab === 'my_tracks' 
-    ? recentPlays.filter(play => {
-        const userId = user?.id || user?._id || '';
-        return play.track.producer_id === userId || 
-               play.track.created_by_id === userId || 
-               play.track.uploaded_by === userId;
-      })
-    : recentPlays;
 
   return (
     <View style={styles.container}>
@@ -184,7 +180,7 @@ export default function LiveRadarScreen() {
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Ionicons name="musical-notes" size={20} color="#FF9800" />
-          <Text style={styles.statValue}>{myTracks.length}</Text>
+          <Text style={styles.statValue}>{myTracksCount}</Text>
           <Text style={styles.statLabel}>My Tracks</Text>
         </View>
       </View>
@@ -224,7 +220,15 @@ export default function LiveRadarScreen() {
             <ActivityIndicator size="large" color={Colors.primary} />
             <Text style={styles.loadingText}>Loading live activity...</Text>
           </View>
-        ) : displayedPlays.length === 0 ? (
+        ) : error ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="warning-outline" size={60} color={Colors.textMuted} />
+            <Text style={styles.emptyText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={loadData}>
+              <Text style={styles.retryText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : recentPlays.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="radio-outline" size={60} color={Colors.textMuted} />
             <Text style={styles.emptyText}>
@@ -235,65 +239,65 @@ export default function LiveRadarScreen() {
             </Text>
             <Text style={styles.emptySubtext}>
               {activeTab === 'my_tracks'
-                ? 'Upload more tracks to get noticed!'
+                ? 'Upload more tracks to get noticed by DJs!'
                 : 'Check back later for live updates'
               }
             </Text>
           </View>
         ) : (
-          displayedPlays.map((play) => {
-            const coverUrl = getCoverImageUrl(play.track);
-            
-            return (
-              <View key={play.id} style={[styles.playCard, play.is_live && styles.playCardLive]}>
-                {/* Live Indicator */}
-                {play.is_live && (
-                  <View style={styles.playLiveIndicator}>
-                    <View style={styles.playLiveDot} />
-                    <Text style={styles.playLiveText}>LIVE</Text>
+          recentPlays.map((play) => (
+            <View key={play.id} style={[styles.playCard, play.is_live && styles.playCardLive]}>
+              {/* Live Indicator */}
+              {play.is_live && (
+                <View style={styles.playLiveIndicator}>
+                  <View style={styles.playLiveDot} />
+                  <Text style={styles.playLiveText}>LIVE</Text>
+                </View>
+              )}
+              
+              {/* Track Cover */}
+              <View style={styles.playCover}>
+                {play.track_artwork ? (
+                  <Image source={{ uri: play.track_artwork }} style={styles.playCoverImage} />
+                ) : (
+                  <View style={styles.playCoverPlaceholder}>
+                    <Ionicons name="musical-notes" size={24} color={Colors.textMuted} />
                   </View>
                 )}
+              </View>
+              
+              {/* Play Info */}
+              <View style={styles.playInfo}>
+                <Text style={styles.playTrackTitle} numberOfLines={1}>
+                  {play.track_title}
+                </Text>
+                <Text style={styles.playTrackArtist} numberOfLines={1}>
+                  {play.producer_name}
+                </Text>
                 
-                {/* Track Cover */}
-                <View style={styles.playCover}>
-                  {coverUrl ? (
-                    <Image source={{ uri: coverUrl }} style={styles.playCoverImage} />
-                  ) : (
-                    <View style={styles.playCoverPlaceholder}>
-                      <Ionicons name="musical-notes" size={24} color={Colors.textMuted} />
-                    </View>
-                  )}
-                </View>
-                
-                {/* Play Info */}
-                <View style={styles.playInfo}>
-                  <Text style={styles.playTrackTitle} numberOfLines={1}>
-                    {play.track.title}
-                  </Text>
-                  <Text style={styles.playTrackArtist} numberOfLines={1}>
-                    {getArtistName(play.track)}
-                  </Text>
-                  
-                  <View style={styles.playDetails}>
-                    <View style={styles.playDetailItem}>
-                      <Ionicons name="person" size={12} color={Colors.textMuted} />
-                      <Text style={styles.playDetailText}>{play.dj_name}</Text>
-                    </View>
+                <View style={styles.playDetails}>
+                  <View style={styles.playDetailItem}>
+                    <Ionicons name="person" size={12} color={Colors.textMuted} />
+                    <Text style={styles.playDetailText}>{play.dj_name}</Text>
+                  </View>
+                  {play.club_name && (
                     <View style={styles.playDetailItem}>
                       <Text style={styles.playCountry}>{play.country}</Text>
                       <Text style={styles.playDetailText}>{play.club_name}</Text>
                     </View>
-                  </View>
-                </View>
-                
-                {/* Time & Location */}
-                <View style={styles.playMeta}>
-                  <Text style={styles.playTime}>{formatTimeAgo(play.played_at)}</Text>
-                  <Text style={styles.playLocation}>{play.location}</Text>
+                  )}
                 </View>
               </View>
-            );
-          })
+              
+              {/* Time & Location */}
+              <View style={styles.playMeta}>
+                <Text style={styles.playTime}>{formatTimeAgo(play.played_at)}</Text>
+                {play.location && (
+                  <Text style={styles.playLocation}>{play.location}</Text>
+                )}
+              </View>
+            </View>
+          ))
         )}
         
         <View style={{ height: 30 }} />
@@ -378,6 +382,14 @@ const styles = StyleSheet.create({
   emptyContainer: { padding: 60, alignItems: 'center' },
   emptyText: { color: Colors.text, fontSize: 18, fontWeight: '600', marginTop: 16, textAlign: 'center' },
   emptySubtext: { color: Colors.textMuted, fontSize: 14, marginTop: 4, textAlign: 'center' },
+  retryButton: { 
+    marginTop: 16, 
+    paddingHorizontal: 24, 
+    paddingVertical: 10, 
+    backgroundColor: Colors.primary, 
+    borderRadius: 8 
+  },
+  retryText: { color: '#fff', fontWeight: '600' },
   
   // Play Card
   playCard: {
