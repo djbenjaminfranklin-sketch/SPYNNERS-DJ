@@ -683,7 +683,7 @@ export default function UploadScreen() {
               {rightsConfirmed && <Ionicons name="checkmark" size={14} color="#fff" />}
             </View>
             <Text style={styles.checkboxLabel}>
-              I confirm that I own or have the rights to upload this track *
+              {t('upload.rightsConfirm')} *
             </Text>
           </TouchableOpacity>
 
@@ -692,7 +692,7 @@ export default function UploadScreen() {
               {freeDownloadAuthorized && <Ionicons name="checkmark" size={14} color="#fff" />}
             </View>
             <Text style={styles.checkboxLabel}>
-              I authorize free download for promotional purposes on SPYNNERS *
+              {t('upload.freeDownload')} *
             </Text>
           </TouchableOpacity>
         </View>
@@ -706,12 +706,12 @@ export default function UploadScreen() {
           {uploading ? (
             <View style={styles.uploadingContainer}>
               <ActivityIndicator color="#fff" />
-              <Text style={styles.submitButtonText}>Uploading... {uploadProgress}%</Text>
+              <Text style={styles.submitButtonText}>{t('upload.uploading')} {uploadProgress}%</Text>
             </View>
           ) : (
             <>
               <Ionicons name="cloud-upload" size={22} color="#fff" />
-              <Text style={styles.submitButtonText}>Upload Track</Text>
+              <Text style={styles.submitButtonText}>{t('upload.submit')}</Text>
             </>
           )}
         </TouchableOpacity>
