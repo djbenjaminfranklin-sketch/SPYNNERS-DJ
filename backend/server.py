@@ -702,6 +702,91 @@ async def base44_signup(request: Base44SignupRequest):
     except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Base44 service unavailable: {str(e)}")
 
+# ==================== MP3 METADATA EXTRACTION ====================
+
+@app.post("/api/extract-mp3-metadata")
+async def extract_mp3_metadata(file: UploadFile = File(...)):
+    """Extract metadata from MP3 file including cover art, BPM, genre"""
+    if not MUTAGEN_AVAILABLE:
+        raise HTTPException(status_code=503, detail="MP3 metadata extraction not available")
+    
+    try:
+        # Save file temporarily
+        content = await file.read()
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as tmp_file:
+            tmp_file.write(content)
+            tmp_path = tmp_file.name
+        
+        result = {
+            "title": None,
+            "artist": None,
+            "album": None,
+            "genre": None,
+            "bpm": None,
+            "cover_image": None,
+            "duration": None,
+        }
+        
+        try:
+            # Try to read MP3 metadata
+            audio = MP3(tmp_path)
+            
+            # Get duration
+            if audio.info:
+                result["duration"] = int(audio.info.length)
+            
+            # Try ID3 tags
+            try:
+                tags = ID3(tmp_path)
+                
+                # Title
+                if 'TIT2' in tags:
+                    result["title"] = str(tags['TIT2'].text[0])
+                
+                # Artist
+                if 'TPE1' in tags:
+                    result["artist"] = str(tags['TPE1'].text[0])
+                
+                # Album
+                if 'TALB' in tags:
+                    result["album"] = str(tags['TALB'].text[0])
+                
+                # Genre
+                if 'TCON' in tags:
+                    result["genre"] = str(tags['TCON'].text[0])
+                
+                # BPM
+                if 'TBPM' in tags:
+                    try:
+                        result["bpm"] = int(float(str(tags['TBPM'].text[0])))
+                    except:
+                        pass
+                
+                # Cover art
+                for key in tags.keys():
+                    if key.startswith('APIC'):
+                        apic = tags[key]
+                        if apic.data:
+                            # Convert to base64
+                            cover_base64 = base64.b64encode(apic.data).decode('utf-8')
+                            mime_type = apic.mime if hasattr(apic, 'mime') else 'image/jpeg'
+                            result["cover_image"] = f"data:{mime_type};base64,{cover_base64}"
+                            break
+                            
+            except Exception as id3_error:
+                print(f"ID3 tags error: {id3_error}")
+                
+        finally:
+            # Clean up temp file
+            os.unlink(tmp_path)
+        
+        print(f"[MP3 Metadata] Extracted: title={result['title']}, artist={result['artist']}, genre={result['genre']}, bpm={result['bpm']}, has_cover={result['cover_image'] is not None}")
+        return result
+        
+    except Exception as e:
+        print(f"[MP3 Metadata] Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to extract metadata: {str(e)}")
+
 @app.get("/api/base44/auth/me")
 async def base44_me(authorization: Optional[str] = Header(None)):
     """Proxy me request to Base44"""
