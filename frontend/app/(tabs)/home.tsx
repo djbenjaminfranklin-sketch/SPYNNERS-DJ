@@ -280,7 +280,7 @@ export default function HomeScreen() {
     
     // Get the touch position relative to the progress bar
     const { locationX } = event.nativeEvent;
-    const progressBarWidth = 60; // Same as style width
+    const progressBarWidth = 80; // Same as style width
     const percentage = Math.max(0, Math.min(1, locationX / progressBarWidth));
     const newPosition = percentage * playbackDuration;
     
