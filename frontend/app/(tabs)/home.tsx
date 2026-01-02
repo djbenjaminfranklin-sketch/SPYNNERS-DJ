@@ -359,14 +359,65 @@ export default function HomeScreen() {
     return track.average_rating || track.rating || 0;
   };
 
+  // Notification state
+  const [hasNotifications, setHasNotifications] = React.useState(true);
+  const [notificationCount, setNotificationCount] = React.useState(3);
+
   return (
     <View style={styles.container}>
+      {/* Top Header with Language & Notifications */}
+      <View style={styles.topHeader}>
+        <View style={styles.headerLeft}>
+          <Text style={styles.logoText}>SPYNNERS</Text>
+        </View>
+        
+        <View style={styles.headerRight}>
+          {/* Language Selector */}
+          <TouchableOpacity 
+            style={styles.langButton}
+            onPress={() => {
+              // Toggle language
+              const newLang = t('language') === 'FR' ? 'en' : 'fr';
+              // Language change handled by context
+            }}
+          >
+            <Ionicons name="language" size={20} color={Colors.text} />
+            <Text style={styles.langText}>{t('language') === 'FR' ? 'FR' : 'EN'}</Text>
+          </TouchableOpacity>
+          
+          {/* Notification Bell */}
+          <TouchableOpacity 
+            style={styles.notificationButton}
+            onPress={() => router.push('/(tabs)/received')}
+          >
+            <Ionicons name="notifications-outline" size={24} color={Colors.text} />
+            {hasNotifications && notificationCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {notificationCount > 9 ? '9+' : notificationCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView
         style={styles.scrollView}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
         contentContainerStyle={{ paddingBottom: currentTrack ? 120 : 20 }}
       >
-        {/* SPYN Buttons - Two round buttons */}
+        {/* User Menu - Two Rows Grid (FIRST) */}
+        <View style={styles.menuContainer}>
+          <View style={styles.menuRow}>
+            {USER_MENU_ITEMS_ROW1.map(renderMenuItem)}
+          </View>
+          <View style={styles.menuRow}>
+            {USER_MENU_ITEMS_ROW2.map(renderMenuItem)}
+          </View>
+        </View>
+
+        {/* SPYN Buttons - Two round buttons (AFTER menus) */}
         <View style={styles.spynButtonsContainer}>
           <TouchableOpacity style={styles.spynButton} onPress={handleSpynDetection} activeOpacity={0.8}>
             <LinearGradient colors={['#9C27B0', '#7B1FA2']} style={styles.spynButtonGradient}>
@@ -383,16 +434,6 @@ export default function HomeScreen() {
               <Text style={styles.spynButtonSubtext}>Record</Text>
             </LinearGradient>
           </TouchableOpacity>
-        </View>
-
-        {/* User Menu - Two Rows Grid */}
-        <View style={styles.menuContainer}>
-          <View style={styles.menuRow}>
-            {USER_MENU_ITEMS_ROW1.map(renderMenuItem)}
-          </View>
-          <View style={styles.menuRow}>
-            {USER_MENU_ITEMS_ROW2.map(renderMenuItem)}
-          </View>
         </View>
 
         {/* Search & Filters */}
