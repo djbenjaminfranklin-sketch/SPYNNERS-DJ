@@ -139,7 +139,7 @@ export default function UploadScreen() {
     }
   };
 
-  // Pick audio file
+  // Pick audio file and extract metadata via backend
   const pickAudioFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -156,10 +156,54 @@ export default function UploadScreen() {
         }
         setAudioFile({ uri: file.uri, name: file.name });
         
-        // Try to extract title from filename
+        // Try to extract title from filename as fallback
         if (!title && file.name) {
           const nameWithoutExt = file.name.replace(/\.(mp3|wav|m4a|aac)$/i, '');
           setTitle(nameWithoutExt);
+        }
+        
+        // Try to extract metadata via backend API
+        try {
+          console.log('[Upload] Extracting metadata via backend...');
+          
+          // Create form data
+          const formData = new FormData();
+          formData.append('file', {
+            uri: file.uri,
+            name: file.name,
+            type: 'audio/mpeg',
+          } as any);
+          
+          const response = await fetch('/api/extract-mp3-metadata', {
+            method: 'POST',
+            body: formData,
+          });
+          
+          if (response.ok) {
+            const metadata = await response.json();
+            console.log('[Upload] Extracted metadata:', metadata);
+            
+            // Auto-fill fields with extracted metadata
+            if (metadata.title && !title) {
+              setTitle(metadata.title);
+            }
+            if (metadata.artist && !artistName) {
+              setArtistName(metadata.artist);
+            }
+            if (metadata.genre) {
+              setGenre(metadata.genre);
+            }
+            if (metadata.bpm) {
+              setBpm(metadata.bpm.toString());
+            }
+            if (metadata.cover_image && !coverImage) {
+              setCoverImage(metadata.cover_image);
+              Alert.alert('Info', 'Cover art extracted from MP3 file');
+            }
+          }
+        } catch (metadataError) {
+          console.log('[Upload] Metadata extraction failed:', metadataError);
+          // Not critical, continue without metadata
         }
       }
     } catch (error) {
