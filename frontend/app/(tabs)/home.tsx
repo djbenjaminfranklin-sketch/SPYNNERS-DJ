@@ -22,6 +22,7 @@ import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { base44Tracks, base44Playlists, base44Notifications2, Track, Notification } from '../../src/services/base44Api';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import NotificationModal from '../../src/components/NotificationModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MENU_ITEM_SIZE = (SCREEN_WIDTH - 24 - 40) / 5; // 5 items per row with spacing
