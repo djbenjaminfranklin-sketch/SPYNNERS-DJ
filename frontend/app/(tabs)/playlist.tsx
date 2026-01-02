@@ -11,11 +11,13 @@ import {
   TextInput,
   Alert,
   Image,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Audio } from 'expo-av';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { base44Playlists, Playlist } from '../../src/services/base44Api';
+import { base44Playlists, base44Tracks, Playlist, Track } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -29,9 +31,24 @@ export default function PlaylistScreen() {
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [selectedPlaylist, setSelectedPlaylist] = useState<any | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  
+  // Track detail states
+  const [playlistTracks, setPlaylistTracks] = useState<Track[]>([]);
+  const [loadingTracks, setLoadingTracks] = useState(false);
+  
+  // Audio player states
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [currentPlayingTrack, setCurrentPlayingTrack] = useState<Track | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     loadPlaylists();
+    return () => {
+      // Cleanup audio when component unmounts
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
   }, [user]);
 
   const loadPlaylists = async () => {
@@ -45,9 +62,10 @@ export default function PlaylistScreen() {
       console.log('[Playlist] All playlists loaded:', allPlaylists.length);
       
       // Filter to show only MY playlists
-      const myPlaylists = allPlaylists.filter((p: any) => 
-        p.user_id === userId || p.created_by_id === userId
-      );
+      const myPlaylists = allPlaylists.filter((p: any) => {
+        const playlistUserId = p.user_id || p.created_by_id || '';
+        return playlistUserId === userId;
+      });
       
       console.log('[Playlist] My playlists:', myPlaylists.length);
       setPlaylists(myPlaylists);
