@@ -815,32 +815,33 @@ async def extract_mp3_metadata(file: UploadFile = File(...)):
                         pass
             except Exception as easy_error:
                 print(f"EasyID3 error: {easy_error}")
+            
+            print(f"[MP3 Metadata] Extracted from tags: title={result['title']}, artist={result['artist']}, genre={result['genre']}, bpm={result['bpm']}, has_cover={result['cover_image'] is not None}")
+            
+            # If BPM not found in tags, try automatic detection with librosa
+            if result["bpm"] is None and LIBROSA_AVAILABLE:
+                try:
+                    print(f"[MP3 Metadata] Attempting automatic BPM detection with librosa...")
+                    # Load audio file (first 60 seconds for faster processing)
+                    y, sr = librosa.load(tmp_path, sr=None, duration=60)
+                    # Detect tempo (BPM)
+                    tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
+                    if tempo is not None:
+                        # tempo can be an array, get the first value
+                        if hasattr(tempo, '__iter__'):
+                            bpm_value = float(tempo[0]) if len(tempo) > 0 else float(tempo)
+                        else:
+                            bpm_value = float(tempo)
+                        result["bpm"] = int(round(bpm_value))
+                        print(f"[MP3 Metadata] Auto-detected BPM: {result['bpm']}")
+                except Exception as bpm_error:
+                    print(f"[MP3 Metadata] BPM detection error: {bpm_error}")
                 
         finally:
             # Clean up temp file
             os.unlink(tmp_path)
         
-        print(f"[MP3 Metadata] Extracted: title={result['title']}, artist={result['artist']}, genre={result['genre']}, bpm={result['bpm']}, has_cover={result['cover_image'] is not None}")
-        
-        # If BPM not found in tags, try automatic detection with librosa
-        if result["bpm"] is None and LIBROSA_AVAILABLE:
-            try:
-                print(f"[MP3 Metadata] Attempting automatic BPM detection with librosa...")
-                # Load audio file
-                y, sr = librosa.load(tmp_path, sr=None, duration=60)  # Load first 60 seconds
-                # Detect tempo (BPM)
-                tempo, _ = librosa.beat.beat_track(y=y, sr=sr)
-                if tempo is not None:
-                    # tempo can be an array, get the first value
-                    if hasattr(tempo, '__iter__'):
-                        bpm_value = float(tempo[0]) if len(tempo) > 0 else float(tempo)
-                    else:
-                        bpm_value = float(tempo)
-                    result["bpm"] = int(round(bpm_value))
-                    print(f"[MP3 Metadata] Auto-detected BPM: {result['bpm']}")
-            except Exception as bpm_error:
-                print(f"[MP3 Metadata] BPM detection error: {bpm_error}")
-        
+        print(f"[MP3 Metadata] Final result: title={result['title']}, artist={result['artist']}, genre={result['genre']}, bpm={result['bpm']}")
         return result
         
     except Exception as e:
