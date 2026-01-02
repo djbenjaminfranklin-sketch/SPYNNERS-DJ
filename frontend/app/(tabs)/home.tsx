@@ -442,6 +442,8 @@ export default function HomeScreen() {
             const trackId = track.id || track._id || '';
             const isCurrentTrack = currentTrack && (currentTrack.id || currentTrack._id) === trackId;
             const coverUrl = getCoverImageUrl(track);
+            const artistName = getArtistName(track);
+            const rating = getRating(track);
             
             return (
               <View key={trackId} style={[styles.trackCard, isCurrentTrack && styles.trackCardActive]}>
@@ -467,8 +469,8 @@ export default function HomeScreen() {
                 {/* Track Info */}
                 <View style={styles.trackInfo}>
                   <Text style={styles.trackTitle} numberOfLines={1}>{track.title}</Text>
-                  <Text style={styles.trackArtist} numberOfLines={1}>{track.artist_name} • {track.bpm || '—'} BPM</Text>
-                  {renderRating(track.rating)}
+                  <Text style={styles.trackArtist} numberOfLines={1}>{artistName} • {track.bpm || '—'} BPM</Text>
+                  {renderRating(rating)}
                 </View>
 
                 {/* VIP Badge */}
