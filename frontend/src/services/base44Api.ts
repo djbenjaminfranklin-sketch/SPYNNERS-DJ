@@ -436,33 +436,79 @@ export const base44Users = {
     }
   },
 
-  // Fetch all users with pagination (fetches multiple pages)
-  async fetchAllUsersWithPagination(searchQuery?: string): Promise<User[]> {
+  // Fetch all users by extracting unique producers from all tracks
+  async fetchAllUsersFromTracks(): Promise<User[]> {
     try {
-      console.log('[Users] Fetching all users with pagination...');
-      const allUsers: User[] = [];
-      const pageSize = 100;
+      console.log('[Users] Fetching all users from tracks with pagination...');
+      const allUsers = new Map<string, User>();
+      const pageSize = 200;
       let offset = 0;
       let hasMore = true;
+      let totalTracksProcessed = 0;
       
       while (hasMore) {
-        const users = await this.nativeGetAllUsers({
-          search: searchQuery || '',
-          limit: pageSize,
-          offset,
-        });
+        const params = new URLSearchParams();
+        params.append('limit', pageSize.toString());
+        params.append('offset', offset.toString());
         
-        if (users.length > 0) {
-          allUsers.push(...users);
+        const response = await api.get(`/api/base44/entities/Track?${params.toString()}`);
+        const data = response.data;
+        
+        let tracks: any[] = [];
+        if (Array.isArray(data)) {
+          tracks = data;
+        } else if (data?.items) {
+          tracks = data.items;
+        } else if (data?.data) {
+          tracks = data.data;
+        }
+        
+        console.log(`[Users] Fetched ${tracks.length} tracks at offset ${offset}`);
+        
+        if (tracks.length > 0) {
+          tracks.forEach((track: any) => {
+            // Extract producer info
+            const producerId = track.producer_id || track.created_by_id || track.uploaded_by || '';
+            const producerName = track.producer_name || track.artist_name || 'Unknown';
+            
+            if (producerId && !allUsers.has(producerId)) {
+              allUsers.set(producerId, {
+                id: producerId,
+                _id: producerId,
+                email: '',
+                full_name: producerName,
+                user_type: 'producer',
+              });
+            }
+            
+            // Also check collaborators
+            if (track.collaborators && Array.isArray(track.collaborators)) {
+              track.collaborators.forEach((collab: any) => {
+                const collabId = typeof collab === 'string' ? collab : collab.id || collab._id;
+                const collabName = typeof collab === 'string' ? collab : collab.name || collab.full_name;
+                if (collabId && !allUsers.has(collabId)) {
+                  allUsers.set(collabId, {
+                    id: collabId,
+                    _id: collabId,
+                    email: '',
+                    full_name: collabName || 'Unknown',
+                    user_type: 'producer',
+                  });
+                }
+              });
+            }
+          });
+          
+          totalTracksProcessed += tracks.length;
           offset += pageSize;
           
           // If we got less than the page size, we're done
-          if (users.length < pageSize) {
+          if (tracks.length < pageSize) {
             hasMore = false;
           }
           
-          // Safety limit to prevent infinite loops (max 2000 users)
-          if (offset >= 2000) {
+          // Safety limit to prevent infinite loops (max 5000 tracks = ~25 requests)
+          if (offset >= 5000) {
             hasMore = false;
           }
         } else {
@@ -470,11 +516,64 @@ export const base44Users = {
         }
       }
       
-      console.log('[Users] Total users fetched:', allUsers.length);
-      return allUsers;
+      console.log(`[Users] Total tracks processed: ${totalTracksProcessed}, Unique users found: ${allUsers.size}`);
+      return Array.from(allUsers.values());
+    } catch (error) {
+      console.error('[Users] Error fetching users from tracks:', error);
+      return [];
+    }
+  },
+
+  // Fetch all users with pagination (fetches multiple pages)
+  async fetchAllUsersWithPagination(searchQuery?: string): Promise<User[]> {
+    try {
+      console.log('[Users] Fetching all users with pagination...');
+      
+      // First try the native function
+      const nativeUsers = await this.nativeGetAllUsers({
+        search: searchQuery || '',
+        limit: 100,
+        offset: 0,
+      });
+      
+      if (nativeUsers.length > 0) {
+        console.log('[Users] Got users from nativeGetAllUsers:', nativeUsers.length);
+        
+        // If we got some users, try to paginate to get more
+        if (nativeUsers.length >= 100) {
+          let allUsers = [...nativeUsers];
+          let offset = 100;
+          let hasMore = true;
+          
+          while (hasMore && offset < 2000) {
+            const moreUsers = await this.nativeGetAllUsers({
+              search: searchQuery || '',
+              limit: 100,
+              offset,
+            });
+            
+            if (moreUsers.length > 0) {
+              allUsers.push(...moreUsers);
+              offset += 100;
+              if (moreUsers.length < 100) hasMore = false;
+            } else {
+              hasMore = false;
+            }
+          }
+          
+          return allUsers;
+        }
+        
+        return nativeUsers;
+      }
+      
+      // If native function failed, fallback to extracting from tracks
+      console.log('[Users] Falling back to extracting users from tracks...');
+      return await this.fetchAllUsersFromTracks();
     } catch (error) {
       console.error('[Users] Error fetching all users with pagination:', error);
-      return [];
+      // Fallback to tracks
+      return await this.fetchAllUsersFromTracks();
     }
   },
 
