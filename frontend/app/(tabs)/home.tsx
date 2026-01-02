@@ -296,7 +296,7 @@ export default function HomeScreen() {
     return <View style={styles.ratingContainer}>{stars}</View>;
   };
 
-  // Filter dropdown
+  // Filter dropdown with Portal-like behavior for z-index
   const FilterDropdown = ({ value, options, show, setShow, onSelect, closeOthers }: any) => (
     <View style={styles.filterDropdown}>
       <TouchableOpacity 
@@ -310,24 +310,32 @@ export default function HomeScreen() {
         <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
       </TouchableOpacity>
       {show && (
-        <View style={styles.filterDropdownList}>
-          <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
-            {options.map((option: string) => (
-              <TouchableOpacity
-                key={option}
-                style={[styles.filterOption, value === option && styles.filterOptionSelected]}
-                onPress={() => { 
-                  onSelect(option); 
-                  setShow(false); 
-                  // Trigger reload after filter change
-                  setTimeout(loadTracks, 100); 
-                }}
-              >
-                <Text style={[styles.filterOptionText, value === option && styles.filterOptionTextSelected]}>{option}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+        <>
+          {/* Backdrop to catch clicks outside */}
+          <TouchableOpacity 
+            style={styles.filterBackdrop} 
+            onPress={() => setShow(false)}
+            activeOpacity={1}
+          />
+          <View style={styles.filterDropdownList}>
+            <ScrollView style={{ maxHeight: 250 }} nestedScrollEnabled>
+              {options.map((option: string) => (
+                <TouchableOpacity
+                  key={option}
+                  style={[styles.filterOption, value === option && styles.filterOptionSelected]}
+                  onPress={() => { 
+                    onSelect(option); 
+                    setShow(false); 
+                    // Trigger reload after filter change
+                    setTimeout(loadTracks, 100); 
+                  }}
+                >
+                  <Text style={[styles.filterOptionText, value === option && styles.filterOptionTextSelected]}>{option}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </>
       )}
     </View>
   );
