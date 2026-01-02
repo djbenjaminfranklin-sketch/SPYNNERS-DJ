@@ -458,14 +458,14 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Upload Track Button */}
+        {/* Upload Track Button - styled like spynners.com */}
         <TouchableOpacity 
           style={styles.uploadTrackButton} 
           onPress={() => router.push('/(tabs)/upload')}
           activeOpacity={0.8}
         >
-          <LinearGradient colors={['#4CAF50', '#388E3C']} style={styles.uploadTrackGradient}>
-            <Ionicons name="cloud-upload" size={22} color="#fff" />
+          <LinearGradient colors={['#4DD0E1', '#26C6DA', '#00BCD4']} style={styles.uploadTrackGradient} start={{x: 0, y: 0}} end={{x: 1, y: 0}}>
+            <Ionicons name="cloud-upload-outline" size={22} color="#fff" />
             <Text style={styles.uploadTrackText}>{t('menu.uploadTrack')}</Text>
           </LinearGradient>
         </TouchableOpacity>
