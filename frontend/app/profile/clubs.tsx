@@ -184,7 +184,7 @@ export default function ClubsScreen() {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Ionicons name="location" size={24} color={Colors.primary} />
-          <Text style={styles.headerTitle}>Partner Clubs</Text>
+          <Text style={styles.headerTitle}>{t('clubs.title')}</Text>
         </View>
         <View style={{ width: 40 }} />
       </LinearGradient>
@@ -194,19 +194,19 @@ export default function ClubsScreen() {
         <View style={styles.statItem}>
           <Ionicons name="business" size={20} color={Colors.primary} />
           <Text style={styles.statValue}>{clubs.length}</Text>
-          <Text style={styles.statLabel}>Total Clubs</Text>
+          <Text style={styles.statLabel}>{t('clubs.totalClubs')}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Ionicons name="star" size={20} color="#FFD700" />
           <Text style={styles.statValue}>{clubs.filter(c => c.is_partner).length}</Text>
-          <Text style={styles.statLabel}>Partners</Text>
+          <Text style={styles.statLabel}>{t('clubs.partners')}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Ionicons name="globe" size={20} color="#4CAF50" />
           <Text style={styles.statValue}>{countries.length - 1}</Text>
-          <Text style={styles.statLabel}>Countries</Text>
+          <Text style={styles.statLabel}>{t('clubs.countries')}</Text>
         </View>
       </View>
 
