@@ -275,12 +275,62 @@ export default function HomeScreen() {
     }
   };
 
-  const handleSendTrack = (track: Track) => {
-    Alert.alert('Send Track', `Send "${track.title}" to a member`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Choose Member', onPress: () => router.push('/(tabs)/chat') },
-    ]);
+  const handleSendTrack = async (track: Track) => {
+    setSelectedTrackForSend(track);
+    setShowSendTrackModal(true);
+    setLoadingMembers(true);
+    
+    try {
+      // Load members using nativeGetAllUsers
+      const users = await base44Users.nativeGetAllUsers({ search: '', limit: 100, offset: 0 });
+      const userId = user?.id || user?._id || '';
+      
+      // Filter out current user
+      const filteredUsers = users.filter((u: any) => {
+        const memberId = u.id || u._id || '';
+        return memberId !== userId;
+      });
+      
+      setMembersList(filteredUsers);
+    } catch (error) {
+      console.error('Error loading members:', error);
+      Alert.alert('Error', 'Could not load members');
+    } finally {
+      setLoadingMembers(false);
+    }
   };
+  
+  const sendTrackToMember = async (memberId: string, memberName: string) => {
+    if (!selectedTrackForSend) return;
+    
+    try {
+      const userId = user?.id || user?._id || '';
+      const trackId = selectedTrackForSend.id || selectedTrackForSend._id || '';
+      
+      // Create a message or notification to send the track
+      await base44Messages.create({
+        sender_id: userId,
+        receiver_id: memberId,
+        content: `🎵 Shared track: ${selectedTrackForSend.title}`,
+        track_id: trackId,
+        type: 'track_share',
+      });
+      
+      Alert.alert(t('common.success'), `Track "${selectedTrackForSend.title}" sent to ${memberName}`);
+      setShowSendTrackModal(false);
+      setSelectedTrackForSend(null);
+      setMemberSearchQuery('');
+    } catch (error) {
+      console.error('Error sending track:', error);
+      Alert.alert(t('common.error'), 'Could not send track');
+    }
+  };
+  
+  // Filter members by search query
+  const filteredMembers = membersList.filter((member: any) => {
+    const name = member.full_name || member.name || member.email || '';
+    return name.toLowerCase().includes(memberSearchQuery.toLowerCase());
+  });
 
   // Navigate to SPYN Detection
   const handleSpynDetection = () => {
