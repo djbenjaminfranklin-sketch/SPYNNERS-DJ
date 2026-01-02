@@ -939,4 +939,24 @@ const styles = StyleSheet.create({
   playlistList: { maxHeight: 250 },
   playlistOptionInfo: { flex: 1 },
   playlistTrackCount: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  // Language modal
+  langFlag: { fontSize: 18 },
+  langOption: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    padding: 14, 
+    backgroundColor: Colors.background, 
+    borderRadius: 10, 
+    marginBottom: 8, 
+    gap: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  langOptionActive: { 
+    backgroundColor: Colors.primary + '20', 
+    borderColor: Colors.primary 
+  },
+  langOptionFlag: { fontSize: 24 },
+  langOptionText: { color: Colors.text, fontSize: 15, flex: 1 },
+  langOptionTextActive: { color: Colors.primary, fontWeight: '600' },
 });
