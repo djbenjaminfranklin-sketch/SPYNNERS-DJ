@@ -38,16 +38,19 @@ export default function LibraryScreen() {
       const userId = user.id || user._id || '';
       console.log('[Library] Loading uploads for user:', userId);
       
-      // Get all tracks and filter by user
+      // Get all tracks and filter by user AND approved status
       const allTracks = await base44Tracks.list({ limit: 100 });
-      const myTracks = allTracks.filter((track: Track) => 
-        track.created_by_id === userId || 
-        track.producer_id === userId ||
-        track.uploaded_by === userId
+      const myApprovedTracks = allTracks.filter((track: Track) => 
+        // Filter by user
+        (track.created_by_id === userId || 
+         track.producer_id === userId ||
+         track.uploaded_by === userId) &&
+        // Filter approved only
+        track.status === 'approved'
       );
       
-      console.log('[Library] My uploads:', myTracks.length);
-      setTracks(myTracks);
+      console.log('[Library] My approved uploads:', myApprovedTracks.length);
+      setTracks(myApprovedTracks);
     } catch (e) {
       console.error('[Library] fetch error', e);
     } finally {
