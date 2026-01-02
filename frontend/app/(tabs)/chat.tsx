@@ -278,7 +278,7 @@ export default function ChatScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading members...</Text>
+        <Text style={styles.loadingText}>{t('chat.loadingMembers')}</Text>
       </View>
     );
   }
@@ -287,7 +287,7 @@ export default function ChatScreen() {
     <View style={styles.container}>
       {/* Header */}
       <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
-        <Text style={styles.headerTitle}>Messages</Text>
+        <Text style={styles.headerTitle}>{t('chat.messages')}</Text>
         {totalUnread > 0 && (
           <View style={styles.headerBadge}>
             <Text style={styles.headerBadgeText}>{totalUnread}</Text>
@@ -301,7 +301,7 @@ export default function ChatScreen() {
           <Ionicons name="search" size={20} color={Colors.textMuted} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search members..."
+            placeholder={t('chat.searchMembers')}
             placeholderTextColor={Colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -318,15 +318,15 @@ export default function ChatScreen() {
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{members.length}</Text>
-          <Text style={styles.statLabel}>Members</Text>
+          <Text style={styles.statLabel}>{t('common.members')}</Text>
         </View>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{members.filter(m => m.isOnline).length}</Text>
-          <Text style={[styles.statLabel, { color: '#4CAF50' }]}>Online</Text>
+          <Text style={[styles.statLabel, { color: '#4CAF50' }]}>{t('common.online')}</Text>
         </View>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{totalUnread}</Text>
-          <Text style={[styles.statLabel, { color: Colors.primary }]}>Unread</Text>
+          <Text style={[styles.statLabel, { color: Colors.primary }]}>{t('common.unread')}</Text>
         </View>
       </View>
 
@@ -334,7 +334,7 @@ export default function ChatScreen() {
       {filteredMembers.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="people-outline" size={60} color={Colors.textMuted} />
-          <Text style={styles.emptyText}>No members found</Text>
+          <Text style={styles.emptyText}>{t('chat.noMembersFound')}</Text>
         </View>
       ) : (
         <FlatList
