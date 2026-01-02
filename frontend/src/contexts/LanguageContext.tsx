@@ -101,6 +101,11 @@ const translations: Record<Language, Record<string, string>> = {
     'spyn.save': 'Save',
     'spyn.delete': 'Delete',
     'spyn.stop': 'Stop',
+    'spyn.stopRecording': 'Stop Recording',
+    'spyn.producerNotified': 'Producer Notified!',
+    'spyn.playingTrack': 'has been notified that you\'re playing their track!',
+    'spyn.djSetComplete': 'DJ Set Complete',
+    'spyn.duration': 'Duration',
     
     // Profile
     'profile.editProfile': 'Edit Profile',
@@ -110,6 +115,17 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.terms': 'Terms & Privacy',
     'profile.admin': 'Admin Panel',
     'profile.logout': 'Log Out',
+    'profile.updateInfo': 'Update your information',
+    'profile.buyDiamonds': 'Buy diamonds',
+    'profile.manageTracks': 'Manage your tracks',
+    'profile.viewPlaylists': 'View your playlists',
+    'profile.visitWebsite': 'Visit spynners.com',
+    'profile.frequentQuestions': 'Frequently asked questions',
+    'profile.termsOfUse': 'Terms of use',
+    'profile.uploads': 'Uploads',
+    'profile.diamonds': 'Diamonds',
+    'profile.favorites': 'Favorites',
+    'profile.logoutConfirm': 'Do you really want to log out?',
     
     // Common
     'common.cancel': 'Cancel',
@@ -123,6 +139,12 @@ const translations: Record<Language, Record<string, string>> = {
     'common.noResults': 'No results',
     'common.language': 'Language',
     'common.selectLanguage': 'Select your language',
+    'common.tracks': 'tracks',
+    'common.members': 'Members',
+    'common.online': 'Online',
+    'common.unread': 'Unread',
+    'common.playAll': 'Play All',
+    'common.shuffle': 'Shuffle',
     
     // Menu items
     'menu.myUploads': 'My Uploads',
@@ -135,6 +157,7 @@ const translations: Record<Language, Record<string, string>> = {
     'menu.liveRadar': 'Live Radar',
     'menu.vip': 'V.I.P.',
     'menu.uploadTrack': 'Upload Track',
+    'menu.website': 'Website',
     
     // Actions
     'action.download': 'Download',
@@ -153,6 +176,36 @@ const translations: Record<Language, Record<string, string>> = {
     'filter.high': 'High',
     'filter.vipOnly': 'VIP Only',
     'filter.searchPlaceholder': 'Search tracks...',
+    
+    // Chat
+    'chat.messages': 'Messages',
+    'chat.searchMembers': 'Search members...',
+    'chat.noMembersFound': 'No members found',
+    'chat.loadingMembers': 'Loading members...',
+    'chat.noMessages': 'No messages yet',
+    'chat.startConversation': 'Say hello to start the conversation!',
+    'chat.typeMessage': 'Type a message...',
+    
+    // Playlist
+    'playlist.tracks': 'Tracks',
+    'playlist.noTracksInPlaylist': 'No tracks in this playlist',
+    'playlist.addTracksHint': 'Add tracks from the home screen',
+    'playlist.loadingTracks': 'Loading tracks...',
+    
+    // Library
+    'library.myUploads': 'My Uploads',
+    'library.noUploads': 'No uploads yet',
+    'library.uploadFirst': 'Upload your first track to get started',
+    'library.status': 'Status',
+    'library.pending': 'Pending',
+    'library.approved': 'Approved',
+    'library.rejected': 'Rejected',
+    
+    // Received
+    'received.title': 'Received Tracks',
+    'received.from': 'From',
+    'received.noTracks': 'No tracks received yet',
+    'received.waitingTracks': 'Tracks sent to you will appear here',
   },
   
   fr: {
