@@ -18,7 +18,7 @@ const getBackendUrl = () => {
   }
   return Constants.expoConfig?.extra?.backendUrl || 
          process.env.EXPO_PUBLIC_BACKEND_URL || 
-         'https://spynners-fix.preview.emergentagent.com';
+         'https://music-share-16.preview.emergentagent.com';
 };
 
 // Storage key for auth token
