@@ -1144,6 +1144,31 @@ const styles = StyleSheet.create({
   langOptionText: { color: Colors.text, fontSize: 15, flex: 1 },
   langOptionTextActive: { color: Colors.primary, fontWeight: '600' },
   
+  // Member item for send track modal
+  memberItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: Colors.background,
+    borderRadius: 10,
+    marginBottom: 8,
+    gap: 12,
+  },
+  memberAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  memberName: {
+    flex: 1,
+    color: Colors.text,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  
   // Upload Track Button (styled like spynners.com)
   uploadTrackButton: {
     marginHorizontal: 40,
