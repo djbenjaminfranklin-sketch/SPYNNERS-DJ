@@ -431,13 +431,13 @@ export default function UploadScreen() {
 
         {/* Track Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Track Information</Text>
+          <Text style={styles.sectionTitle}>{t('upload.trackInfo')}</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Title *</Text>
+            <Text style={styles.inputLabel}>{t('upload.title')} *</Text>
             <TextInput
               style={styles.input}
-              placeholder="Track title"
+              placeholder={t('upload.title')}
               placeholderTextColor={Colors.textMuted}
               value={title}
               onChangeText={setTitle}
@@ -445,10 +445,10 @@ export default function UploadScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Artist Name *</Text>
+            <Text style={styles.inputLabel}>{t('upload.artistName')} *</Text>
             <TextInput
               style={styles.input}
-              placeholder="Artist or producer name"
+              placeholder={t('upload.artistName')}
               placeholderTextColor={Colors.textMuted}
               value={artistName}
               onChangeText={setArtistName}
@@ -456,10 +456,10 @@ export default function UploadScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Label Name</Text>
+            <Text style={styles.inputLabel}>{t('upload.labelName')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Label (optional)"
+              placeholder={t('upload.labelName')}
               placeholderTextColor={Colors.textMuted}
               value={labelName}
               onChangeText={setLabelName}
@@ -467,10 +467,10 @@ export default function UploadScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Collaborators</Text>
+            <Text style={styles.inputLabel}>{t('upload.collaborators')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Comma separated names"
+              placeholder={t('upload.collaborators')}
               placeholderTextColor={Colors.textMuted}
               value={collaborators}
               onChangeText={setCollaborators}
@@ -480,17 +480,17 @@ export default function UploadScreen() {
 
         {/* Genre & Technical */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Genre & Technical</Text>
+          <Text style={styles.sectionTitle}>{t('upload.genreTech')}</Text>
 
           {/* Genre Dropdown */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Genre *</Text>
+            <Text style={styles.inputLabel}>{t('upload.genre')} *</Text>
             <TouchableOpacity 
               style={styles.dropdown} 
               onPress={() => setShowGenreDropdown(!showGenreDropdown)}
             >
               <Text style={[styles.dropdownText, !genre && styles.dropdownPlaceholder]}>
-                {genre || 'Select genre'}
+                {genre || t('upload.selectGenre')}
               </Text>
               <Ionicons name="chevron-down" size={20} color={Colors.textMuted} />
             </TouchableOpacity>
@@ -516,7 +516,7 @@ export default function UploadScreen() {
           {/* BPM & Key */}
           <View style={styles.row}>
             <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-              <Text style={styles.inputLabel}>BPM</Text>
+              <Text style={styles.inputLabel}>{t('upload.bpm')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="125"
@@ -527,13 +527,13 @@ export default function UploadScreen() {
               />
             </View>
             <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-              <Text style={styles.inputLabel}>Key</Text>
+              <Text style={styles.inputLabel}>{t('upload.key')}</Text>
               <TouchableOpacity 
                 style={styles.dropdown} 
                 onPress={() => setShowKeyDropdown(!showKeyDropdown)}
               >
                 <Text style={[styles.dropdownText, !trackKey && styles.dropdownPlaceholder]}>
-                  {trackKey || 'Select'}
+                  {trackKey || t('common.select')}
                 </Text>
                 <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
               </TouchableOpacity>
