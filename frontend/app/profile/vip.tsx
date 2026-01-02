@@ -230,10 +230,10 @@ export default function VIPScreen() {
                     <View style={styles.promoFooter}>
                       <View style={styles.promoInfo}>
                         <Text style={styles.promoTracks}>
-                          {(promo.track_ids || []).length} exclusive tracks
+                          {(promo.track_ids || []).length} {t('vip.exclusiveTracks')}
                         </Text>
                         {promo.duration_days && (
-                          <Text style={styles.promoDuration}>{promo.duration_days} days access</Text>
+                          <Text style={styles.promoDuration}>{promo.duration_days} {t('vip.daysAccess')}</Text>
                         )}
                       </View>
                       
