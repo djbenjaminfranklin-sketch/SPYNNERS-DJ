@@ -1,6 +1,5 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet } from 'react-native';
 import { Colors } from '../../src/theme/colors';
 
 export default function TabLayout() {
@@ -36,20 +35,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="library"
         options={{
-          title: 'Library',
+          title: 'My Uploads',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="library" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="spyn"
-        options={{
-          title: 'SPYN',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.spynButton, focused && styles.spynButtonActive]}>
-              <Ionicons name="radio" size={24} color={focused ? '#fff' : color} />
-            </View>
+            <Ionicons name="cloud-upload" size={size} color={color} />
           ),
         }}
       />
@@ -71,45 +59,31 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Hidden tabs - accessible via navigation */}
+      <Tabs.Screen
+        name="spyn"
+        options={{
+          href: null,
+        }}
+      />
       <Tabs.Screen
         name="playlist"
         options={{
-          href: null, // Accessible from Library
+          href: null,
         }}
       />
       <Tabs.Screen
         name="upload"
         options={{
-          href: null, // Accessible from Profile
+          href: null,
         }}
       />
       <Tabs.Screen
         name="received"
         options={{
-          href: null, // Hidden - accessible from Library
+          href: null,
         }}
       />
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  spynButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#E53935',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 5,
-    shadowColor: '#E53935',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  spynButtonActive: {
-    backgroundColor: '#C62828',
-    transform: [{ scale: 1.05 }],
-  },
-});
