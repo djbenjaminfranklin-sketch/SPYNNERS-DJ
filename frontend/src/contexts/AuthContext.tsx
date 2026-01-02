@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { base44Auth, User } from '../services/base44Api';
+import { base44Auth, base44Users, User } from '../services/base44Api';
 
 interface AuthContextType {
   user: User | null;
@@ -9,6 +9,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, fullName: string, userType?: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +23,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadStoredAuth();
   }, []);
 
+  // Fetch complete user data from Base44 Users collection
+  const fetchCompleteUserData = async (basicUser: User): Promise<User> => {
+    try {
+      console.log('[AuthContext] Fetching complete user data for:', basicUser.email);
+      
+      // Try to find the user in the Users collection by email
+      const users = await base44Users.list({ limit: 100 });
+      const fullUser = users.find((u: User) => u.email === basicUser.email);
+      
+      if (fullUser) {
+        console.log('[AuthContext] Found full user data:', fullUser.full_name, 'avatar:', !!fullUser.avatar);
+        return {
+          ...basicUser,
+          ...fullUser,
+          id: basicUser.id || fullUser.id || fullUser._id,
+          _id: basicUser._id || fullUser._id || fullUser.id,
+        };
+      }
+      
+      return basicUser;
+    } catch (error) {
+      console.error('[AuthContext] Error fetching complete user data:', error);
+      return basicUser;
+    }
+  };
+
   const loadStoredAuth = async () => {
     try {
       console.log('[AuthContext] Loading stored auth...');
@@ -31,15 +58,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (storedToken && storedUser) {
         console.log('[AuthContext] Found stored auth, restoring session');
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
         
-        // Optionally verify token by fetching current user
+        // Try to get updated user data
         try {
           const currentUser = await base44Auth.me();
           if (currentUser) {
-            console.log('[AuthContext] Token verified, user:', currentUser.email);
-            setUser(currentUser);
-            await AsyncStorage.setItem('user', JSON.stringify(currentUser));
+            console.log('[AuthContext] Token verified, fetching complete data');
+            const fullUser = await fetchCompleteUserData(currentUser);
+            setUser(fullUser);
+            await AsyncStorage.setItem('user', JSON.stringify(fullUser));
           }
         } catch (verifyError) {
           console.log('[AuthContext] Token verification skipped/failed');
@@ -54,16 +83,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const currentUser = await base44Auth.me();
+      if (currentUser) {
+        const fullUser = await fetchCompleteUserData(currentUser);
+        setUser(fullUser);
+        await AsyncStorage.setItem('user', JSON.stringify(fullUser));
+      }
+    } catch (error) {
+      console.error('[AuthContext] Error refreshing user:', error);
+    }
+  };
+
   const login = async (email: string, password: string) => {
     try {
       console.log('[AuthContext] Attempting login for:', email);
       
       const result = await base44Auth.login(email, password);
       
-      console.log('[AuthContext] Login successful');
+      console.log('[AuthContext] Login successful, fetching complete user data');
+      
+      // Get complete user data with avatar, diamonds, etc.
+      const fullUser = await fetchCompleteUserData(result.user);
       
       setToken(result.token);
-      setUser(result.user);
+      setUser(fullUser);
+      
+      // Store the complete user data
+      await AsyncStorage.setItem('user', JSON.stringify(fullUser));
     } catch (error: any) {
       console.error('[AuthContext] Login error:', error?.message || error);
       throw error;
