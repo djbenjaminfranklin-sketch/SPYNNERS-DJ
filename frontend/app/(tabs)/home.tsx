@@ -274,6 +274,24 @@ export default function HomeScreen() {
     return <View style={styles.ratingContainer}>{stars}</View>;
   };
 
+  // Seek to position
+  const seekToPosition = async (event: any) => {
+    if (!sound || playbackDuration === 0) return;
+    
+    // Get the touch position relative to the progress bar
+    const { locationX } = event.nativeEvent;
+    const progressBarWidth = 60; // Same as style width
+    const percentage = Math.max(0, Math.min(1, locationX / progressBarWidth));
+    const newPosition = percentage * playbackDuration;
+    
+    try {
+      await sound.setPositionAsync(newPosition);
+      setPlaybackPosition(newPosition);
+    } catch (error) {
+      console.error('[Player] Seek error:', error);
+    }
+  };
+
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
