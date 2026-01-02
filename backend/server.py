@@ -736,7 +736,7 @@ async def extract_mp3_metadata(file: UploadFile = File(...)):
             if audio.info:
                 result["duration"] = int(audio.info.length)
             
-            # Try ID3 tags
+            # Try ID3 tags first
             try:
                 tags = ID3(tmp_path)
                 
@@ -752,16 +752,30 @@ async def extract_mp3_metadata(file: UploadFile = File(...)):
                 if 'TALB' in tags:
                     result["album"] = str(tags['TALB'].text[0])
                 
-                # Genre
+                # Genre - try multiple tag formats
                 if 'TCON' in tags:
                     result["genre"] = str(tags['TCON'].text[0])
                 
-                # BPM
+                # BPM - try multiple tag formats
                 if 'TBPM' in tags:
                     try:
-                        result["bpm"] = int(float(str(tags['TBPM'].text[0])))
+                        bpm_val = str(tags['TBPM'].text[0])
+                        result["bpm"] = int(float(bpm_val))
                     except:
                         pass
+                
+                # Try TXXX frames for custom tags (BPM, genre might be there)
+                for key in tags.keys():
+                    if key.startswith('TXXX'):
+                        frame = tags[key]
+                        desc = frame.desc.lower() if hasattr(frame, 'desc') else ''
+                        if 'bpm' in desc and not result["bpm"]:
+                            try:
+                                result["bpm"] = int(float(str(frame.text[0])))
+                            except:
+                                pass
+                        elif 'genre' in desc and not result["genre"]:
+                            result["genre"] = str(frame.text[0])
                 
                 # Cover art
                 for key in tags.keys():
@@ -776,6 +790,23 @@ async def extract_mp3_metadata(file: UploadFile = File(...)):
                             
             except Exception as id3_error:
                 print(f"ID3 tags error: {id3_error}")
+            
+            # Try EasyID3 as fallback for missing fields
+            try:
+                easy_tags = EasyID3(tmp_path)
+                if not result["title"] and 'title' in easy_tags:
+                    result["title"] = str(easy_tags['title'][0])
+                if not result["artist"] and 'artist' in easy_tags:
+                    result["artist"] = str(easy_tags['artist'][0])
+                if not result["genre"] and 'genre' in easy_tags:
+                    result["genre"] = str(easy_tags['genre'][0])
+                if not result["bpm"] and 'bpm' in easy_tags:
+                    try:
+                        result["bpm"] = int(float(str(easy_tags['bpm'][0])))
+                    except:
+                        pass
+            except Exception as easy_error:
+                print(f"EasyID3 error: {easy_error}")
                 
         finally:
             # Clean up temp file
