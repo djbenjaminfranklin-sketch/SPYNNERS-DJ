@@ -54,23 +54,25 @@ export default function BlackDiamondsScreen() {
   const handlePurchase = async () => {
     if (!selectedPack) {
       Alert.alert(
-        isEnglish ? 'Selection required' : 'Sélection requise',
-        isEnglish ? 'Choose a diamond pack' : 'Choisissez un pack de diamonds'
+        t('diamonds.selectionRequired'),
+        t('diamonds.chooseAPack')
       );
       return;
     }
 
     const pack = DIAMOND_PACKS.find(p => p.id === selectedPack);
     
+    const confirmMessage = t('diamonds.confirmPurchase')
+      .replace('{amount}', String(pack?.amount))
+      .replace('{price}', pack?.price || '');
+    
     Alert.alert(
-      isEnglish ? 'Buy Black Diamonds' : 'Acheter des Black Diamonds',
-      isEnglish 
-        ? `Buy ${pack?.amount} Black Diamonds for ${pack?.price}?\n\nYou will be redirected to spynners.com to complete the purchase.`
-        : `Acheter ${pack?.amount} Black Diamonds pour ${pack?.price}?\n\nVous serez redirigé vers spynners.com pour finaliser l'achat.`,
+      t('diamonds.buyDiamonds'),
+      confirmMessage,
       [
-        { text: isEnglish ? 'Cancel' : 'Annuler', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: isEnglish ? 'Continue' : 'Continuer',
+          text: t('diamonds.continue'),
           onPress: async () => {
             setLoading(true);
             try {
@@ -85,11 +87,11 @@ export default function BlackDiamondsScreen() {
               
               // After redirect, simulate diamond addition for demo
               setTimeout(() => {
+                const addedMessage = t('diamonds.diamondsAdded')
+                  .replace('{amount}', String(pack?.amount));
                 Alert.alert(
-                  isEnglish ? 'Purchase Complete! 💎' : 'Achat terminé! 💎',
-                  isEnglish 
-                    ? `${pack?.amount} Black Diamonds added to your account!`
-                    : `${pack?.amount} Black Diamonds ajoutés à votre compte!`,
+                  t('diamonds.purchaseComplete'),
+                  addedMessage,
                   [{ text: 'OK', onPress: () => {
                     setBalance(prev => prev + (pack?.amount || 0));
                     setSelectedPack(null);
@@ -99,8 +101,8 @@ export default function BlackDiamondsScreen() {
             } catch (error) {
               console.error('Purchase error:', error);
               Alert.alert(
-                isEnglish ? 'Error' : 'Erreur',
-                isEnglish ? 'Could not open purchase page. Please try again.' : 'Impossible d\'ouvrir la page d\'achat. Veuillez réessayer.'
+                t('common.error'),
+                t('diamonds.purchaseError')
               );
             } finally {
               setLoading(false);
