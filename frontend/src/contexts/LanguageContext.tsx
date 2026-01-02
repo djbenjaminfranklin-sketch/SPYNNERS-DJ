@@ -583,6 +583,34 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': '成功',
     'common.search': '搜索',
     'common.noResults': '无结果',
+    'common.language': '语言',
+    'common.selectLanguage': '选择你的语言',
+    
+    // Menu items
+    'menu.received': '已收到',
+    'menu.myUploads': '我的上传',
+    'menu.vip': 'VIP',
+    'menu.rankings': '排行榜',
+    'menu.liveRadar': '实时雷达',
+    'menu.uploadTrack': '上传曲目',
+    
+    // Actions
+    'action.download': '下载',
+    'action.share': '分享',
+    'action.addToPlaylist': '添加到播放列表',
+    'action.sendTrack': '发送曲目',
+    
+    // Filters
+    'filter.allGenres': '所有风格',
+    'filter.allEnergy': '所有能量等级',
+    'filter.recentlyAdded': '最近添加',
+    'filter.aToZ': 'A到Z',
+    'filter.topRated': '最高评分',
+    'filter.low': '低',
+    'filter.medium': '中',
+    'filter.high': '高',
+    'filter.vipOnly': '仅VIP',
+    'filter.searchPlaceholder': '搜索曲目...',
   },
 };
 
