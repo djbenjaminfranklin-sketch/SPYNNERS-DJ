@@ -36,7 +36,6 @@ export default function BlackDiamondsScreen() {
   const [loading, setLoading] = useState(false);
   const [fetchingBalance, setFetchingBalance] = useState(true);
 
-  const isEnglish = language === 'en';
   const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL;
 
   useEffect(() => {
