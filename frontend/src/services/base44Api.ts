@@ -645,6 +645,200 @@ export const base44Notifications = {
   },
 };
 
+// ==================== VIP SERVICE ====================
+
+export interface VIPPromo {
+  id?: string;
+  _id?: string;
+  name: string;
+  description?: string;
+  track_ids?: string[];
+  price?: number;
+  duration_days?: number;
+  is_active?: boolean;
+  created_at?: string;
+}
+
+export interface VIPPurchase {
+  id?: string;
+  _id?: string;
+  user_id: string;
+  promo_id: string;
+  purchased_at: string;
+  expires_at?: string;
+  amount?: number;
+}
+
+export interface VIPDownload {
+  id?: string;
+  _id?: string;
+  user_id: string;
+  track_id: string;
+  downloaded_at: string;
+}
+
+export const base44VIP = {
+  // VIP Promos
+  async listPromos(): Promise<VIPPromo[]> {
+    try {
+      const response = await api.get('/api/base44/entities/VIPPromo?limit=100');
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      if (data?.items) return data.items;
+      return [];
+    } catch (error) {
+      console.error('[VIP] Error listing promos:', error);
+      return [];
+    }
+  },
+
+  async getPromo(promoId: string): Promise<VIPPromo | null> {
+    try {
+      const response = await api.get(`/api/base44/entities/VIPPromo/${promoId}`);
+      return response.data;
+    } catch (error) {
+      console.error('[VIP] Error getting promo:', error);
+      return null;
+    }
+  },
+
+  // VIP Purchases
+  async listMyPurchases(userId: string): Promise<VIPPurchase[]> {
+    try {
+      const response = await api.get(`/api/base44/entities/VIPPurchase?user_id=${userId}`);
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      if (data?.items) return data.items;
+      return [];
+    } catch (error) {
+      console.error('[VIP] Error listing purchases:', error);
+      return [];
+    }
+  },
+
+  async createPurchase(purchase: Partial<VIPPurchase>): Promise<VIPPurchase | null> {
+    try {
+      const response = await api.post('/api/base44/entities/VIPPurchase', purchase);
+      return response.data;
+    } catch (error) {
+      console.error('[VIP] Error creating purchase:', error);
+      throw error;
+    }
+  },
+
+  // VIP Downloads
+  async recordDownload(download: Partial<VIPDownload>): Promise<VIPDownload | null> {
+    try {
+      const response = await api.post('/api/base44/entities/VIPDownload', download);
+      return response.data;
+    } catch (error) {
+      console.error('[VIP] Error recording download:', error);
+      throw error;
+    }
+  },
+
+  async listMyDownloads(userId: string): Promise<VIPDownload[]> {
+    try {
+      const response = await api.get(`/api/base44/entities/VIPDownload?user_id=${userId}`);
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      if (data?.items) return data.items;
+      return [];
+    } catch (error) {
+      console.error('[VIP] Error listing downloads:', error);
+      return [];
+    }
+  },
+};
+
+// ==================== MESSAGE SERVICE ====================
+
+export interface Message {
+  id?: string;
+  _id?: string;
+  sender_id: string;
+  sender_name?: string;
+  receiver_id: string;
+  content?: string;
+  audio_url?: string;
+  attachment_urls?: string[];
+  read?: boolean;
+  created_at?: string;
+}
+
+export const base44Messages = {
+  async list(filters?: { receiver_id?: string; sender_id?: string; read?: boolean }): Promise<Message[]> {
+    try {
+      const params = new URLSearchParams();
+      params.append('limit', '200');
+      if (filters?.receiver_id) params.append('receiver_id', filters.receiver_id);
+      if (filters?.sender_id) params.append('sender_id', filters.sender_id);
+      if (filters?.read !== undefined) params.append('read', filters.read.toString());
+
+      const response = await api.get(`/api/base44/entities/Message?${params.toString()}`);
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      if (data?.items) return data.items;
+      return [];
+    } catch (error) {
+      console.error('[Messages] Error listing messages:', error);
+      return [];
+    }
+  },
+
+  async getUnreadCount(userId: string): Promise<number> {
+    try {
+      const messages = await this.list({ receiver_id: userId, read: false });
+      return messages.length;
+    } catch (error) {
+      console.error('[Messages] Error getting unread count:', error);
+      return 0;
+    }
+  },
+
+  async send(message: Partial<Message>): Promise<Message | null> {
+    try {
+      const response = await api.post('/api/base44/entities/Message', {
+        ...message,
+        read: false,
+        created_at: new Date().toISOString(),
+      });
+      return response.data;
+    } catch (error) {
+      console.error('[Messages] Error sending message:', error);
+      throw error;
+    }
+  },
+
+  async markAsRead(messageId: string): Promise<Message | null> {
+    try {
+      const response = await api.put(`/api/base44/entities/Message/${messageId}`, {
+        read: true,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('[Messages] Error marking message as read:', error);
+      throw error;
+    }
+  },
+
+  async getConversation(userId1: string, userId2: string): Promise<Message[]> {
+    try {
+      // Get all messages between two users
+      const allMessages = await this.list();
+      return allMessages.filter((msg: Message) => 
+        (msg.sender_id === userId1 && msg.receiver_id === userId2) ||
+        (msg.sender_id === userId2 && msg.receiver_id === userId1)
+      ).sort((a, b) => 
+        new Date(a.created_at || '').getTime() - new Date(b.created_at || '').getTime()
+      );
+    } catch (error) {
+      console.error('[Messages] Error getting conversation:', error);
+      return [];
+    }
+  },
+};
+
 // Export default api object
 export default {
   auth: base44Auth,
