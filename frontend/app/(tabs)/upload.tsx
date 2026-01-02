@@ -362,19 +362,19 @@ export default function UploadScreen() {
           </TouchableOpacity>
           <View style={styles.headerContent}>
             <Ionicons name="cloud-upload" size={32} color={Colors.primary} />
-            <Text style={styles.headerTitle}>Upload Track</Text>
-            <Text style={styles.headerSubtitle}>Share your music with the SPYNNERS community</Text>
+            <Text style={styles.headerTitle}>{t('page.uploadTrack')}</Text>
+            <Text style={styles.headerSubtitle}>{t('upload.shareMusic')}</Text>
           </View>
         </View>
 
         {/* Upload for another user */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Upload for account of...</Text>
+          <Text style={styles.sectionTitle}>{t('upload.uploadFor')}</Text>
           <View style={styles.searchContainer}>
             <Ionicons name="search" size={20} color={Colors.textMuted} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search producer or label..."
+              placeholder={t('upload.searchProducer')}
               placeholderTextColor={Colors.textMuted}
               value={uploadForSearch}
               onChangeText={searchUsers}
@@ -400,15 +400,15 @@ export default function UploadScreen() {
 
         {/* Cover Image */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cover Image</Text>
+          <Text style={styles.sectionTitle}>{t('upload.coverImage')}</Text>
           <TouchableOpacity style={styles.imageUpload} onPress={pickCoverImage}>
             {coverImage ? (
               <Image source={{ uri: coverImage }} style={styles.coverPreview} />
             ) : (
               <View style={styles.imagePlaceholder}>
                 <Ionicons name="image" size={40} color={Colors.textMuted} />
-                <Text style={styles.imagePlaceholderText}>Tap to select cover art</Text>
-                <Text style={styles.imagePlaceholderHint}>Square format recommended (1:1)</Text>
+                <Text style={styles.imagePlaceholderText}>{t('upload.selectCover')}</Text>
+                <Text style={styles.imagePlaceholderHint}>{t('upload.squareFormat')}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -416,12 +416,12 @@ export default function UploadScreen() {
 
         {/* Audio File */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Audio File *</Text>
+          <Text style={styles.sectionTitle}>{t('upload.audioFile')} *</Text>
           <TouchableOpacity style={styles.fileUpload} onPress={pickAudioFile}>
             <Ionicons name="musical-notes" size={24} color={audioFile ? Colors.primary : Colors.textMuted} />
             <View style={styles.fileInfo}>
               <Text style={[styles.fileName, audioFile && styles.fileNameSelected]}>
-                {audioFile ? audioFile.name : 'Select MP3 or WAV file'}
+                {audioFile ? audioFile.name : t('upload.selectAudio')}
               </Text>
               <Text style={styles.fileHint}>Max 40MB</Text>
             </View>
