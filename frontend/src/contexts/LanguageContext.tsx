@@ -2007,7 +2007,6 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Profile continued
     'profile.updateInfo': '更新你的信息',
-    'profile.updateInfo': '更新你的信息',
     'profile.buyDiamonds': '购买钻石',
     'profile.manageTracks': '管理你的曲目',
     'profile.viewPlaylists': '查看你的播放列表',
