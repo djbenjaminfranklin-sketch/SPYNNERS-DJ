@@ -237,6 +237,21 @@ const translations: Record<Language, Record<string, string>> = {
     'received.from': 'From',
     'received.noTracks': 'No tracks received yet',
     'received.waitingTracks': 'Tracks sent to you will appear here',
+    
+    // Diamonds
+    'diamonds.yourBalance': 'Your balance',
+    'diamonds.info': 'Black Diamonds allow downloading exclusive VIP tracks and accessing premium content.',
+    'diamonds.buyDiamonds': 'Buy Diamonds',
+    'diamonds.popular': 'POPULAR',
+    'diamonds.processing': 'Processing...',
+    'diamonds.buyNow': 'Buy Now',
+    'diamonds.vipBenefits': 'VIP Benefits',
+    'diamonds.vipDownloads': 'VIP Downloads',
+    'diamonds.accessExclusive': 'Access exclusive tracks',
+    'diamonds.premiumContent': 'Premium Content',
+    'diamonds.tracksBeforeEveryone': 'Tracks before everyone',
+    'diamonds.supportArtists': 'Support Artists',
+    'diamonds.supportProducers': 'Support producers',
   },
   
   fr: {
