@@ -28,19 +28,20 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MENU_ITEM_SIZE = (SCREEN_WIDTH - 24 - 40) / 5; // 5 items per row with spacing
 
 // Menu items with colors matching spynners.com - 2 rows
+// Labels use translation keys
 const USER_MENU_ITEMS_ROW1 = [
-  { id: 'my-uploads', label: 'My Uploads', icon: 'cloud-upload', colors: ['#9C27B0', '#7B1FA2'], route: '/(tabs)/library' },
-  { id: 'profile', label: 'Profile', icon: 'person', colors: ['#9C27B0', '#7B1FA2'], route: '/(tabs)/profile' },
-  { id: 'chat', label: 'Chat', icon: 'chatbubbles', colors: ['#673AB7', '#512DA8'], route: '/(tabs)/chat' },
-  { id: 'received', label: 'Received', icon: 'mail', colors: ['#2196F3', '#1976D2'], route: '/(tabs)/received' },
-  { id: 'playlists', label: 'Playlists', icon: 'list', colors: ['#4CAF50', '#388E3C'], route: '/(tabs)/playlist' },
+  { id: 'my-uploads', labelKey: 'menu.myUploads', icon: 'cloud-upload', colors: ['#9C27B0', '#7B1FA2'], route: '/(tabs)/library' },
+  { id: 'profile', labelKey: 'menu.profile', icon: 'person', colors: ['#9C27B0', '#7B1FA2'], route: '/(tabs)/profile' },
+  { id: 'chat', labelKey: 'menu.chat', icon: 'chatbubbles', colors: ['#673AB7', '#512DA8'], route: '/(tabs)/chat' },
+  { id: 'received', labelKey: 'menu.received', icon: 'mail', colors: ['#2196F3', '#1976D2'], route: '/(tabs)/received' },
+  { id: 'playlists', labelKey: 'menu.playlists', icon: 'list', colors: ['#4CAF50', '#388E3C'], route: '/(tabs)/playlist' },
 ];
 
 const USER_MENU_ITEMS_ROW2 = [
-  { id: 'analytics', label: 'Analytics', icon: 'bar-chart', colors: ['#FF9800', '#F57C00'], route: '/profile/analytics' },
-  { id: 'rankings', label: 'Rankings', icon: 'trending-up', colors: ['#E91E63', '#C2185B'], route: '/profile/rankings' },
-  { id: 'live-radar', label: 'Live Radar', icon: 'radio', colors: ['#3F51B5', '#303F9F'], route: '/profile/radar' },
-  { id: 'vip', label: 'V.I.P.', icon: 'diamond', colors: ['#7C4DFF', '#651FFF'], route: '/profile/vip', highlight: true },
+  { id: 'analytics', labelKey: 'menu.analytics', icon: 'bar-chart', colors: ['#FF9800', '#F57C00'], route: '/profile/analytics' },
+  { id: 'rankings', labelKey: 'menu.rankings', icon: 'trending-up', colors: ['#E91E63', '#C2185B'], route: '/profile/rankings' },
+  { id: 'live-radar', labelKey: 'menu.liveRadar', icon: 'radio', colors: ['#3F51B5', '#303F9F'], route: '/profile/radar' },
+  { id: 'vip', labelKey: 'menu.vip', icon: 'diamond', colors: ['#7C4DFF', '#651FFF'], route: '/profile/vip', highlight: true },
 ];
 
 // Genres and filters
