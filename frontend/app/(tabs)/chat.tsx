@@ -57,13 +57,62 @@ export default function ChatScreen() {
   const loadMembers = async () => {
     try {
       setLoading(true);
-      console.log('[Chat] Loading all members using nativeGetAllUsers...');
+      console.log('[Chat] Loading all members using Base44 SDK nativeGetAllUsers...');
       
       const userId = user?.id || user?._id || '';
       
-      // Use the new nativeGetAllUsers function to get all users with pagination
-      const allUsers = await base44Users.fetchAllUsersWithPagination();
-      console.log('[Chat] Total users fetched via nativeGetAllUsers:', allUsers.length);
+      // Use the Base44 SDK to invoke nativeGetAllUsers function directly
+      let allUsers: any[] = [];
+      let offset = 0;
+      const pageSize = 100;
+      let hasMore = true;
+      
+      while (hasMore) {
+        try {
+          console.log(`[Chat] Fetching users batch at offset ${offset}...`);
+          const result = await invokeBase44Function('nativeGetAllUsers', {
+            search: '',
+            limit: pageSize,
+            offset: offset,
+          });
+          
+          // Handle different response formats
+          let users: any[] = [];
+          if (result?.data?.users) {
+            users = result.data.users;
+          } else if (result?.users) {
+            users = result.users;
+          } else if (Array.isArray(result)) {
+            users = result;
+          } else if (result?.data && Array.isArray(result.data)) {
+            users = result.data;
+          }
+          
+          console.log(`[Chat] Got ${users.length} users at offset ${offset}`);
+          
+          if (users.length > 0) {
+            allUsers.push(...users);
+            offset += pageSize;
+            
+            // If we got less than page size, we're done
+            if (users.length < pageSize) {
+              hasMore = false;
+            }
+            
+            // Safety limit - max 2000 users
+            if (offset >= 2000) {
+              hasMore = false;
+            }
+          } else {
+            hasMore = false;
+          }
+        } catch (err) {
+          console.error('[Chat] Error fetching users batch:', err);
+          hasMore = false;
+        }
+      }
+      
+      console.log('[Chat] Total users fetched via SDK:', allUsers.length);
       
       // Get user's messages to find recent conversations
       const userMessages = await base44Messages.list({ receiver_id: userId });
@@ -95,7 +144,7 @@ export default function ChatScreen() {
         
         if (memberId && memberId !== userId && !memberMap.has(memberId)) {
           const msgInfo = lastMessageMap.get(memberId);
-          const userType = userData.user_type?.toLowerCase() || '';
+          const userType = (userData.user_type || '').toLowerCase();
           
           memberMap.set(memberId, {
             id: memberId,
