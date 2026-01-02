@@ -843,7 +843,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>('en'); // Default to English
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [, forceUpdate] = useState(0); // Force re-render trigger
 
   useEffect(() => {
     loadLanguage();
@@ -858,8 +858,6 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Error loading language:', error);
-    } finally {
-      setIsLoaded(true);
     }
   };
 
@@ -868,31 +866,25 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     try {
       await AsyncStorage.setItem('app_language', lang);
       setLanguageState(lang);
+      // Force re-render of all children
+      forceUpdate(n => n + 1);
     } catch (error) {
       console.error('Error saving language:', error);
     }
   };
 
-  // Use useMemo to create translation function that updates when language changes
-  const t = React.useCallback((key: string): string => {
+  // Create t function that always uses current language
+  const t = (key: string): string => {
     const result = translations[language]?.[key] || translations['en']?.[key] || key;
     return result;
-  }, [language]);
+  };
 
-  const getCurrentFlag = React.useCallback((): string => {
+  const getCurrentFlag = (): string => {
     return LANGUAGES.find(l => l.code === language)?.flag || '🇬🇧';
-  }, [language]);
-
-  // Create context value with useMemo to prevent unnecessary re-renders
-  const contextValue = React.useMemo(() => ({
-    language,
-    setLanguage,
-    t,
-    getCurrentFlag,
-  }), [language, t, getCurrentFlag]);
+  };
 
   return (
-    <LanguageContext.Provider value={contextValue}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, getCurrentFlag }}>
       {children}
     </LanguageContext.Provider>
   );
