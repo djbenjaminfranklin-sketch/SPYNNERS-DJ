@@ -123,7 +123,7 @@ export default function RankingsScreen() {
       const filters: any = { limit: 50 };
       
       // Apply genre filter
-      if (selectedGenre !== 'All Genres') {
+      if (selectedGenre !== 'all') {
         filters.genre = selectedGenre;
       }
       
