@@ -231,21 +231,94 @@ export default function HomeScreen() {
   };
 
   // Actions
-  const handleDownload = (track: Track) => {
-    Alert.alert('Download', `Downloading "${track.title}"...`, [{ text: 'OK' }]);
-    try { base44Tracks.download(track.id || track._id || ''); } catch {}
+  const handleDownload = async (track: Track) => {
+    try {
+      Alert.alert('Download', `Downloading "${track.title}"...`);
+      
+      // Get the audio URL
+      const audioUrl = track.audio_url || track.audio_file;
+      if (audioUrl) {
+        // Open in browser to download
+        const { Linking } = require('react-native');
+        await Linking.openURL(audioUrl);
+      }
+      
+      // Try to record the download
+      try { 
+        await base44Tracks.download(track.id || track._id || ''); 
+      } catch (e) {
+        console.log('[Download] Could not record download:', e);
+      }
+    } catch (error) {
+      console.error('[Download] Error:', error);
+      Alert.alert('Error', 'Could not download track');
+    }
   };
 
-  const handleShare = (track: Track) => {
-    Alert.alert('Share', `Share "${track.title}" via...`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Copy Link', onPress: () => Alert.alert('Copied!') },
-    ]);
+  const handleShare = async (track: Track) => {
+    try {
+      const { Share } = require('react-native');
+      const trackUrl = `https://spynners.com/track/${track.id || track._id}`;
+      
+      await Share.share({
+        message: `Check out "${track.title}" by ${track.producer_name || 'Unknown'} on SPYNNERS! ${trackUrl}`,
+        url: trackUrl,
+        title: track.title,
+      });
+    } catch (error) {
+      console.error('[Share] Error:', error);
+    }
   };
 
-  const handleAddToPlaylist = (track: Track) => {
+  const handleAddToPlaylist = async (track: Track) => {
     setSelectedTrackForPlaylist(track);
     setShowPlaylistModal(true);
+    
+    // Load user's playlists
+    setLoadingPlaylists(true);
+    try {
+      const userId = user?.id || user?._id || '';
+      const allPlaylists = await base44Playlists.list();
+      const myPlaylists = allPlaylists.filter((p: any) => {
+        const playlistUserId = p.user_id || p.created_by_id || '';
+        return playlistUserId === userId;
+      });
+      setUserPlaylists(myPlaylists);
+    } catch (error) {
+      console.error('[Playlist] Error loading playlists:', error);
+    } finally {
+      setLoadingPlaylists(false);
+    }
+  };
+
+  const addToPlaylist = async (playlistId: string) => {
+    if (!selectedTrackForPlaylist) return;
+    
+    try {
+      const trackId = selectedTrackForPlaylist.id || selectedTrackForPlaylist._id || '';
+      
+      // Find the playlist
+      const playlist = userPlaylists.find((p: any) => (p.id || p._id) === playlistId);
+      if (!playlist) return;
+      
+      // Get current track IDs
+      const currentTrackIds = playlist.track_ids || playlist.tracks || [];
+      
+      // Add the new track ID if not already present
+      if (!currentTrackIds.includes(trackId)) {
+        await base44Playlists.update(playlistId, {
+          track_ids: [...currentTrackIds, trackId],
+        });
+        Alert.alert('Success', `Added "${selectedTrackForPlaylist.title}" to "${playlist.name}"`);
+      } else {
+        Alert.alert('Info', 'Track is already in this playlist');
+      }
+      
+      setShowPlaylistModal(false);
+    } catch (error) {
+      console.error('[Playlist] Error adding to playlist:', error);
+      Alert.alert('Error', 'Could not add track to playlist');
+    }
   };
 
   const handleSendTrack = (track: Track) => {
