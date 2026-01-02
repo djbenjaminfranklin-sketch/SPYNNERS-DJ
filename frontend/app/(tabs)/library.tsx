@@ -270,17 +270,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.textMuted,
   },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginRight: 10,
-  },
-  statusText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#fff',
-  },
   trackStats: {
     alignItems: 'flex-end',
     gap: 4,
