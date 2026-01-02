@@ -237,28 +237,39 @@ export default function RankingsScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Rankings</Text>
+        <Text style={styles.headerTitle}>{t('rankings.title')}</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
       {/* Tab Selector */}
       <View style={styles.tabContainer}>
-        {RANKING_TABS.map((tab) => (
-          <TouchableOpacity 
-            key={tab.id}
-            style={[styles.tab, activeTab === tab.id && styles.tabActive]}
-            onPress={() => setActiveTab(tab.id)}
-          >
-            <Ionicons 
-              name={tab.icon as any} 
-              size={18} 
-              color={activeTab === tab.id ? Colors.primary : Colors.textMuted} 
-            />
-            <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'downloads' && styles.tabActive]}
+          onPress={() => setActiveTab('downloads')}
+        >
+          <Ionicons name="download" size={18} color={activeTab === 'downloads' ? Colors.primary : Colors.textMuted} />
+          <Text style={[styles.tabText, activeTab === 'downloads' && styles.tabTextActive]}>
+            {t('rankings.topDownloads')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'rated' && styles.tabActive]}
+          onPress={() => setActiveTab('rated')}
+        >
+          <Ionicons name="star" size={18} color={activeTab === 'rated' ? Colors.primary : Colors.textMuted} />
+          <Text style={[styles.tabText, activeTab === 'rated' && styles.tabTextActive]}>
+            {t('rankings.topRated')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tab, activeTab === 'recent' && styles.tabActive]}
+          onPress={() => setActiveTab('recent')}
+        >
+          <Ionicons name="time" size={18} color={activeTab === 'recent' ? Colors.primary : Colors.textMuted} />
+          <Text style={[styles.tabText, activeTab === 'recent' && styles.tabTextActive]}>
+            {t('rankings.newReleases')}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Genre Filter */}
@@ -267,7 +278,7 @@ export default function RankingsScreen() {
         onPress={() => setShowGenreFilter(!showGenreFilter)}
       >
         <Ionicons name="funnel" size={18} color={Colors.primary} />
-        <Text style={styles.genreFilterText}>{selectedGenre}</Text>
+        <Text style={styles.genreFilterText}>{selectedGenreLabel}</Text>
         <Ionicons name="chevron-down" size={18} color={Colors.textMuted} />
       </TouchableOpacity>
 
@@ -275,22 +286,22 @@ export default function RankingsScreen() {
       {showGenreFilter && (
         <View style={styles.genreDropdown}>
           <ScrollView style={{ maxHeight: 250 }} nestedScrollEnabled>
-            {GENRES.map((genre) => (
+            {currentGenres.map((genre) => (
               <TouchableOpacity
-                key={genre}
-                style={[styles.genreOption, selectedGenre === genre && styles.genreOptionActive]}
+                key={genre.value}
+                style={[styles.genreOption, selectedGenre === genre.value && styles.genreOptionActive]}
                 onPress={() => {
-                  setSelectedGenre(genre);
+                  setSelectedGenre(genre.value);
                   setShowGenreFilter(false);
                 }}
               >
                 <Text style={[
                   styles.genreOptionText, 
-                  selectedGenre === genre && styles.genreOptionTextActive
+                  selectedGenre === genre.value && styles.genreOptionTextActive
                 ]}>
-                  {genre}
+                  {genre.label}
                 </Text>
-                {selectedGenre === genre && (
+                {selectedGenre === genre.value && (
                   <Ionicons name="checkmark" size={18} color={Colors.primary} />
                 )}
               </TouchableOpacity>
@@ -309,13 +320,13 @@ export default function RankingsScreen() {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Loading rankings...</Text>
+            <Text style={styles.loadingText}>{t('rankings.loading')}</Text>
           </View>
         ) : tracks.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="trophy-outline" size={60} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>No tracks found</Text>
-            <Text style={styles.emptySubtext}>Try selecting a different genre</Text>
+            <Text style={styles.emptyText}>{t('rankings.noTracks')}</Text>
+            <Text style={styles.emptySubtext}>{t('rankings.tryDifferentGenre')}</Text>
           </View>
         ) : (
           tracks.map((track, index) => {
