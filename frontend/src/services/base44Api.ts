@@ -464,6 +464,16 @@ export const base44Playlists = {
     }
   },
 
+  async update(playlistId: string, updates: Partial<Playlist>): Promise<Playlist | null> {
+    try {
+      const response = await api.put(`/api/base44/entities/Playlist/${playlistId}`, updates);
+      return response.data;
+    } catch (error) {
+      console.error('[Playlists] Error updating playlist:', error);
+      throw error;
+    }
+  },
+
   async addTrack(playlistId: string, trackId: string): Promise<any> {
     try {
       const response = await api.post('/api/base44/functions/invoke/add_to_playlist', {
