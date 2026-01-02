@@ -826,12 +826,13 @@ const translations: Record<Language, Record<string, string>> = {
     'userType.djProducerDesc': 'Toco y produzco',
     'userType.label': 'Sello',
     'userType.labelDesc': 'Represento un sello musical',
+    
+    // Navigation
     'nav.home': 'Inicio',
-    'nav.library': 'Biblioteca',
+    'nav.library': 'Mis Subidas',
     'nav.spyn': 'SPYN',
     'nav.chat': 'Chat',
     'nav.profile': 'Perfil',
-    'nav.home': 'Inicio',
     'nav.playlist': 'Playlists',
     'nav.received': 'Recibidos',
     'nav.upload': 'Subir Track',
