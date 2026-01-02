@@ -54,9 +54,10 @@ export default function ChatScreen() {
   }, []);
 
   const loadMembers = async () => {
+    // Version 2.0 - Force bundle refresh
+    console.log('[Chat] === VERSION 2.0 === Loading all members via nativeGetAllUsers...');
     try {
       setLoading(true);
-      console.log('[Chat] Loading all members via nativeGetAllUsers...');
       
       const userId = user?.id || user?._id || '';
       
