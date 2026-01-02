@@ -9,51 +9,98 @@ import {
   ActivityIndicator,
   Image,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { base44Users, User } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+
+interface Member {
+  id?: string;
+  _id?: string;
+  email: string;
+  full_name?: string;
+  user_type?: string;
+  avatar?: string;
+  isOnline?: boolean;
+}
+
+const getBackendUrl = () => {
+  if (typeof window !== 'undefined') return '';
+  return 'https://trackhub-20.preview.emergentagent.com';
+};
 
 export default function ChatScreen() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const router = useRouter();
-  const [members, setMembers] = useState<User[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadMembers();
-  }, []);
+  }, [token]);
 
   const loadMembers = async () => {
     try {
       setLoading(true);
       console.log('[Chat] Loading all members...');
       
-      const allUsers = await base44Users.list({});
+      // Get auth token from storage
+      const authToken = token || await AsyncStorage.getItem('auth_token');
+      
+      if (!authToken) {
+        console.log('[Chat] No auth token, cannot load members');
+        setLoading(false);
+        return;
+      }
+      
+      // Make authenticated request to get users
+      const response = await axios.get(
+        `${getBackendUrl()}/api/base44/entities/User`,
+        {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+          params: { limit: 100 }
+        }
+      );
+      
+      const allUsers = response.data || [];
       console.log('[Chat] Members loaded:', allUsers.length);
       
+      if (allUsers.length === 0) {
+        setMembers([]);
+        setLoading(false);
+        return;
+      }
+      
       // Sort: online users first (simulated - in real app would use presence system)
-      // For now, randomly mark some as "online" for demo
-      const membersWithStatus = allUsers.map((u: User) => ({
+      const membersWithStatus = allUsers.map((u: Member) => ({
         ...u,
         isOnline: Math.random() > 0.7, // 30% chance of being "online" for demo
       }));
       
       // Sort online first
-      membersWithStatus.sort((a: any, b: any) => {
+      membersWithStatus.sort((a: Member, b: Member) => {
         if (a.isOnline && !b.isOnline) return -1;
         if (!a.isOnline && b.isOnline) return 1;
         return 0;
       });
       
       setMembers(membersWithStatus);
-    } catch (error) {
-      console.error('[Chat] Error loading members:', error);
+    } catch (error: any) {
+      console.error('[Chat] Error loading members:', error?.response?.data || error?.message);
+      // Show error message if auth failed
+      if (error?.response?.status === 401) {
+        Alert.alert('Authentication Required', 'Please log in to view members');
+      }
     } finally {
       setLoading(false);
     }
@@ -65,7 +112,7 @@ export default function ChatScreen() {
     setRefreshing(false);
   };
 
-  const filteredMembers = members.filter((m: any) => {
+  const filteredMembers = members.filter((m: Member) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -74,6 +121,8 @@ export default function ChatScreen() {
       m.user_type?.toLowerCase().includes(query)
     );
   });
+
+  const onlineCount = members.filter((m: Member) => m.isOnline).length;
 
   const getUserTypeLabel = (type?: string) => {
     switch (type) {
@@ -85,10 +134,18 @@ export default function ChatScreen() {
     }
   };
 
-  const renderMember = ({ item }: { item: any }) => (
+  const startChat = (member: Member) => {
+    Alert.alert(
+      `Chat with ${member.full_name || 'User'}`,
+      'Direct messaging coming soon!',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const renderMember = ({ item }: { item: Member }) => (
     <TouchableOpacity 
       style={styles.memberCard}
-      onPress={() => {/* Navigate to chat with this user */}}
+      onPress={() => startChat(item)}
       activeOpacity={0.7}
     >
       <View style={styles.avatarContainer}>
@@ -97,7 +154,7 @@ export default function ChatScreen() {
         ) : (
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
             <Text style={styles.avatarText}>
-              {(item.full_name || 'U').charAt(0).toUpperCase()}
+              {(item.full_name || item.email || 'U').charAt(0).toUpperCase()}
             </Text>
           </View>
         )}
@@ -105,11 +162,11 @@ export default function ChatScreen() {
       </View>
       
       <View style={styles.memberInfo}>
-        <Text style={styles.memberName}>{item.full_name || 'Unknown'}</Text>
+        <Text style={styles.memberName}>{item.full_name || item.email?.split('@')[0] || 'Unknown'}</Text>
         <Text style={styles.memberType}>{getUserTypeLabel(item.user_type)}</Text>
       </View>
 
-      <TouchableOpacity style={styles.messageButton}>
+      <TouchableOpacity style={styles.messageButton} onPress={() => startChat(item)}>
         <Ionicons name="chatbubble" size={20} color={Colors.primary} />
       </TouchableOpacity>
     </TouchableOpacity>
@@ -153,26 +210,33 @@ export default function ChatScreen() {
       <View style={styles.onlineInfo}>
         <View style={styles.onlineDotSmall} />
         <Text style={styles.onlineText}>
-          {members.filter((m: any) => m.isOnline).length} online
+          {onlineCount} online
         </Text>
       </View>
 
       {/* Members List */}
-      <FlatList
-        data={filteredMembers}
-        keyExtractor={(item) => item.id || item._id || Math.random().toString()}
-        renderItem={renderMember}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="people-outline" size={60} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>No members found</Text>
-          </View>
-        }
-      />
+      {members.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="people-outline" size={60} color={Colors.textMuted} />
+          <Text style={styles.emptyText}>No members found</Text>
+          <Text style={styles.emptySubtext}>
+            Members will appear here once available
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadMembers}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredMembers}
+          keyExtractor={(item) => item.id || item._id || item.email || Math.random().toString()}
+          renderItem={renderMember}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          }
+        />
+      )}
     </View>
   );
 }
@@ -256,6 +320,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyContainer: { alignItems: 'center', paddingVertical: 60 },
-  emptyText: { color: Colors.textMuted, fontSize: 16, marginTop: 12 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
+  emptyText: { color: Colors.text, fontSize: 18, fontWeight: '600', marginTop: 16 },
+  emptySubtext: { color: Colors.textMuted, fontSize: 14, marginTop: 8, textAlign: 'center', paddingHorizontal: 40 },
+  retryButton: { marginTop: 20, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: Colors.primary, borderRadius: 8 },
+  retryText: { color: '#fff', fontWeight: '600' },
 });
