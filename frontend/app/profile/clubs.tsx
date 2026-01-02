@@ -308,7 +308,7 @@ export default function ClubsScreen() {
                   
                   <View style={styles.clubStats}>
                     <Ionicons name="play-circle" size={14} color={Colors.primary} />
-                    <Text style={styles.clubPlays}>{club.plays_this_week} plays this week</Text>
+                    <Text style={styles.clubPlays}>{club.plays_this_week} {t('clubs.playsThisWeek')}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
