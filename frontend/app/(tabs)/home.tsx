@@ -80,6 +80,8 @@ export default function HomeScreen() {
   // Modals
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [selectedTrackForPlaylist, setSelectedTrackForPlaylist] = useState<Track | null>(null);
+  const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
+  const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   
   // Animation for player
   const playerAnim = useRef(new Animated.Value(0)).current;
