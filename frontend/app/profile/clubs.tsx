@@ -165,7 +165,7 @@ export default function ClubsScreen() {
 
   // Filter clubs
   const filteredClubs = clubs.filter(club => {
-    if (selectedCountry !== 'All' && club.country !== selectedCountry) return false;
+    if (selectedCountry !== t('clubs.all') && club.country !== selectedCountry) return false;
     if (showPartnerOnly && !club.is_partner) return false;
     return true;
   });
