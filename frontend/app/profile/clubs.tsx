@@ -257,13 +257,13 @@ export default function ClubsScreen() {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Loading clubs...</Text>
+            <Text style={styles.loadingText}>{t('clubs.loadingClubs')}</Text>
           </View>
         ) : filteredClubs.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="location-outline" size={60} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>No clubs found</Text>
-            <Text style={styles.emptySubtext}>Try changing your filters</Text>
+            <Text style={styles.emptyText}>{t('clubs.noClubs')}</Text>
+            <Text style={styles.emptySubtext}>{t('clubs.tryFilters')}</Text>
           </View>
         ) : (
           <View style={styles.clubsGrid}>
