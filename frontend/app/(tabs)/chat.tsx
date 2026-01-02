@@ -20,6 +20,7 @@ import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { base44Messages, base44Users, Message, User } from '../../src/services/base44Api';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 
 interface Member {
   id: string;
