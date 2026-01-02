@@ -4,6 +4,7 @@ SPYNNERS Backend Server
 - Chat messaging
 - Track upload
 - User authentication (local fallback)
+- MP3 metadata extraction
 """
 
 import os
@@ -13,6 +14,7 @@ import hmac
 import time
 import json
 import uuid
+import tempfile
 from datetime import datetime
 from typing import Optional, List
 from io import BytesIO
@@ -24,6 +26,15 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from bson import ObjectId
 import httpx
+
+# For MP3 metadata extraction
+try:
+    from mutagen.mp3 import MP3
+    from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB, TCON, TBPM
+    MUTAGEN_AVAILABLE = True
+except ImportError:
+    MUTAGEN_AVAILABLE = False
+    print("Warning: mutagen not available, MP3 metadata extraction disabled")
 
 load_dotenv()
 
