@@ -132,6 +132,7 @@ const CLUBS_DATA: Club[] = [
 
 export default function ClubsScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [clubs, setClubs] = useState<Club[]>([]);
