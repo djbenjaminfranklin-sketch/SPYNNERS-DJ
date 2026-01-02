@@ -382,10 +382,10 @@ export default function AdminScreen() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <Ionicons name="lock-closed" size={64} color={Colors.textMuted} />
-        <Text style={styles.accessDeniedTitle}>Admin Access Required</Text>
-        <Text style={styles.accessDeniedText}>You don't have permission to access this area.</Text>
+        <Text style={styles.accessDeniedTitle}>{t('admin.accessDenied')}</Text>
+        <Text style={styles.accessDeniedText}>{t('admin.noPermission')}</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Go Back</Text>
+          <Text style={styles.backButtonText}>{t('admin.goBack')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -395,7 +395,7 @@ export default function AdminScreen() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading admin panel...</Text>
+        <Text style={styles.loadingText}>{t('admin.loadingAdmin')}</Text>
       </View>
     );
   }
