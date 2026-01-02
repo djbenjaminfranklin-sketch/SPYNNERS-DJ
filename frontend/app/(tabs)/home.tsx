@@ -274,15 +274,19 @@ export default function HomeScreen() {
     return <View style={styles.ratingContainer}>{stars}</View>;
   };
 
-  // Seek to position
+  // Seek to position - improved with logging
   const seekToPosition = async (event: any) => {
-    if (!sound || playbackDuration === 0) return;
+    if (!sound || playbackDuration === 0) {
+      console.log('[Player] Cannot seek - no sound or duration');
+      return;
+    }
     
-    // Get the touch position relative to the progress bar
     const { locationX } = event.nativeEvent;
-    const progressBarWidth = 80; // Same as style width
+    const progressBarWidth = 80;
     const percentage = Math.max(0, Math.min(1, locationX / progressBarWidth));
-    const newPosition = percentage * playbackDuration;
+    const newPosition = Math.floor(percentage * playbackDuration);
+    
+    console.log('[Player] Seeking to:', newPosition, 'ms (', Math.round(percentage * 100), '%)');
     
     try {
       await sound.setPositionAsync(newPosition);
