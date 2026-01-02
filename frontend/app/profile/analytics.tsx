@@ -98,7 +98,7 @@ export default function AnalyticsScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading your analytics...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -109,7 +109,7 @@ export default function AnalyticsScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Analytics</Text>
+        <Text style={styles.headerTitle}>{t('analytics.title')}</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
@@ -117,8 +117,8 @@ export default function AnalyticsScreen() {
         {stats.totalTracks === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="bar-chart-outline" size={60} color={Colors.textMuted} />
-            <Text style={styles.emptyTitle}>No tracks yet</Text>
-            <Text style={styles.emptySubtitle}>Upload tracks to see your analytics</Text>
+            <Text style={styles.emptyTitle}>{t('analytics.noTracks')}</Text>
+            <Text style={styles.emptySubtitle}>{t('analytics.uploadToSee')}</Text>
           </View>
         ) : (
           <>
@@ -128,7 +128,7 @@ export default function AnalyticsScreen() {
                 <LinearGradient colors={['#9C27B0', '#7B1FA2']} style={styles.statGradient}>
                   <Ionicons name="musical-notes" size={28} color="#fff" />
                   <Text style={styles.statValue}>{stats.totalTracks}</Text>
-                  <Text style={styles.statLabel}>My Tracks</Text>
+                  <Text style={styles.statLabel}>{t('analytics.myTracks')}</Text>
                 </LinearGradient>
               </View>
               
@@ -136,7 +136,7 @@ export default function AnalyticsScreen() {
                 <LinearGradient colors={['#2196F3', '#1976D2']} style={styles.statGradient}>
                   <Ionicons name="play" size={28} color="#fff" />
                   <Text style={styles.statValue}>{stats.totalPlays}</Text>
-                  <Text style={styles.statLabel}>Total Plays</Text>
+                  <Text style={styles.statLabel}>{t('analytics.totalPlays')}</Text>
                 </LinearGradient>
               </View>
             </View>
@@ -146,7 +146,7 @@ export default function AnalyticsScreen() {
                 <LinearGradient colors={['#4CAF50', '#388E3C']} style={styles.statGradient}>
                   <Ionicons name="download" size={28} color="#fff" />
                   <Text style={styles.statValue}>{stats.totalDownloads}</Text>
-                  <Text style={styles.statLabel}>Downloads</Text>
+                  <Text style={styles.statLabel}>{t('analytics.downloads')}</Text>
                 </LinearGradient>
               </View>
               
@@ -154,24 +154,24 @@ export default function AnalyticsScreen() {
                 <LinearGradient colors={['#FF9800', '#F57C00']} style={styles.statGradient}>
                   <Ionicons name="star" size={28} color="#fff" />
                   <Text style={styles.statValue}>{stats.averageRating}</Text>
-                  <Text style={styles.statLabel}>Avg. Rating</Text>
+                  <Text style={styles.statLabel}>{t('analytics.avgRating')}</Text>
                 </LinearGradient>
               </View>
             </View>
 
             {/* Status breakdown */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Track Status</Text>
+              <Text style={styles.sectionTitle}>{t('analytics.trackStatus')}</Text>
               
               <View style={styles.statusCard}>
                 <View style={styles.statusRow}>
                   <View style={[styles.statusDot, { backgroundColor: '#4CAF50' }]} />
-                  <Text style={styles.statusLabel}>Approved</Text>
+                  <Text style={styles.statusLabel}>{t('analytics.approved')}</Text>
                   <Text style={styles.statusValue}>{stats.approvedTracks}</Text>
                 </View>
                 <View style={styles.statusRow}>
                   <View style={[styles.statusDot, { backgroundColor: '#FF9800' }]} />
-                  <Text style={styles.statusLabel}>Pending</Text>
+                  <Text style={styles.statusLabel}>{t('analytics.pending')}</Text>
                   <Text style={styles.statusValue}>{stats.pendingTracks}</Text>
                 </View>
               </View>
