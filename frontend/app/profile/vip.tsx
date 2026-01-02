@@ -218,7 +218,7 @@ export default function VIPScreen() {
                       <Text style={styles.promoName}>{promo.name}</Text>
                       {isPurchased && (
                         <View style={styles.purchasedBadge}>
-                          <Text style={styles.purchasedText}>OWNED</Text>
+                          <Text style={styles.purchasedText}>{t('vip.owned')}</Text>
                         </View>
                       )}
                     </View>
