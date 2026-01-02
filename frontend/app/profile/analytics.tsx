@@ -28,19 +28,40 @@ export default function AnalyticsScreen() {
     try {
       setLoading(true);
       
-      // Get all approved tracks
-      const allTracks = await base44Tracks.list({ limit: 200 });
+      // Get user ID - try different possible fields
+      const userId = user?.id || user?._id || '';
+      console.log('[Analytics] Loading for user:', userId);
       
-      // Filter only approved tracks
-      const approvedTracks = allTracks.filter((track: any) => track.status === 'approved');
+      if (!userId) {
+        console.log('[Analytics] No user ID found');
+        setLoading(false);
+        return;
+      }
 
-      // Calculate stats for ALL approved tracks
+      // Get all tracks
+      const allTracks = await base44Tracks.list({ limit: 500 });
+      console.log('[Analytics] Total tracks loaded:', allTracks.length);
+      
+      // Filter to get ONLY user's tracks
+      const myTracks = allTracks.filter((track: any) => {
+        const isMyTrack = 
+          track.producer_id === userId || 
+          track.created_by_id === userId ||
+          track.uploaded_by === userId;
+        return isMyTrack;
+      });
+      
+      console.log('[Analytics] My tracks:', myTracks.length);
+
+      // Calculate stats from MY tracks only
       let totalPlays = 0;
       let totalDownloads = 0;
       let totalRating = 0;
       let ratingCount = 0;
+      let approvedCount = 0;
+      let pendingCount = 0;
 
-      approvedTracks.forEach((track: any) => {
+      myTracks.forEach((track: any) => {
         totalPlays += track.play_count || 0;
         totalDownloads += track.download_count || 0;
         
@@ -48,18 +69,21 @@ export default function AnalyticsScreen() {
           totalRating += track.average_rating || track.rating || 0;
           ratingCount++;
         }
+
+        if (track.status === 'approved') {
+          approvedCount++;
+        } else if (track.status === 'pending') {
+          pendingCount++;
+        }
       });
 
-      // Count by status
-      const pendingTracks = allTracks.filter((t: any) => t.status === 'pending').length;
-
       setStats({
-        totalTracks: approvedTracks.length,
+        totalTracks: myTracks.length,
         totalPlays,
         totalDownloads,
         averageRating: ratingCount > 0 ? Math.round((totalRating / ratingCount) * 10) / 10 : 0,
-        approvedTracks: approvedTracks.length,
-        pendingTracks: pendingTracks,
+        approvedTracks: approvedCount,
+        pendingTracks: pendingCount,
       });
     } catch (error) {
       console.error('[Analytics] Error loading:', error);
@@ -72,7 +96,7 @@ export default function AnalyticsScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading analytics...</Text>
+        <Text style={styles.loadingText}>Loading your analytics...</Text>
       </View>
     );
   }
@@ -83,69 +107,75 @@ export default function AnalyticsScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Analytics</Text>
+        <Text style={styles.headerTitle}>My Analytics</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
       <ScrollView style={styles.content}>
-        {/* Main Stats */}
-        <View style={styles.mainStats}>
-          <View style={styles.statCard}>
-            <LinearGradient colors={['#9C27B0', '#7B1FA2']} style={styles.statGradient}>
-              <Ionicons name="musical-notes" size={28} color="#fff" />
-              <Text style={styles.statValue}>{stats.totalTracks}</Text>
-              <Text style={styles.statLabel}>Total Tracks</Text>
-            </LinearGradient>
+        {stats.totalTracks === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="bar-chart-outline" size={60} color={Colors.textMuted} />
+            <Text style={styles.emptyTitle}>No tracks yet</Text>
+            <Text style={styles.emptySubtitle}>Upload tracks to see your analytics</Text>
           </View>
-          
-          <View style={styles.statCard}>
-            <LinearGradient colors={['#2196F3', '#1976D2']} style={styles.statGradient}>
-              <Ionicons name="play" size={28} color="#fff" />
-              <Text style={styles.statValue}>{stats.totalPlays}</Text>
-              <Text style={styles.statLabel}>Total Plays</Text>
-            </LinearGradient>
-          </View>
-        </View>
-
-        <View style={styles.mainStats}>
-          <View style={styles.statCard}>
-            <LinearGradient colors={['#4CAF50', '#388E3C']} style={styles.statGradient}>
-              <Ionicons name="download" size={28} color="#fff" />
-              <Text style={styles.statValue}>{stats.totalDownloads}</Text>
-              <Text style={styles.statLabel}>Downloads</Text>
-            </LinearGradient>
-          </View>
-          
-          <View style={styles.statCard}>
-            <LinearGradient colors={['#FF9800', '#F57C00']} style={styles.statGradient}>
-              <Ionicons name="star" size={28} color="#fff" />
-              <Text style={styles.statValue}>{stats.averageRating}</Text>
-              <Text style={styles.statLabel}>Avg. Rating</Text>
-            </LinearGradient>
-          </View>
-        </View>
-
-        {/* Status breakdown */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Track Status</Text>
-          
-          <View style={styles.statusCard}>
-            <View style={styles.statusRow}>
-              <View style={[styles.statusDot, { backgroundColor: '#4CAF50' }]} />
-              <Text style={styles.statusLabel}>Approved</Text>
-              <Text style={styles.statusValue}>{stats.approvedTracks}</Text>
+        ) : (
+          <>
+            {/* Main Stats */}
+            <View style={styles.mainStats}>
+              <View style={styles.statCard}>
+                <LinearGradient colors={['#9C27B0', '#7B1FA2']} style={styles.statGradient}>
+                  <Ionicons name="musical-notes" size={28} color="#fff" />
+                  <Text style={styles.statValue}>{stats.totalTracks}</Text>
+                  <Text style={styles.statLabel}>My Tracks</Text>
+                </LinearGradient>
+              </View>
+              
+              <View style={styles.statCard}>
+                <LinearGradient colors={['#2196F3', '#1976D2']} style={styles.statGradient}>
+                  <Ionicons name="play" size={28} color="#fff" />
+                  <Text style={styles.statValue}>{stats.totalPlays}</Text>
+                  <Text style={styles.statLabel}>Total Plays</Text>
+                </LinearGradient>
+              </View>
             </View>
-            <View style={styles.statusRow}>
-              <View style={[styles.statusDot, { backgroundColor: '#FF9800' }]} />
-              <Text style={styles.statusLabel}>Pending</Text>
-              <Text style={styles.statusValue}>{stats.pendingTracks}</Text>
-            </View>
-          </View>
-        </View>
 
-        <Text style={styles.comingSoon}>
-          More detailed analytics coming soon...
-        </Text>
+            <View style={styles.mainStats}>
+              <View style={styles.statCard}>
+                <LinearGradient colors={['#4CAF50', '#388E3C']} style={styles.statGradient}>
+                  <Ionicons name="download" size={28} color="#fff" />
+                  <Text style={styles.statValue}>{stats.totalDownloads}</Text>
+                  <Text style={styles.statLabel}>Downloads</Text>
+                </LinearGradient>
+              </View>
+              
+              <View style={styles.statCard}>
+                <LinearGradient colors={['#FF9800', '#F57C00']} style={styles.statGradient}>
+                  <Ionicons name="star" size={28} color="#fff" />
+                  <Text style={styles.statValue}>{stats.averageRating}</Text>
+                  <Text style={styles.statLabel}>Avg. Rating</Text>
+                </LinearGradient>
+              </View>
+            </View>
+
+            {/* Status breakdown */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Track Status</Text>
+              
+              <View style={styles.statusCard}>
+                <View style={styles.statusRow}>
+                  <View style={[styles.statusDot, { backgroundColor: '#4CAF50' }]} />
+                  <Text style={styles.statusLabel}>Approved</Text>
+                  <Text style={styles.statusValue}>{stats.approvedTracks}</Text>
+                </View>
+                <View style={styles.statusRow}>
+                  <View style={[styles.statusDot, { backgroundColor: '#FF9800' }]} />
+                  <Text style={styles.statusLabel}>Pending</Text>
+                  <Text style={styles.statusValue}>{stats.pendingTracks}</Text>
+                </View>
+              </View>
+            </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -166,6 +196,9 @@ const styles = StyleSheet.create({
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 20, fontWeight: '700', color: '#fff' },
   content: { flex: 1, padding: 16 },
+  emptyState: { alignItems: 'center', paddingVertical: 60 },
+  emptyTitle: { fontSize: 20, fontWeight: '600', color: Colors.text, marginTop: 16 },
+  emptySubtitle: { fontSize: 14, color: Colors.textMuted, marginTop: 8 },
   mainStats: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   statCard: { flex: 1, borderRadius: 12, overflow: 'hidden' },
   statGradient: { padding: 20, alignItems: 'center' },
@@ -178,5 +211,4 @@ const styles = StyleSheet.create({
   statusDot: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },
   statusLabel: { flex: 1, color: Colors.text, fontSize: 14 },
   statusValue: { color: Colors.text, fontSize: 16, fontWeight: '600' },
-  comingSoon: { textAlign: 'center', color: Colors.textMuted, marginTop: 30, fontSize: 14 },
 });
