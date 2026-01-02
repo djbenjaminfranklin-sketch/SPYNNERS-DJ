@@ -107,7 +107,7 @@ export default function HomeScreen() {
       setLoading(true);
       console.log('[Home] Loading tracks...');
       
-      const filters: any = { limit: 50 };
+      const filters: any = { limit: 100 }; // Get more tracks to have better selection
       if (selectedGenre !== 'All Genres') filters.genre = selectedGenre;
       if (selectedEnergy !== 'All Energy Levels') filters.energy_level = selectedEnergy.toLowerCase().replace(' ', '_');
       if (showVIPOnly) filters.is_vip = true;
@@ -115,7 +115,7 @@ export default function HomeScreen() {
       const sortMap: Record<string, string> = {
         'Recently Added': '-created_date',
         'Most Downloaded': '-download_count',
-        'Top Rated': '-rating',
+        'Top Rated': '-average_rating',
         'Oldest': 'created_date',
       };
       filters.sort = sortMap[selectedSort] || '-created_date';
@@ -123,20 +123,14 @@ export default function HomeScreen() {
       const result = await base44Tracks.list(filters);
       console.log('[Home] Tracks loaded:', result?.length || 0);
       
-      // Filter only approved tracks and use real tracks if available
+      // Filter ONLY approved tracks
       if (result && result.length > 0) {
-        // Filter approved tracks only
         const approvedTracks = result.filter((track: Track) => 
-          track.is_approved === true || track.status === 'approved'
+          track.status === 'approved'
         );
         console.log('[Home] Approved tracks:', approvedTracks.length);
         
-        if (approvedTracks.length > 0) {
-          setTracks(approvedTracks);
-        } else {
-          // If no approved tracks, show all tracks (fallback)
-          setTracks(result);
-        }
+        setTracks(approvedTracks);
       } else {
         console.log('[Home] No tracks from API, showing demo tracks');
         setTracks(getDemoTracks());
