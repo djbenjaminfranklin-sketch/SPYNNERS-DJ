@@ -173,7 +173,7 @@ export default function LibraryScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading your uploads...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -182,7 +182,7 @@ export default function LibraryScreen() {
     <View style={styles.container}>
       {/* Header */}
       <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
-        <Text style={styles.headerTitle}>My Uploads</Text>
+        <Text style={styles.headerTitle}>{t('page.myUploads')}</Text>
         <View style={styles.headerRight}>
           <Text style={styles.trackCount}>{tracks.length} tracks</Text>
           <TouchableOpacity 
@@ -198,15 +198,15 @@ export default function LibraryScreen() {
       {tracks.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="cloud-upload-outline" size={80} color={Colors.textMuted} />
-          <Text style={styles.emptyTitle}>No Uploads Yet</Text>
-          <Text style={styles.emptySubtitle}>Upload your first track to get started</Text>
+          <Text style={styles.emptyTitle}>{t('page.noTracks')}</Text>
+          <Text style={styles.emptySubtitle}>{t('upload.firstTrackHint') || 'Upload your first track to get started'}</Text>
           <TouchableOpacity 
             style={styles.emptyButton}
             onPress={() => router.push('/(tabs)/upload')}
           >
             <LinearGradient colors={[Colors.primary, '#7B1FA2']} style={styles.emptyButtonGradient}>
               <Ionicons name="cloud-upload" size={20} color="#fff" />
-              <Text style={styles.emptyButtonText}>Upload Track</Text>
+              <Text style={styles.emptyButtonText}>{t('page.uploadTrack')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
