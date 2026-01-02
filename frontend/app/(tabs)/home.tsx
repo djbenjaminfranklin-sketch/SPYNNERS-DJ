@@ -380,7 +380,7 @@ export default function HomeScreen() {
           setShow(!show); 
         }}
       >
-        <Text style={styles.filterButtonText} numberOfLines={1}>{value}</Text>
+        <Text style={styles.filterButtonText} numberOfLines={1}>{getTranslatedValue(value)}</Text>
         <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
       </TouchableOpacity>
       {show && (
@@ -404,7 +404,7 @@ export default function HomeScreen() {
                     setTimeout(loadTracks, 100); 
                   }}
                 >
-                  <Text style={[styles.filterOptionText, value === option && styles.filterOptionTextSelected]}>{option}</Text>
+                  <Text style={[styles.filterOptionText, value === option && styles.filterOptionTextSelected]}>{getTranslatedValue(option)}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
