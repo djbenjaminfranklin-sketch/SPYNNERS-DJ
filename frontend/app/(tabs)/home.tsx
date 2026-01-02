@@ -495,7 +495,7 @@ export default function HomeScreen() {
             return (
               <View key={trackId} style={[styles.trackCard, isCurrentTrack && styles.trackCardActive]}>
                 {/* Left: Play Button & Cover */}
-                <TouchableOpacity style={styles.playButton} onPress={() => playTrack(track)}>
+                <TouchableOpacity style={styles.playButton} onPress={() => handlePlayTrack(track)}>
                   <Ionicons name={isCurrentTrack && isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
                 </TouchableOpacity>
                 
