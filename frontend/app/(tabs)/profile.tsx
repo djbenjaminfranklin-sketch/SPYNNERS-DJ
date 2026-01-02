@@ -30,16 +30,16 @@ export default function ProfileScreen() {
   const handleLogout = () => {
     if (Platform.OS === 'web') {
       // For web, use confirm dialog
-      const confirmed = window.confirm('Voulez-vous vraiment vous déconnecter?');
+      const confirmed = window.confirm(t('profile.logoutConfirm'));
       if (confirmed) {
         logout();
         router.replace('/(auth)/login');
       }
     } else {
-      Alert.alert(t('logout'), t('logoutConfirm'), [
-        { text: t('cancel'), style: 'cancel' },
+      Alert.alert(t('profile.logout'), t('profile.logoutConfirm'), [
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: t('logout'),
+          text: t('profile.logout'),
           onPress: async () => {
             await logout();
             router.replace('/(auth)/login');
