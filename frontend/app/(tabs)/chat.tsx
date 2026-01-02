@@ -56,23 +56,13 @@ export default function ChatScreen() {
   const loadMembers = async () => {
     try {
       setLoading(true);
-      console.log('[Chat] Loading all members...');
+      console.log('[Chat] Loading all members using nativeGetAllUsers...');
       
       const userId = user?.id || user?._id || '';
       
-      // Try to load all users directly from Base44
-      let allUsers: any[] = [];
-      try {
-        // Fetch users with high limit
-        const usersResponse = await base44Users.list();
-        allUsers = usersResponse || [];
-        console.log('[Chat] Users from API:', allUsers.length);
-      } catch (err) {
-        console.log('[Chat] Could not load users directly, falling back to tracks');
-      }
-      
-      // Also get producers from tracks to ensure we have everyone
-      const allTracks = await base44Tracks.list({ limit: 1000 });
+      // Use the new nativeGetAllUsers function to get all users with pagination
+      const allUsers = await base44Users.fetchAllUsersWithPagination();
+      console.log('[Chat] Total users fetched via nativeGetAllUsers:', allUsers.length);
       
       // Get user's messages to find recent conversations
       const userMessages = await base44Messages.list({ receiver_id: userId });
@@ -94,64 +84,43 @@ export default function ChatScreen() {
         }
       });
       
-      // Build member map from both users and track producers
+      // Build member map from users
       const memberMap = new Map<string, Member>();
       
-      // Add users from Users API
-      allUsers.forEach((user: any) => {
-        const memberId = user.id || user._id || '';
-        const memberName = user.full_name || user.name || user.email?.split('@')[0] || 'Unknown';
+      // Add all users from nativeGetAllUsers
+      allUsers.forEach((userData: any) => {
+        const memberId = userData.id || userData._id || '';
+        const memberName = userData.full_name || userData.name || userData.email?.split('@')[0] || 'Unknown';
         
         if (memberId && memberId !== userId && !memberMap.has(memberId)) {
           const msgInfo = lastMessageMap.get(memberId);
+          const userType = userData.user_type?.toLowerCase() || '';
+          
           memberMap.set(memberId, {
             id: memberId,
             name: memberName,
-            type: (user.user_type === 'dj' ? 'DJ' : user.user_type === 'producer' ? 'Producer' : 'Both') as any,
-            isOnline: Math.random() > 0.7,
-            trackCount: 0,
+            type: (userType === 'dj' ? 'DJ' : userType === 'producer' ? 'Producer' : 'Both') as any,
+            isOnline: Math.random() > 0.7, // TODO: implement real online status
+            trackCount: userData.track_count || 0,
+            avatar: userData.avatar || userData.profile_image,
             lastMessage: msgInfo?.message,
             unreadCount: msgInfo?.unread || 0,
           });
         }
       });
       
-      // Add/update with producers from tracks
-      allTracks.forEach((track: Track) => {
-        const producerId = track.producer_id || track.created_by_id || '';
-        const producerName = track.producer_name || track.artist_name || 'Unknown';
-        
-        if (producerId && producerId !== userId) {
-          if (!memberMap.has(producerId)) {
-            const msgInfo = lastMessageMap.get(producerId);
-            memberMap.set(producerId, {
-              id: producerId,
-              name: producerName,
-              type: 'Producer',
-              isOnline: Math.random() > 0.7,
-              trackCount: 1,
-              lastMessage: msgInfo?.message,
-              unreadCount: msgInfo?.unread || 0,
-            });
-          } else {
-            const existing = memberMap.get(producerId)!;
-            existing.trackCount++;
-          }
-        }
-      });
-      
       // Convert to array and sort
       const membersList = Array.from(memberMap.values())
         .sort((a, b) => {
-          // Sort by unread first, then online, then track count
+          // Sort by unread first, then online, then by name
           if ((a.unreadCount || 0) > 0 && (b.unreadCount || 0) === 0) return -1;
           if ((b.unreadCount || 0) > 0 && (a.unreadCount || 0) === 0) return 1;
           if (a.isOnline && !b.isOnline) return -1;
           if (!a.isOnline && b.isOnline) return 1;
-          return b.trackCount - a.trackCount;
+          return a.name.localeCompare(b.name);
         });
       
-      console.log('[Chat] Found', membersList.length, 'unique members');
+      console.log('[Chat] Final members list count:', membersList.length);
       setMembers(membersList);
     } catch (error) {
       console.error('[Chat] Error loading members:', error);
