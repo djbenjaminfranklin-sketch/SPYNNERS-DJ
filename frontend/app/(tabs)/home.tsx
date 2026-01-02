@@ -548,56 +548,6 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      {/* Bottom Player */}
-      {currentTrack && (
-        <Animated.View style={[styles.bottomPlayer, { transform: [{ translateY: playerAnim.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }) }] }]}>
-          <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.playerGradient}>
-            {/* Track Info */}
-            <View style={styles.playerLeft}>
-              {getCoverImageUrl(currentTrack) ? (
-                <Image source={{ uri: getCoverImageUrl(currentTrack)! }} style={styles.playerCover} />
-              ) : (
-                <View style={[styles.playerCover, styles.playerCoverPlaceholder]}>
-                  <Ionicons name="musical-notes" size={20} color={Colors.textMuted} />
-                </View>
-              )}
-              <View style={styles.playerInfo}>
-                <Text style={styles.playerTitle} numberOfLines={1}>{currentTrack.title}</Text>
-                <Text style={styles.playerArtist} numberOfLines={1}>{getArtistName(currentTrack)}</Text>
-              </View>
-            </View>
-
-            {/* Controls */}
-            <View style={styles.playerControls}>
-              <TouchableOpacity style={styles.playerControlBtn}>
-                <Ionicons name="play-skip-back" size={20} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.playerPlayBtn} onPress={togglePlayPause}>
-                <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.playerControlBtn}>
-                <Ionicons name="play-skip-forward" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Progress & Time */}
-            <View style={styles.playerRight}>
-              <Text style={styles.playerTime}>{formatTime(playbackPosition)}</Text>
-              <TouchableOpacity 
-                style={styles.progressBar} 
-                onPress={seekToPosition}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.progressFill, { width: `${playbackDuration > 0 ? (playbackPosition / playbackDuration) * 100 : 0}%` }]} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={closePlayer}>
-                <Ionicons name="close" size={20} color={Colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-      )}
-
       {/* Add to Playlist Modal */}
       <Modal visible={showPlaylistModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
