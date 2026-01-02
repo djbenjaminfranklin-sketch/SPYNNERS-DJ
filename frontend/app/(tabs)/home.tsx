@@ -49,7 +49,7 @@ const SORT_OPTIONS = ['Recently Added', 'Most Downloaded', 'Top Rated', 'Oldest'
 
 export default function HomeScreen() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const router = useRouter();
   
   // Use global player context
