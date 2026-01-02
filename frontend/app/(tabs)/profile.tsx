@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   Alert,
   Linking,
   Platform,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -15,6 +17,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import LanguageSelector from '../../src/components/LanguageSelector';
+import { base44Tracks, base44Users, Track } from '../../src/services/base44Api';
 
 // Admin emails - add your admin emails here
 const ADMIN_EMAILS = ['admin@spynners.com', 'contact@spynners.com'];
@@ -22,10 +25,61 @@ const ADMIN_EMAILS = ['admin@spynners.com', 'contact@spynners.com'];
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  
+  // Stats state
+  const [uploadsCount, setUploadsCount] = useState(0);
+  const [diamondsCount, setDiamondsCount] = useState(0);
+  const [favoritesCount, setFavoritesCount] = useState(0);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
 
   // Check if current user is admin
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
+
+  // Load user stats and avatar
+  useEffect(() => {
+    loadUserData();
+  }, [user]);
+
+  const loadUserData = async () => {
+    if (!user) return;
+    
+    try {
+      setLoadingStats(true);
+      const userId = user.id || user._id || '';
+      
+      // Get user's uploads count
+      const allTracks = await base44Tracks.list({ limit: 500 });
+      const myTracks = allTracks.filter((track: Track) => 
+        track.created_by_id === userId || 
+        track.producer_id === userId ||
+        track.uploaded_by === userId
+      );
+      setUploadsCount(myTracks.length);
+      
+      // Get diamonds from user object
+      setDiamondsCount(user.diamonds || 0);
+      
+      // Get favorites (placeholder - would need a favorites API)
+      setFavoritesCount(0);
+      
+      // Get avatar
+      if (user.avatar) {
+        if (user.avatar.startsWith('http')) {
+          setUserAvatar(user.avatar);
+        } else {
+          // Base44 file format
+          setUserAvatar(`https://app.base44.com/api/v1/files/${user.avatar}/content`);
+        }
+      }
+      
+    } catch (error) {
+      console.error('[Profile] Error loading user data:', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
