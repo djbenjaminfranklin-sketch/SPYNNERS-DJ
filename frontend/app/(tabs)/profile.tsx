@@ -142,17 +142,17 @@ export default function ProfileScreen() {
           <View style={styles.statBox}>
             <Ionicons name="musical-notes" size={24} color={Colors.primary} />
             <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>{t('uploads')}</Text>
+            <Text style={styles.statLabel}>{t('profile.uploads')}</Text>
           </View>
           <View style={styles.statBox}>
             <Ionicons name="diamond" size={24} color="#FFD700" />
             <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>{t('diamonds')}</Text>
+            <Text style={styles.statLabel}>{t('profile.diamonds')}</Text>
           </View>
           <View style={styles.statBox}>
             <Ionicons name="heart" size={24} color={Colors.error} />
             <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>{t('favorites')}</Text>
+            <Text style={styles.statLabel}>{t('profile.favorites')}</Text>
           </View>
         </View>
 
