@@ -38,6 +38,7 @@ interface RadarPlay {
 export default function LiveRadarScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [recentPlays, setRecentPlays] = useState<RadarPlay[]>([]);
