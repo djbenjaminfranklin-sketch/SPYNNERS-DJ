@@ -243,7 +243,7 @@ export default function VIPScreen() {
                         disabled={isPurchased}
                       >
                         <Text style={styles.promoButtonText}>
-                          {isPurchased ? 'Purchased' : `${promo.price || 0}€`}
+                          {isPurchased ? t('vip.purchased') : `${promo.price || 0}€`}
                         </Text>
                       </TouchableOpacity>
                     </View>
