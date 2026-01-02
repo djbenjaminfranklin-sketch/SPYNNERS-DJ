@@ -307,6 +307,34 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'Éxito',
     'common.search': 'Buscar',
     'common.noResults': 'Sin resultados',
+    'common.language': 'Idioma',
+    'common.selectLanguage': 'Selecciona tu idioma',
+    
+    // Menu items
+    'menu.received': 'Recibidas',
+    'menu.myUploads': 'Mis Subidas',
+    'menu.vip': 'VIP',
+    'menu.rankings': 'Rankings',
+    'menu.liveRadar': 'Radar en Vivo',
+    'menu.uploadTrack': 'Subir Track',
+    
+    // Actions
+    'action.download': 'Descargar',
+    'action.share': 'Compartir',
+    'action.addToPlaylist': 'Agregar a Playlist',
+    'action.sendTrack': 'Enviar Track',
+    
+    // Filters
+    'filter.allGenres': 'Todos los Géneros',
+    'filter.allEnergy': 'Todos los Niveles',
+    'filter.recentlyAdded': 'Agregados Recientemente',
+    'filter.aToZ': 'A a Z',
+    'filter.topRated': 'Mejor Valorados',
+    'filter.low': 'Bajo',
+    'filter.medium': 'Medio',
+    'filter.high': 'Alto',
+    'filter.vipOnly': 'Solo VIP',
+    'filter.searchPlaceholder': 'Buscar tracks...',
   },
   
   it: {
