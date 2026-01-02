@@ -322,6 +322,15 @@ const translations: Record<Language, Record<string, string>> = {
     'radar.expandSearch': 'Expand your search to find more DJs',
     'radar.playing': 'Playing',
     'radar.distance': 'Distance',
+    
+    // Rankings
+    'rankings.title': 'Rankings',
+    'rankings.topDownloads': 'Top Downloads',
+    'rankings.topRated': 'Top Rated',
+    'rankings.newReleases': 'New Releases',
+    'rankings.loading': 'Loading rankings...',
+    'rankings.noTracks': 'No tracks found',
+    'rankings.tryDifferentGenre': 'Try selecting a different genre',
   },
   
   fr: {
