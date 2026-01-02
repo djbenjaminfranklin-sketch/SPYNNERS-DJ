@@ -458,13 +458,25 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Upload Track Button */}
+        <TouchableOpacity 
+          style={styles.uploadTrackButton} 
+          onPress={() => router.push('/(tabs)/upload')}
+          activeOpacity={0.8}
+        >
+          <LinearGradient colors={['#4CAF50', '#388E3C']} style={styles.uploadTrackGradient}>
+            <Ionicons name="cloud-upload" size={22} color="#fff" />
+            <Text style={styles.uploadTrackText}>{t('menu.uploadTrack')}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
         {/* Search & Filters */}
         <View style={styles.searchSection}>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={20} color={Colors.textMuted} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search tracks or producers..."
+              placeholder={t('common.search') + '...'}
               placeholderTextColor={Colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
