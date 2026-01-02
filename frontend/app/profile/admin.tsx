@@ -50,6 +50,7 @@ type DuplicateGroup = {
 export default function AdminScreen() {
   const router = useRouter();
   const { user, token } = useAuth();
+  const { t } = useLanguage();
   const [pendingTracks, setPendingTracks] = useState<PendingTrack[]>([]);
   const [allTracks, setAllTracks] = useState<PendingTrack[]>([]);
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
