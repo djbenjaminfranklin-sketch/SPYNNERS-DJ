@@ -114,13 +114,13 @@ export default function HelpScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('helpFaq')}</Text>
+        <Text style={styles.headerTitle}>{t('help.title')}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.content}>
         {/* FAQ Section */}
-        <Text style={styles.sectionTitle}>{t('frequentQuestions')}</Text>
+        <Text style={styles.sectionTitle}>{t('help.frequentQuestions')}</Text>
         
         {FAQ_ITEMS.map((item, index) => (
           <TouchableOpacity
@@ -144,20 +144,16 @@ export default function HelpScreen() {
         ))}
 
         {/* Contact Section */}
-        <Text style={styles.sectionTitle}>
-          {language === 'fr' ? 'Nous contacter' : 'Contact Us'}
-        </Text>
+        <Text style={styles.sectionTitle}>{t('help.contactUs')}</Text>
         
         <View style={styles.contactCard}>
-          <Text style={styles.contactLabel}>
-            {language === 'fr' ? 'Vous avez une question?' : 'Have a question?'}
-          </Text>
+          <Text style={styles.contactLabel}>{t('help.haveQuestion')}</Text>
           
           <TextInput
             style={styles.contactInput}
             value={contactMessage}
             onChangeText={setContactMessage}
-            placeholder={language === 'fr' ? 'Écrivez votre message ici...' : 'Write your message here...'}
+            placeholder={t('help.writeMessage')}
             placeholderTextColor={Colors.textMuted}
             multiline
             numberOfLines={4}
@@ -165,9 +161,7 @@ export default function HelpScreen() {
           
           <TouchableOpacity style={styles.sendButton} onPress={handleContact}>
             <Ionicons name="send" size={20} color="#fff" />
-            <Text style={styles.sendButtonText}>
-              {language === 'fr' ? 'Envoyer' : 'Send'}
-            </Text>
+            <Text style={styles.sendButtonText}>{t('help.send')}</Text>
           </TouchableOpacity>
         </View>
 
