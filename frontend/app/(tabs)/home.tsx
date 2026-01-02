@@ -174,17 +174,6 @@ export default function HomeScreen() {
     // Try to record play count
     try { await base44Tracks.play(track.id || track._id || ''); } catch {}
   };
-  };
-
-  const closePlayer = async () => {
-    if (sound) {
-      await sound.stopAsync();
-      await sound.unloadAsync();
-      setSound(null);
-    }
-    setCurrentTrack(null);
-    setIsPlaying(false);
-  };
 
   // Actions
   const handleDownload = async (track: Track) => {
