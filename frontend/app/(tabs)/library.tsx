@@ -61,11 +61,15 @@ export default function LibraryScreen() {
     setRefreshing(false);
   };
 
-  // Get cover image URL
+  // Get cover image URL - same as home.tsx
   const getCoverImageUrl = (track: Track): string | null => {
     const url = track.artwork_url || track.cover_image;
-    if (url && url.startsWith('http')) {
-      return url;
+    if (url) {
+      if (url.startsWith('http')) {
+        return url;
+      }
+      // Base44 file URL format
+      return `https://base44.app/api/apps/691a4d96d819355b52c063f3/files/public/691a4d96d819355b52c063f3/${url}`;
     }
     return null;
   };
@@ -77,8 +81,6 @@ export default function LibraryScreen() {
 
   const renderTrack = ({ item }: { item: Track }) => {
     const coverUrl = getCoverImageUrl(item);
-    const status = item.status || 'pending';
-    const statusColor = status === 'approved' ? '#4CAF50' : status === 'rejected' ? '#F44336' : '#FF9800';
     
     return (
       <View style={styles.trackCard}>
