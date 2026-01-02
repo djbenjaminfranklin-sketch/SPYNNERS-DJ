@@ -56,12 +56,23 @@ export default function ChatScreen() {
   const loadMembers = async () => {
     try {
       setLoading(true);
-      console.log('[Chat] Loading members from tracks...');
+      console.log('[Chat] Loading all members...');
       
       const userId = user?.id || user?._id || '';
       
-      // Get ALL tracks to extract unique producers
-      const allTracks = await base44Tracks.list({ limit: 500 });
+      // Try to load all users directly from Base44
+      let allUsers: any[] = [];
+      try {
+        // Fetch users with high limit
+        const usersResponse = await base44Users.list();
+        allUsers = usersResponse || [];
+        console.log('[Chat] Users from API:', allUsers.length);
+      } catch (err) {
+        console.log('[Chat] Could not load users directly, falling back to tracks');
+      }
+      
+      // Also get producers from tracks to ensure we have everyone
+      const allTracks = await base44Tracks.list({ limit: 1000 });
       
       // Get user's messages to find recent conversations
       const userMessages = await base44Messages.list({ receiver_id: userId });
@@ -83,27 +94,49 @@ export default function ChatScreen() {
         }
       });
       
-      // Extract unique producers from tracks
-      const producerMap = new Map<string, Member>();
+      // Build member map from both users and track producers
+      const memberMap = new Map<string, Member>();
       
+      // Add users from Users API
+      allUsers.forEach((user: any) => {
+        const memberId = user.id || user._id || '';
+        const memberName = user.full_name || user.name || user.email?.split('@')[0] || 'Unknown';
+        
+        if (memberId && memberId !== userId && !memberMap.has(memberId)) {
+          const msgInfo = lastMessageMap.get(memberId);
+          memberMap.set(memberId, {
+            id: memberId,
+            name: memberName,
+            type: (user.user_type === 'dj' ? 'DJ' : user.user_type === 'producer' ? 'Producer' : 'Both') as any,
+            isOnline: Math.random() > 0.7,
+            trackCount: 0,
+            lastMessage: msgInfo?.message,
+            unreadCount: msgInfo?.unread || 0,
+          });
+        }
+      });
+      
+      // Add/update with producers from tracks
       allTracks.forEach((track: Track) => {
         const producerId = track.producer_id || track.created_by_id || '';
         const producerName = track.producer_name || track.artist_name || 'Unknown';
         
-        if (producerId && producerId !== userId && !producerMap.has(producerId)) {
-          const msgInfo = lastMessageMap.get(producerId);
-          producerMap.set(producerId, {
-            id: producerId,
-            name: producerName,
-            type: 'Producer',
-            isOnline: Math.random() > 0.7, // Simulated online status
-            trackCount: 1,
-            lastMessage: msgInfo?.message,
-            unreadCount: msgInfo?.unread || 0,
-          });
-        } else if (producerId && producerMap.has(producerId)) {
-          const existing = producerMap.get(producerId)!;
-          existing.trackCount++;
+        if (producerId && producerId !== userId) {
+          if (!memberMap.has(producerId)) {
+            const msgInfo = lastMessageMap.get(producerId);
+            memberMap.set(producerId, {
+              id: producerId,
+              name: producerName,
+              type: 'Producer',
+              isOnline: Math.random() > 0.7,
+              trackCount: 1,
+              lastMessage: msgInfo?.message,
+              unreadCount: msgInfo?.unread || 0,
+            });
+          } else {
+            const existing = memberMap.get(producerId)!;
+            existing.trackCount++;
+          }
         }
       });
       
