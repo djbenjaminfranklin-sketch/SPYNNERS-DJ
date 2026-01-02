@@ -285,7 +285,7 @@ export default function ClubsScreen() {
                 {club.is_partner && (
                   <View style={styles.partnerBadge}>
                     <Ionicons name="star" size={12} color="#FFD700" />
-                    <Text style={styles.partnerBadgeText}>Partner</Text>
+                    <Text style={styles.partnerBadgeText}>{t('clubs.partner')}</Text>
                   </View>
                 )}
                 
