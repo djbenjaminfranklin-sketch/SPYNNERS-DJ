@@ -734,6 +734,65 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
+      {/* Send Track Modal */}
+      <Modal visible={showSendTrackModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { maxHeight: '80%' }]}>
+            <Text style={styles.modalTitle}>{t('action.sendTrack')}</Text>
+            {selectedTrackForSend && (
+              <Text style={styles.modalSubtitle}>"{selectedTrackForSend.title}"</Text>
+            )}
+            
+            {/* Search input */}
+            <View style={[styles.searchContainer, { marginVertical: 10 }]}>
+              <Ionicons name="search" size={18} color={Colors.textMuted} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={t('common.search') + '...'}
+                placeholderTextColor={Colors.textMuted}
+                value={memberSearchQuery}
+                onChangeText={setMemberSearchQuery}
+              />
+            </View>
+            
+            {loadingMembers ? (
+              <ActivityIndicator size="small" color={Colors.primary} style={{ marginVertical: 20 }} />
+            ) : (
+              <ScrollView style={{ maxHeight: 300 }}>
+                {filteredMembers.slice(0, 50).map((member: any) => {
+                  const memberId = member.id || member._id || '';
+                  const memberName = member.full_name || member.name || member.email?.split('@')[0] || 'Unknown';
+                  return (
+                    <TouchableOpacity
+                      key={memberId}
+                      style={styles.memberItem}
+                      onPress={() => sendTrackToMember(memberId, memberName)}
+                    >
+                      <View style={styles.memberAvatar}>
+                        <Ionicons name="person" size={20} color={Colors.textMuted} />
+                      </View>
+                      <Text style={styles.memberName}>{memberName}</Text>
+                      <Ionicons name="send" size={18} color={Colors.primary} />
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            )}
+            
+            <TouchableOpacity 
+              style={styles.modalCancel} 
+              onPress={() => {
+                setShowSendTrackModal(false);
+                setSelectedTrackForSend(null);
+                setMemberSearchQuery('');
+              }}
+            >
+              <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Language Selection Modal */}
       <Modal visible={showLanguageModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
