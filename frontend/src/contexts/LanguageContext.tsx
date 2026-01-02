@@ -116,6 +116,17 @@ const translations: Record<Language, Record<string, string>> = {
     'action.share': 'Share',
     'action.addToPlaylist': 'Add to Playlist',
     'action.sendTrack': 'Send Track',
+    
+    // Filters
+    'filter.allGenres': 'All Genres',
+    'filter.allEnergy': 'All Energy Levels',
+    'filter.recentlyAdded': 'Recently Added',
+    'filter.aToZ': 'A to Z',
+    'filter.topRated': 'Top Rated',
+    'filter.low': 'Low',
+    'filter.medium': 'Medium',
+    'filter.high': 'High',
+    'filter.vipOnly': 'VIP Only',
   },
   
   fr: {
