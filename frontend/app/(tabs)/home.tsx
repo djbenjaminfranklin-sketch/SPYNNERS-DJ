@@ -548,9 +548,13 @@ export default function HomeScreen() {
             {/* Progress & Time */}
             <View style={styles.playerRight}>
               <Text style={styles.playerTime}>{formatTime(playbackPosition)}</Text>
-              <View style={styles.progressBar}>
+              <TouchableOpacity 
+                style={styles.progressBar} 
+                onPress={seekToPosition}
+                activeOpacity={0.8}
+              >
                 <View style={[styles.progressFill, { width: `${playbackDuration > 0 ? (playbackPosition / playbackDuration) * 100 : 0}%` }]} />
-              </View>
+              </TouchableOpacity>
               <TouchableOpacity onPress={closePlayer}>
                 <Ionicons name="close" size={20} color={Colors.textMuted} />
               </TouchableOpacity>
