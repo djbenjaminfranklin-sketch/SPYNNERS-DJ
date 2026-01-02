@@ -662,6 +662,15 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Notification Modal */}
+      <NotificationModal 
+        visible={showNotificationModal} 
+        onClose={() => {
+          setShowNotificationModal(false);
+          loadNotifications(); // Refresh count after closing
+        }} 
+      />
     </View>
   );
 }
