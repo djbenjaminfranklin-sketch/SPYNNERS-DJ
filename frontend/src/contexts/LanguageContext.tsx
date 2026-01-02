@@ -1950,6 +1950,17 @@ const translations: Record<Language, Record<string, string>> = {
     'spyn.listening': '聆听中... (10秒)',
     'spyn.trackIdentified': '曲目已识别！',
     'spyn.newSearch': '新搜索',
+    'spyn.djSetStarted': 'DJ Set已开始',
+    'spyn.djSetEnded': 'DJ Set已结束',
+    'spyn.tracksIdentified': '已识别曲目',
+    'spyn.save': '保存',
+    'spyn.delete': '删除',
+    'spyn.stop': '停止',
+    'spyn.stopRecording': '停止录制',
+    'spyn.producerNotified': '制作人已通知！',
+    'spyn.playingTrack': '已被通知你正在播放他们的曲目！',
+    'spyn.djSetComplete': 'DJ Set完成',
+    'spyn.duration': '时长',
     
     // Menu items
     'menu.received': '已收到',
