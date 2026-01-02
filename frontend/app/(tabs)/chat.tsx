@@ -376,8 +376,8 @@ export default function ChatScreen() {
           ) : messages.length === 0 ? (
             <View style={styles.messagesEmpty}>
               <Ionicons name="chatbubbles-outline" size={60} color={Colors.textMuted} />
-              <Text style={styles.messagesEmptyText}>No messages yet</Text>
-              <Text style={styles.messagesEmptySubtext}>Say hello to start the conversation!</Text>
+              <Text style={styles.messagesEmptyText}>{t('chat.noMessages')}</Text>
+              <Text style={styles.messagesEmptySubtext}>{t('chat.startConversation')}</Text>
             </View>
           ) : (
             <ScrollView style={styles.messagesList} contentContainerStyle={styles.messagesContent}>
