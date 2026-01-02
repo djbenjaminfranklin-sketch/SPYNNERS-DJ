@@ -409,8 +409,8 @@ export default function AdminScreen() {
           <Ionicons name="arrow-back" size={24} color={Colors.text} />
         </TouchableOpacity>
         <View>
-          <Text style={styles.headerTitle}>Admin Panel</Text>
-          <Text style={styles.headerSubtitle}>Manage tracks, ACRCloud & duplicates</Text>
+          <Text style={styles.headerTitle}>{t('admin.title')}</Text>
+          <Text style={styles.headerSubtitle}>{t('admin.subtitle')}</Text>
         </View>
         <View style={styles.pendingBadge}>
           <Text style={styles.pendingBadgeText}>{pendingTracks.length}</Text>
@@ -421,19 +421,19 @@ export default function AdminScreen() {
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
           <Text style={styles.statNumber}>{pendingTracks.length}</Text>
-          <Text style={styles.statLabel}>Pending</Text>
+          <Text style={styles.statLabel}>{t('admin.pending')}</Text>
         </View>
         <View style={styles.statBox}>
           <Text style={[styles.statNumber, { color: '#00C853' }]}>
             {allTracks.filter(t => t.status === 'approved').length}
           </Text>
-          <Text style={styles.statLabel}>Approved</Text>
+          <Text style={styles.statLabel}>{t('admin.approved')}</Text>
         </View>
         <View style={styles.statBox}>
           <Text style={[styles.statNumber, { color: '#FF9800' }]}>
             {duplicateGroups.length}
           </Text>
-          <Text style={styles.statLabel}>Duplicates</Text>
+          <Text style={styles.statLabel}>{t('admin.duplicates')}</Text>
         </View>
         <View style={styles.statBox}>
           <Text style={[styles.statNumber, { color: '#2196F3' }]}>
