@@ -203,7 +203,8 @@ export default function HelpScreen() {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [contactMessage, setContactMessage] = useState('');
 
-  const FAQ_ITEMS = language === 'fr' ? FAQ_ITEMS_FR : FAQ_ITEMS_EN;
+  // Get FAQ items for current language, fallback to English
+  const currentFaqItems = FAQ_ITEMS[language] || FAQ_ITEMS['en'];
 
   const toggleFAQ = (index: number) => {
     setExpandedIndex(expandedIndex === index ? null : index);
@@ -212,15 +213,17 @@ export default function HelpScreen() {
   const handleContact = () => {
     if (!contactMessage.trim()) {
       Alert.alert(
-        language === 'fr' ? 'Message requis' : 'Message required',
-        language === 'fr' ? 'Veuillez écrire votre message' : 'Please write your message'
+        t('common.error'),
+        t('help.writeMessage')
       );
       return;
     }
 
     Alert.alert(
-      language === 'fr' ? 'Message envoyé! ✉️' : 'Message sent! ✉️',
-      language === 'fr' ? 'Notre équipe vous répondra sous 24-48h.' : 'Our team will respond within 24-48h.',
+      t('common.success') + ' ✉️',
+      language === 'fr' ? 'Notre équipe vous répondra sous 24-48h.' : 
+      language === 'es' ? 'Nuestro equipo te responderá en 24-48h.' :
+      'Our team will respond within 24-48h.',
       [{ text: 'OK', onPress: () => setContactMessage('') }]
     );
   };
@@ -243,7 +246,7 @@ export default function HelpScreen() {
         {/* FAQ Section */}
         <Text style={styles.sectionTitle}>{t('help.frequentQuestions')}</Text>
         
-        {FAQ_ITEMS.map((item, index) => (
+        {currentFaqItems.map((item, index) => (
           <TouchableOpacity
             key={index}
             style={styles.faqItem}
