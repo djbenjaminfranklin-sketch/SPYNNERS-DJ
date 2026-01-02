@@ -942,6 +942,7 @@ const styles = StyleSheet.create({
   filterDropdown: { flex: 1, position: 'relative', zIndex: 1000 },
   filterButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.backgroundCard, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 10, borderWidth: 1, borderColor: Colors.primary },
   filterButtonText: { color: Colors.text, fontSize: 11, flex: 1 },
+  filterBackdrop: { position: 'fixed' as any, top: 0, left: 0, right: 0, bottom: 0, zIndex: 1999 },
   filterDropdownList: { position: 'absolute', top: 42, left: 0, right: 0, backgroundColor: Colors.backgroundCard, borderRadius: 6, borderWidth: 1, borderColor: Colors.primary, zIndex: 2000, elevation: 2000, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   filterOption: { padding: 10, borderBottomWidth: 1, borderBottomColor: Colors.border },
   filterOptionSelected: { backgroundColor: Colors.primary + '20' },
