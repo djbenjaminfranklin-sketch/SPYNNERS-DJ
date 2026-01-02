@@ -1,38 +1,53 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  FlatList, 
   TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
   Image,
+  ActivityIndicator,
   RefreshControl,
-  Alert,
+  TextInput,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { base44Tracks, Track } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
+import { base44Tracks, base44Messages, Track, Message } from '../../src/services/base44Api';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 interface Member {
   id: string;
   name: string;
-  type: string;
+  type: 'DJ' | 'Producer' | 'Both';
   isOnline: boolean;
   trackCount: number;
+  avatar?: string;
+  lastMessage?: string;
+  unreadCount?: number;
 }
 
 export default function ChatScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Conversation modal
+  const [showConversation, setShowConversation] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
     loadMembers();
@@ -43,8 +58,30 @@ export default function ChatScreen() {
       setLoading(true);
       console.log('[Chat] Loading members from tracks...');
       
+      const userId = user?.id || user?._id || '';
+      
       // Get ALL tracks to extract unique producers
       const allTracks = await base44Tracks.list({ limit: 500 });
+      
+      // Get user's messages to find recent conversations
+      const userMessages = await base44Messages.list({ receiver_id: userId });
+      const sentMessages = await base44Messages.list({ sender_id: userId });
+      const allMessages = [...userMessages, ...sentMessages];
+      
+      // Create a map of last messages per user
+      const lastMessageMap = new Map<string, { message: string; unread: number }>();
+      allMessages.forEach((msg: Message) => {
+        const otherId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id;
+        if (!lastMessageMap.has(otherId)) {
+          lastMessageMap.set(otherId, {
+            message: msg.content || '',
+            unread: msg.receiver_id === userId && !msg.read ? 1 : 0,
+          });
+        } else if (msg.receiver_id === userId && !msg.read) {
+          const existing = lastMessageMap.get(otherId)!;
+          existing.unread++;
+        }
+      });
       
       // Extract unique producers from tracks
       const producerMap = new Map<string, Member>();
@@ -53,29 +90,35 @@ export default function ChatScreen() {
         const producerId = track.producer_id || track.created_by_id || '';
         const producerName = track.producer_name || track.artist_name || 'Unknown';
         
-        if (producerId && !producerMap.has(producerId)) {
+        if (producerId && producerId !== userId && !producerMap.has(producerId)) {
+          const msgInfo = lastMessageMap.get(producerId);
           producerMap.set(producerId, {
             id: producerId,
             name: producerName,
             type: 'Producer',
-            isOnline: Math.random() > 0.7, // 30% online for demo
+            isOnline: Math.random() > 0.7, // Simulated online status
             trackCount: 1,
+            lastMessage: msgInfo?.message,
+            unreadCount: msgInfo?.unread || 0,
           });
-        } else if (producerId) {
+        } else if (producerId && producerMap.has(producerId)) {
           const existing = producerMap.get(producerId)!;
           existing.trackCount++;
         }
       });
       
-      // Convert to array and sort by online status then by track count
+      // Convert to array and sort
       const membersList = Array.from(producerMap.values())
         .sort((a, b) => {
+          // Sort by unread first, then online, then track count
+          if ((a.unreadCount || 0) > 0 && (b.unreadCount || 0) === 0) return -1;
+          if ((b.unreadCount || 0) > 0 && (a.unreadCount || 0) === 0) return 1;
           if (a.isOnline && !b.isOnline) return -1;
           if (!a.isOnline && b.isOnline) return 1;
           return b.trackCount - a.trackCount;
         });
       
-      console.log('[Chat] Found', membersList.length, 'unique producers');
+      console.log('[Chat] Found', membersList.length, 'unique members');
       setMembers(membersList);
     } catch (error) {
       console.error('[Chat] Error loading members:', error);
@@ -90,44 +133,112 @@ export default function ChatScreen() {
     setRefreshing(false);
   };
 
-  const filteredMembers = members.filter((m: Member) => {
-    if (!searchQuery) return true;
-    return m.name.toLowerCase().includes(searchQuery.toLowerCase());
-  });
-
-  const onlineCount = members.filter((m: Member) => m.isOnline).length;
-
-  const startChat = (member: Member) => {
-    Alert.alert(
-      `Chat with ${member.name}`,
-      `${member.trackCount} tracks uploaded\n\nDirect messaging coming soon!`,
-      [{ text: 'OK' }]
-    );
+  // Open conversation with a member
+  const openConversation = async (member: Member) => {
+    setSelectedMember(member);
+    setShowConversation(true);
+    setLoadingMessages(true);
+    
+    try {
+      const userId = user?.id || user?._id || '';
+      const conversation = await base44Messages.getConversation(userId, member.id);
+      setMessages(conversation);
+      
+      // Mark messages as read
+      for (const msg of conversation) {
+        if (msg.receiver_id === userId && !msg.read) {
+          await base44Messages.markAsRead(msg.id || msg._id || '');
+        }
+      }
+      
+      // Update unread count
+      setMembers(prev => prev.map(m => 
+        m.id === member.id ? { ...m, unreadCount: 0 } : m
+      ));
+    } catch (error) {
+      console.error('[Chat] Error loading conversation:', error);
+    } finally {
+      setLoadingMessages(false);
+    }
   };
+
+  // Send message
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedMember) return;
+    
+    setSendingMessage(true);
+    try {
+      const userId = user?.id || user?._id || '';
+      const userName = user?.full_name || user?.email || 'User';
+      
+      const message = await base44Messages.send({
+        sender_id: userId,
+        sender_name: userName,
+        receiver_id: selectedMember.id,
+        content: newMessage.trim(),
+      });
+      
+      if (message) {
+        setMessages(prev => [...prev, message]);
+        setNewMessage('');
+      }
+    } catch (error) {
+      console.error('[Chat] Error sending message:', error);
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  // Filter members by search
+  const filteredMembers = members.filter(member =>
+    member.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Get total unread count
+  const totalUnread = members.reduce((sum, m) => sum + (m.unreadCount || 0), 0);
 
   const renderMember = ({ item }: { item: Member }) => (
     <TouchableOpacity 
       style={styles.memberCard}
-      onPress={() => startChat(item)}
+      onPress={() => openConversation(item)}
       activeOpacity={0.7}
     >
+      {/* Avatar */}
       <View style={styles.avatarContainer}>
-        <View style={[styles.avatar, styles.avatarPlaceholder]}>
+        <View style={styles.avatar}>
           <Text style={styles.avatarText}>
             {item.name.charAt(0).toUpperCase()}
           </Text>
         </View>
-        {item.isOnline && <View style={styles.onlineDot} />}
-      </View>
-      
-      <View style={styles.memberInfo}>
-        <Text style={styles.memberName}>{item.name}</Text>
-        <Text style={styles.memberType}>{item.type} • {item.trackCount} tracks</Text>
+        {item.isOnline && <View style={styles.onlineIndicator} />}
       </View>
 
-      <TouchableOpacity style={styles.messageButton} onPress={() => startChat(item)}>
-        <Ionicons name="chatbubble" size={20} color={Colors.primary} />
-      </TouchableOpacity>
+      {/* Member Info */}
+      <View style={styles.memberInfo}>
+        <Text style={styles.memberName} numberOfLines={1}>{item.name}</Text>
+        {item.lastMessage ? (
+          <Text style={styles.lastMessage} numberOfLines={1}>{item.lastMessage}</Text>
+        ) : (
+          <Text style={styles.memberStats}>
+            {item.type} • {item.trackCount} tracks
+          </Text>
+        )}
+      </View>
+
+      {/* Unread Badge or Status */}
+      {item.unreadCount && item.unreadCount > 0 ? (
+        <View style={styles.unreadBadge}>
+          <Text style={styles.unreadText}>{item.unreadCount}</Text>
+        </View>
+      ) : (
+        <View style={styles.memberMeta}>
+          {item.isOnline ? (
+            <Text style={styles.onlineText}>Online</Text>
+          ) : (
+            <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
+          )}
+        </View>
+      )}
     </TouchableOpacity>
   );
 
@@ -144,43 +255,54 @@ export default function ChatScreen() {
     <View style={styles.container}>
       {/* Header */}
       <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.header}>
-        <Text style={styles.headerTitle}>Chat</Text>
-        <Text style={styles.headerSubtitle}>{members.length} producers</Text>
+        <Text style={styles.headerTitle}>Messages</Text>
+        {totalUnread > 0 && (
+          <View style={styles.headerBadge}>
+            <Text style={styles.headerBadgeText}>{totalUnread}</Text>
+          </View>
+        )}
       </LinearGradient>
 
       {/* Search */}
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color={Colors.textMuted} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search producers..."
-          placeholderTextColor={Colors.textMuted}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Ionicons name="close-circle" size={20} color={Colors.textMuted} />
-          </TouchableOpacity>
-        )}
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={20} color={Colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search members..."
+            placeholderTextColor={Colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={20} color={Colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-      {/* Online indicator */}
-      <View style={styles.onlineInfo}>
-        <View style={styles.onlineDotSmall} />
-        <Text style={styles.onlineText}>
-          {onlineCount} online
-        </Text>
+      {/* Stats */}
+      <View style={styles.statsRow}>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{members.length}</Text>
+          <Text style={styles.statLabel}>Members</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{members.filter(m => m.isOnline).length}</Text>
+          <Text style={[styles.statLabel, { color: '#4CAF50' }]}>Online</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{totalUnread}</Text>
+          <Text style={[styles.statLabel, { color: Colors.primary }]}>Unread</Text>
+        </View>
       </View>
 
       {/* Members List */}
-      {members.length === 0 ? (
+      {filteredMembers.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="people-outline" size={60} color={Colors.textMuted} />
-          <Text style={styles.emptyText}>No producers found</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadMembers}>
-            <Text style={styles.retryText}>Retry</Text>
-          </TouchableOpacity>
+          <Text style={styles.emptyText}>No members found</Text>
         </View>
       ) : (
         <FlatList
@@ -193,6 +315,83 @@ export default function ChatScreen() {
           }
         />
       )}
+
+      {/* Conversation Modal */}
+      <Modal visible={showConversation} animationType="slide">
+        <KeyboardAvoidingView 
+          style={styles.conversationContainer}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          {/* Conversation Header */}
+          <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.conversationHeader}>
+            <TouchableOpacity onPress={() => setShowConversation(false)}>
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <View style={styles.conversationHeaderInfo}>
+              <Text style={styles.conversationName}>{selectedMember?.name}</Text>
+              {selectedMember?.isOnline && (
+                <Text style={styles.conversationStatus}>Online</Text>
+              )}
+            </View>
+            <View style={{ width: 24 }} />
+          </LinearGradient>
+
+          {/* Messages */}
+          {loadingMessages ? (
+            <View style={styles.messagesLoading}>
+              <ActivityIndicator size="small" color={Colors.primary} />
+            </View>
+          ) : messages.length === 0 ? (
+            <View style={styles.messagesEmpty}>
+              <Ionicons name="chatbubbles-outline" size={60} color={Colors.textMuted} />
+              <Text style={styles.messagesEmptyText}>No messages yet</Text>
+              <Text style={styles.messagesEmptySubtext}>Say hello to start the conversation!</Text>
+            </View>
+          ) : (
+            <ScrollView style={styles.messagesList} contentContainerStyle={styles.messagesContent}>
+              {messages.map((msg, index) => {
+                const isMine = msg.sender_id === (user?.id || user?._id);
+                return (
+                  <View 
+                    key={msg.id || msg._id || index} 
+                    style={[styles.messageBubble, isMine ? styles.myMessage : styles.theirMessage]}
+                  >
+                    <Text style={[styles.messageText, isMine && styles.myMessageText]}>
+                      {msg.content}
+                    </Text>
+                    <Text style={[styles.messageTime, isMine && styles.myMessageTime]}>
+                      {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          )}
+
+          {/* Message Input */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.messageInput}
+              placeholder="Type a message..."
+              placeholderTextColor={Colors.textMuted}
+              value={newMessage}
+              onChangeText={setNewMessage}
+              multiline
+            />
+            <TouchableOpacity 
+              style={[styles.sendButton, !newMessage.trim() && styles.sendButtonDisabled]}
+              onPress={sendMessage}
+              disabled={!newMessage.trim() || sendingMessage}
+            >
+              {sendingMessage ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="send" size={20} color="#fff" />
+              )}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -201,60 +400,81 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
   loadingText: { color: Colors.textMuted, marginTop: 12 },
-  header: { paddingTop: 50, paddingBottom: 16, paddingHorizontal: 20 },
+  
+  // Header
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    paddingTop: 50, 
+    paddingBottom: 16, 
+    paddingHorizontal: 16,
+    gap: 8,
+  },
   headerTitle: { fontSize: 24, fontWeight: '700', color: Colors.text },
-  headerSubtitle: { fontSize: 14, color: Colors.textMuted, marginTop: 4 },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.backgroundCard,
-    margin: 16,
-    marginBottom: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
+  headerBadge: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  headerBadgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  
+  // Search
+  searchContainer: { paddingHorizontal: 12, paddingVertical: 10 },
+  searchBar: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: Colors.backgroundCard, 
+    borderRadius: 10, 
+    paddingHorizontal: 12, 
     height: 44,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  searchInput: { flex: 1, color: Colors.text, marginLeft: 8, fontSize: 14 },
-  onlineInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 8,
+  searchInput: { flex: 1, color: Colors.text, fontSize: 14, marginLeft: 8 },
+  
+  // Stats
+  statsRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    marginHorizontal: 12,
   },
-  onlineDotSmall: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#4CAF50',
-    marginRight: 6,
-  },
-  onlineText: { color: Colors.textMuted, fontSize: 12 },
+  statItem: { alignItems: 'center' },
+  statValue: { fontSize: 18, fontWeight: '700', color: Colors.text },
+  statLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  
+  // List
   listContent: { padding: 12 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 60 },
+  emptyText: { color: Colors.text, fontSize: 18, fontWeight: '600', marginTop: 16 },
+  
+  // Member Card
   memberCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.backgroundCard,
     borderRadius: 12,
     padding: 12,
-    marginBottom: 8,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: Colors.border,
+    gap: 12,
   },
   avatarContainer: { position: 'relative' },
   avatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-  },
-  avatarPlaceholder: {
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarText: { color: '#fff', fontSize: 20, fontWeight: '600' },
-  onlineDot: {
+  avatarText: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  onlineIndicator: {
     position: 'absolute',
     bottom: 2,
     right: 2,
@@ -265,19 +485,87 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.backgroundCard,
   },
-  memberInfo: { flex: 1, marginLeft: 12 },
+  memberInfo: { flex: 1, minWidth: 0 },
   memberName: { fontSize: 16, fontWeight: '600', color: Colors.text },
-  memberType: { fontSize: 12, color: Colors.primary, marginTop: 2 },
-  messageButton: {
-    width: 40,
-    height: 40,
+  memberStats: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  lastMessage: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  memberMeta: { alignItems: 'flex-end' },
+  onlineText: { fontSize: 11, color: '#4CAF50', fontWeight: '500' },
+  unreadBadge: {
+    backgroundColor: Colors.primary,
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  unreadText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  
+  // Conversation
+  conversationContainer: { flex: 1, backgroundColor: Colors.background },
+  conversationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 50,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+  },
+  conversationHeaderInfo: { alignItems: 'center' },
+  conversationName: { fontSize: 18, fontWeight: '700', color: Colors.text },
+  conversationStatus: { fontSize: 12, color: '#4CAF50', marginTop: 2 },
+  messagesLoading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  messagesEmpty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  messagesEmptyText: { fontSize: 18, fontWeight: '600', color: Colors.text, marginTop: 16 },
+  messagesEmptySubtext: { fontSize: 14, color: Colors.textMuted, marginTop: 4 },
+  messagesList: { flex: 1 },
+  messagesContent: { padding: 16 },
+  messageBubble: {
+    maxWidth: '80%',
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 8,
+  },
+  myMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: Colors.primary,
+    borderBottomRightRadius: 4,
+  },
+  theirMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.backgroundCard,
+    borderBottomLeftRadius: 4,
+  },
+  messageText: { fontSize: 14, color: Colors.text },
+  myMessageText: { color: '#fff' },
+  messageTime: { fontSize: 10, color: Colors.textMuted, marginTop: 4, alignSelf: 'flex-end' },
+  myMessageTime: { color: 'rgba(255,255,255,0.7)' },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    gap: 8,
+  },
+  messageInput: {
+    flex: 1,
+    backgroundColor: Colors.backgroundCard,
     borderRadius: 20,
-    backgroundColor: Colors.background,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    color: Colors.text,
+    fontSize: 14,
+    maxHeight: 100,
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60 },
-  emptyText: { color: Colors.text, fontSize: 18, fontWeight: '600', marginTop: 16 },
-  retryButton: { marginTop: 20, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: Colors.primary, borderRadius: 8 },
-  retryText: { color: '#fff', fontWeight: '600' },
+  sendButtonDisabled: { opacity: 0.5 },
 });
