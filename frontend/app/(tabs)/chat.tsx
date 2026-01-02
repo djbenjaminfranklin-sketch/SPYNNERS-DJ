@@ -18,8 +18,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import { base44Messages, base44Users, Message } from '../../src/services/base44Api';
+import { base44Messages, Message } from '../../src/services/base44Api';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { invokeBase44Function } from '../../src/api/base44Client';
 
 interface Member {
   id: string;
