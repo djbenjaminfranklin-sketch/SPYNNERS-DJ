@@ -56,10 +56,25 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Navigation
     'nav.home': 'Home',
-    'nav.library': 'Library',
+    'nav.library': 'My Uploads',
+    'nav.playlist': 'Playlists',
+    'nav.received': 'Received',
     'nav.spyn': 'SPYN',
     'nav.chat': 'Chat',
     'nav.profile': 'Profile',
+    'nav.upload': 'Upload Track',
+    
+    // Page titles
+    'page.myUploads': 'My Uploads',
+    'page.myPlaylists': 'My Playlists', 
+    'page.receivedTracks': 'Received Tracks',
+    'page.chat': 'Messages',
+    'page.uploadTrack': 'Upload Track',
+    'page.noTracks': 'No tracks yet',
+    'page.noPlaylists': 'No playlists yet',
+    'page.noReceivedTracks': 'No received tracks',
+    'page.createPlaylist': 'Create Playlist',
+    'page.playlistName': 'Playlist Name',
     
     // SPYN
     'spyn.detection': 'DETECTION',
