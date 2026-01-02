@@ -598,7 +598,7 @@ export default function HomeScreen() {
         <View style={styles.filtersRow}>
           <FilterDropdown 
             value={selectedGenre} 
-            options={GENRES} 
+            options={GENRE_VALUES} 
             show={showGenreFilter} 
             setShow={setShowGenreFilter} 
             onSelect={setSelectedGenre}
