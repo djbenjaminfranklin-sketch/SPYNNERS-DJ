@@ -985,4 +985,25 @@ const styles = StyleSheet.create({
   langOptionFlag: { fontSize: 24 },
   langOptionText: { color: Colors.text, fontSize: 15, flex: 1 },
   langOptionTextActive: { color: Colors.primary, fontWeight: '600' },
+  
+  // Upload Track Button (styled like spynners.com)
+  uploadTrackButton: {
+    marginHorizontal: 40,
+    marginVertical: 8,
+    borderRadius: 25,
+    overflow: 'hidden',
+  },
+  uploadTrackGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    gap: 10,
+  },
+  uploadTrackText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });
