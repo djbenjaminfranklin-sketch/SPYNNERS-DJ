@@ -176,9 +176,13 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.profileSection}>
           <View style={[styles.avatar, isAdmin && styles.adminAvatar]}>
-            <Text style={styles.avatarText}>
-              {user?.full_name?.charAt(0).toUpperCase() || 'U'}
-            </Text>
+            {userAvatar ? (
+              <Image source={{ uri: userAvatar }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarText}>
+                {user?.full_name?.charAt(0).toUpperCase() || 'U'}
+              </Text>
+            )}
             {isAdmin && (
               <View style={styles.adminBadge}>
                 <Ionicons name="shield-checkmark" size={14} color="#fff" />
@@ -187,6 +191,7 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.name}>{user?.full_name || 'User'}</Text>
           <Text style={styles.email}>{user?.email || ''}</Text>
+          {user?.user_type && <Text style={styles.userType}>{user.user_type}</Text>}
           {isAdmin && <Text style={styles.adminLabel}>Administrator</Text>}
         </View>
       </View>
@@ -195,17 +200,29 @@ export default function ProfileScreen() {
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
             <Ionicons name="musical-notes" size={24} color={Colors.primary} />
-            <Text style={styles.statNumber}>0</Text>
+            {loadingStats ? (
+              <ActivityIndicator size="small" color={Colors.primary} />
+            ) : (
+              <Text style={styles.statNumber}>{uploadsCount}</Text>
+            )}
             <Text style={styles.statLabel}>{t('profile.uploads')}</Text>
           </View>
           <View style={styles.statBox}>
             <Ionicons name="diamond" size={24} color="#FFD700" />
-            <Text style={styles.statNumber}>0</Text>
+            {loadingStats ? (
+              <ActivityIndicator size="small" color="#FFD700" />
+            ) : (
+              <Text style={styles.statNumber}>{diamondsCount}</Text>
+            )}
             <Text style={styles.statLabel}>{t('profile.diamonds')}</Text>
           </View>
           <View style={styles.statBox}>
             <Ionicons name="heart" size={24} color={Colors.error} />
-            <Text style={styles.statNumber}>0</Text>
+            {loadingStats ? (
+              <ActivityIndicator size="small" color={Colors.error} />
+            ) : (
+              <Text style={styles.statNumber}>{favoritesCount}</Text>
+            )}
             <Text style={styles.statLabel}>{t('profile.favorites')}</Text>
           </View>
         </View>
