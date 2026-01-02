@@ -15,8 +15,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Audio } from 'expo-av';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { usePlayer } from '../../src/contexts/PlayerContext';
 import { base44Playlists, base44Tracks, Playlist, Track } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,6 +24,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function PlaylistScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { playTrack, currentTrack, isPlaying, togglePlayPause } = usePlayer();
+  
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -35,19 +37,9 @@ export default function PlaylistScreen() {
   // Track detail states
   const [playlistTracks, setPlaylistTracks] = useState<Track[]>([]);
   const [loadingTracks, setLoadingTracks] = useState(false);
-  
-  // Audio player states
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [currentPlayingTrack, setCurrentPlayingTrack] = useState<Track | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     loadPlaylists();
-    return () => {
-      // Cleanup audio when component unmounts
-      if (sound) {
-        sound.unloadAsync();
-      }
     };
   }, [user]);
 
