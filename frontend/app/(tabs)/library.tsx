@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { usePlayer } from '../../src/contexts/PlayerContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 import { base44Tracks, Track } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,6 +21,7 @@ import { useRouter } from 'expo-router';
 export default function LibraryScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { t } = useLanguage();
   const { playTrack, currentTrack, isPlaying, togglePlayPause } = usePlayer();
   
   const [tracks, setTracks] = useState<Track[]>([]);
