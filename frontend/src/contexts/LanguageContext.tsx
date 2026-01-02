@@ -174,6 +174,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.unread': 'Unread',
     'common.playAll': 'Play All',
     'common.shuffle': 'Shuffle',
+    'common.select': 'Select',
     
     // Menu items
     'menu.myUploads': 'My Uploads',
