@@ -271,8 +271,29 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                 try:
                     # Clean title for search (remove parentheses content like "Extended", "Original Mix")
                     import re
-                    clean_title = re.sub(r'\s*\([^)]*\)\s*', '', track_title).strip()
-                    print(f"[SPYNNERS] Searching for: '{track_title}' (clean: '{clean_title}')")
+                    from difflib import SequenceMatcher
+                    
+                    # Normalize function for better matching
+                    def normalize_title(title):
+                        if not title:
+                            return ""
+                        # Remove parentheses content
+                        title = re.sub(r'\s*\([^)]*\)\s*', ' ', title)
+                        # Remove special characters except spaces
+                        title = re.sub(r'[^\w\s]', ' ', title)
+                        # Normalize spaces
+                        title = ' '.join(title.split())
+                        return title.lower().strip()
+                    
+                    def similarity_score(a, b):
+                        """Calculate similarity between two strings (0-1)"""
+                        return SequenceMatcher(None, a, b).ratio()
+                    
+                    clean_title = normalize_title(track_title)
+                    clean_artist = normalize_title(track_artist)
+                    
+                    print(f"[SPYNNERS] Searching for: '{track_title}' (normalized: '{clean_title}')")
+                    print(f"[SPYNNERS] Artist: '{track_artist}' (normalized: '{clean_artist}')")
                     
                     # Search by acrcloud_id first
                     if acr_id:
@@ -287,12 +308,11 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                                 tracks = search_resp.json()
                                 if tracks and len(tracks) > 0:
                                     spynners_track = tracks[0]
-                                    print(f"[SPYNNERS] Found track by acrcloud_id: {spynners_track.get('title')}")
+                                    print(f"[SPYNNERS] ✅ Found track by acrcloud_id: {spynners_track.get('title')}")
                     
-                    # If not found by acrcloud_id, search by title (flexible matching)
+                    # If not found by acrcloud_id, search by title with fuzzy matching
                     if not spynners_track:
                         async with httpx.AsyncClient(timeout=10.0) as search_client:
-                            # Get all tracks and search manually (Base44 doesn't support LIKE queries)
                             search_resp = await search_client.get(
                                 f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Track",
                                 params={"limit": 500},
@@ -302,32 +322,62 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                                 all_tracks = search_resp.json()
                                 print(f"[SPYNNERS] Searching through {len(all_tracks)} tracks...")
                                 
-                                # Search for matching title (case-insensitive, partial match)
+                                best_match = None
+                                best_score = 0
+                                
                                 for t in all_tracks:
-                                    t_title = (t.get("title") or "").lower()
+                                    t_title = t.get("title") or ""
+                                    t_producer = t.get("producer_name") or ""
+                                    
                                     if not t_title:
                                         continue
-                                    t_clean = re.sub(r'\s*\([^)]*\)\s*', '', t_title).strip()
                                     
-                                    # Match by clean title or if one contains the other
-                                    if (clean_title.lower() == t_clean or 
-                                        clean_title.lower() in t_title or 
-                                        t_clean in clean_title.lower() or
-                                        track_title.lower() == t_title):
-                                        spynners_track = t
-                                        print(f"[SPYNNERS] Found track by title match: '{t.get('title')}'")
-                                        break
+                                    t_title_norm = normalize_title(t_title)
+                                    t_producer_norm = normalize_title(t_producer)
                                     
-                                    # Also try matching by producer name / artist
-                                    t_producer = (t.get("producer_name") or "").lower()
-                                    if t_producer and track_artist and t_producer in track_artist.lower():
-                                        # Producer matches, check if title is similar
-                                        t_title_start = t_title[:10] if len(t_title) >= 10 else t_title
-                                        clean_title_start = clean_title.lower()[:10] if len(clean_title) >= 10 else clean_title.lower()
-                                        if clean_title_start in t_title or t_title_start in clean_title.lower():
-                                            spynners_track = t
-                                            print(f"[SPYNNERS] Found track by producer+title: '{t.get('title')}' by {t.get('producer_name')}")
-                                            break
+                                    # Calculate title similarity
+                                    title_score = similarity_score(clean_title, t_title_norm)
+                                    
+                                    # Bonus if artist/producer matches
+                                    artist_bonus = 0
+                                    if clean_artist and t_producer_norm:
+                                        artist_score = similarity_score(clean_artist, t_producer_norm)
+                                        if artist_score > 0.5:
+                                            artist_bonus = 0.2
+                                        # Check if artist name is in producer name or vice versa
+                                        if clean_artist in t_producer_norm or t_producer_norm in clean_artist:
+                                            artist_bonus = 0.3
+                                    
+                                    # Check if title contains the search term or vice versa
+                                    contains_bonus = 0
+                                    if clean_title in t_title_norm or t_title_norm in clean_title:
+                                        contains_bonus = 0.2
+                                    
+                                    # Check for key words match
+                                    clean_words = set(clean_title.split())
+                                    t_words = set(t_title_norm.split())
+                                    common_words = clean_words & t_words
+                                    if len(common_words) > 0:
+                                        word_bonus = len(common_words) / max(len(clean_words), len(t_words)) * 0.3
+                                    else:
+                                        word_bonus = 0
+                                    
+                                    total_score = title_score + artist_bonus + contains_bonus + word_bonus
+                                    
+                                    # Exact match - perfect score
+                                    if t_title_norm == clean_title:
+                                        total_score = 2.0
+                                    
+                                    if total_score > best_score:
+                                        best_score = total_score
+                                        best_match = t
+                                
+                                # Accept match if score is above threshold
+                                if best_match and best_score >= 0.6:
+                                    spynners_track = best_match
+                                    print(f"[SPYNNERS] ✅ Found track by fuzzy match (score: {best_score:.2f}): '{best_match.get('title')}'")
+                                elif best_match:
+                                    print(f"[SPYNNERS] ⚠️ Best match score too low ({best_score:.2f}): '{best_match.get('title')}'")
                     
                     # Get artwork and producer info from Spynners track
                     if spynners_track:
