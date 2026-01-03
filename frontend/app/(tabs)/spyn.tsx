@@ -88,6 +88,8 @@ interface SessionInfo {
 export default function SpynScreen() {
   const { user, token } = useAuth();
   const { t } = useLanguage();
+  const params = useLocalSearchParams();
+  const autostart = params.autostart === 'true';
   
   // Session state
   const [sessionActive, setSessionActive] = useState(false);
@@ -124,6 +126,7 @@ export default function SpynScreen() {
   const isRecordingRef = useRef(false);
   const sessionActiveRef = useRef(false);
   const identifiedTracksRef = useRef<string[]>([]);
+  const autostartTriggeredRef = useRef(false);
   
   // Microphone permission state
   const [micPermission, setMicPermission] = useState(false);
@@ -147,6 +150,18 @@ export default function SpynScreen() {
       stopAllAnimations();
     };
   }, []);
+
+  // Autostart session when coming from home page
+  useEffect(() => {
+    if (autostart && micPermission && !sessionActive && !autostartTriggeredRef.current) {
+      console.log('[SPYN] Autostart triggered from home page');
+      autostartTriggeredRef.current = true;
+      // Small delay to ensure everything is loaded
+      setTimeout(() => {
+        handleSpynButtonPress();
+      }, 500);
+    }
+  }, [autostart, micPermission, sessionActive]);
 
   // Request microphone permission on page load
   const requestMicrophonePermission = async () => {
