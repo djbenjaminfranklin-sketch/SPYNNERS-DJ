@@ -124,6 +124,10 @@ export default function SpynScreen() {
   const sessionActiveRef = useRef(false);
   const identifiedTracksRef = useRef<string[]>([]);
   
+  // Microphone permission state
+  const [micPermission, setMicPermission] = useState(false);
+  const [micPermissionRequested, setMicPermissionRequested] = useState(false);
+  
   // Animation refs
   const pulseAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   const rotateAnimRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -134,6 +138,7 @@ export default function SpynScreen() {
   
   useEffect(() => {
     requestLocationPermission();
+    requestMicrophonePermission(); // Request mic permission on page load
     startIdleAnimations();
     
     return () => {
@@ -141,6 +146,30 @@ export default function SpynScreen() {
       stopAllAnimations();
     };
   }, []);
+
+  // Request microphone permission on page load
+  const requestMicrophonePermission = async () => {
+    try {
+      console.log('[SPYN] Requesting microphone permission on page load...');
+      setMicPermissionRequested(true);
+      
+      if (Platform.OS === 'web') {
+        // Web: Request media permission
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop()); // Stop immediately, just wanted permission
+        setMicPermission(true);
+        console.log('[SPYN] Web microphone permission granted');
+      } else {
+        // Native: Use expo-av
+        const { granted } = await Audio.requestPermissionsAsync();
+        setMicPermission(granted);
+        console.log('[SPYN] Native microphone permission:', granted ? 'granted' : 'denied');
+      }
+    } catch (error) {
+      console.error('[SPYN] Microphone permission error:', error);
+      setMicPermission(false);
+    }
+  };
 
   const stopAllAnimations = () => {
     rotateAnimRef.current?.stop();
