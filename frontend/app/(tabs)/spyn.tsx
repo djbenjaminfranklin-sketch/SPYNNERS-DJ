@@ -115,6 +115,7 @@ export default function SpynScreen() {
   const [showDiamondModal, setShowDiamondModal] = useState(false);
   const [correctedVenue, setCorrectedVenue] = useState('');
   const [whoPlayed, setWhoPlayed] = useState<'me' | 'another' | null>(null);
+  const [otherDjName, setOtherDjName] = useState('');
   
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
