@@ -138,10 +138,6 @@ export const translations = {
     uploads: 'Uploads',
     diamonds: 'Diamonds',
     favorites: 'Favorites',
-    
-    // Profile
-    uploads: 'Uploads',
-    diamonds: 'Diamonds',
     user: 'User',
     administrator: 'Administrator',
     
