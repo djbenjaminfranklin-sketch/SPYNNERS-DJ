@@ -1089,6 +1089,61 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   
+  // Offline Sessions Card
+  offlineSessionsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFB74D15',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FFB74D40',
+  },
+  offlineSessionsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  offlineIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFB74D25',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  offlineTextContainer: {
+    flex: 1,
+  },
+  offlineTitle: {
+    color: '#FFB74D',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  offlineSubtitle: {
+    color: '#FFB74D99',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  offlineBadge: {
+    backgroundColor: '#FFB74D',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    minWidth: 28,
+    alignItems: 'center',
+  },
+  offlineBadgeText: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  
   // Menu Grid - Two Rows
   menuContainer: {
     paddingHorizontal: 12,
