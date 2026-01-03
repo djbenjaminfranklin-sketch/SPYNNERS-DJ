@@ -1297,6 +1297,159 @@ export default function SpynScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* ==================== SYNC OFFLINE MODAL ==================== */}
+      <Modal 
+        visible={showSyncModal} 
+        transparent 
+        animationType="slide"
+        onRequestClose={() => setShowSyncModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.syncModalContent}>
+            <TouchableOpacity 
+              style={styles.modalCloseButton} 
+              onPress={() => {
+                setShowSyncModal(false);
+                setSyncResults([]);
+              }}
+            >
+              <Ionicons name="close" size={24} color="#888" />
+            </TouchableOpacity>
+
+            <Ionicons name="cloud-upload" size={50} color={CYAN_COLOR} style={{ marginBottom: 16 }} />
+            
+            <Text style={styles.syncModalTitle}>
+              {isSyncing ? 'Synchronisation...' : syncResults.length > 0 ? 'Résultats' : 'Session Offline'}
+            </Text>
+            
+            {!isSyncing && syncResults.length === 0 && (
+              <>
+                <Text style={styles.syncModalSubtitle}>
+                  {pendingSyncCount} enregistrement(s) en attente d'identification
+                </Text>
+                
+                <TouchableOpacity 
+                  style={styles.syncModalButton}
+                  onPress={async () => {
+                    setIsSyncing(true);
+                    console.log('[SPYN] Syncing offline recordings...');
+                    
+                    try {
+                      const { synced, failed } = await offlineService.syncPendingSessions(token || undefined);
+                      
+                      // Get results from last session
+                      const sessions = await offlineService.getOfflineSessions();
+                      const lastSyncedSession = sessions.find(s => s.status === 'synced');
+                      
+                      if (lastSyncedSession) {
+                        const results = lastSyncedSession.recordings
+                          .filter(r => r.result?.success)
+                          .map(r => r.result);
+                        setSyncResults(results);
+                      }
+                      
+                      setPendingSyncCount(await offlineService.getPendingCount());
+                      
+                      if (synced === 0 && failed === 0) {
+                        Alert.alert('Info', 'Aucun enregistrement à synchroniser.');
+                        setShowSyncModal(false);
+                      }
+                    } catch (error) {
+                      console.error('[SPYN] Sync error:', error);
+                      Alert.alert('Erreur', 'Échec de la synchronisation. Réessayez.');
+                    } finally {
+                      setIsSyncing(false);
+                    }
+                  }}
+                >
+                  <Text style={styles.syncModalButtonText}>Synchroniser maintenant</Text>
+                  <Ionicons name="sync" size={20} color="#fff" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.syncModalButtonSecondary}
+                  onPress={() => {
+                    setShowSyncModal(false);
+                  }}
+                >
+                  <Text style={styles.syncModalButtonTextSecondary}>Plus tard</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            
+            {isSyncing && (
+              <View style={styles.syncingContainer}>
+                <Animated.View style={{ transform: [{ rotate }] }}>
+                  <Ionicons name="sync" size={40} color={CYAN_COLOR} />
+                </Animated.View>
+                <Text style={styles.syncingText}>Identification en cours...</Text>
+              </View>
+            )}
+            
+            {!isSyncing && syncResults.length > 0 && (
+              <View style={styles.syncResultsContainer}>
+                <Text style={styles.syncResultsTitle}>
+                  {syncResults.length} track(s) identifié(s) :
+                </Text>
+                <ScrollView style={styles.syncResultsList}>
+                  {syncResults.map((result, index) => (
+                    <View key={index} style={styles.syncResultItem}>
+                      {result.cover_image ? (
+                        <Image 
+                          source={{ uri: result.cover_image }} 
+                          style={styles.syncResultImage}
+                        />
+                      ) : (
+                        <View style={[styles.syncResultImage, styles.placeholderImage]}>
+                          <Ionicons name="musical-notes" size={20} color="#666" />
+                        </View>
+                      )}
+                      <View style={styles.syncResultInfo}>
+                        <Text style={styles.syncResultTitle} numberOfLines={1}>
+                          {result.title}
+                        </Text>
+                        <Text style={styles.syncResultArtist} numberOfLines={1}>
+                          {result.artist}
+                        </Text>
+                      </View>
+                      <Ionicons name="checkmark-circle" size={24} color={GREEN_COLOR} />
+                    </View>
+                  ))}
+                </ScrollView>
+                
+                <TouchableOpacity 
+                  style={styles.syncModalButton}
+                  onPress={() => {
+                    setShowSyncModal(false);
+                    setSyncResults([]);
+                  }}
+                >
+                  <Text style={styles.syncModalButtonText}>Fermer</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            {!isSyncing && syncResults.length === 0 && pendingSyncCount === 0 && (
+              <View style={styles.noResultsContainer}>
+                <Ionicons name="alert-circle" size={40} color="#FFB74D" />
+                <Text style={styles.noResultsText}>
+                  Aucun track Spynners identifié dans cette session.
+                </Text>
+                <Text style={styles.noResultsSubtext}>
+                  Assurez-vous de jouer des tracks de la bibliothèque Spynners.
+                </Text>
+                <TouchableOpacity 
+                  style={styles.syncModalButton}
+                  onPress={() => setShowSyncModal(false)}
+                >
+                  <Text style={styles.syncModalButtonText}>Fermer</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
