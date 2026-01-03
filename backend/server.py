@@ -248,22 +248,73 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
         print(f"[ACRCloud] Full response: {json.dumps(result, indent=2)[:500]}")
         
         # Parse ACRCloud response
-        if result.get("status", {}).get("code") == 0:
-            # Successfully identified
+        status_code = result.get("status", {}).get("code", -1)
+        if status_code == 0:
+            # Check for custom_files first (Spynners tracks), then music (general tracks)
+            custom_files = result.get("metadata", {}).get("custom_files", [])
             music = result.get("metadata", {}).get("music", [])
-            if music:
+            
+            track = None
+            is_custom = False
+            
+            if custom_files:
+                track = custom_files[0]
+                is_custom = True
+                print(f"[ACRCloud] Found in custom_files (Spynners track)")
+            elif music:
                 track = music[0]
-                
+                print(f"[ACRCloud] Found in music (general track)")
+            
+            if track:
                 # Get ACRCloud ID and track info
                 acr_id = track.get("acrid", "")
                 track_title = track.get("title", "Unknown")
-                track_artist = ", ".join([a.get("name", "") for a in track.get("artists", [])]) or "Unknown"
+                
+                # For custom files, artist might be in producer_name
+                if is_custom:
+                    track_artist = track.get("producer_name") or track.get("artist", "Unknown")
+                else:
+                    track_artist = ", ".join([a.get("name", "") for a in track.get("artists", [])]) or "Unknown"
                 
                 print(f"[ACRCloud] Identified: {track_title} by {track_artist}")
                 print(f"[ACRCloud] ACR ID: {acr_id}")
                 
+                # For custom files, we already have Spynners data directly
+                if is_custom:
+                    cover_image = track.get("artwork_url")
+                    producer_id = track.get("producer_id")
+                    spynners_track_id = track.get("spynners_track_id")
+                    genre = track.get("genre", "")
+                    
+                    print(f"[ACRCloud] Custom file - artwork_url: {cover_image}")
+                    print(f"[ACRCloud] Custom file - spynners_track_id: {spynners_track_id}")
+                    
+                    # Build result directly from custom_files data
+                    recognition_result = {
+                        "success": True,
+                        "title": track_title,
+                        "artist": track_artist,
+                        "album": track.get("album", ""),
+                        "cover_image": cover_image,
+                        "genre": genre,
+                        "genres": [genre] if genre else [],
+                        "release_date": track.get("release_date", ""),
+                        "label": track.get("label", ""),
+                        "duration_ms": track.get("duration_ms", 0),
+                        "score": track.get("score", 0),
+                        "bpm": track.get("bpm"),
+                        "spynners_track_id": spynners_track_id,
+                        "producer_id": producer_id,
+                        "acrcloud_id": acr_id,
+                        "play_offset_ms": track.get("play_offset_ms", 0),
+                        "is_spynners_track": True
+                    }
+                    
+                    print(f"[SPYNNERS] ✅ Direct match from custom_files: {track_title}")
+                    return recognition_result
+                
                 # ==================== SEARCH IN SPYNNERS DATABASE ====================
-                # Try to find the track in Spynners by acrcloud_id first, then by title
+                # For non-custom tracks, search in Spynners by acrcloud_id or title
                 spynners_track = None
                 cover_image = None
                 producer_email = None
