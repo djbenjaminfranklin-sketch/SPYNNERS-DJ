@@ -139,6 +139,12 @@ export const translations = {
     diamonds: 'Diamonds',
     favorites: 'Favorites',
     
+    // Profile
+    uploads: 'Uploads',
+    diamonds: 'Diamonds',
+    user: 'User',
+    administrator: 'Administrator',
+    
     // Auth
     login: 'Login',
     signup: 'Sign Up',
