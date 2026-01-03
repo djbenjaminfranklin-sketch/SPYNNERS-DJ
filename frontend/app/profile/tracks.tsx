@@ -62,14 +62,23 @@ export default function ManageTracksScreen() {
   const [syncing, setSyncing] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchTracks();
-  }, []);
+    if (user?.id) {
+      fetchTracks();
+    }
+  }, [user?.id]);
 
   const fetchTracks = async () => {
     try {
       setLoading(true);
       
       const userId = user?.id;
+      
+      if (!userId) {
+        console.log('[Tracks] No user ID, cannot fetch tracks');
+        setLoading(false);
+        return;
+      }
+      
       console.log('[Tracks] Fetching tracks for user:', userId);
       
       // Fetch all approved tracks
