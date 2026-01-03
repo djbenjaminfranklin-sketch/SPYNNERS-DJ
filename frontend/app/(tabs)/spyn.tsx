@@ -205,13 +205,43 @@ export default function SpynScreen() {
       console.log('[SPYN] Refreshing pending count:', newPendingCount, 'isOffline:', isOffline);
       setPendingSyncCount(newPendingCount);
       
-      if (!isOffline && newPendingCount > 0) {
-        console.log('[SPYN] Online with pending recordings - showing sync card');
+      // AUTO-SYNC when coming back online with pending recordings
+      if (!isOffline && newPendingCount > 0 && !isSyncing) {
+        console.log('[SPYN] 🔄 AUTO-SYNC: Online with', newPendingCount, 'pending recordings');
+        setIsSyncing(true);
+        
+        try {
+          const { synced, failed, results } = await offlineService.syncPendingSessions(token || undefined);
+          
+          console.log('[SPYN] Auto-sync complete:', synced, 'synced,', failed, 'failed');
+          
+          // Update pending count
+          const remainingCount = await offlineService.getPendingCount();
+          setPendingSyncCount(remainingCount);
+          
+          // Show results
+          if (results && results.length > 0) {
+            const identifiedTracks = results.filter(r => r.success && r.is_spynners_track);
+            setSyncResults(identifiedTracks);
+            setShowSyncModal(true);
+          } else if (synced > 0) {
+            // Show alert if no Spynners tracks identified
+            Alert.alert(
+              '🔄 Synchronisation terminée',
+              `${synced} enregistrement(s) traité(s).\nAucun track Spynners identifié.`,
+              [{ text: 'OK' }]
+            );
+          }
+        } catch (error) {
+          console.error('[SPYN] Auto-sync error:', error);
+        } finally {
+          setIsSyncing(false);
+        }
       }
     };
     
     syncIfNeeded();
-  }, [isOffline]);
+  }, [isOffline, token]);
 
   // Autostart session when coming from home page
   useEffect(() => {
