@@ -940,6 +940,7 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.favorites': 'Favoritos',
     'profile.user': 'Usuario',
     'profile.administrator': 'Administrador',
+    'profile.manageTracksAdmin': 'Gestionar subidas de tracks',
     'profile.logoutConfirm': '¿Realmente quieres cerrar sesión?',
     
     // Common
