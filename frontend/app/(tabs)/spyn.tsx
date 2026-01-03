@@ -1277,6 +1277,21 @@ export default function SpynScreen() {
               <Text style={styles.radioText}>Another DJ</Text>
             </TouchableOpacity>
 
+            {/* DJ Name Input - appears when "Another DJ" is selected */}
+            {whoPlayed === 'another' && (
+              <View style={styles.otherDjContainer}>
+                <Text style={styles.otherDjLabel}>Nom du DJ :</Text>
+                <TextInput
+                  style={styles.otherDjInput}
+                  value={otherDjName}
+                  onChangeText={setOtherDjName}
+                  placeholder="Entrez le nom du DJ"
+                  placeholderTextColor="#666"
+                  autoCapitalize="words"
+                />
+              </View>
+            )}
+
             {/* Warning Messages */}
             {identifiedTracks.length === 0 && (
               <View style={styles.warningBox}>
