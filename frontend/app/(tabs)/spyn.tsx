@@ -27,7 +27,7 @@ import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BUTTON_SIZE = Math.min(SCREEN_WIDTH * 0.45, 180); // BIGGER BUTTON
+const BUTTON_SIZE = Math.min(SCREEN_WIDTH * 0.45, 180);
 
 // Get backend URL
 const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL 
@@ -43,8 +43,8 @@ const GREEN_COLOR = '#4CAF50';
 
 // Session settings
 const MAX_SESSION_DURATION = 5 * 60 * 60 * 1000; // 5 hours in ms
-const RECOGNITION_INTERVAL = 15000; // 15 seconds between recognitions
-const RECORDING_DURATION = 10000; // 10 seconds recording
+const RECOGNITION_INTERVAL = 12000; // 12 seconds between recognitions
+const RECORDING_DURATION = 8000; // 8 seconds recording
 
 interface TrackResult {
   success: boolean;
@@ -91,6 +91,7 @@ export default function SpynScreen() {
   const [showDiamondModal, setShowDiamondModal] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [startedAtTime, setStartedAtTime] = useState('');
+  const [diamondsEarned, setDiamondsEarned] = useState(0);
   
   // End session form state
   const [correctedVenue, setCorrectedVenue] = useState('');
@@ -110,7 +111,7 @@ export default function SpynScreen() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const isRecordingRef = useRef(false);
   const sessionActiveRef = useRef(false);
-  const lastIdentifiedTrackRef = useRef<string | null>(null);
+  const identifiedTracksRef = useRef<string[]>([]); // Store all identified track keys
 
   // Animation refs for cleanup
   const rotateAnimRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -245,6 +246,8 @@ export default function SpynScreen() {
   
   const startSession = async () => {
     try {
+      console.log('[SPYN] Starting session...');
+      
       if (locationPermission) {
         await updateLocation();
       }
@@ -292,7 +295,7 @@ export default function SpynScreen() {
       sessionActiveRef.current = true;
       setIdentifiedTracks([]);
       setCurrentTrack(null);
-      lastIdentifiedTrackRef.current = null;
+      identifiedTracksRef.current = []; // Reset identified tracks list
 
       // Start duration timer
       durationIntervalRef.current = setInterval(() => {
@@ -314,7 +317,8 @@ export default function SpynScreen() {
       startListeningAnimation();
       setIsListening(true);
 
-      // Start continuous recognition loop
+      // Start continuous recognition loop IMMEDIATELY
+      console.log('[SPYN] Starting continuous recognition...');
       startContinuousRecognition();
 
     } catch (error) {
@@ -336,9 +340,13 @@ export default function SpynScreen() {
   };
 
   const performRecognition = async () => {
-    if (isRecordingRef.current || !sessionActiveRef.current) return;
+    if (isRecordingRef.current || !sessionActiveRef.current) {
+      console.log('[SPYN] Skipping recognition - already recording or session not active');
+      return;
+    }
     
     isRecordingRef.current = true;
+    console.log('[SPYN] Starting recognition cycle...');
 
     try {
       if (Platform.OS === 'web') {
@@ -350,6 +358,7 @@ export default function SpynScreen() {
       console.error('Recognition error:', error);
     } finally {
       isRecordingRef.current = false;
+      console.log('[SPYN] Recognition cycle complete, ready for next');
     }
   };
 
@@ -378,11 +387,13 @@ export default function SpynScreen() {
           };
 
           mediaRecorder.start();
+          console.log('[SPYN] Web recording started...');
 
           // Stop after recording duration
           setTimeout(() => {
             if (mediaRecorder.state === 'recording') {
               mediaRecorder.stop();
+              console.log('[SPYN] Web recording stopped');
             }
           }, RECORDING_DURATION);
         })
@@ -410,12 +421,14 @@ export default function SpynScreen() {
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       recordingRef.current = recording;
+      console.log('[SPYN] Native recording started...');
 
       // Wait for recording duration
       await new Promise(resolve => setTimeout(resolve, RECORDING_DURATION));
 
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
+      console.log('[SPYN] Native recording stopped');
 
       if (uri) {
         const audioBase64 = await FileSystem.readAsStringAsync(uri, {
@@ -451,20 +464,24 @@ export default function SpynScreen() {
         }
       );
 
-      console.log('[SPYN] Response:', response.data);
+      console.log('[SPYN] ACRCloud Response:', response.data);
 
       if (response.data.success && response.data.title) {
-        const trackKey = `${response.data.title}-${response.data.artist}`;
+        const trackKey = `${response.data.title}-${response.data.artist}`.toLowerCase();
         
-        // Only add if it's a DIFFERENT track than the last one identified
-        if (trackKey !== lastIdentifiedTrackRef.current) {
+        // Check if this track was ALREADY identified in this session
+        if (!identifiedTracksRef.current.includes(trackKey)) {
+          console.log('[SPYN] New track identified:', trackKey);
+          
+          // Add to identified tracks list
+          identifiedTracksRef.current.push(trackKey);
+          
           const trackResult: TrackResult = {
             ...response.data,
             time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
             id: `${Date.now()}`,
           };
 
-          lastIdentifiedTrackRef.current = trackKey;
           setCurrentTrack(trackResult);
           setIdentifiedTracks(prev => [trackResult, ...prev]);
 
@@ -474,26 +491,30 @@ export default function SpynScreen() {
           // Update session in Base44
           if (session?.id) {
             try {
+              const updatedTracks = [...identifiedTracks, trackResult].map(t => ({
+                title: t.title,
+                artist: t.artist,
+                time: t.time,
+                cover: t.cover_image,
+              }));
+              
               await axios.put(
                 `${BACKEND_URL}/api/base44/entities/SessionMix/${session.id}`,
-                { 
-                  tracks: [...identifiedTracks, trackResult].map(t => ({
-                    title: t.title,
-                    artist: t.artist,
-                    time: t.time,
-                    cover: t.cover_image,
-                  }))
-                },
+                { tracks: updatedTracks },
                 { headers: { Authorization: `Bearer ${token}` } }
               );
             } catch (e) {
               console.log('Could not update session');
             }
           }
+        } else {
+          console.log('[SPYN] Track already identified in this session, skipping:', trackKey);
         }
+      } else {
+        console.log('[SPYN] No track identified in this sample');
       }
     } catch (error: any) {
-      console.error('[SPYN] Recognition error:', error);
+      console.error('[SPYN] Recognition error:', error?.response?.data || error.message);
     } finally {
       setRecognizing(false);
     }
@@ -575,9 +596,9 @@ export default function SpynScreen() {
 
     // Award Black Diamond if at least 1 track was identified
     if (identifiedTracks.length > 0) {
-      // Award diamond
+      // Award diamond and update user profile
       try {
-        await axios.post(
+        const awardResponse = await axios.post(
           `${BACKEND_URL}/api/award-diamond`,
           { 
             user_id: user?.id,
@@ -587,6 +608,35 @@ export default function SpynScreen() {
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        
+        if (awardResponse.data.success) {
+          setDiamondsEarned(1);
+          console.log('[SPYN] Black diamond awarded!');
+          
+          // Also update user's diamond count directly
+          try {
+            const userId = user?.id || user?._id;
+            if (userId) {
+              // Get current user data
+              const userResponse = await axios.get(
+                `${BACKEND_URL}/api/base44/entities/User/${userId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              
+              const currentDiamonds = userResponse.data?.black_diamonds || userResponse.data?.diamonds || 0;
+              
+              // Update with incremented diamonds
+              await axios.put(
+                `${BACKEND_URL}/api/base44/entities/User/${userId}`,
+                { black_diamonds: currentDiamonds + 1 },
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              console.log('[SPYN] User diamond count updated:', currentDiamonds + 1);
+            }
+          } catch (e) {
+            console.log('[SPYN] Could not update user diamonds directly');
+          }
+        }
       } catch (e) {
         console.log('Could not award diamond');
       }
@@ -624,7 +674,7 @@ export default function SpynScreen() {
     setSessionDuration('00:00:00');
     setWhoPlayed(null);
     setCorrectedVenue('');
-    lastIdentifiedTrackRef.current = null;
+    identifiedTracksRef.current = [];
   };
 
   // Rotate interpolation
@@ -767,6 +817,15 @@ export default function SpynScreen() {
               <Text style={styles.autoAnalysis}>Auto-analysis every {RECOGNITION_INTERVAL / 1000}s</Text>
             </View>
 
+            {/* END SESSION BUTTON - RIGHT AFTER MIC ANIMATION */}
+            <TouchableOpacity 
+              style={styles.endSessionButtonLarge} 
+              onPress={handleEndSession}
+            >
+              <Ionicons name="stop-circle" size={20} color="#fff" />
+              <Text style={styles.endSessionButtonText}>End Session</Text>
+            </TouchableOpacity>
+
             {/* Current Track */}
             {currentTrack && (
               <View style={styles.currentTrackContainer}>
@@ -778,7 +837,11 @@ export default function SpynScreen() {
                 <View style={styles.currentTrackCard}>
                   <View style={styles.currentTrackImageContainer}>
                     {currentTrack.cover_image ? (
-                      <Image source={{ uri: currentTrack.cover_image }} style={styles.currentTrackImage} />
+                      <Image 
+                        source={{ uri: currentTrack.cover_image }} 
+                        style={styles.currentTrackImage}
+                        resizeMode="cover"
+                      />
                     ) : (
                       <View style={[styles.currentTrackImage, styles.placeholderImage]}>
                         <Ionicons name="musical-notes" size={32} color="#666" />
@@ -788,10 +851,8 @@ export default function SpynScreen() {
                   <View style={styles.currentTrackInfo}>
                     <Text style={styles.currentTrackTitle}>"{currentTrack.title}"</Text>
                     <Text style={styles.currentTrackArtist}>{currentTrack.artist}</Text>
-                    {currentTrack.genre && (
-                      <View style={styles.genreBadge}>
-                        <Text style={styles.genreText}>{currentTrack.genre}</Text>
-                      </View>
+                    {currentTrack.album && (
+                      <Text style={styles.currentTrackAlbum}>{currentTrack.album}</Text>
                     )}
                   </View>
                 </View>
@@ -808,7 +869,11 @@ export default function SpynScreen() {
                   <View key={track.id || index} style={styles.trackItem}>
                     <View style={styles.trackImageContainer}>
                       {track.cover_image ? (
-                        <Image source={{ uri: track.cover_image }} style={styles.trackImage} />
+                        <Image 
+                          source={{ uri: track.cover_image }} 
+                          style={styles.trackImage}
+                          resizeMode="cover"
+                        />
                       ) : (
                         <View style={[styles.trackImage, styles.placeholderImage]}>
                           <Ionicons name="musical-notes" size={20} color="#666" />
@@ -824,15 +889,6 @@ export default function SpynScreen() {
                 ))}
               </View>
             )}
-
-            {/* End Session Button - BELOW */}
-            <TouchableOpacity 
-              style={styles.endSessionButtonLarge} 
-              onPress={handleEndSession}
-            >
-              <Ionicons name="stop-circle" size={20} color="#fff" />
-              <Text style={styles.endSessionButtonText}>End Session</Text>
-            </TouchableOpacity>
           </>
         )}
 
@@ -1037,7 +1093,7 @@ const styles = StyleSheet.create({
   sessionDuration: { color: '#fff', fontSize: 28, fontWeight: 'bold', marginTop: 4 },
 
   // Listening Section
-  listeningSection: { alignItems: 'center', width: '100%', marginBottom: 30 },
+  listeningSection: { alignItems: 'center', width: '100%', marginBottom: 20 },
   soundBarsContainer: { 
     flexDirection: 'row', 
     alignItems: 'flex-end', 
@@ -1060,6 +1116,21 @@ const styles = StyleSheet.create({
   },
   listeningStatus: { color: '#00BFA5', fontSize: 16, fontWeight: '600' },
   autoAnalysis: { color: Colors.textMuted, fontSize: 12, marginTop: 4 },
+
+  // End Session Button Large - NOW POSITIONED AFTER MIC
+  endSessionButtonLarge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E53935',
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 30,
+    gap: 10,
+    marginTop: 10,
+    marginBottom: 25,
+  },
+  endSessionButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 
   // Current Track
   currentTrackContainer: { width: '100%', marginBottom: 20 },
@@ -1084,18 +1155,11 @@ const styles = StyleSheet.create({
   currentTrackImage: { width: 80, height: 80, borderRadius: 8 },
   currentTrackInfo: { flex: 1, marginLeft: 14 },
   currentTrackTitle: { color: CYAN_COLOR, fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
-  currentTrackArtist: { color: '#fff', fontSize: 14, marginBottom: 6 },
-  genreBadge: { 
-    backgroundColor: CYAN_COLOR + '30', 
-    paddingHorizontal: 10, 
-    paddingVertical: 3, 
-    borderRadius: 12, 
-    alignSelf: 'flex-start' 
-  },
-  genreText: { color: CYAN_COLOR, fontSize: 11 },
+  currentTrackArtist: { color: '#fff', fontSize: 14, marginBottom: 4 },
+  currentTrackAlbum: { color: Colors.textMuted, fontSize: 12 },
 
   // Track Items
-  sectionTitle: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  sectionTitle: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 12, alignSelf: 'flex-start' },
   trackItem: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -1103,6 +1167,7 @@ const styles = StyleSheet.create({
     padding: 12, 
     borderRadius: 12,
     marginBottom: 8,
+    width: '100%',
   },
   trackImageContainer: { width: 50, height: 50 },
   trackImage: { width: 50, height: 50, borderRadius: 6 },
@@ -1119,21 +1184,6 @@ const styles = StyleSheet.create({
   // History Section
   historySection: { width: '100%', marginTop: 20 },
   identifiedSection: { width: '100%', marginBottom: 20 },
-
-  // End Session Button Large
-  endSessionButtonLarge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#E53935',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 30,
-    gap: 10,
-    marginTop: 20,
-    marginBottom: 40,
-  },
-  endSessionButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 
   // End Session Modal
   modalOverlay: {
