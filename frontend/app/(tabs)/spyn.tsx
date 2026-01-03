@@ -12,6 +12,7 @@ import {
   Platform,
   Image,
   Modal,
+  Easing,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
@@ -26,7 +27,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { base44Tracks } from '../../src/services/base44Api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BUTTON_SIZE = Math.min(SCREEN_WIDTH * 0.38, 150);
+const BUTTON_SIZE = Math.min(SCREEN_WIDTH * 0.35, 140);
 
 // Colors matching spynners.com
 const DETECTION_GRADIENT = ['#FF6B6B', '#EE5A5A', '#E53935'];
