@@ -209,13 +209,104 @@ export default function ProfileScreen() {
             )}
           </View>
           <Text style={styles.name}>{user?.full_name || t('profile.user')}</Text>
-          <Text style={styles.email}>{user?.email || ''}</Text>
           {user?.user_type && <Text style={styles.userType}>{user.user_type}</Text>}
-          {isAdmin && <Text style={styles.adminLabel}>{t('profile.administrator')}</Text>}
         </View>
       </View>
 
       <ScrollView style={styles.content}>
+        {/* ========== EMAIL SECTION ========== */}
+        <View style={styles.infoCard}>
+          <Text style={styles.infoLabel}>Email</Text>
+          <View style={styles.emailRow}>
+            <Ionicons name="mail" size={18} color={Colors.primary} />
+            <Text style={styles.emailText}>{user?.email || ''}</Text>
+            <View style={styles.verifiedBadge}>
+              <Text style={styles.verifiedText}>Vérifié</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* ========== ROLE SECTION ========== */}
+        <View style={styles.infoCard}>
+          <Text style={styles.infoLabel}>Rôle</Text>
+          <View style={styles.roleRow}>
+            <Ionicons name="person" size={18} color="#888" />
+            {isAdmin ? (
+              <View style={styles.adminRoleBadge}>
+                <Text style={styles.adminRoleText}>Admin</Text>
+              </View>
+            ) : (
+              <Text style={styles.roleText}>{user?.user_type || 'DJ'}</Text>
+            )}
+          </View>
+        </View>
+
+        {/* ========== BLACK DIAMONDS SECTION ========== */}
+        <View style={styles.infoCard}>
+          <Text style={styles.infoLabel}>Black Diamonds</Text>
+          <View style={styles.diamondRow}>
+            <View style={styles.diamondIcon}>
+              <Ionicons name="diamond" size={28} color="#1a1a2e" />
+            </View>
+            <Text style={styles.diamondCount}>{diamondsCount}</Text>
+          </View>
+        </View>
+
+        {/* ========== GENRES PRÉFÉRÉS SECTION ========== */}
+        <View style={styles.genresCard}>
+          <View style={styles.genresHeader}>
+            <Ionicons name="musical-note" size={18} color={Colors.text} />
+            <Text style={styles.genresTitle}>Genres Préférés</Text>
+          </View>
+          <Text style={styles.genresSubtitle}>
+            Sélectionnez les genres pour lesquels vous souhaitez recevoir des notifications et emails
+          </Text>
+          
+          <View style={styles.genresGrid}>
+            {GENRES_LIST.slice(0, 20).map((genre, index) => {
+              const isSelected = preferredGenres.includes(genre);
+              return (
+                <TouchableOpacity 
+                  key={index} 
+                  style={styles.genreCheckbox}
+                  onPress={() => router.push('/profile/edit')}
+                >
+                  <View style={[styles.checkbox, isSelected && styles.checkboxChecked]}>
+                    {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                  </View>
+                  <Text style={[styles.genreLabel, isSelected && styles.genreLabelSelected]}>
+                    {genre}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          
+          <TouchableOpacity 
+            style={styles.modifyArtworkButton}
+            onPress={() => router.push('/profile/edit')}
+          >
+            <Ionicons name="pencil" size={16} color={Colors.primary} />
+            <Text style={styles.modifyArtworkText}>Modifier artwork</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ========== DANGER ZONE ========== */}
+        <View style={styles.dangerCard}>
+          <View style={styles.dangerHeader}>
+            <Ionicons name="warning" size={18} color="#ff6b6b" />
+            <Text style={styles.dangerTitle}>Danger Zone</Text>
+          </View>
+          <Text style={styles.dangerText}>
+            Deleting your account is irreversible. All your data, tracks, favorites and messages will be permanently deleted.
+          </Text>
+          <TouchableOpacity style={styles.deleteAccountButton}>
+            <Ionicons name="trash" size={18} color="#fff" />
+            <Text style={styles.deleteAccountText}>Delete my account</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Original stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
             <Ionicons name="musical-notes" size={24} color={Colors.primary} />
