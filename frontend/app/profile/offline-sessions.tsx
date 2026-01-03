@@ -397,7 +397,6 @@ export default function OfflineSessionsScreen() {
                   <TouchableOpacity
                     style={[styles.actionButton, styles.deleteButton]}
                     onPress={() => deleteSession(session)}
-                    disabled={isSyncing}
                   >
                     <Ionicons name="trash-outline" size={18} color={RED_COLOR} />
                     <Text style={[styles.actionButtonText, { color: RED_COLOR }]}>
