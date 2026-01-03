@@ -117,6 +117,28 @@ export default function HomeScreen() {
   
   // Animation for player
   const playerAnim = useRef(new Animated.Value(0)).current;
+  
+  // Offline sessions state
+  const [pendingOfflineSessions, setPendingOfflineSessions] = useState(0);
+  const [isSyncingOffline, setIsSyncingOffline] = useState(false);
+
+  // Load pending offline sessions count
+  useEffect(() => {
+    const loadOfflineCount = async () => {
+      try {
+        const count = await offlineService.getPendingCount();
+        setPendingOfflineSessions(count);
+      } catch (error) {
+        console.error('Error loading offline count:', error);
+      }
+    };
+    
+    loadOfflineCount();
+    
+    // Refresh every 10 seconds
+    const interval = setInterval(loadOfflineCount, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     loadTracks();
