@@ -189,7 +189,7 @@ export default function ProfileScreen() {
               </View>
             )}
           </View>
-          <Text style={styles.name}>{user?.full_name || 'User'}</Text>
+          <Text style={styles.name}>{user?.full_name || t('profile.user')}</Text>
           <Text style={styles.email}>{user?.email || ''}</Text>
           {user?.user_type && <Text style={styles.userType}>{user.user_type}</Text>}
           {isAdmin && <Text style={styles.adminLabel}>Administrator</Text>}
