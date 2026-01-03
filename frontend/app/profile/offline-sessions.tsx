@@ -118,32 +118,27 @@ export default function OfflineSessionsScreen() {
     }
   };
 
-  const deleteSession = (session: OfflineSession) => {
-    Alert.alert(
-      'Supprimer la session ?',
-      `Cette session contient ${session.recordings.length} enregistrement(s). Cette action est irréversible.`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const success = await offlineService.deleteSession(session.id);
-              if (success) {
-                await loadSessions();
-                Alert.alert('Supprimé', 'La session a été supprimée.');
-              } else {
-                Alert.alert('Erreur', 'Session non trouvée.');
-              }
-            } catch (error) {
-              console.error('Delete error:', error);
-              Alert.alert('Erreur', 'Impossible de supprimer la session.');
-            }
-          },
-        },
-      ]
-    );
+  const deleteSession = async (session: OfflineSession) => {
+    // Direct delete without confirmation for now to debug
+    console.log('[OfflineSessions] Deleting session:', session.id);
+    
+    try {
+      const success = await offlineService.deleteSession(session.id);
+      console.log('[OfflineSessions] Delete result:', success);
+      
+      if (success) {
+        // Reload sessions immediately
+        const allSessions = await offlineService.getOfflineSessions();
+        allSessions.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+        setSessions(allSessions);
+        Alert.alert('✅ Supprimé', 'La session a été supprimée.');
+      } else {
+        Alert.alert('Erreur', 'Session non trouvée.');
+      }
+    } catch (error) {
+      console.error('[OfflineSessions] Delete error:', error);
+      Alert.alert('Erreur', 'Impossible de supprimer la session.');
+    }
   };
 
   const syncAllSessions = async () => {
