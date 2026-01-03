@@ -9,11 +9,21 @@ import Constants from 'expo-constants';
 
 // Get backend URL from environment
 const getBackendUrl = () => {
-  // For web preview, use relative URL (goes through the proxy)
+  // Check if we're on the main preview domain (where /api proxy works)
   if (typeof window !== 'undefined') {
-    return '';
+    const hostname = window.location.hostname;
+    
+    // If on the main preview domain, use relative URL (proxy works)
+    if (hostname.includes('preview.emergentagent.com')) {
+      return '';
+    }
+    
+    // If on ngrok or other domains, use the full backend URL
+    // The backend is accessible via the preview domain
+    return 'https://spynapp.preview.emergentagent.com';
   }
-  // For mobile, use the configured backend URL
+  
+  // For mobile (Expo Go), use the configured backend URL
   return Constants.expoConfig?.extra?.backendUrl || 
          process.env.EXPO_PUBLIC_BACKEND_URL || 
          'https://spynapp.preview.emergentagent.com';
