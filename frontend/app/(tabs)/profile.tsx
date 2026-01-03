@@ -162,8 +162,8 @@ export default function ProfileScreen() {
   if (isAdmin) {
     menuItems.splice(0, 0, {
       icon: 'shield-checkmark',
-      title: 'Admin Panel',
-      subtitle: 'Manage track uploads',
+      title: t('profile.adminPanel'),
+      subtitle: t('profile.manageUploads'),
       onPress: () => router.push('/profile/admin'),
     });
   }
