@@ -1173,6 +1173,72 @@ export const base44Notifications2 = {
   },
 };
 
+// ==================== PUBLIC PROFILES SERVICE ====================
+
+export const base44Profiles = {
+  /**
+   * Get a single user's public profile by ID
+   */
+  async getProfile(userId: string): Promise<PublicProfile | null> {
+    try {
+      console.log('[Profiles] Fetching profile for user:', userId);
+      const response = await api.post('/api/base44/functions/invoke/getPublicProfiles', {
+        userId,
+      });
+      
+      if (response.data?.success && response.data?.profile) {
+        console.log('[Profiles] Profile fetched successfully');
+        return response.data.profile;
+      }
+      
+      console.log('[Profiles] No profile found');
+      return null;
+    } catch (error) {
+      console.error('[Profiles] Error fetching profile:', error);
+      return null;
+    }
+  },
+
+  /**
+   * List all public profiles with optional filters
+   */
+  async listProfiles(filters?: { userType?: string; limit?: number }): Promise<PublicProfile[]> {
+    try {
+      console.log('[Profiles] Fetching profiles with filters:', filters);
+      const response = await api.post('/api/base44/functions/invoke/getPublicProfiles', {
+        userType: filters?.userType,
+        limit: filters?.limit || 50,
+      });
+      
+      if (response.data?.success && response.data?.profiles) {
+        console.log('[Profiles] Profiles fetched:', response.data.profiles.length);
+        return response.data.profiles;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('[Profiles] Error listing profiles:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get avatar URL - returns the best available avatar
+   */
+  getAvatarUrl(profile: PublicProfile): string | null {
+    if (profile.avatar_url) return profile.avatar_url;
+    if (profile.generated_avatar_url) return profile.generated_avatar_url;
+    return null;
+  },
+
+  /**
+   * Get display name - returns artist_name or full_name
+   */
+  getDisplayName(profile: PublicProfile): string {
+    return profile.artist_name || profile.full_name || 'Unknown';
+  },
+};
+
 // Export default api object
 export default {
   auth: base44Auth,
@@ -1183,4 +1249,5 @@ export default {
   admin: base44Admin,
   notifications: base44Notifications,
   notifications2: base44Notifications2,
+  profiles: base44Profiles,
 };
