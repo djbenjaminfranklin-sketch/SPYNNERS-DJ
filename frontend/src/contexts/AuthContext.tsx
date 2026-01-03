@@ -110,8 +110,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(result.token);
       setUser(fullUser);
       
-      // Store the complete user data
+      // Store both token and user data
+      await AsyncStorage.setItem('auth_token', result.token);
       await AsyncStorage.setItem('user', JSON.stringify(fullUser));
+      
+      console.log('[AuthContext] Token and user data saved to storage');
     } catch (error: any) {
       console.error('[AuthContext] Login error:', error?.message || error);
       throw error;
