@@ -2313,6 +2313,16 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.administrator': '管理员',
     'profile.manageTracksAdmin': '管理曲目上传',
     'profile.logoutConfirm': '你确定要退出吗？',
+    'profile.logoutDesc': '退出你的账户',
+    'profile.radar': '雷达',
+    'profile.trackYourPlays': '实时追踪你的播放',
+    'profile.editDeleteTracks': '编辑或删除你的曲目',
+    'profile.adminPanel': '管理面板',
+    'profile.adminDesc': '管理用户和曲目',
+    'profile.loginRequired': '请登录以查看你的个人资料',
+    'profile.dangerZone': '危险区域',
+    'profile.deleteAccount': '删除我的账户',
+    'profile.deleteAccountWarning': '删除账户是不可逆的。你的所有数据、曲目、收藏和消息将被永久删除。',
     
     // Common
     'common.cancel': '取消',
