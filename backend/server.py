@@ -254,38 +254,85 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
             if music:
                 track = music[0]
                 
+                # Log full track data for debugging
+                print(f"[ACRCloud] Full track data keys: {track.keys()}")
+                print(f"[ACRCloud] External metadata: {track.get('external_metadata', {}).keys() if track.get('external_metadata') else 'None'}")
+                
                 # Extract cover image from various sources
                 cover_image = None
                 
                 # Try Spotify cover
                 spotify = track.get("external_metadata", {}).get("spotify", {})
-                if spotify.get("album", {}).get("images"):
-                    images = spotify["album"]["images"]
-                    if images:
-                        cover_image = images[0].get("url")
+                if spotify:
+                    print(f"[ACRCloud] Spotify data: {spotify}")
+                    if spotify.get("album", {}).get("images"):
+                        images = spotify["album"]["images"]
+                        if images:
+                            cover_image = images[0].get("url")
                 
                 # Try Deezer cover
                 if not cover_image:
                     deezer = track.get("external_metadata", {}).get("deezer", {})
-                    if deezer.get("album", {}).get("cover_xl"):
-                        cover_image = deezer["album"]["cover_xl"]
-                    elif deezer.get("album", {}).get("cover_big"):
-                        cover_image = deezer["album"]["cover_big"]
-                    elif deezer.get("album", {}).get("cover_medium"):
-                        cover_image = deezer["album"]["cover_medium"]
+                    if deezer:
+                        print(f"[ACRCloud] Deezer data: {deezer}")
+                        if deezer.get("album", {}).get("cover_xl"):
+                            cover_image = deezer["album"]["cover_xl"]
+                        elif deezer.get("album", {}).get("cover_big"):
+                            cover_image = deezer["album"]["cover_big"]
+                        elif deezer.get("album", {}).get("cover_medium"):
+                            cover_image = deezer["album"]["cover_medium"]
+                        elif deezer.get("album", {}).get("cover"):
+                            cover_image = deezer["album"]["cover"]
                 
                 # Try iTunes/Apple Music cover
                 if not cover_image:
                     apple = track.get("external_metadata", {}).get("itunes", {})
-                    if apple.get("artworkUrl100"):
-                        # Replace 100x100 with larger size
-                        cover_image = apple["artworkUrl100"].replace("100x100", "600x600")
+                    if apple:
+                        print(f"[ACRCloud] iTunes data: {apple}")
+                        if apple.get("artworkUrl100"):
+                            cover_image = apple["artworkUrl100"].replace("100x100", "600x600")
                 
                 # Try YouTube thumbnail
                 if not cover_image:
                     youtube = track.get("external_metadata", {}).get("youtube", {})
-                    if youtube.get("vid"):
-                        cover_image = f"https://img.youtube.com/vi/{youtube['vid']}/maxresdefault.jpg"
+                    if youtube:
+                        print(f"[ACRCloud] YouTube data: {youtube}")
+                        if youtube.get("vid"):
+                            cover_image = f"https://img.youtube.com/vi/{youtube['vid']}/maxresdefault.jpg"
+                
+                # Try MusicBrainz or other sources in external_ids
+                if not cover_image:
+                    external_ids = track.get("external_ids", {})
+                    if external_ids:
+                        print(f"[ACRCloud] External IDs: {external_ids}")
+                        # Try to get cover from MusicBrainz via CoverArtArchive
+                        if external_ids.get("musicbrainz"):
+                            mb_ids = external_ids["musicbrainz"]
+                            if isinstance(mb_ids, list) and len(mb_ids) > 0:
+                                release_id = mb_ids[0].get("release", {}).get("id") if isinstance(mb_ids[0], dict) else None
+                                if release_id:
+                                    cover_image = f"https://coverartarchive.org/release/{release_id}/front-500"
+                
+                # Fallback: Generate a cover URL from Deezer search API (artist + title)
+                if not cover_image:
+                    artist_name = ", ".join([a.get("name", "") for a in track.get("artists", [])])
+                    track_title = track.get("title", "")
+                    if artist_name and track_title:
+                        # Use Deezer's search to find cover art
+                        try:
+                            search_query = f"{artist_name} {track_title}".replace(" ", "+")
+                            deezer_search_url = f"https://api.deezer.com/search?q={search_query}&limit=1"
+                            async with httpx.AsyncClient(timeout=5.0) as deezer_client:
+                                deezer_resp = await deezer_client.get(deezer_search_url)
+                                if deezer_resp.status_code == 200:
+                                    deezer_data = deezer_resp.json()
+                                    if deezer_data.get("data") and len(deezer_data["data"]) > 0:
+                                        cover_image = deezer_data["data"][0].get("album", {}).get("cover_xl") or \
+                                                     deezer_data["data"][0].get("album", {}).get("cover_big") or \
+                                                     deezer_data["data"][0].get("album", {}).get("cover_medium")
+                                        print(f"[ACRCloud] Found cover via Deezer search: {cover_image}")
+                        except Exception as deezer_error:
+                            print(f"[ACRCloud] Deezer search failed: {deezer_error}")
                 
                 # Extract genre
                 genres = [g.get("name") for g in track.get("genres", [])]
