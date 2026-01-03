@@ -274,6 +274,12 @@ class OfflineService {
 
   async getPendingCount(): Promise<number> {
     const sessions = await this.getOfflineSessions();
+    // Count number of SESSIONS (not recordings) that are pending
+    return sessions.filter(s => s.status === 'pending_sync').length;
+  }
+
+  async getPendingRecordingsCount(): Promise<number> {
+    const sessions = await this.getOfflineSessions();
     return sessions
       .filter(s => s.status === 'pending_sync')
       .reduce((acc, s) => acc + s.recordings.length, 0);
