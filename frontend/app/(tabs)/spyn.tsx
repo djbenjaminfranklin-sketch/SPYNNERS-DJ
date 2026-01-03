@@ -794,20 +794,26 @@ export default function SpynScreen() {
       // Fire and forget - don't wait for emails
       identifiedTracks.forEach(async (track) => {
         try {
-          console.log(`[SPYN] Sending email for track: ${track.title}, producerId: ${track.producer_id}`);
+          // Determine DJ name based on who played
+          const djNameToUse = whoPlayed === 'another' && otherDjName.trim() 
+            ? otherDjName.trim() 
+            : user?.full_name || 'DJ';
+          
+          console.log(`[SPYN] Sending email for track: ${track.title}, producerId: ${track.producer_id}, DJ: ${djNameToUse}`);
           
           // Call with required fields: producerId, trackTitle, djName
           const emailPayload = {
             producerId: track.producer_id, // Required field
             trackTitle: track.title || 'Unknown Track', // Required field
-            djName: user?.full_name || 'DJ', // Required field
+            djName: djNameToUse, // Required field - uses other DJ name if specified
             // Optional fields
             city: location?.city || '',
             country: location?.country || '',
             venue: correctedVenue || location?.venue || '',
             trackArtworkUrl: track.cover_image || '',
-            djAvatar: user?.avatar || '',
+            djAvatar: whoPlayed === 'me' ? (user?.avatar || '') : '', // No avatar if another DJ
             playedAt: new Date().toISOString(),
+            reportedBy: whoPlayed === 'another' ? user?.full_name : undefined, // Who reported the session
           };
           
           console.log('[SPYN] Email payload:', JSON.stringify(emailPayload));
