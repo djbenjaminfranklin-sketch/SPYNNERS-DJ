@@ -156,19 +156,26 @@ export default function SpynScreen() {
     startIdleAnimations();
     initOfflineMode();
     
+    // Subscribe to network changes
+    const unsubscribeNetwork = offlineService.onNetworkChange((online) => {
+      console.log('[SPYN] Network changed callback:', online ? 'ONLINE' : 'OFFLINE');
+      setIsOffline(!online);
+    });
+    
     return () => {
       stopSession();
       stopAllAnimations();
+      unsubscribeNetwork();
     };
   }, []);
 
   // Initialize offline mode
   const initOfflineMode = async () => {
     try {
-      // Check network status
+      // Check network status immediately
       const isOnline = await offlineService.checkNetworkStatus();
+      console.log('[SPYN] Initial network check:', isOnline ? 'ONLINE' : 'OFFLINE');
       setIsOffline(!isOnline);
-      console.log('[SPYN] Network status:', isOnline ? 'ONLINE' : 'OFFLINE');
       
       // Get pending sync count
       const pendingCount = await offlineService.getPendingCount();
@@ -186,14 +193,11 @@ export default function SpynScreen() {
     }
   };
 
-  // Monitor network changes
+  // Monitor network changes and auto-sync
   useEffect(() => {
-    const checkNetwork = async () => {
-      const online = offlineService.isNetworkAvailable();
-      setIsOffline(!online);
-      
-      // Auto-sync when coming back online
-      if (online && pendingSyncCount > 0) {
+    // Auto-sync when coming back online with pending recordings
+    const syncIfNeeded = async () => {
+      if (!isOffline && pendingSyncCount > 0) {
         console.log('[SPYN] Network restored - syncing offline recordings...');
         const { synced, failed } = await offlineService.syncPendingSessions(token || undefined);
         if (synced > 0) {
@@ -207,9 +211,8 @@ export default function SpynScreen() {
       }
     };
     
-    const interval = setInterval(checkNetwork, 5000); // Check every 5 seconds
-    return () => clearInterval(interval);
-  }, [pendingSyncCount, token]);
+    syncIfNeeded();
+  }, [isOffline, pendingSyncCount, token]);
 
   // Autostart session when coming from home page
   useEffect(() => {
