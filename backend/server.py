@@ -1747,39 +1747,54 @@ async def process_offline_session(request: OfflineSessionRequest, authorization:
                             producer_id = track.get("producer_id")
                             cover_image = track.get("artwork_url")
                         else:
-                            # Try to match with Spynners database using fuzzy matching
+                            # Try to match with Spynners database using Base44 API
                             try:
                                 from difflib import SequenceMatcher
                                 
-                                # Search in our track database
-                                all_tracks = list(db["tracks"].find({"status": "approved"}))
-                                best_match = None
-                                best_score = 0
+                                # Fetch tracks from Base44 API
+                                base44_url = "https://spynners.com/api/entities/Track"
+                                headers = {
+                                    "X-Base44-App-Id": BASE44_APP_ID,
+                                    "Content-Type": "application/json"
+                                }
                                 
-                                for db_track in all_tracks:
-                                    db_title = db_track.get("title", "").lower()
-                                    acr_title = track_title.lower()
-                                    
-                                    # Calculate similarity
-                                    title_ratio = SequenceMatcher(None, db_title, acr_title).ratio()
-                                    
-                                    # Check artist match too
-                                    db_artist = (db_track.get("producer_name") or db_track.get("artist", "")).lower()
-                                    artist_ratio = SequenceMatcher(None, db_artist, track_artist.lower()).ratio()
-                                    
-                                    # Combined score
-                                    combined_score = (title_ratio * 0.7) + (artist_ratio * 0.3)
-                                    
-                                    if combined_score > best_score and combined_score > 0.6:
-                                        best_score = combined_score
-                                        best_match = db_track
+                                async with httpx.AsyncClient(timeout=30.0) as http_client:
+                                    tracks_response = await http_client.get(
+                                        f"{base44_url}?status=approved&limit=500",
+                                        headers=headers
+                                    )
                                 
-                                if best_match:
-                                    print(f"[Offline] Matched to Spynners track: {best_match.get('title')} (score: {best_score:.2f})")
-                                    spynners_track_id = str(best_match.get("_id"))
-                                    producer_id = best_match.get("producer_id")
-                                    cover_image = best_match.get("artwork_url")
-                                    is_custom = True  # Mark as Spynners track
+                                if tracks_response.status_code == 200:
+                                    all_tracks = tracks_response.json()
+                                    best_match = None
+                                    best_score = 0
+                                    
+                                    for db_track in all_tracks:
+                                        db_title = db_track.get("title", "").lower()
+                                        acr_title = track_title.lower()
+                                        
+                                        # Calculate similarity
+                                        title_ratio = SequenceMatcher(None, db_title, acr_title).ratio()
+                                        
+                                        # Check artist match too
+                                        db_artist = (db_track.get("producer_name") or db_track.get("artist", "")).lower()
+                                        artist_ratio = SequenceMatcher(None, db_artist, track_artist.lower()).ratio()
+                                        
+                                        # Combined score
+                                        combined_score = (title_ratio * 0.7) + (artist_ratio * 0.3)
+                                        
+                                        if combined_score > best_score and combined_score > 0.6:
+                                            best_score = combined_score
+                                            best_match = db_track
+                                    
+                                    if best_match:
+                                        print(f"[Offline] Matched to Spynners track: {best_match.get('title')} (score: {best_score:.2f})")
+                                        spynners_track_id = best_match.get("id")
+                                        producer_id = best_match.get("producer_id")
+                                        cover_image = best_match.get("artwork_url")
+                                        is_custom = True  # Mark as Spynners track
+                                else:
+                                    print(f"[Offline] Failed to fetch tracks from Base44: {tracks_response.status_code}")
                             except Exception as match_error:
                                 print(f"[Offline] Matching error: {match_error}")
                         
