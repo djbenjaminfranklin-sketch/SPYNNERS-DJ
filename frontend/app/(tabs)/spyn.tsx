@@ -90,12 +90,14 @@ export default function SpynScreen() {
   const scaleAnim1 = useRef(new Animated.Value(1)).current;
   const scaleAnim2 = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const rotateAnim1 = useRef(new Animated.Value(0)).current;
+  const rotateAnim2 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Request location permission
     requestLocationPermission();
     
-    // Start animations
+    // Start glow animations
     const glowLoop1 = Animated.loop(
       Animated.sequence([
         Animated.timing(glowAnim1, { toValue: 1, duration: 2000, useNativeDriver: false }),
@@ -108,6 +110,25 @@ export default function SpynScreen() {
         Animated.timing(glowAnim2, { toValue: 1, duration: 2000, useNativeDriver: false }),
         Animated.timing(glowAnim2, { toValue: 0, duration: 2000, useNativeDriver: false }),
       ])
+    );
+
+    // Rotating light animation - continuous spin
+    const rotateLoop1 = Animated.loop(
+      Animated.timing(rotateAnim1, {
+        toValue: 1,
+        duration: 3000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+
+    const rotateLoop2 = Animated.loop(
+      Animated.timing(rotateAnim2, {
+        toValue: 1,
+        duration: 3500,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
     );
 
     const scaleLoop1 = Animated.loop(
