@@ -827,6 +827,105 @@ export const base44Admin = {
       return null;
     }
   },
+
+  // ==================== NEW ADMIN API - getAdminData ====================
+  
+  /**
+   * Get complete admin dashboard data
+   * Requires admin role ("admin" or "admin_readonly")
+   */
+  async getDashboard(): Promise<any> {
+    try {
+      console.log('[Admin] Fetching dashboard data...');
+      const response = await api.post('/api/base44/functions/invoke/getAdminData', {});
+      console.log('[Admin] Dashboard data fetched:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[Admin] Error getting dashboard:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Get specific section of admin data
+   * @param section - One of: pending_tracks, vip_requests, approved_tracks, users, sessions, downloads, vip_promos, broadcasts, dj_categories, forum_posts
+   */
+  async getSection(section: string): Promise<any> {
+    try {
+      console.log('[Admin] Fetching section:', section);
+      const response = await api.post('/api/base44/functions/invoke/getAdminData', {
+        section,
+      });
+      console.log('[Admin] Section data fetched:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[Admin] Error getting section:', section, error);
+      return null;
+    }
+  },
+
+  /**
+   * Get pending tracks for approval
+   */
+  async getPendingTracksNew(): Promise<any> {
+    return this.getSection('pending_tracks');
+  },
+
+  /**
+   * Get VIP requests
+   */
+  async getVipRequests(): Promise<any> {
+    return this.getSection('vip_requests');
+  },
+
+  /**
+   * Get all users
+   */
+  async getAllUsersNew(): Promise<any> {
+    return this.getSection('users');
+  },
+
+  /**
+   * Get SPYN sessions
+   */
+  async getSessions(): Promise<any> {
+    return this.getSection('sessions');
+  },
+
+  /**
+   * Get downloads data
+   */
+  async getDownloads(): Promise<any> {
+    return this.getSection('downloads');
+  },
+
+  /**
+   * Get VIP promos
+   */
+  async getVipPromos(): Promise<any> {
+    return this.getSection('vip_promos');
+  },
+
+  /**
+   * Get broadcast emails
+   */
+  async getBroadcasts(): Promise<any> {
+    return this.getSection('broadcasts');
+  },
+
+  /**
+   * Get DJ categories
+   */
+  async getDjCategories(): Promise<any> {
+    return this.getSection('dj_categories');
+  },
+
+  /**
+   * Get pending forum posts
+   */
+  async getForumPosts(): Promise<any> {
+    return this.getSection('forum_posts');
+  },
 };
 
 // ==================== SPYN NOTIFICATION SERVICE ====================
