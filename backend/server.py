@@ -269,7 +269,12 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                 producer_email = None
                 
                 try:
-                    # Search by acrcloud_id
+                    # Clean title for search (remove parentheses content like "Extended", "Original Mix")
+                    import re
+                    clean_title = re.sub(r'\s*\([^)]*\)\s*', '', track_title).strip()
+                    print(f"[SPYNNERS] Searching for: '{track_title}' (clean: '{clean_title}')")
+                    
+                    # Search by acrcloud_id first
                     if acr_id:
                         spynners_search_url = f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Track"
                         async with httpx.AsyncClient(timeout=10.0) as search_client:
@@ -284,23 +289,40 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                                     spynners_track = tracks[0]
                                     print(f"[SPYNNERS] Found track by acrcloud_id: {spynners_track.get('title')}")
                     
-                    # If not found by acrcloud_id, search by title
+                    # If not found by acrcloud_id, search by title (flexible matching)
                     if not spynners_track:
                         async with httpx.AsyncClient(timeout=10.0) as search_client:
-                            # Try exact title match
+                            # Get all tracks and search manually (Base44 doesn't support LIKE queries)
                             search_resp = await search_client.get(
                                 f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Track",
-                                params={"title": track_title, "limit": 5},
+                                params={"limit": 500},
                                 headers={"X-Base44-App-Id": BASE44_APP_ID}
                             )
                             if search_resp.status_code == 200:
-                                tracks = search_resp.json()
-                                if tracks and len(tracks) > 0:
-                                    # Find best match
-                                    for t in tracks:
-                                        if t.get("title", "").lower() == track_title.lower():
+                                all_tracks = search_resp.json()
+                                print(f"[SPYNNERS] Searching through {len(all_tracks)} tracks...")
+                                
+                                # Search for matching title (case-insensitive, partial match)
+                                for t in all_tracks:
+                                    t_title = t.get("title", "").lower()
+                                    t_clean = re.sub(r'\s*\([^)]*\)\s*', '', t_title).strip()
+                                    
+                                    # Match by clean title or if one contains the other
+                                    if (clean_title.lower() == t_clean or 
+                                        clean_title.lower() in t_title or 
+                                        t_clean in clean_title.lower() or
+                                        track_title.lower() == t_title):
+                                        spynners_track = t
+                                        print(f"[SPYNNERS] Found track by title match: '{t.get('title')}'")
+                                        break
+                                    
+                                    # Also try matching by producer name / artist
+                                    t_producer = t.get("producer_name", "").lower()
+                                    if t_producer and t_producer in track_artist.lower():
+                                        # Producer matches, check if title is similar
+                                        if clean_title.lower()[:10] in t_title or t_title[:10] in clean_title.lower():
                                             spynners_track = t
-                                            print(f"[SPYNNERS] Found track by title: {spynners_track.get('title')}")
+                                            print(f"[SPYNNERS] Found track by producer+title: '{t.get('title')}' by {t.get('producer_name')}")
                                             break
                     
                     # Get artwork and producer info from Spynners track
@@ -310,6 +332,19 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                         
                         print(f"[SPYNNERS] Artwork URL: {cover_image}")
                         print(f"[SPYNNERS] Producer ID: {producer_id}")
+                        
+                        # Update the acrcloud_id in Spynners if it was empty
+                        if acr_id and not spynners_track.get("acrcloud_id"):
+                            try:
+                                async with httpx.AsyncClient(timeout=5.0) as update_client:
+                                    await update_client.put(
+                                        f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Track/{spynners_track.get('id')}",
+                                        json={"acrcloud_id": acr_id},
+                                        headers={"X-Base44-App-Id": BASE44_APP_ID}
+                                    )
+                                    print(f"[SPYNNERS] Updated acrcloud_id for track")
+                            except:
+                                pass
                         
                         # Get producer email for notification
                         if producer_id:
@@ -326,13 +361,7 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                             except Exception as e:
                                 print(f"[SPYNNERS] Could not get producer email: {e}")
                     else:
-                        print(f"[SPYNNERS] Track NOT found in Spynners database - this may not be a Spynners track")
-                        # Return early if track is not in Spynners
-                        return {
-                            "success": False,
-                            "message": "Track not found in Spynners library",
-                            "acr_title": track_title,
-                            "acr_artist": track_artist
+                        print(f"[SPYNNERS] Track NOT found in Spynners database: '{track_title}' by '{track_artist}'")
                         }
                         
                 except Exception as e:
