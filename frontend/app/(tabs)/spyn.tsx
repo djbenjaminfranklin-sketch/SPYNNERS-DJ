@@ -414,6 +414,51 @@ export default function SpynScreen() {
     }
   };
 
+  // Web-specific recognition using base64 directly
+  const recognizeAudioBase64 = async (audioBase64: string) => {
+    setRecognizing(true);
+    setResult(null);
+
+    try {
+      console.log('[SPYN Web] Sending audio to ACRCloud, size:', audioBase64.length);
+      
+      const response = await axios.post(
+        `${BACKEND_URL}/api/recognize-audio`,
+        { 
+          audio_base64: audioBase64,
+          location: location,
+          dj_id: user?.id,
+          dj_name: user?.full_name,
+        },
+        { 
+          headers: { 
+            'Content-Type': 'application/json', 
+            Authorization: `Bearer ${token}` 
+          },
+          timeout: 30000,
+        }
+      );
+
+      console.log('[SPYN Web] Response:', response.data);
+
+      if (response.data.success) {
+        setResult(response.data);
+        
+        // Notify producer if track is recognized
+        if (response.data.title && response.data.artist) {
+          await notifyProducer(response.data, location);
+        }
+      } else {
+        Alert.alert('Not Recognized', response.data.message || 'Could not identify this track. Try with a clearer audio sample.');
+      }
+    } catch (error: any) {
+      console.error('[SPYN Web] Recognition error:', error);
+      Alert.alert('Error', 'Recognition failed. Check your connection.');
+    } finally {
+      setRecognizing(false);
+    }
+  };
+
   // ==================== SPYN RECORD SET ====================
   const startRecordSet = async () => {
     try {
