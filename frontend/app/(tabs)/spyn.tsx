@@ -154,22 +154,43 @@ export default function SpynScreen() {
   const updateLocation = async () => {
     try {
       const currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
+        accuracy: Location.Accuracy.High,
       });
       
-      // Reverse geocode to get venue/city/country
-      const [address] = await Location.reverseGeocodeAsync({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-      });
+      const lat = currentLocation.coords.latitude;
+      const lng = currentLocation.coords.longitude;
+      
+      // Try Google Places API first for nearby venues (clubs, bars, etc.)
+      let venueName = undefined;
+      try {
+        const response = await axios.get(
+          `${BACKEND_URL}/api/nearby-places`,
+          {
+            params: { lat, lng },
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 10000,
+          }
+        );
+        
+        if (response.data.success && response.data.venue) {
+          venueName = response.data.venue;
+        }
+      } catch (placeError) {
+        console.log('Google Places lookup failed, using reverse geocode:', placeError);
+      }
+      
+      // Fallback to reverse geocode for city/country
+      const [address] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
       
       setLocation({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-        venue: address?.name || address?.street || undefined,
+        latitude: lat,
+        longitude: lng,
+        venue: venueName || address?.name || address?.street || undefined,
         city: address?.city || address?.region || undefined,
         country: address?.country || undefined,
       });
+      
+      console.log('Location updated:', { lat, lng, venue: venueName, city: address?.city });
     } catch (error) {
       console.error('Location update error:', error);
     }
