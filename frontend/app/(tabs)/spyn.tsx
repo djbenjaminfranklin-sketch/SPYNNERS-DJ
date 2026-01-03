@@ -597,23 +597,32 @@ export default function SpynScreen() {
     // Send emails to all identified track producers (non-blocking)
     if (identifiedTracks.length > 0 && token) {
       console.log('[SPYN] Sending emails to producers via Base44...');
+      console.log('[SPYN] Token available:', token ? 'Yes' : 'No');
       
       // Fire and forget - don't wait for emails
       identifiedTracks.forEach(async (track) => {
         try {
-          // Call directly with token to ensure authentication
-          await axios.post(
+          console.log(`[SPYN] Sending email for track: ${track.title}, producerId: ${track.producer_id}`);
+          
+          // Call with required fields: producerId, trackTitle, djName
+          const emailPayload = {
+            producerId: track.producer_id, // Required field
+            trackTitle: track.title || 'Unknown Track', // Required field
+            djName: user?.full_name || 'DJ', // Required field
+            // Optional fields
+            city: location?.city || '',
+            country: location?.country || '',
+            venue: correctedVenue || location?.venue || '',
+            trackArtworkUrl: track.cover_image || '',
+            djAvatar: user?.avatar || '',
+            playedAt: new Date().toISOString(),
+          };
+          
+          console.log('[SPYN] Email payload:', JSON.stringify(emailPayload));
+          
+          const response = await axios.post(
             `${BACKEND_URL}/api/base44/functions/invoke/sendTrackPlayedEmail`,
-            {
-              trackTitle: track.title || 'Unknown Track',
-              artistName: track.artist || 'Unknown Artist',
-              djName: user?.full_name || 'DJ',
-              clubName: correctedVenue || location?.venue || 'Unknown Venue',
-              location: `${location?.city || 'Unknown'}, ${location?.country || 'Unknown'}`,
-              playedAt: new Date().toISOString(),
-              trackId: track.id,
-              producerId: track.producer_id,
-            },
+            emailPayload,
             {
               headers: {
                 'Content-Type': 'application/json',
@@ -621,11 +630,13 @@ export default function SpynScreen() {
               },
             }
           );
-          console.log(`[SPYN] Email sent for: ${track.title}`);
-        } catch (e) {
-          console.log(`[SPYN] Could not send email for: ${track.title}`);
+          console.log(`[SPYN] ✅ Email sent for: ${track.title}`, response.data);
+        } catch (e: any) {
+          console.log(`[SPYN] ❌ Could not send email for: ${track.title}`, e?.response?.data || e.message);
         }
       });
+    } else {
+      console.log('[SPYN] No emails sent - tracks:', identifiedTracks.length, ', token:', token ? 'Yes' : 'No');
     }
 
     // Award Black Diamond ONLY if valid venue (club, bar, restaurant)
