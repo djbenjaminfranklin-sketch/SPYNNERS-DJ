@@ -105,7 +105,7 @@ export default function ProfileScreen() {
       icon: 'shield-checkmark',
       title: t('profile.adminPanel'),
       subtitle: t('profile.adminDesc'),
-      onPress: () => router.push('/admin/dashboard'),
+      onPress: () => router.push('/profile/admin'),
     }] : []),
     {
       icon: 'log-out-outline',
