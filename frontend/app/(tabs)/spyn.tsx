@@ -894,6 +894,7 @@ export default function SpynScreen() {
     setSessionDuration('00:00:00');
     setWhoPlayed(null);
     setCorrectedVenue('');
+    setOtherDjName('');
     identifiedTracksRef.current = [];
     // Keep identified tracks visible for review
   };
