@@ -229,26 +229,34 @@ class OfflineService {
   }
 
   async endOfflineSession(sessionId?: string): Promise<OfflineSession | null> {
+    console.log('[Offline] endOfflineSession called, sessionId:', sessionId);
+    
     const sessions = await this.getOfflineSessions();
+    console.log('[Offline] Found', sessions.length, 'sessions');
+    console.log('[Offline] Sessions statuses:', sessions.map(s => `${s.id}: ${s.status}`));
     
     const session = sessionId 
       ? sessions.find(s => s.id === sessionId)
       : sessions.find(s => s.status === 'recording');
     
     if (session) {
+      console.log('[Offline] Found session to end:', session.id, 'with status:', session.status);
       session.status = 'pending_sync';
       session.endTime = new Date().toISOString();
       await this.saveOfflineSessions(sessions);
       
-      console.log('[Offline] Session ended:', session.id);
+      console.log('[Offline] Session ended and saved:', session.id);
       console.log('[Offline] Recordings to sync:', session.recordings.length);
       
       // Try to sync immediately if online
       if (this.isOnline) {
+        console.log('[Offline] Online - starting immediate sync');
         this.syncPendingSessions();
       }
       
       return session;
+    } else {
+      console.log('[Offline] No session found to end');
     }
     
     return null;
