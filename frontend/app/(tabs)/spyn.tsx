@@ -877,6 +877,18 @@ export default function SpynScreen() {
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         
+        {/* ==================== DEBUG: NETWORK STATUS (always visible) ==================== */}
+        <View style={styles.debugBanner}>
+          <Ionicons 
+            name={isOffline ? "cloud-offline" : "cloud-done"} 
+            size={16} 
+            color={isOffline ? "#FFB74D" : "#4CAF50"} 
+          />
+          <Text style={[styles.debugText, { color: isOffline ? "#FFB74D" : "#4CAF50" }]}>
+            {isOffline ? "📴 OFFLINE" : "✅ ONLINE"}
+          </Text>
+        </View>
+
         {/* ==================== OFFLINE BANNER ==================== */}
         {isOffline && (
           <View style={styles.offlineBanner}>
