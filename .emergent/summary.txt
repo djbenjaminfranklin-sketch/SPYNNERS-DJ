@@ -1,173 +1,254 @@
 <analysis>
 
 **original_problem_statement:**
-The user wants to continue developing their Expo/React Native application, Spynners. The primary goal is to fix a long list of bugs and implement new features to bring the app to parity with the  website.
+The user wants to continue developing the Spynners Expo/React Native application. The primary goals of this session were to fix numerous bugs and add features to the SPYN Detection feature to match the  website, implement a complete user profile page based on a new API, and build out an Admin Panel.
 
-During this session, the user's priorities were:
-1.  Fix the Chat page to show all ~782 members instead of just ~30.
-2.  Fix the track filters (Genre, Energy, Sort) and search bar on the Home page.
-3.  Fix the filter dropdowns appearing behind the track list.
-4.  Implement the internal track sharing feature (send to another member).
-5.  Fix the language switching feature so that it translates content across the entire application and for all supported languages.
-6.  Improve the track upload process to be more like the website, specifically by automatically extracting metadata (cover art, title, artist, genre, BPM) from the uploaded MP3 file.
-7.  Provide an Expo Go QR code/link for mobile testing.
+Key user requests during this session included:
+1.  **Fix SPYN Feature (Highest Priority):**
+    *   The End Session button must be positioned directly under the main SPYN button.
+    *   The SPYN session must start with a single click (no second button).
+    *   The pulsating animation must be continuous throughout the session.
+    *   The app must detect multiple tracks in a row (continuous detection).
+    *   Cover art for identified tracks must be displayed.
+    *   The venue location must be displayed *during* the session, not just at the end.
+    *   Black Diamonds awarded in a session must be reflected in the user's profile count.
+    *   A Black Diamond should only be awarded if the venue is a club, restaurant, or bar.
+    *   An email should be sent to all identified producers' emails after the session ends.
+2.  **Implement New Profile Page:**
+    *   The user provided a new  API specification.
+    *   The profile page must be redesigned to use this API and display the user's avatar, email (with Verified badge), role, Black Diamond count, preferred genres, and social media links, identical to the website.
+3.  **Implement Admin Panel:**
+    *   The user provided a new  API specification for an admin-only dashboard.
+    *   The panel should be accessible to admin users and display data like pending tracks.
+4.  **Fix Translations:**
+    *   The user reported untranslated text on the new profile page (Stats, Social, Danger Zone).
 
-**User's preferred language**: Français (French)
+**User's preferred language**: Français (French). The next agent MUST respond in French.
 
 **what currently exists?**
-The application is in a much-improved state. The most critical bug, the incomplete chat member list, has been resolved by implementing a backend-proxied call to the correct Base44 function endpoint. The home page filters, search, and UI layering (z-index) have been fixed. The language translation system has been significantly expanded to include all 6 languages and applied to most major pages, though it may still be incomplete. A robust track upload system has been implemented, featuring a new backend endpoint () that uses  to read ID3 tags and  to perform audio analysis for BPM detection. The internal track sharing feature is now functional.
+-   A heavily modified  which has undergone several rewrites to address user feedback. The latest version attempts to fix single-click start, cover art display, and continuous detection.
+-   A new backend implementation in  that parses the cover image URL from the ACRCloud API response and includes it in the  endpoint's return data.
+-   A completely rewritten profile page () that successfully calls a new  Base44 function via a backend proxy. It displays detailed user information like avatar, stats, and social links.
+-   A new Admin Panel page at . Due to persistent authentication issues with the  API, it uses a **workaround** to display tracks by fetching them directly from Base44 entities ().
+-   An updated  service file containing new interfaces () and services for the  and  APIs.
+-   A significantly updated  with many new translation keys for the profile page and SPYN modals across all six languages (EN, FR, ES, IT, DE, ZH).
+-   The backend proxy in  has been updated to correctly route requests for  and  to the  custom domain.
 
 **Last working item**:
-    - Last item agent was working: The agent was working on two user-reported issues simultaneously:
-        1.  **BPM & Genre Detection:** The user reported that BPM and Genre were not being automatically populated during track upload. The agent implemented a fix by adding the  library to the backend to analyze the audio file and detect the BPM, as a fallback to reading ID3 tags.
-        2.  **Incomplete Translations:** The user reported that pages other than the home page were not being translated. The agent added the  hook and translated static text on  and .
-    - Status: USER VERIFICATION PENDING
+    - Last item agent was working: Fixing a comprehensive list of bugs in the SPYN feature. The agent just overwrote  with new logic and modified  to add the track's cover image to the recognition API response.
+    - Status: IN PROGRESS
     - Agent Testing Done: N
-    - Which testing method agent to use? manual testing by curl
     - User Testing Done: N
+    - Which testing method agent to use? both.
+        1.  **Backend:** Use  to test the  endpoint and verify that the  field is now present in the JSON response.
+        2.  **Frontend:** Use Expo Go on a physical device to test the entire SPYN session flow, as the microphone and continuous detection will not work in the web preview.
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Translations are incomplete on some pages (P0)
-  - Issue 2: BPM detection during upload is not working as expected (P1)
-  - Issue 3: The Global Player component does not appear on certain pages (e.g., Playlist page) (P2)
-  - Issue 4: The player's seek bar functionality is not intuitive and has performance issues (P3)
-  
+  - Issue 1: SPYN Feature is Buggy and Incomplete (P0)
+  - Issue 2: Admin Panel Authentication is Broken (P1)
+  - Issue 3: Black Diamond Count not Updating (P2)
+  - Issue 4: Expo Go Tunnel Instability (P2)
+  - Issue 5: Incomplete Translations (P3)
+
   Issues Detail:
   - Issue 1: 
-     - Description: The user reported: a part la page promo les autres pages ne sont pas traduites (besides the promo page, the other pages are not translated). Although the agent has added translations to , , and , a full audit is required to ensure all static text on all pages and components is internationalized.
-     - Attempted fixes: The agent added the  hook and wrapped static strings with the  function in  and . Many new translation keys were added to  for all 6 languages.
-     - Next debug checklist: 
-        1.  Review all files in  and  for any hardcoded English text.
-        2.  Translate all remaining static text, adding new keys to  as needed.
-        3.  Pay special attention to titles, buttons, placeholders, and labels.
-     - Why fix this issue and what will be achieved with the fix? To provide a fully localized experience for users in all supported languages, which is a core requirement.
-     - Status:  IN PROGRESS
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? frontend
-     - Blocked on other issue: none
-
-  - Issue 2: 
-     - Description: The user reported that after uploading a track, the BPM is not automatically detected and filled in. The agent previously implemented ID3 tag reading, which was insufficient.
-     - Attempted fixes: The agent installed  on the backend and added logic to the  endpoint in  to analyze the audio and calculate the BPM. The code was also refactored to prevent a temporary file from being deleted before analysis.
+     - Description: The core SPYN feature, despite multiple rewrites, fails to meet several key user requirements. This is the highest priority issue.
+     - Attempted fixes: The agent just overwrote  and  to address these. The backend change was to add the cover image from the ACRCloud response. The frontend change attempted to fix the rest.
      - Next debug checklist:
-        1.  Verify the  implementation in  is correct.
-        2.  Add extensive logging to the  function to see the output of .
-        3.  Test by uploading an MP3 file with a known BPM and check the backend logs and the frontend response to see if the BPM is correctly detected.
-        4.  Ensure the detected BPM is correctly set in the frontend's state in .
-     - Why fix this issue and what will be achieved with the fix? This is a key feature to streamline the upload process for producers, matching the functionality of the main website.
+        1.  Verify the backend fix:  the  endpoint with a sample file to confirm  is in the response.
+        2.  Test on Expo Go: Start a SPYN session.
+        3.  Check for single-click start: Does the session begin immediately?
+        4.  Check for cover art: Does the track's cover image appear?
+        5.  Check for continuous detection: Play a second song. Is it identified and added to the list?
+        6.  Check location display: Is the venue location visible *during* the session?
+        7.  Implement the post-session email logic to producers.
+        8.  Implement the conditional Black Diamond award based on venue type (, , ).
+     - Why fix this issue and what will be achieved with the fix? This is the user's primary feature request and is currently unusable in the state they expect.
      - Status:  IN PROGRESS
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? both
-     - Blocked on other issue: none
+     - Blocked on other issue: None
 
-  - Issue 3:
-     - Description: (From previous fork) The  component does not appear at the bottom of the screen when a track is played from pages other than the Home page, like the Playlists page.
-     - Attempted fixes: None in this session.
+  - Issue 2: 
+     - Description: The Admin Panel () cannot successfully call the  API. The backend logs show a  error because the user's authentication token is not being passed through the backend proxy to the Base44 function. The current implementation is a **workaround** that fetches tracks directly from Base44 entities, bypassing the intended API.
+     - Attempted fixes: The agent tried to fix this by adding  fallbacks and extra logging in , but the root cause was not solved.
      - Next debug checklist:
-        1.  Check  to ensure the  handler for a track correctly calls the  function from the  context.
-        2.  Add logging inside  to see if  is being set correctly when a track is played from the playlist page.
-        3.  Inspect  for rendering logic issues.
-     - Why fix this issue and what will be achieved with the fix? A consistent, global audio player is essential for the user experience of a music application.
-     - Status:  NOT STARTED
+        1.  Log in as admin on the web preview.
+        2.  Open the browser's developer tools (Network tab).
+        3.  Navigate to the Admin Panel.
+        4.  Inspect the headers of the outgoing request to .
+        5.  Verify if the  header is present. If not, the issue is in the frontend  interceptor in .
+        6.  If the header is present on the frontend call, check the backend logs (wix-public/1.719.0/scripts/error-pages/app.js"></script>
+  <!--  -->
+
+<script>
+  angular.module('wixErrorPagesApp').constant('staticsUrl', '//static.parastorage.com/services/wix-public/1.719.0/');
+  angular.module('wixErrorPagesApp').constant('baseDomain', 'wix.com');
+  angular.module('wixErrorPagesApp').constant('language', 'en');
+  angular.module('wixErrorPagesApp').constant('errorCode', {code: 'ConnectYourDomain'});
+  angular.module('wixErrorPagesApp').constant('data', {});
+  angular.module('wixErrorPagesApp').constant('exceptionName', '');
+  angular.module('wixErrorPagesApp').constant('serverErrorCode', '404');
+  angular.module('wixErrorPagesApp').constant('requestId', '1767448130.48410087611471324756');
+</script>
+<div ng-cloak ng-include="errorPageCtrl.errorPageUrl">
+  <div class="non-angular-supported-browser-wrapper">
+    <h1 class="non-angular-supported-browser-header">Error ConnectYourDomain occurred</h1>
+    <div class="non-angular-supported-browser-link">
+      <span>Regardless, we recommend you to <a href="http://browsehappy.com/">update your browser.</a></span>
+    </div>
+  </div>
+</div>
+<!-- verification -->
+<!-- end verification -->
+</body>
+</html>
+
+INFO:     10.64.128.53:42412 - "POST /api/notify-producer HTTP/1.1" 200 OK
+[ACRCloud] Sending 213952 bytes to ACRCloud...
+[ACRCloud] Response: {'version': '1.0', 'msg': 'Success', 'code': 0}
+INFO:     10.64.128.8:58368 - "POST /api/recognize-audio HTTP/1.1" 200 OK
+INFO:     10.64.129.8:36212 - "POST /api/award-diamond HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:54504 - "GET /api/health HTTP/1.1" 200 OK) to see why the proxy in  is not forwarding it.
+     - Why fix this issue and what will be achieved with the fix? The current implementation is a fragile workaround. Fixing the auth flow will allow the Admin Panel to use the powerful, purpose-built  API and get all required data (not just tracks).
+     - Status:  NOT STARTED (Workaround was implemented, but the root cause remains).
      - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? frontend
-     - Blocked on other issue: none
+     - Should Test frontend/backend/both after fix? both
+     - Blocked on other issue: None
+
+  - Issue 3: 
+     - Description: When a user earns a Black Diamond from a SPYN session, their total diamond count on the profile page is not updated.
+     - Attempted fixes: An  endpoint was added to , but the logic to connect this to the profile's data source is missing.
+     - Next debug checklist:
+        1.  After fixing the SPYN session, ensure the End Session modal successfully calls the  endpoint.
+        2.  In , the  API is used to fetch profile data. This data is likely cached or not re-fetched.
+        3.  After a session ends, the profile data needs to be invalidated and re-fetched from the server to show the new count. This could be done using a state management library or a context-based refetch mechanism.
+     - Why fix this issue and what will be achieved with the fix? It's a core part of the gamification loop for the SPYN feature.
+     - Status:  NOT STARTED
+     - Is recurring issue? N
+     - Should Test frontend/backend/both after fix? both
+     - Blocked on other issue: Issue 1 (SPYN Feature is Buggy)
 
   - Issue 4:
-     - Description: (From previous fork) The audio player's seek bar does not work correctly. Touching it causes the track to jump to the end.
-     - Attempted fixes: None in this session.
-     - Next debug checklist:
-        1.  Review the  (or pan handler) logic inside .
-        2.  Ensure the calculation for the new seek position is correct.
-        3.  Verify that  is being called correctly.
-     - Why fix this issue and what will be achieved with the fix? A functional seek bar is a fundamental requirement for a music player.
-     - Status:  NOT STARTED
+     - Description: The user repeatedly had issues connecting to the app via the Expo Go tunnel URL, receiving TLS errors. This is likely an infrastructure issue with Expo's services but it severely hinders testing.
+     - Status:  BLOCKED (External issue)
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? frontend
-     - Blocked on other issue: none
+     - Blocked on other issue: None
+
+  - Issue 5:
+     - Description: The user consistently finds untranslated text. While many keys were added for the profile page, a full audit is still pending.
+     - Status:  IN PROGRESS
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? frontend
+     - Blocked on other issue: None
+
+**In progress Task List**:
+  - Task 1: 
+     - Description: Finalize and test the SPYN feature, addressing all bugs reported by the user.
+     - Where to resume: The agent just modified  and . The next step is to restart services and begin testing on a physical device via Expo Go, starting with verifying the backend  fix.
+     - What will be achieved with this? A functional SPYN feature that matches the user's expectations.
+     - Status:  IN PROGRESS
+     - Should Test frontend/backend/both after fix? both
+     - Blocked on something: None
 
 **Upcoming and Future Tasks**
-- **Upload Feature: Admin-only Upload For Account (P2):** The upload page () needs to be modified to hide or disable the upload for account of feature for non-admin users. This will require checking the user's role from .
-- **Implement Full Notification Modal (P3):** The  is still a placeholder. It needs to be implemented to fetch and display categorized notifications (e.g., Track Received, Chat Message) as originally requested.
-- **Implement Chat Conversation View (P2):** The current chat screen is only a list of members. A new screen needs to be created to display the actual conversation with a selected user, using the  API.
-- **Implement Full VIP Page Functionality (P2):** The VIP page () needs to be fully built out.
+-   **P1: Fix Admin Panel Auth:** Remove the workaround and fix the  auth token propagation issue.
+-   **P2: Complete All Language Translations:** Proactively audit every page in every language to find and fix remaining untranslated text.
+-   **P3: Admin-only Upload For Account:** Modify the upload page () to hide or disable the upload for account of feature for non-admin users.
+-   **P3: Implement Full Notification Modal:** The  is still a placeholder.
+-   **P3: Implement Chat Conversation View:** The current chat screen is only a list of members.
+-   **P3: Implement Full VIP Page Functionality:** The VIP page () needs to be fully built out.
 
 **Completed work in this session**
-- **Chat Member List:** Fixed the critical bug where the chat page only showed ~30 members. The app now correctly fetches and displays all ~782 members by using a paginated call to a backend proxy that calls the  Base44 function.
-- **Home Page Filters & Search:**
-    - Fixed the Genre, Energy, and Sort dropdown filters.
-    - Fixed the track search functionality by implementing a client-side search as a workaround for an API limitation.
-- **UI/UX Fixes:**
-    - **Dropdown Visibility:** Fixed a  issue where filter dropdowns on the home page appeared behind the track list.
-    - **Upload Button Style:** Updated the Upload Track button style on the home page to match the main website's design.
-- **Internal Track Sharing:** Implemented the send track feature, allowing users to select another member from a modal and send them a track via an internal message.
-- **Upload Metadata Extraction:** Created a new backend endpoint () that uses  to read ID3 tags (Title, Artist, Genre, Cover Art) and  for audio analysis to detect BPM from uploaded MP3s.
-- **Caching Issues Resolved:** Diagnosed and resolved a persistent browser/CDN caching issue that was preventing frontend updates from being visible to the user, using a cache-busting query parameter.
+- **Profile Page Overhaul:**
+  - Implemented a new  service in  to call the user-provided  API.
+  - Completely redesigned  to fetch and display detailed user info: avatar, email, role, stats, social links, and preferred genres.
+  - Fixed a backend proxy issue in  to allow the  function to be called correctly.
+- **Admin Panel Implementation (with Workaround):**
+  - Created a new page at .
+  - Implemented a new  service in  for the  API.
+  - Implemented a **fallback mechanism** in  to fetch tracks directly from Base44 entities when the  API fails due to auth issues, unblocking the user.
+  - Fixed the navigation route to the admin panel from  to .
+- **Extensive Translation Fixes:**
+  - Added dozens of new translation keys to  for the redesigned profile page (e.g., 'profile.stats', 'profile.social', 'profile.dangerZone') across all 6 supported languages.
+  - Added translation keys for the SPYN End Session modal.
+- **SPYN Backend Improvement:**
+  - Modified the  endpoint in  to parse the  URL from the ACRCloud response and return it as .
+
+**Earlier issues found/mentioned but not fixed**
+   - Issue 1:
+     - **Admin Panel Auth Failure:** The root cause of the  API returning a  was not fixed. The agent implemented a workaround by fetching data from another source, but the fundamental problem of the auth token not being passed through the backend proxy remains.
+     - Debug checklist: See Issue 2 in the All Pending/In progress Issue list section.
+     - Why to solve this issue and what will be achieved with this? To use the intended, more powerful admin API and remove fragile workaround code.
+     - Should Test frontend/backend/both after fix: both
+     - Is recurring issue? Y
+
+**Known issue recurrence from previous fork**
+  - **Global Player component issues:** The player not appearing on certain pages and the seek bar being broken were mentioned in the initial handoff but were not addressed at all during this session.
+  - Recurrence count: 2+
+  - Status: NOT STARTED
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend-for-Frontend (BFF):** A new custom endpoint () was created in the  proxy to handle complex logic (MP3 metadata extraction) that is not suitable for the client. This offloads processing and avoids client-side dependency issues.
-- **Audio Analysis:** The backend now uses the  library to perform audio signal processing to detect the BPM of a track, going beyond simple ID3 tag reading.
-- **Cache Busting:** Resolved a critical deployment/testing issue by adding a versioned query parameter () to the application URL, forcing browsers and CDNs to fetch the latest code bundle.
-- **Internationalization (i18n):** Expanded the i18n system significantly, adding translations for dynamic filter options and applying the  context to multiple pages.
-- **Debugging Complex Systems:** The session involved extensive debugging across the frontend, backend proxy, and external Base44 API, including network errors (CORS), authentication issues, API limitations, and persistent caching problems.
+- **Backend as a Proxy:** The FastAPI backend () acts as a proxy to call Base44 functions. It's critical to update the  list in this file when adding new functions that require the  custom domain.
+- **API Authentication Flow:** The current auth flow is broken for proxied function calls. The intended flow is: Frontend Login -> Store Token (/) -> Axios Interceptor adds  header to API calls -> Backend Proxy receives call -> Backend Proxy forwards the call *with the auth header* to Base44. The last step is likely failing.
+- **Workaround vs. Root Cause:** The agent implemented a workaround for the Admin Panel by querying Base44 entities directly instead of fixing the auth issue for the  function. This is important technical debt to be aware of.
+- **API-Driven UI:** The profile page is now fully driven by the  API, making it a good pattern to follow for other data-heavy pages.
+- **Expo Tunnel vs. Web Preview:** The Expo Go tunnel service has been unreliable. The main web preview () and local preview () have been more stable for testing.
 
 **key DB schema**
-  - No changes to DB schema. All data is managed by the external Base44 service.
+- No schema changes were made. The application interacts with existing Base44 entities:
+  - **Track:** Used for the admin panel track list. Contains  (, , ).
+  - **User:** Used for authentication and profile data. Contains  (, , etc.).
+  - **SessionMix:** Mentioned in a previous fork for the SPYN End Session logic.
 
 **All files of reference**
-- : The implementation for fetching all members is now stable and uses  from .
-- : Contains the critical proxy logic for  and the new  endpoint with  and .
-- : Contains the frontend logic for the new upload flow, which calls the metadata extraction endpoint.
-- : Contains the fixes for filters, search, z-index, and the new internal track sharing modal.
-- : The central file for all UI text translations, now greatly expanded.
-
-**Areas that need refactoring**:
-- The file  was created to use the Base44 SDK directly but this approach failed and was abandoned. The file is now unused and should be removed to avoid confusion. The successful pattern is using  which calls the backend proxy.
-
-**key api endpoints**
-- : **(NEW)** Custom backend endpoint that accepts a file upload, extracts ID3 tags and cover art using , and analyzes the audio to detect BPM using .
-- : The backend proxy endpoint used by the Chat page to fetch the complete list of users.
-- : **(NEWLY ENABLED)** The backend proxy now supports creating new entities, used by the Upload page.
+- : Contains the core logic for the SPYN feature. Currently the most critical and buggy file.
+- : The Admin Panel. Contains the workaround logic for fetching tracks.
+- : The backend proxy. Contains the  list and the logic for the  endpoint.
+- : Defines the API services and the critical (and likely buggy) auth interceptor.
+- : The central file for all app translations.
 
 **Critical Info for New Agent**
-- **Caching is a MAJOR problem:** If your frontend changes do not appear, the user's browser (or the preview CDN) is likely serving a cached version. You MUST force a hard refresh (Ctrl+Shift+R), use private/incognito mode, or apply a cache-busting parameter to the URL (e.g., ) to ensure the latest code is being tested. Do not assume your code is broken until you have ruled out caching.
-- **Upload Metadata Extraction is a Backend Process:** Do not try to process MP3 files on the frontend. The correct flow is: user selects file in  -> file is sent to  in  -> backend processes with  and  -> backend returns JSON with metadata -> frontend populates the form.
-- **Chat Member List is Stable:** The logic in  to fetch all users via the backend proxy is working correctly. Do not change it unless necessary. The pagination logic fetches users in batches of 500.
+- **Your immediate task is to fix the SPYN feature.** Refer to Issue 1 in the list above. Start by testing the latest changes on a physical device. The user is very focused on this.
+- **The Admin Panel is using a WORKAROUND.** The real  API is failing with a 403 error. The root cause is that the auth token is not being passed correctly through the full stack. Fixing this is a major piece of technical debt.
+- **You will need the user's correct password to test any authenticated features** like login or the Admin Panel. The agent in this session did not have it and could not test these flows.
+- **The Expo Go tunnel is unreliable.** Be prepared to instruct the user to test using the web preview URL on their phone's browser if they report connection issues.
+- **The backend was just changed to return cover art.** You need to verify this is working and that the frontend () is correctly using the  field from the API response.
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **Feedback (Latest):** BPM is not auto-detected. The rest is OK. Wants a plugin for BPM detection like the website. (IN PROGRESS)
-2.  **Feedback:** Upload works (cover & title), but not BPM/genre. Only the main page is translated. (IN PROGRESS)
-3.  **Request:** Provide an Expo Go link. (ADDRESSED)
-4.  **Feedback:** The other pages are not translated. Upload doesn't work (doesn't show cover art, etc.). (ADDRESSED/IN PROGRESS)
-5.  **Confirmation:** Translations are working. (ADDRESSED)
-6.  **Confirmation:** All fixes work except for other page translations. Upload doesn't work like the site and should extract cover art. (ADDRESSED/IN PROGRESS)
-7.  **Confirmation:** All translations are working now. Internal sharing works. (ADDRESSED)
-8.  **Feedback:** The first page language changes, but dropdowns don't, and other languages don't work. (ADDRESSED)
-9.  **Confirmation:** Playlist add works, but internal share arrow is broken. Language change doesn't work fully. (ADDRESSED)
-10. **Confirmation:** Filter dropdowns are fixed. (ADDRESSED)
+- **10. (Latest)** User provides a new, detailed list of bugs for the SPYN feature: still not single-click start, no cover art, location not shown during session, emails need to be sent after, and Black Diamonds should be conditional on venue type. (IN PROGRESS)
+- **9.** User confirms the Admin Panel now shows tracks. (cest ok) (RESOLVED - via workaround)
+- **8.** Agent asks user to test the Admin Panel after explaining the login-first workflow. (ADDRESSED)
+- **7.** User reports the Admin Panel is empty (Maintenant, ça fonctionne, mais je ne vois aucun track.). (ADDRESSED - led to workaround)
+- **6.** Agent confirms the admin route is fixed and asks user to test. (ADDRESSED)
+- **5.** User sends screenshot of a 404 error, indicating the admin route is wrong. (ADDRESSED - route fixed)
+- **4.** User is asked to test the login flow manually. (ADDRESSED)
+- **3.** User confirms that the  function requires auth via . (ADDRESSED - led to auth debugging)
+- **2.** User reports that the Admin panel doesn't work, and there are untranslated tabs and delete account text. (ADDRESSED - translations fixed)
+- **1.** User provides the API spec for the  function. (ADDRESSED - service implemented)
 
 **Project Health Check:**
-- **Broken**: None.
-- **Mocked**: None.
+-   **Broken**: The SPYN feature is not working as per user requirements and is the main source of user frustration. The core authentication flow for proxied Base44 functions is also broken.
+-   **Mocked**: The Admin Panel's data loading is effectively a mock/workaround, as it doesn't use the intended  API.
 
 **3rd Party Integrations**
-- **Base44**: Backend as a Service, accessed via a custom FastAPI proxy.
-- **Mutagen**: Python library for reading/writing audio metadata (ID3 tags).
-- **Librosa**: Python library for audio analysis, used for BPM detection.
+- **Base44**: Backend as a Service for user auth, data storage (entities), and serverless functions (, ).
+- **ACRCloud**: External API for audio recognition (SPYN detection). Uses keys from .
+- **Google Places API**: External API for venue/location identification. Uses a key from .
 
 **Testing status**
   - Testing agent used after significant changes: NO
-  - Troubleshoot agent used after agent stuck in loop: NO
+  - Troubleshoot agent used after agent stuck in loop: YES (Implicitly, the agent ran a diagnostic that identified the 403 error and its cause).
   - Test files created: None
-  - Known regressions: Add to Playlist was a regression mentioned in the initial summary, but the user later confirmed it was working. No other known regressions.
+  - Known regressions: None new, but the old Player bugs persist.
 
 **What agent forgot to execute**
-The agent successfully prioritized the user's immediate feedback. However, several tasks from the initial problem statement were not addressed as they were superseded by the user's interactive requests. These are now listed in the Upcoming and Future Tasks and All Pending/In progress Issue list sections:
-- Global Player visibility and seek bar issues.
-- Admin-only Upload for account of feature.
-- Full implementation of the Notification bell modal.
+-   The agent did not fix the root cause of the Admin Panel authentication failure, opting for a workaround.
+-   The agent did not implement the logic to re-fetch profile data after a SPYN session, so the Black Diamond count will not update on the profile page.
+-   The agent completely forgot about the long-standing bugs from the previous fork related to the Global Player component (seek bar and visibility).
 
 </analysis>

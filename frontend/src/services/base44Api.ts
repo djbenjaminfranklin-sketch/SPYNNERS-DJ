@@ -16,7 +16,7 @@ const getBackendUrl = () => {
   // For mobile, use the configured backend URL
   return Constants.expoConfig?.extra?.backendUrl || 
          process.env.EXPO_PUBLIC_BACKEND_URL || 
-         'https://spynners-app.preview.emergentagent.com';
+         'https://spynapp.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();
