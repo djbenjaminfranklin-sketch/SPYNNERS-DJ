@@ -221,7 +221,6 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
         )
         
         # Prepare request - ACRCloud accepts various formats
-        # The audio from iOS/Android recording is typically m4a or aac
         files = {
             'sample': ('audio.wav', BytesIO(audio_data), 'audio/wav')
         }
@@ -254,19 +253,62 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
             music = result.get("metadata", {}).get("music", [])
             if music:
                 track = music[0]
+                
+                # Extract cover image from various sources
+                cover_image = None
+                
+                # Try Spotify cover
+                spotify = track.get("external_metadata", {}).get("spotify", {})
+                if spotify.get("album", {}).get("images"):
+                    images = spotify["album"]["images"]
+                    if images:
+                        cover_image = images[0].get("url")
+                
+                # Try Deezer cover
+                if not cover_image:
+                    deezer = track.get("external_metadata", {}).get("deezer", {})
+                    if deezer.get("album", {}).get("cover_xl"):
+                        cover_image = deezer["album"]["cover_xl"]
+                    elif deezer.get("album", {}).get("cover_big"):
+                        cover_image = deezer["album"]["cover_big"]
+                    elif deezer.get("album", {}).get("cover_medium"):
+                        cover_image = deezer["album"]["cover_medium"]
+                
+                # Try iTunes/Apple Music cover
+                if not cover_image:
+                    apple = track.get("external_metadata", {}).get("itunes", {})
+                    if apple.get("artworkUrl100"):
+                        # Replace 100x100 with larger size
+                        cover_image = apple["artworkUrl100"].replace("100x100", "600x600")
+                
+                # Try YouTube thumbnail
+                if not cover_image:
+                    youtube = track.get("external_metadata", {}).get("youtube", {})
+                    if youtube.get("vid"):
+                        cover_image = f"https://img.youtube.com/vi/{youtube['vid']}/maxresdefault.jpg"
+                
+                # Extract genre
+                genres = [g.get("name") for g in track.get("genres", [])]
+                genre = genres[0] if genres else ""
+                
                 recognition_result = {
                     "success": True,
                     "title": track.get("title", "Unknown"),
                     "artist": ", ".join([a.get("name", "") for a in track.get("artists", [])]) or "Unknown",
                     "album": track.get("album", {}).get("name", ""),
+                    "cover_image": cover_image,
+                    "genre": genre,
+                    "genres": genres,
                     "release_date": track.get("release_date", ""),
-                    "genres": [g.get("name") for g in track.get("genres", [])],
                     "label": track.get("label", ""),
                     "duration_ms": track.get("duration_ms", 0),
                     "score": track.get("score", 0),
                     "external_ids": track.get("external_ids", {}),
                     "play_offset_ms": result.get("metadata", {}).get("played_duration", 0) * 1000
                 }
+                
+                print(f"[ACRCloud] Identified: {recognition_result['title']} by {recognition_result['artist']}")
+                print(f"[ACRCloud] Cover image: {cover_image}")
                 
                 # Save to history
                 if authorization:
