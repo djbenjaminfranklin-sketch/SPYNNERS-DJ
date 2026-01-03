@@ -1381,6 +1381,8 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.uploads': 'Upload',
     'profile.diamonds': 'Diamonds',
     'profile.favorites': 'Preferiti',
+    'profile.user': 'Utente',
+    'profile.administrator': 'Amministratore',
     'profile.logoutConfirm': 'Vuoi davvero uscire?',
     
     // Common
