@@ -374,14 +374,14 @@ export default function ProfileScreen() {
         <View style={styles.dangerCard}>
           <View style={styles.dangerHeader}>
             <Ionicons name="warning" size={18} color="#ff6b6b" />
-            <Text style={styles.dangerTitle}>Danger Zone</Text>
+            <Text style={styles.dangerTitle}>{t('profile.dangerZone')}</Text>
           </View>
           <Text style={styles.dangerText}>
-            La suppression de votre compte est irréversible. Toutes vos données, tracks, favoris et messages seront définitivement supprimés.
+            {t('profile.deleteAccountWarning')}
           </Text>
           <TouchableOpacity style={styles.deleteAccountButton}>
             <Ionicons name="trash" size={18} color="#fff" />
-            <Text style={styles.deleteAccountText}>Supprimer mon compte</Text>
+            <Text style={styles.deleteAccountText}>{t('profile.deleteAccount')}</Text>
           </TouchableOpacity>
         </View>
 
