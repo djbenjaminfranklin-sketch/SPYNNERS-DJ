@@ -176,6 +176,16 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.administrator': 'Administrator',
     'profile.manageTracksAdmin': 'Manage track uploads',
     'profile.logoutConfirm': 'Do you really want to log out?',
+    'profile.logoutDesc': 'Sign out of your account',
+    'profile.radar': 'Radar',
+    'profile.trackYourPlays': 'Track your plays in real-time',
+    'profile.editDeleteTracks': 'Edit or delete your tracks',
+    'profile.adminPanel': 'Admin Panel',
+    'profile.adminDesc': 'Manage users and tracks',
+    'profile.loginRequired': 'Please log in to view your profile',
+    'profile.dangerZone': 'Danger Zone',
+    'profile.deleteAccount': 'Delete my account',
+    'profile.deleteAccountWarning': 'Deleting your account is irreversible. All your data, tracks, favorites and messages will be permanently deleted.',
     
     // Common
     'common.cancel': 'Cancel',
