@@ -1932,6 +1932,16 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.administrator': 'Administrator',
     'profile.manageTracksAdmin': 'Track-Uploads verwalten',
     'profile.logoutConfirm': 'Möchtest du dich wirklich abmelden?',
+    'profile.logoutDesc': 'Aus deinem Konto abmelden',
+    'profile.radar': 'Radar',
+    'profile.trackYourPlays': 'Verfolge deine Plays in Echtzeit',
+    'profile.editDeleteTracks': 'Bearbeite oder lösche deine Tracks',
+    'profile.adminPanel': 'Admin-Panel',
+    'profile.adminDesc': 'Benutzer und Tracks verwalten',
+    'profile.loginRequired': 'Bitte melde dich an, um dein Profil zu sehen',
+    'profile.dangerZone': 'Gefahrenzone',
+    'profile.deleteAccount': 'Mein Konto löschen',
+    'profile.deleteAccountWarning': 'Das Löschen deines Kontos ist unwiderruflich. Alle deine Daten, Tracks, Favoriten und Nachrichten werden dauerhaft gelöscht.',
     
     // Common
     'common.cancel': 'Abbrechen',
