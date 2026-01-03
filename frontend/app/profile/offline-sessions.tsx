@@ -129,13 +129,13 @@ export default function OfflineSessionsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const allSessions = await offlineService.getOfflineSessions();
-              const filtered = allSessions.filter(s => s.id !== session.id);
-              // Save filtered sessions (we need to add this method or use AsyncStorage directly)
-              const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-              await AsyncStorage.setItem('spynners_offline_sessions', JSON.stringify(filtered));
-              await loadSessions();
-              Alert.alert('Supprimé', 'La session a été supprimée.');
+              const success = await offlineService.deleteSession(session.id);
+              if (success) {
+                await loadSessions();
+                Alert.alert('Supprimé', 'La session a été supprimée.');
+              } else {
+                Alert.alert('Erreur', 'Session non trouvée.');
+              }
             } catch (error) {
               console.error('Delete error:', error);
               Alert.alert('Erreur', 'Impossible de supprimer la session.');
