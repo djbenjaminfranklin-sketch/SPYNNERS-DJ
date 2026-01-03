@@ -618,13 +618,8 @@ export default function SpynScreen() {
         
         console.log('[SPYN] ✅ Recording saved offline. Total pending:', pending);
         
-        // Show offline indicator on current track area
-        setCurrentTrack({
-          success: false,
-          title: `Recording #${offlineRecordingsCount + 1}`,
-          artist: 'Saved offline - will sync when online',
-          time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        });
+        // DON'T show as a track - just update the counter
+        // The currentTrack should show a clear offline message, not as an identified track
         
       } catch (error) {
         console.error('[SPYN] Failed to save offline recording:', error);
