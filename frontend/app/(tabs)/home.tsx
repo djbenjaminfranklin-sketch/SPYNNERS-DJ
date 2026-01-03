@@ -23,6 +23,7 @@ import { base44Tracks, base44Playlists, base44Notifications2, base44Users, base4
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import NotificationModal from '../../src/components/NotificationModal';
+import offlineService from '../../src/services/offlineService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MENU_ITEM_SIZE = (SCREEN_WIDTH - 24 - 40) / 5; // 5 items per row with spacing
