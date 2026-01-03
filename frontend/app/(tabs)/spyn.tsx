@@ -501,13 +501,15 @@ export default function SpynScreen() {
 
       console.log('[SPYN] ACRCloud Response:', JSON.stringify(response.data, null, 2));
 
-      if (response.data.success && response.data.title) {
+      // ONLY show tracks that are found in Spynners database
+      if (response.data.success && response.data.title && response.data.spynners_track_id) {
         const trackKey = `${response.data.title}-${response.data.artist}`.toLowerCase();
         
         // Check if we already identified this track
         if (!identifiedTracksRef.current.includes(trackKey)) {
-          console.log('[SPYN] ✅ New track identified:', trackKey);
+          console.log('[SPYN] ✅ SPYNNERS track identified:', trackKey);
           console.log('[SPYN] Cover image URL:', response.data.cover_image);
+          console.log('[SPYN] Producer email:', response.data.producer_email);
           
           identifiedTracksRef.current.push(trackKey);
           
@@ -517,10 +519,11 @@ export default function SpynScreen() {
             artist: response.data.artist,
             album: response.data.album,
             genre: response.data.genre,
-            cover_image: response.data.cover_image, // Cover from ACRCloud
+            cover_image: response.data.cover_image,
             score: response.data.score,
             time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-            id: `${Date.now()}`,
+            id: response.data.spynners_track_id,
+            producer_id: response.data.producer_id,
           };
 
           setCurrentTrack(trackResult);
@@ -528,6 +531,9 @@ export default function SpynScreen() {
         } else {
           console.log('[SPYN] Track already identified:', trackKey);
         }
+      } else if (response.data.success && response.data.title) {
+        // Track identified by ACRCloud but NOT in Spynners
+        console.log('[SPYN] ⚠️ Track NOT in Spynners:', response.data.title, 'by', response.data.artist);
       } else {
         console.log('[SPYN] No track identified in this cycle');
       }
