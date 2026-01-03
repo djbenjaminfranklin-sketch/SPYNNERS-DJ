@@ -574,6 +574,32 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Offline Sessions Card - Only show if there are pending sessions */}
+        {pendingOfflineSessions > 0 && (
+          <TouchableOpacity 
+            style={styles.offlineSessionsCard}
+            onPress={() => router.push('/profile/offline-sessions')}
+            activeOpacity={0.8}
+          >
+            <View style={styles.offlineSessionsLeft}>
+              <View style={styles.offlineIconContainer}>
+                <Ionicons name="cloud-upload" size={24} color="#FFB74D" />
+              </View>
+              <View style={styles.offlineTextContainer}>
+                <Text style={styles.offlineTitle}>
+                  {pendingOfflineSessions} session(s) offline
+                </Text>
+                <Text style={styles.offlineSubtitle}>
+                  En attente de synchronisation
+                </Text>
+              </View>
+            </View>
+            <View style={styles.offlineBadge}>
+              <Text style={styles.offlineBadgeText}>{pendingOfflineSessions}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
         {/* Upload Track Button - styled like spynners.com */}
         <TouchableOpacity 
           style={styles.uploadTrackButton} 
