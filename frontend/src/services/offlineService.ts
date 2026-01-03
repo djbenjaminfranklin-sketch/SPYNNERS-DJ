@@ -59,6 +59,7 @@ class OfflineService {
   private isOnline: boolean = true;
   private syncInProgress: boolean = false;
   private networkUnsubscribe: (() => void) | null = null;
+  private networkChangeCallbacks: ((isOnline: boolean) => void)[] = [];
 
   constructor() {
     this.initNetworkListener();
@@ -73,6 +74,15 @@ class OfflineService {
       
       console.log('[Offline] Network state changed:', this.isOnline ? 'ONLINE' : 'OFFLINE');
       
+      // Notify all registered callbacks
+      this.networkChangeCallbacks.forEach(callback => {
+        try {
+          callback(this.isOnline);
+        } catch (e) {
+          console.error('[Offline] Callback error:', e);
+        }
+      });
+      
       // If we just came back online, sync pending sessions
       if (wasOffline && this.isOnline) {
         console.log('[Offline] Network restored - starting sync...');
@@ -81,10 +91,25 @@ class OfflineService {
     });
   }
 
+  // Register a callback to be notified when network status changes
+  onNetworkChange(callback: (isOnline: boolean) => void): () => void {
+    this.networkChangeCallbacks.push(callback);
+    // Return unsubscribe function
+    return () => {
+      this.networkChangeCallbacks = this.networkChangeCallbacks.filter(cb => cb !== callback);
+    };
+  }
+
   async checkNetworkStatus(): Promise<boolean> {
-    const state = await NetInfo.fetch();
-    this.isOnline = state.isConnected ?? false;
-    return this.isOnline;
+    try {
+      const state = await NetInfo.fetch();
+      this.isOnline = state.isConnected ?? false;
+      console.log('[Offline] checkNetworkStatus:', this.isOnline ? 'ONLINE' : 'OFFLINE', state);
+      return this.isOnline;
+    } catch (error) {
+      console.error('[Offline] checkNetworkStatus error:', error);
+      return this.isOnline;
+    }
   }
 
   isNetworkAvailable(): boolean {
