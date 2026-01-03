@@ -214,11 +214,19 @@ export const base44Auth = {
       
       // Save to storage
       if (token) {
+        console.log('[Auth] Saving token...');
         await AsyncStorage.setItem(AUTH_TOKEN_KEY, token);
         await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+        
+        // Also save to localStorage for web compatibility
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+          window.localStorage.setItem(USER_KEY, JSON.stringify(user));
+          console.log('[Auth] Token saved to localStorage');
+        }
       }
       
-      console.log('[Auth] Login successful');
+      console.log('[Auth] Login successful, token saved');
       return response.data;
     } catch (error: any) {
       console.error('[Auth] Login error:', error?.response?.data || error?.message);
