@@ -161,6 +161,26 @@ export default function ProfileScreen() {
     );
   }
 
+  // If no user, show login prompt
+  if (!user) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <Ionicons name="person-circle" size={80} color={Colors.primary} />
+        <Text style={{ color: Colors.text, fontSize: 18, marginTop: 20, textAlign: 'center' }}>
+          {t('profile.loginRequired') || 'Please log in to view your profile'}
+        </Text>
+        <TouchableOpacity 
+          style={{ marginTop: 20, backgroundColor: Colors.primary, paddingHorizontal: 30, paddingVertical: 12, borderRadius: 25 }}
+          onPress={() => router.replace('/(auth)/login')}
+        >
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
+            {t('login.signIn') || 'Sign In'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Header */}
