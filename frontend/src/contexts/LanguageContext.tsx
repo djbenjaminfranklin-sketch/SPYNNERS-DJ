@@ -572,7 +572,7 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.frequentQuestions': 'Questions fréquentes',
     'profile.termsOfUse': 'Conditions d\'utilisation',
     'profile.uploads': 'Uploads',
-    'profile.diamonds': 'Diamonds',
+    'profile.diamonds': 'Diamants',
     'profile.favorites': 'Favoris',
     'profile.user': 'Utilisateur',
     'profile.administrator': 'Administrateur',
