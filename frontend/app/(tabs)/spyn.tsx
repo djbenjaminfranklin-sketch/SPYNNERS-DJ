@@ -1305,6 +1305,22 @@ const styles = StyleSheet.create({
     minHeight: '100%' 
   },
   
+  // Debug Banner (always visible for testing)
+  debugBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#333',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    marginBottom: 10,
+    gap: 6,
+  },
+  debugText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  
   // Location Banner - ALWAYS VISIBLE AT TOP
   locationBanner: { 
     flexDirection: 'row', 
