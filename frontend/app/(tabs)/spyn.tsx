@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -38,6 +38,11 @@ const CYAN_COLOR = '#5CB3CC';
 const DARK_BG = '#0a0a0a';
 const CARD_BG = '#1a1a2e';
 
+// Session settings
+const MAX_SESSION_DURATION = 5 * 60 * 60 * 1000; // 5 hours in ms
+const RECOGNITION_INTERVAL = 12000; // 12 seconds between recognitions
+const RECORDING_DURATION = 10000; // 10 seconds recording
+
 interface TrackResult {
   success: boolean;
   title?: string;
@@ -46,6 +51,8 @@ interface TrackResult {
   genre?: string;
   cover_image?: string;
   score?: number;
+  time?: string;
+  id?: string;
 }
 
 interface LocationInfo {
@@ -56,20 +63,30 @@ interface LocationInfo {
   country?: string;
 }
 
+interface SessionInfo {
+  id?: string;
+  startTime: Date;
+  venue?: string;
+  city?: string;
+  country?: string;
+}
+
 export default function SpynScreen() {
   const { user, token } = useAuth();
   const { t } = useLanguage();
   
   // States
-  const [recording, setRecording] = useState<any>(null);
+  const [sessionActive, setSessionActive] = useState(false);
+  const [session, setSession] = useState<SessionInfo | null>(null);
   const [recognizing, setRecognizing] = useState(false);
-  const [result, setResult] = useState<TrackResult | null>(null);
   const [location, setLocation] = useState<LocationInfo | null>(null);
   const [locationPermission, setLocationPermission] = useState(false);
-  const [identifiedTracks, setIdentifiedTracks] = useState<any[]>([]);
-  const [sessionActive, setSessionActive] = useState(false);
-  const [countdown, setCountdown] = useState(10);
-  const [audioLevel, setAudioLevel] = useState(0);
+  const [identifiedTracks, setIdentifiedTracks] = useState<TrackResult[]>([]);
+  const [currentTrack, setCurrentTrack] = useState<TrackResult | null>(null);
+  const [sessionDuration, setSessionDuration] = useState('00:00:00');
+  const [showEndSessionModal, setShowEndSessionModal] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [audioLevel, setAudioLevel] = useState<'silence' | 'good' | 'loud'>('silence');
   
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -78,18 +95,22 @@ export default function SpynScreen() {
   const glowAnim = useRef(new Animated.Value(0)).current;
   
   // Refs
-  const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const sessionIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recognitionLoopRef = useRef<NodeJS.Timeout | null>(null);
+  const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const isRecordingRef = useRef(false);
 
   useEffect(() => {
     requestLocationPermission();
     startIdleAnimations();
     return () => {
-      if (countdownRef.current) clearInterval(countdownRef.current);
+      stopSession();
     };
   }, []);
 
   const startIdleAnimations = () => {
-    // Rotating glow animation
     Animated.loop(
       Animated.timing(rotateAnim, {
         toValue: 1,
@@ -99,7 +120,6 @@ export default function SpynScreen() {
       })
     ).start();
 
-    // Glow pulse animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: false }),
@@ -109,13 +129,12 @@ export default function SpynScreen() {
   };
 
   const startListeningAnimation = () => {
-    // Animate sound bars
     barAnims.forEach((anim, index) => {
-      const randomDuration = 200 + Math.random() * 300;
+      const randomDuration = 150 + Math.random() * 250;
       Animated.loop(
         Animated.sequence([
           Animated.timing(anim, {
-            toValue: 0.3 + Math.random() * 0.7,
+            toValue: 0.4 + Math.random() * 0.6,
             duration: randomDuration,
             useNativeDriver: false,
           }),
@@ -128,17 +147,19 @@ export default function SpynScreen() {
       ).start();
     });
 
-    // Pulse animation
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.1, duration: 500, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.15, duration: 400, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
       ])
     ).start();
   };
 
   const stopListeningAnimation = () => {
-    barAnims.forEach(anim => anim.stopAnimation());
+    barAnims.forEach(anim => {
+      anim.stopAnimation();
+      anim.setValue(0.3);
+    });
     pulseAnim.stopAnimation();
     pulseAnim.setValue(1);
   };
@@ -148,7 +169,7 @@ export default function SpynScreen() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         setLocationPermission(true);
-        updateLocation();
+        await updateLocation();
       }
     } catch (error) {
       console.error('Location permission error:', error);
@@ -164,7 +185,6 @@ export default function SpynScreen() {
       const lat = currentLocation.coords.latitude;
       const lng = currentLocation.coords.longitude;
       
-      // Try Google Places API for venue name
       let venueName = undefined;
       try {
         const response = await axios.get(
@@ -178,7 +198,6 @@ export default function SpynScreen() {
         console.log('Places lookup failed');
       }
       
-      // Fallback to reverse geocode
       const [address] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
       
       setLocation({
@@ -193,119 +212,176 @@ export default function SpynScreen() {
     }
   };
 
-  // ==================== SPYN DETECTION ====================
-  const startDetection = async () => {
+  // ==================== SESSION MANAGEMENT ====================
+  
+  const startSession = async () => {
     try {
       if (locationPermission) {
         await updateLocation();
       }
 
-      setSessionActive(true);
-      setCountdown(10);
-      startListeningAnimation();
+      // Create session in Base44
+      const sessionData = {
+        status: 'active',
+        dj_id: user?.id,
+        dj_name: user?.full_name,
+        venue: location?.venue || 'Unknown Venue',
+        city: location?.city || 'Unknown City',
+        country: location?.country || 'Unknown Country',
+        latitude: location?.latitude,
+        longitude: location?.longitude,
+        started_at: new Date().toISOString(),
+        tracks: [],
+      };
 
-      // Start countdown
-      countdownRef.current = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            if (countdownRef.current) clearInterval(countdownRef.current);
-            return 0;
-          }
-          return prev - 1;
-        });
+      let sessionId = undefined;
+      try {
+        const response = await axios.post(
+          `${BACKEND_URL}/api/base44/entities/SessionMix`,
+          sessionData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        sessionId = response.data?.id;
+      } catch (e) {
+        console.log('Could not create session in Base44');
+      }
+
+      const newSession: SessionInfo = {
+        id: sessionId,
+        startTime: new Date(),
+        venue: location?.venue,
+        city: location?.city,
+        country: location?.country,
+      };
+
+      setSession(newSession);
+      setSessionActive(true);
+      setIdentifiedTracks([]);
+      setCurrentTrack(null);
+
+      // Start duration timer
+      durationIntervalRef.current = setInterval(() => {
+        const elapsed = Date.now() - newSession.startTime.getTime();
+        const hours = Math.floor(elapsed / 3600000);
+        const minutes = Math.floor((elapsed % 3600000) / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        setSessionDuration(
+          `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+        );
+
+        // Auto-end after 5 hours
+        if (elapsed >= MAX_SESSION_DURATION) {
+          endSession();
+        }
       }, 1000);
 
-      // Web implementation
+      // Start continuous recognition loop
+      startContinuousRecognition();
+
+    } catch (error) {
+      console.error('Start session error:', error);
+      Alert.alert('Error', 'Could not start session');
+    }
+  };
+
+  const startContinuousRecognition = () => {
+    // Start first recognition immediately
+    performRecognition();
+
+    // Set up continuous loop
+    recognitionLoopRef.current = setInterval(() => {
+      if (!isRecordingRef.current) {
+        performRecognition();
+      }
+    }, RECOGNITION_INTERVAL);
+  };
+
+  const performRecognition = async () => {
+    if (isRecordingRef.current) return;
+    
+    isRecordingRef.current = true;
+    setIsListening(true);
+    startListeningAnimation();
+
+    try {
       if (Platform.OS === 'web') {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        await performWebRecognition();
+      } else {
+        await performNativeRecognition();
+      }
+    } catch (error) {
+      console.error('Recognition error:', error);
+    } finally {
+      isRecordingRef.current = false;
+      setIsListening(false);
+      stopListeningAnimation();
+    }
+  };
+
+  const performWebRecognition = async () => {
+    return new Promise<void>((resolve) => {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then((stream) => {
           const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
           const audioChunks: BlobPart[] = [];
-          
+          mediaRecorderRef.current = mediaRecorder;
+
           mediaRecorder.ondataavailable = (event) => {
             audioChunks.push(event.data);
           };
-          
+
           mediaRecorder.onstop = async () => {
-            stopListeningAnimation();
             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
             const reader = new FileReader();
             reader.onloadend = async () => {
               const base64Audio = (reader.result as string).split(',')[1];
               await recognizeAudio(base64Audio);
+              resolve();
             };
             reader.readAsDataURL(audioBlob);
             stream.getTracks().forEach(track => track.stop());
           };
-          
-          setRecording(mediaRecorder);
+
           mediaRecorder.start();
-          
-          // Auto-stop after 10 seconds
+
+          // Stop after recording duration
           setTimeout(() => {
             if (mediaRecorder.state === 'recording') {
               mediaRecorder.stop();
-              setRecording(null);
             }
-          }, 10000);
-          
-          return;
-        } catch (webError) {
-          console.error('Web recording error:', webError);
-          Alert.alert('Error', 'Microphone access denied');
-          setSessionActive(false);
-          stopListeningAnimation();
-          return;
-        }
-      }
-
-      // Native implementation
-      const { granted } = await Audio.requestPermissionsAsync();
-      if (!granted) {
-        Alert.alert('Permission Required', 'Microphone access is needed');
-        setSessionActive(false);
-        stopListeningAnimation();
-        return;
-      }
-
-      await Audio.setAudioModeAsync({ 
-        allowsRecordingIOS: true, 
-        playsInSilentModeIOS: true,
-      });
-      
-      const { recording: newRecording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-
-      setRecording(newRecording);
-
-      // Auto-stop after 10 seconds
-      setTimeout(() => stopDetection(), 10000);
-    } catch (error) {
-      console.error('Recording error:', error);
-      Alert.alert('Error', 'Could not start recording');
-      setSessionActive(false);
-      stopListeningAnimation();
-    }
+          }, RECORDING_DURATION);
+        })
+        .catch((error) => {
+          console.error('Web recording error:', error);
+          resolve();
+        });
+    });
   };
 
-  const stopDetection = async () => {
-    if (!recording) return;
+  const performNativeRecognition = async () => {
     try {
-      stopListeningAnimation();
-      
-      if (Platform.OS === 'web') {
-        if (recording.state === 'recording') {
-          recording.stop();
-        }
-        setRecording(null);
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        console.error('Microphone permission denied');
         return;
       }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      recordingRef.current = recording;
+
+      // Wait for recording duration
+      await new Promise(resolve => setTimeout(resolve, RECORDING_DURATION));
 
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
-      setRecording(null);
-      
+
       if (uri) {
         const audioBase64 = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
@@ -313,29 +389,28 @@ export default function SpynScreen() {
         await recognizeAudio(audioBase64);
       }
     } catch (error) {
-      console.error('Stop recording error:', error);
+      console.error('Native recording error:', error);
     }
   };
 
   const recognizeAudio = async (audioBase64: string) => {
     setRecognizing(true);
-    setResult(null);
 
     try {
       console.log('[SPYN] Sending audio to ACRCloud...');
-      
+
       const response = await axios.post(
         `${BACKEND_URL}/api/recognize-audio`,
-        { 
+        {
           audio_base64: audioBase64,
           location: location,
           dj_id: user?.id,
           dj_name: user?.full_name,
         },
-        { 
-          headers: { 
-            'Content-Type': 'application/json', 
-            Authorization: `Bearer ${token}` 
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
           timeout: 30000,
         }
@@ -343,29 +418,54 @@ export default function SpynScreen() {
 
       console.log('[SPYN] Response:', response.data);
 
-      if (response.data.success) {
-        setResult(response.data);
-        
-        // Add to identified tracks list
-        setIdentifiedTracks(prev => [{
+      if (response.data.success && response.data.title) {
+        const trackResult: TrackResult = {
           ...response.data,
           time: new Date().toLocaleTimeString(),
-        }, ...prev]);
-        
-        // Send notification email to producer
-        if (response.data.title && response.data.artist) {
-          await sendProducerNotification(response.data);
+          id: `${Date.now()}`,
+        };
+
+        // Check if this is a different track than the current one
+        const isDifferentTrack = !currentTrack || 
+          currentTrack.title !== trackResult.title || 
+          currentTrack.artist !== trackResult.artist;
+
+        if (isDifferentTrack) {
+          setCurrentTrack(trackResult);
+          setIdentifiedTracks(prev => [trackResult, ...prev]);
+
+          // Send notification to producer
+          await sendProducerNotification(trackResult);
+
+          // Update session in Base44
+          if (session?.id) {
+            try {
+              await axios.put(
+                `${BACKEND_URL}/api/base44/entities/SessionMix/${session.id}`,
+                { 
+                  tracks: identifiedTracks.map(t => ({
+                    title: t.title,
+                    artist: t.artist,
+                    time: t.time,
+                  }))
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+            } catch (e) {
+              console.log('Could not update session');
+            }
+          }
         }
+
+        setAudioLevel('good');
       } else {
-        Alert.alert(t('spyn.notRecognized') || 'Not Recognized', 
-          t('spyn.tryAgain') || 'Could not identify this track. Try again with clearer audio.');
+        setAudioLevel('silence');
       }
     } catch (error: any) {
       console.error('[SPYN] Recognition error:', error);
-      Alert.alert('Error', 'Recognition failed. Please try again.');
+      setAudioLevel('silence');
     } finally {
       setRecognizing(false);
-      setSessionActive(false);
     }
   };
 
@@ -391,17 +491,55 @@ export default function SpynScreen() {
         notificationData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      console.log('[SPYN] Producer notified successfully');
+
+      console.log('[SPYN] Producer notified for:', trackInfo.title);
     } catch (error) {
       console.error('[SPYN] Failed to notify producer:', error);
     }
   };
 
-  const resetDetection = () => {
-    setResult(null);
+  const stopSession = () => {
+    if (recognitionLoopRef.current) {
+      clearInterval(recognitionLoopRef.current);
+      recognitionLoopRef.current = null;
+    }
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    stopListeningAnimation();
+    isRecordingRef.current = false;
+  };
+
+  const endSession = async () => {
+    stopSession();
+
+    // Update session status in Base44
+    if (session?.id) {
+      try {
+        await axios.put(
+          `${BACKEND_URL}/api/base44/entities/SessionMix/${session.id}`,
+          { 
+            status: 'completed',
+            ended_at: new Date().toISOString(),
+            total_tracks: identifiedTracks.length,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        console.log('[SPYN] Session completed');
+      } catch (e) {
+        console.log('Could not update session status');
+      }
+    }
+
     setSessionActive(false);
-    setCountdown(10);
+    setShowEndSessionModal(false);
+    setSession(null);
+    setCurrentTrack(null);
+    setSessionDuration('00:00:00');
   };
 
   // Rotate interpolation
@@ -429,12 +567,10 @@ export default function SpynScreen() {
           </View>
         )}
 
-        {/* Main Content */}
-        {!sessionActive && !recognizing && !result && (
+        {/* ==================== IDLE STATE ==================== */}
+        {!sessionActive && (
           <>
-            {/* SPYN Detection Button */}
             <View style={styles.mainButtonContainer}>
-              {/* Rotating glow ring */}
               <Animated.View style={[styles.glowRingOuter, { transform: [{ rotate }] }]}>
                 <LinearGradient
                   colors={['#FF6B6B', 'transparent', 'transparent', 'transparent']}
@@ -444,11 +580,9 @@ export default function SpynScreen() {
                 />
               </Animated.View>
               
-              {/* Glow effect */}
               <Animated.View style={[styles.glowEffect, { opacity: glowOpacity }]} />
               
-              {/* Main button */}
-              <TouchableOpacity onPress={startDetection} activeOpacity={0.8}>
+              <TouchableOpacity onPress={startSession} activeOpacity={0.8}>
                 <LinearGradient
                   colors={['#FF6B6B', '#E53935']}
                   style={styles.mainButton}
@@ -462,17 +596,17 @@ export default function SpynScreen() {
             </View>
 
             <Text style={styles.instructionText}>
-              {t('spyn.tapToIdentify') || 'Tap to identify the track playing'}
+              {t('spyn.tapToStart') || 'Tap to start a DJ session (max 5 hours)'}
             </Text>
 
-            {/* Identified Tracks History */}
+            {/* Previous Tracks History */}
             {identifiedTracks.length > 0 && (
               <View style={styles.historySection}>
                 <Text style={styles.historyTitle}>
-                  {t('spyn.identifiedTracks') || 'Identified Tracks'} ({identifiedTracks.length})
+                  {t('spyn.previousSession') || 'Previous Session'} ({identifiedTracks.length} tracks)
                 </Text>
                 {identifiedTracks.slice(0, 5).map((track, index) => (
-                  <View key={index} style={styles.historyItem}>
+                  <View key={track.id || index} style={styles.historyItem}>
                     {track.cover_image && (
                       <Image source={{ uri: track.cover_image }} style={styles.historyImage} />
                     )}
@@ -488,124 +622,158 @@ export default function SpynScreen() {
           </>
         )}
 
-        {/* Listening State */}
-        {sessionActive && !recognizing && !result && (
-          <View style={styles.listeningContainer}>
-            {/* Sound Bars Animation */}
-            <View style={styles.soundBarsContainer}>
-              {barAnims.map((anim, index) => (
-                <Animated.View
-                  key={index}
-                  style={[
-                    styles.soundBar,
-                    {
-                      height: anim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [20, 80],
-                      }),
-                      backgroundColor: `hsl(${180 + index * 10}, 70%, 50%)`,
-                    },
-                  ]}
-                />
-              ))}
-            </View>
-
-            {/* Microphone Icon */}
-            <Animated.View style={[styles.micContainer, { transform: [{ scale: pulseAnim }] }]}>
-              <LinearGradient
-                colors={['#00BFA5', '#00897B']}
-                style={styles.micButton}
-              >
-                <Ionicons name="mic" size={40} color="#fff" />
-              </LinearGradient>
-            </Animated.View>
-
-            <Text style={styles.listeningText}>{t('spyn.listening') || 'Listening...'}</Text>
-            <Text style={styles.countdownText}>{countdown}s</Text>
-
-            <TouchableOpacity style={styles.cancelButton} onPress={resetDetection}>
-              <Text style={styles.cancelButtonText}>{t('common.cancel') || 'Cancel'}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Recognizing State */}
-        {recognizing && (
-          <View style={styles.analyzingContainer}>
-            <ActivityIndicator size="large" color={CYAN_COLOR} />
-            <Text style={styles.analyzingText}>{t('spyn.analyzing') || 'Analyzing...'}</Text>
-          </View>
-        )}
-
-        {/* Result State */}
-        {result && (
-          <View style={styles.resultContainer}>
-            {/* Success Badge */}
-            <View style={styles.successBadge}>
-              <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-              <Text style={styles.successText}>{t('spyn.trackIdentified') || 'Track Identified!'}</Text>
-            </View>
-
-            {/* Track Card */}
-            <View style={styles.trackCard}>
-              {result.cover_image && (
-                <Image source={{ uri: result.cover_image }} style={styles.trackCover} />
-              )}
-              <View style={styles.trackInfo}>
-                <Text style={styles.trackTitle}>"{result.title}"</Text>
-                <Text style={styles.trackArtist}>{result.artist}</Text>
-                {result.genre && (
-                  <View style={styles.genreBadge}>
-                    <Text style={styles.genreText}>{result.genre}</Text>
-                  </View>
-                )}
+        {/* ==================== ACTIVE SESSION ==================== */}
+        {sessionActive && (
+          <>
+            {/* Session Header */}
+            <View style={styles.sessionHeader}>
+              <View style={styles.sessionInfo}>
+                <View style={styles.activeBadge}>
+                  <View style={styles.activeDot} />
+                  <Text style={styles.activeText}>Active Session</Text>
+                </View>
+                <Text style={styles.sessionDuration}>{sessionDuration}</Text>
               </View>
+              <TouchableOpacity 
+                style={styles.endSessionButton} 
+                onPress={() => setShowEndSessionModal(true)}
+              >
+                <Text style={styles.endSessionText}>End Session</Text>
+              </TouchableOpacity>
             </View>
 
-            {/* Location Info */}
-            {location && (
-              <View style={styles.locationInfo}>
-                <View style={styles.locationRow}>
-                  <Ionicons name="location" size={16} color="#FF6B6B" />
-                  <Text style={styles.locationDetail}>
-                    @ {location.venue || location.city}, {location.country}
-                  </Text>
-                </View>
-                <View style={styles.locationRow}>
-                  <Ionicons name="time" size={16} color="#888" />
-                  <Text style={styles.locationDetail}>
-                    {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
-                  </Text>
-                </View>
-                <View style={styles.locationRow}>
-                  <Image 
-                    source={{ uri: user?.avatar || 'https://via.placeholder.com/30' }} 
-                    style={styles.djAvatar} 
+            {/* Listening Animation */}
+            <View style={styles.listeningSection}>
+              <View style={styles.soundBarsContainer}>
+                {barAnims.map((anim, index) => (
+                  <Animated.View
+                    key={index}
+                    style={[
+                      styles.soundBar,
+                      {
+                        height: anim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [15, 60],
+                        }),
+                        backgroundColor: isListening 
+                          ? `hsl(${160 + index * 8}, 70%, 50%)` 
+                          : '#333',
+                      },
+                    ]}
                   />
-                  <Text style={styles.locationDetail}>
-                    Played by DJ <Text style={styles.djName}>{user?.full_name || 'Unknown'}</Text>
-                  </Text>
+                ))}
+              </View>
+
+              <Animated.View style={[styles.micContainer, { transform: [{ scale: pulseAnim }] }]}>
+                <LinearGradient
+                  colors={isListening ? ['#00BFA5', '#00897B'] : ['#444', '#333']}
+                  style={styles.micButton}
+                >
+                  <Ionicons name="mic" size={36} color="#fff" />
+                </LinearGradient>
+              </Animated.View>
+
+              <Text style={styles.listeningStatus}>
+                {recognizing ? 'Analyzing...' : isListening ? 'Listening...' : 'Waiting...'}
+              </Text>
+              <Text style={styles.autoAnalysis}>Auto-analysis every {RECOGNITION_INTERVAL / 1000}s</Text>
+            </View>
+
+            {/* Current Track */}
+            {currentTrack && (
+              <View style={styles.currentTrackContainer}>
+                <View style={styles.successBadge}>
+                  <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                  <Text style={styles.successText}>Track Identified!</Text>
+                </View>
+                
+                <View style={styles.trackCard}>
+                  {currentTrack.cover_image && (
+                    <Image source={{ uri: currentTrack.cover_image }} style={styles.trackCover} />
+                  )}
+                  <View style={styles.trackInfo}>
+                    <Text style={styles.trackTitle}>"{currentTrack.title}"</Text>
+                    <Text style={styles.trackArtist}>{currentTrack.artist}</Text>
+                    {currentTrack.genre && (
+                      <View style={styles.genreBadge}>
+                        <Text style={styles.genreText}>{currentTrack.genre}</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
               </View>
             )}
 
-            {/* Producer Notified */}
-            <View style={styles.notifiedBadge}>
-              <Ionicons name="mail" size={18} color="#4CAF50" />
-              <Text style={styles.notifiedText}>
-                {t('spyn.producerNotified') || 'Producer has been notified!'} 📧
-              </Text>
-            </View>
-
-            {/* New Search Button */}
-            <TouchableOpacity style={styles.newSearchButton} onPress={resetDetection}>
-              <Ionicons name="refresh" size={20} color="#fff" />
-              <Text style={styles.newSearchText}>{t('spyn.newSearch') || 'New Search'}</Text>
-            </TouchableOpacity>
-          </View>
+            {/* Identified Tracks List */}
+            {identifiedTracks.length > 0 && (
+              <View style={styles.identifiedSection}>
+                <Text style={styles.identifiedTitle}>
+                  Identified tracks ({identifiedTracks.length})
+                </Text>
+                {identifiedTracks.map((track, index) => (
+                  <View key={track.id || index} style={styles.identifiedItem}>
+                    {track.cover_image && (
+                      <Image source={{ uri: track.cover_image }} style={styles.identifiedImage} />
+                    )}
+                    <View style={styles.identifiedInfo}>
+                      <Text style={styles.identifiedTrackTitle}>{track.title}</Text>
+                      <Text style={styles.identifiedArtist}>{track.artist}</Text>
+                    </View>
+                    <Text style={styles.identifiedTime}>{track.time}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </>
         )}
 
       </ScrollView>
+
+      {/* ==================== END SESSION MODAL ==================== */}
+      <Modal
+        visible={showEndSessionModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowEndSessionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>End Session?</Text>
+            
+            <View style={styles.modalInfo}>
+              <View style={styles.modalRow}>
+                <Ionicons name="location" size={18} color={CYAN_COLOR} />
+                <Text style={styles.modalText}>
+                  {location?.venue || location?.city || 'Unknown Location'}
+                </Text>
+              </View>
+              <View style={styles.modalRow}>
+                <Ionicons name="time" size={18} color="#888" />
+                <Text style={styles.modalText}>Duration: {sessionDuration}</Text>
+              </View>
+              <View style={styles.modalRow}>
+                <Ionicons name="musical-notes" size={18} color="#4CAF50" />
+                <Text style={styles.modalText}>{identifiedTracks.length} tracks identified</Text>
+              </View>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.cancelModalButton}
+                onPress={() => setShowEndSessionModal(false)}
+              >
+                <Text style={styles.cancelModalText}>Continue Session</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.confirmModalButton}
+                onPress={endSession}
+              >
+                <Text style={styles.confirmModalText}>End Session</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -671,117 +839,115 @@ const styles = StyleSheet.create({
   detectionText: { fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.9)', letterSpacing: 1, marginTop: 4 },
   instructionText: { color: Colors.textMuted, fontSize: 14, textAlign: 'center', marginBottom: 40 },
 
-  // Listening State
-  listeningContainer: { alignItems: 'center', marginTop: 20 },
+  // Session Header
+  sessionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 20,
+    paddingHorizontal: 4,
+  },
+  sessionInfo: { alignItems: 'flex-start' },
+  activeBadge: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6,
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    marginBottom: 4,
+  },
+  activeDot: { 
+    width: 8, 
+    height: 8, 
+    borderRadius: 4, 
+    backgroundColor: '#4CAF50' 
+  },
+  activeText: { color: '#4CAF50', fontSize: 12, fontWeight: '600' },
+  sessionDuration: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  endSessionButton: {
+    backgroundColor: '#E53935',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  endSessionText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+
+  // Listening Section
+  listeningSection: { alignItems: 'center', width: '100%', marginBottom: 30 },
   soundBarsContainer: { 
     flexDirection: 'row', 
     alignItems: 'flex-end', 
     justifyContent: 'center', 
-    height: 100, 
-    marginBottom: 30,
+    height: 70, 
+    marginBottom: 20,
     gap: 4,
   },
   soundBar: { 
-    width: 8, 
-    borderRadius: 4,
+    width: 6, 
+    borderRadius: 3,
   },
-  micContainer: { marginBottom: 20 },
+  micContainer: { marginBottom: 12 },
   micButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  listeningText: { color: '#00BFA5', fontSize: 20, fontWeight: '600', marginBottom: 8 },
-  countdownText: { color: Colors.textMuted, fontSize: 16 },
-  cancelButton: { 
-    marginTop: 30, 
-    paddingHorizontal: 30, 
-    paddingVertical: 12, 
-    backgroundColor: 'rgba(255,255,255,0.1)', 
-    borderRadius: 25 
-  },
-  cancelButtonText: { color: Colors.textMuted, fontSize: 14 },
+  listeningStatus: { color: '#00BFA5', fontSize: 16, fontWeight: '600' },
+  autoAnalysis: { color: Colors.textMuted, fontSize: 12, marginTop: 4 },
 
-  // Analyzing State
-  analyzingContainer: { alignItems: 'center', marginTop: 50 },
-  analyzingText: { color: CYAN_COLOR, fontSize: 18, marginTop: 20 },
-
-  // Result State
-  resultContainer: { width: '100%', alignItems: 'center' },
+  // Current Track
+  currentTrackContainer: { width: '100%', marginBottom: 20 },
   successBadge: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    gap: 8, 
-    marginBottom: 20,
-    backgroundColor: 'rgba(76, 175, 80, 0.15)',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 25,
+    gap: 6, 
+    marginBottom: 12,
   },
-  successText: { color: '#4CAF50', fontSize: 16, fontWeight: '600' },
+  successText: { color: '#4CAF50', fontSize: 14, fontWeight: '600' },
   
   trackCard: { 
     backgroundColor: CARD_BG, 
     borderRadius: 16, 
-    padding: 20, 
-    width: '100%',
+    padding: 16, 
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
     borderWidth: 1,
-    borderColor: CYAN_COLOR + '40',
+    borderColor: '#4CAF50' + '40',
   },
-  trackCover: { width: 100, height: 100, borderRadius: 8 },
-  trackInfo: { flex: 1, marginLeft: 16 },
-  trackTitle: { color: CYAN_COLOR, fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
-  trackArtist: { color: '#fff', fontSize: 16, marginBottom: 8 },
+  trackCover: { width: 80, height: 80, borderRadius: 8 },
+  trackInfo: { flex: 1, marginLeft: 14 },
+  trackTitle: { color: CYAN_COLOR, fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
+  trackArtist: { color: '#fff', fontSize: 14, marginBottom: 6 },
   genreBadge: { 
     backgroundColor: CYAN_COLOR + '30', 
-    paddingHorizontal: 12, 
-    paddingVertical: 4, 
-    borderRadius: 15, 
+    paddingHorizontal: 10, 
+    paddingVertical: 3, 
+    borderRadius: 12, 
     alignSelf: 'flex-start' 
   },
-  genreText: { color: CYAN_COLOR, fontSize: 12 },
-  
-  locationInfo: { 
-    backgroundColor: CARD_BG, 
-    borderRadius: 12, 
-    padding: 16, 
-    width: '100%',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: CYAN_COLOR + '30',
-  },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  locationDetail: { color: '#aaa', fontSize: 14 },
-  djAvatar: { width: 24, height: 24, borderRadius: 12 },
-  djName: { color: CYAN_COLOR, fontWeight: '600' },
-  
-  notifiedBadge: { 
+  genreText: { color: CYAN_COLOR, fontSize: 11 },
+
+  // Identified Tracks
+  identifiedSection: { width: '100%' },
+  identifiedTitle: { color: '#fff', fontSize: 15, fontWeight: '600', marginBottom: 12 },
+  identifiedItem: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    gap: 8,
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    marginBottom: 20,
+    backgroundColor: CARD_BG, 
+    padding: 12, 
+    borderRadius: 12,
+    marginBottom: 8,
   },
-  notifiedText: { color: '#4CAF50', fontSize: 14 },
-  
-  newSearchButton: { 
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: CYAN_COLOR, 
-    paddingHorizontal: 30, 
-    paddingVertical: 14, 
-    borderRadius: 25 
-  },
-  newSearchText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  identifiedImage: { width: 50, height: 50, borderRadius: 6 },
+  identifiedInfo: { flex: 1, marginLeft: 12 },
+  identifiedTrackTitle: { color: '#fff', fontSize: 14, fontWeight: '500' },
+  identifiedArtist: { color: Colors.textMuted, fontSize: 12 },
+  identifiedTime: { color: Colors.textMuted, fontSize: 11 },
 
   // History Section
   historySection: { width: '100%', marginTop: 20 },
@@ -799,4 +965,43 @@ const styles = StyleSheet.create({
   historyTitle2: { color: '#fff', fontSize: 14, fontWeight: '500' },
   historyArtist: { color: Colors.textMuted, fontSize: 12 },
   historyTime: { color: Colors.textMuted, fontSize: 12 },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: CARD_BG,
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: CYAN_COLOR + '30',
+  },
+  modalTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  modalInfo: { marginBottom: 24 },
+  modalRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  modalText: { color: '#aaa', fontSize: 14 },
+  modalButtons: { flexDirection: 'row', gap: 12 },
+  cancelModalButton: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelModalText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  confirmModalButton: {
+    flex: 1,
+    backgroundColor: '#E53935',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  confirmModalText: { color: '#fff', fontSize: 14, fontWeight: '600' },
 });
