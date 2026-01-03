@@ -2130,6 +2130,8 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.uploads': '上传',
     'profile.diamonds': '钻石',
     'profile.favorites': '收藏',
+    'profile.user': '用户',
+    'profile.administrator': '管理员',
     'profile.logoutConfirm': '你确定要退出吗？',
     
     // Common
