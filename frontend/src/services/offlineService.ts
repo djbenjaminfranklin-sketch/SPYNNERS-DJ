@@ -285,6 +285,24 @@ class OfflineService {
       .reduce((acc, s) => acc + s.recordings.length, 0);
   }
 
+  async deleteSession(sessionId: string): Promise<boolean> {
+    try {
+      const sessions = await this.getOfflineSessions();
+      const filteredSessions = sessions.filter(s => s.id !== sessionId);
+      
+      if (filteredSessions.length !== sessions.length) {
+        await this.saveOfflineSessions(filteredSessions);
+        console.log('[Offline] Session deleted:', sessionId);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('[Offline] Error deleting session:', error);
+      return false;
+    }
+  }
+
   // ==================== SYNC WITH BACKEND ====================
 
   async syncPendingSessions(token?: string): Promise<{ synced: number; failed: number; results: any[] }> {
