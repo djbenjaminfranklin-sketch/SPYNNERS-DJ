@@ -1166,6 +1166,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  offlineSessionsCardEmpty: {
+    backgroundColor: '#1a1a2e',
+    borderColor: '#333',
+  },
+  offlineIconContainerEmpty: {
+    backgroundColor: '#252540',
+  },
+  offlineTitleEmpty: {
+    color: '#888',
+  },
+  offlineSubtitleEmpty: {
+    color: '#555',
+  },
   
   // Menu Grid - Two Rows
   menuContainer: {
