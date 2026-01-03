@@ -291,6 +291,75 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
         raise HTTPException(status_code=500, detail=f"Recognition failed: {str(e)}")
 
 
+# ==================== GOOGLE PLACES API ====================
+
+@app.get("/api/nearby-places")
+async def get_nearby_places(lat: float, lng: float):
+    """
+    Get nearby venues (clubs, bars, night clubs) using Google Places API.
+    Returns the name of the most likely venue the user is at.
+    """
+    try:
+        if not GOOGLE_PLACES_API_KEY:
+            return {"success": False, "message": "Google Places API key not configured"}
+        
+        # Search for nearby venues - prioritize night clubs, bars, clubs
+        types_to_search = ["night_club", "bar", "cafe", "restaurant", "establishment"]
+        
+        best_venue = None
+        min_distance = float('inf')
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            for place_type in types_to_search[:2]:  # Only search night_club and bar for speed
+                url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+                params = {
+                    "location": f"{lat},{lng}",
+                    "radius": 100,  # 100 meters radius - very close venues only
+                    "type": place_type,
+                    "key": GOOGLE_PLACES_API_KEY
+                }
+                
+                response = await client.get(url, params=params)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    if data.get("status") == "OK" and data.get("results"):
+                        for place in data["results"]:
+                            # Calculate rough distance (already filtered by radius)
+                            place_lat = place["geometry"]["location"]["lat"]
+                            place_lng = place["geometry"]["location"]["lng"]
+                            
+                            # Simple distance calculation
+                            distance = ((place_lat - lat) ** 2 + (place_lng - lng) ** 2) ** 0.5
+                            
+                            if distance < min_distance:
+                                min_distance = distance
+                                best_venue = place["name"]
+                
+                if best_venue:
+                    break  # Found a venue, no need to search more types
+        
+        if best_venue:
+            print(f"[Google Places] Found venue: {best_venue} at ({lat}, {lng})")
+            return {
+                "success": True,
+                "venue": best_venue
+            }
+        
+        return {
+            "success": False,
+            "message": "No nearby venues found"
+        }
+        
+    except Exception as e:
+        print(f"Google Places error: {e}")
+        return {
+            "success": False,
+            "message": f"Places lookup failed: {str(e)}"
+        }
+
+
 # ==================== CHAT ENDPOINTS ====================
 
 @app.get("/api/chat/messages")
