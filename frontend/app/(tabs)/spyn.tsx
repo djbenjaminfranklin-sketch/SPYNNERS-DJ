@@ -1000,8 +1000,18 @@ export default function SpynScreen() {
               </Animated.View>
 
               <Text style={styles.listeningStatus}>
-                {recognizing ? '🎵 Analyzing audio...' : '🎧 Listening...'}
+                {recognizing ? '🎵 Analyzing audio...' : isOffline ? '📴 Recording offline...' : '🎧 Listening...'}
               </Text>
+              
+              {/* Offline recordings counter during session */}
+              {isOffline && offlineRecordingsCount > 0 && (
+                <View style={styles.offlineCounter}>
+                  <Ionicons name="save" size={14} color="#FFB74D" />
+                  <Text style={styles.offlineCounterText}>
+                    {offlineRecordingsCount} recording(s) saved
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* END SESSION BUTTON - DIRECTLY UNDER MIC */}
