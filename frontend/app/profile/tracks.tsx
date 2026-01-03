@@ -238,12 +238,6 @@ export default function ManageTracksScreen() {
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>{tracks.length}</Text>
-          <Text style={styles.statLabel}>Total Tracks</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>
-            {tracks.filter(t => t.status === 'approved').length}
-          </Text>
           <Text style={styles.statLabel}>Approved</Text>
         </View>
         <View style={styles.statItem}>
@@ -251,6 +245,12 @@ export default function ManageTracksScreen() {
             {tracks.filter(t => t.acrcloud_id).length}
           </Text>
           <Text style={styles.statLabel}>Synced</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>
+            {tracks.filter(t => !t.acrcloud_id).length}
+          </Text>
+          <Text style={styles.statLabel}>Not Synced</Text>
         </View>
       </View>
 
