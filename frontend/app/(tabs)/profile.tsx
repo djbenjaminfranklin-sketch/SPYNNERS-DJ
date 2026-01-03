@@ -20,7 +20,22 @@ import LanguageSelector from '../../src/components/LanguageSelector';
 import { base44Tracks, base44Users, Track } from '../../src/services/base44Api';
 
 // Admin emails - add your admin emails here
-const ADMIN_EMAILS = ['admin@spynners.com', 'contact@spynners.com'];
+const ADMIN_EMAILS = ['admin@spynners.com', 'contact@spynners.com', 'djbenjaminfranklin@gmail.com'];
+
+// Genres list for display
+const GENRES_LIST = [
+  'HOUSE', 'Afro House', 'Afro Tech', 'Amapiano', 'Ambient / Experimental',
+  'Bass / Club', 'Bass House', 'Brazilian Funk', 'Breaks / Breakbeat / UK Bass',
+  'Dance / Pop', 'Deep House', 'Downtempo', 'Drum & Bass', 'Dubstep',
+  'Electro (Classic / Detroit / Modern)', 'Electronica', 'Funky / Disco / Nu Disco',
+  'Future House', 'Hard Dance / Hardcore / Hardstyle', 'Hard Techno',
+  'Hip-Hop / R&B', 'Indie Dance', 'Jackin House', 'Jungle', 'Latin / Reggaeton',
+  'Leftfield Bass', 'Melodic House & Techno', 'Minimal / Deep Tech',
+  'Nu Disco / Disco', 'Organic House / Downtempo', 'Progressive House',
+  'Psy-Trance', 'Tech House', 'Techno (Peak Time / Driving)',
+  'Techno (Raw / Deep / Hypnotic)', 'Trance (Main Floor)', 'Tribal',
+  'Uk Garage / Bassline'
+];
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -33,6 +48,7 @@ export default function ProfileScreen() {
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [loadingStats, setLoadingStats] = useState(true);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [preferredGenres, setPreferredGenres] = useState<string[]>([]);
 
   // Check if current user is admin
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
@@ -59,10 +75,13 @@ export default function ProfileScreen() {
       setUploadsCount(myTracks.length);
       
       // Get diamonds from user object
-      setDiamondsCount(user.diamonds || 0);
+      setDiamondsCount(user.diamonds || user.black_diamonds || 48); // Default 48 for demo
       
       // Get favorites (placeholder - would need a favorites API)
       setFavoritesCount(0);
+      
+      // Get preferred genres
+      setPreferredGenres(user.genres || user.preferred_genres || ['Afro House', 'Afro Tech', 'Amapiano', 'Bass House', 'Deep House']);
       
       // Get avatar
       if (user.avatar) {
