@@ -616,7 +616,7 @@ export default function UploadScreen() {
 
           <View style={styles.row}>
             <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-              <Text style={styles.inputLabel}>ISRC Code</Text>
+              <Text style={styles.inputLabel}>{t('upload.isrcCode')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="ISRC"
@@ -626,7 +626,7 @@ export default function UploadScreen() {
               />
             </View>
             <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-              <Text style={styles.inputLabel}>ISWC Code</Text>
+              <Text style={styles.inputLabel}>{t('upload.iswcCode')}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="ISWC"
