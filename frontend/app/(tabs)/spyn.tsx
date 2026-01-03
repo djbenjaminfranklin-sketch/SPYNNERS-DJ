@@ -749,34 +749,37 @@ export default function SpynScreen() {
     
     stopSession();
 
-    // End offline session if we were recording offline
-    if (offlineRecordingsCount > 0) {
-      console.log('[SPYN] Ending offline session with', offlineRecordingsCount, 'recordings');
-      const endedSession = await offlineService.endOfflineSession();
+    // ALWAYS try to end any offline session (regardless of offlineRecordingsCount)
+    // because the count might be out of sync
+    console.log('[SPYN] Ending session, checking for offline recordings...');
+    const endedSession = await offlineService.endOfflineSession();
+    
+    if (endedSession) {
+      console.log('[SPYN] Offline session ended with', endedSession.recordings.length, 'recordings');
       
-      if (endedSession) {
-        // Check if we're back online
-        const isOnline = await offlineService.checkNetworkStatus();
-        const newPendingCount = await offlineService.getPendingCount();
-        setPendingSyncCount(newPendingCount);
-        setOfflineRecordingsCount(0);
-        
-        if (isOnline && newPendingCount > 0) {
-          // Show sync modal immediately
-          setShowSyncModal(true);
-        } else {
-          // Still offline - just show saved message
-          Alert.alert(
-            '📴 Session Offline Sauvegardée',
-            `${endedSession.recordings.length} enregistrement(s) sauvegardé(s).\nIls seront traités quand vous serez en ligne.`,
-            [{ text: 'OK' }]
-          );
-        }
+      // Check if we're back online
+      const isOnline = await offlineService.checkNetworkStatus();
+      const newPendingCount = await offlineService.getPendingCount();
+      setPendingSyncCount(newPendingCount);
+      setOfflineRecordingsCount(0);
+      
+      if (isOnline && newPendingCount > 0) {
+        // Show sync modal immediately
+        setShowSyncModal(true);
+      } else if (!isOnline) {
+        // Still offline - just show saved message
+        Alert.alert(
+          '📴 Session Offline Sauvegardée',
+          `${endedSession.recordings.length} enregistrement(s) sauvegardé(s).\nIls seront traités quand vous serez en ligne.`,
+          [{ text: 'OK' }]
+        );
       }
-      
-      resetSessionState();
-      return; // Don't continue with online session logic
+    } else {
+      console.log('[SPYN] No offline session to end');
     }
+
+    // Reset offline counter
+    setOfflineRecordingsCount(0);
 
     // Check if valid venue (restaurant, bar, club, etc.)
     const isValidVenue = location?.is_valid_venue === true;
