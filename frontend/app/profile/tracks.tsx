@@ -69,14 +69,16 @@ export default function ManageTracksScreen() {
     try {
       setLoading(true);
       
-      // Fetch only APPROVED tracks for current user
+      const userId = user?.id;
+      console.log('[Tracks] Fetching tracks for user:', userId);
+      
+      // Fetch all approved tracks
       const response = await axios.get(
         `${BACKEND_URL}/api/base44/entities/Track`,
         {
           params: {
-            producer_id: user?.id,
             status: 'approved',
-            limit: 200
+            limit: 500
           },
           headers: {
             Authorization: `Bearer ${token}`,
@@ -86,8 +88,16 @@ export default function ManageTracksScreen() {
       );
       
       if (Array.isArray(response.data)) {
+        // Filter to only show tracks where the user is the producer
+        const userTracks = response.data.filter((track: Track) => 
+          track.producer_id === userId
+        );
+        
+        console.log('[Tracks] Total approved tracks:', response.data.length);
+        console.log('[Tracks] User tracks:', userTracks.length);
+        
         // Sort by created_at descending
-        const sortedTracks = response.data.sort((a: Track, b: Track) => {
+        const sortedTracks = userTracks.sort((a: Track, b: Track) => {
           return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime();
         });
         setTracks(sortedTracks);
