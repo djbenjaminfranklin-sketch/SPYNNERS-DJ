@@ -1497,6 +1497,16 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.administrator': 'Amministratore',
     'profile.manageTracksAdmin': 'Gestisci upload tracce',
     'profile.logoutConfirm': 'Vuoi davvero uscire?',
+    'profile.logoutDesc': 'Esci dal tuo account',
+    'profile.radar': 'Radar',
+    'profile.trackYourPlays': 'Segui le tue riproduzioni in tempo reale',
+    'profile.editDeleteTracks': 'Modifica o elimina le tue tracce',
+    'profile.adminPanel': 'Pannello Admin',
+    'profile.adminDesc': 'Gestisci utenti e tracce',
+    'profile.loginRequired': 'Accedi per vedere il tuo profilo',
+    'profile.dangerZone': 'Zona Pericolosa',
+    'profile.deleteAccount': 'Elimina il mio account',
+    'profile.deleteAccountWarning': 'L\'eliminazione del tuo account è irreversibile. Tutti i tuoi dati, tracce, preferiti e messaggi saranno eliminati permanentemente.',
     
     // Common
     'common.cancel': 'Annulla',
