@@ -362,7 +362,6 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                                 print(f"[SPYNNERS] Could not get producer email: {e}")
                     else:
                         print(f"[SPYNNERS] Track NOT found in Spynners database: '{track_title}' by '{track_artist}'")
-                        }
                         
                 except Exception as e:
                     print(f"[SPYNNERS] Error searching Spynners database: {e}")
