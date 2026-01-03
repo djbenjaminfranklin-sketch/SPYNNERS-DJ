@@ -69,12 +69,13 @@ export default function ManageTracksScreen() {
     try {
       setLoading(true);
       
-      // Fetch tracks for current user
+      // Fetch only APPROVED tracks for current user
       const response = await axios.get(
         `${BACKEND_URL}/api/base44/entities/Track`,
         {
           params: {
             producer_id: user?.id,
+            status: 'approved',
             limit: 200
           },
           headers: {
