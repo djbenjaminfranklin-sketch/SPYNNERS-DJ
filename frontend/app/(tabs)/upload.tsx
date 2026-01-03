@@ -35,16 +35,24 @@ const GENRES = [
 
 // Energy levels
 const ENERGY_LEVELS = [
-  { value: 'low', label: 'Low (Warm-up)', icon: '🌅' },
-  { value: 'medium', label: 'Medium (Cruise)', icon: '🌊' },
-  { value: 'high', label: 'High (Peak)', icon: '🔥' },
-  { value: 'very_high', label: 'Very High (Closing)', icon: '💥' },
+  { value: 'low', labelKey: 'upload.energyLow', icon: '🌅' },
+  { value: 'medium', labelKey: 'upload.energyMedium', icon: '🌊' },
+  { value: 'high', labelKey: 'upload.energyHigh', icon: '🔥' },
+  { value: 'very_high', labelKey: 'upload.energyVery', icon: '💥' },
 ];
 
-// Moods
-const MOODS = [
-  'Energetic', 'Groovy', 'Dark', 'Uplifting', 'Melodic', 
-  'Hypnotic', 'Funky', 'Deep', 'Atmospheric', 'Driving'
+// Mood keys for translation
+const MOOD_KEYS = [
+  { value: 'Energetic', labelKey: 'upload.moodEnergetic' },
+  { value: 'Groovy', labelKey: 'upload.moodGroovy' },
+  { value: 'Dark', labelKey: 'upload.moodDark' },
+  { value: 'Uplifting', labelKey: 'upload.moodUplifting' },
+  { value: 'Melodic', labelKey: 'upload.moodMelodic' },
+  { value: 'Hypnotic', labelKey: 'upload.moodHypnotic' },
+  { value: 'Funky', labelKey: 'upload.moodFunky' },
+  { value: 'Deep', labelKey: 'upload.moodDeep' },
+  { value: 'Atmospheric', labelKey: 'upload.moodAtmospheric' },
+  { value: 'Driving', labelKey: 'upload.moodDriving' },
 ];
 
 // Keys (Camelot)
