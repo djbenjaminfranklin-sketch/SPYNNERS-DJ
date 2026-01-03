@@ -1363,6 +1363,52 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   
+  // Pending Sync Card (when online with pending recordings)
+  pendingSyncCard: {
+    backgroundColor: CYAN_COLOR + '15',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    width: '100%',
+    maxWidth: 350,
+    borderWidth: 1,
+    borderColor: CYAN_COLOR + '40',
+  },
+  pendingSyncHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  pendingSyncInfo: {
+    flex: 1,
+  },
+  pendingSyncTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  pendingSyncSubtitle: {
+    color: CYAN_COLOR,
+    fontSize: 13,
+    marginTop: 2,
+  },
+  syncButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: CYAN_COLOR,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    gap: 8,
+  },
+  syncButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  
   // Main Button Container
   mainButtonContainer: { 
     alignItems: 'center', 
