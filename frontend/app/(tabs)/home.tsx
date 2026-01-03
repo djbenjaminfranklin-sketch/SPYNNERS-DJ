@@ -349,9 +349,9 @@ export default function HomeScreen() {
     return name.toLowerCase().includes(memberSearchQuery.toLowerCase());
   });
 
-  // Navigate to SPYN Detection
+  // Navigate to SPYN Detection with autostart
   const handleSpynDetection = () => {
-    router.push('/(tabs)/spyn');
+    router.push('/(tabs)/spyn?autostart=true');
   };
 
   // Navigate to SPYN Record
