@@ -137,6 +137,40 @@ export interface User {
   is_vip?: boolean;
 }
 
+// ==================== PUBLIC PROFILE TYPE ====================
+
+export interface PublicProfile {
+  id: string;
+  full_name: string;
+  artist_name?: string;
+  email?: string;
+  avatar_url?: string;
+  generated_avatar_url?: string;
+  bio?: string;
+  location?: string;
+  country?: string;
+  genres?: string[];
+  social_links?: {
+    instagram?: string;
+    soundcloud?: string;
+    spotify?: string;
+    beatport?: string;
+    youtube?: string;
+    facebook?: string;
+    twitter?: string;
+    website?: string;
+  };
+  black_diamonds?: number;
+  sacem_number?: string;
+  user_type?: string;
+  stats?: {
+    tracks_count?: number;
+    total_plays?: number;
+    total_downloads?: number;
+    followers_count?: number;
+  };
+}
+
 // ==================== PLAYLIST TYPE ====================
 
 export interface Playlist {
