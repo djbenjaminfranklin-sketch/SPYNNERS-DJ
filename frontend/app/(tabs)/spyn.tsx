@@ -24,33 +24,33 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import Constants from 'expo-constants';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import { base44Tracks } from '../../src/services/base44Api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BUTTON_SIZE = Math.min(SCREEN_WIDTH * 0.35, 140);
+const BUTTON_SIZE = Math.min(SCREEN_WIDTH * 0.32, 130);
 
-// Colors matching spynners.com
-const DETECTION_GRADIENT = ['#FF6B6B', '#EE5A5A', '#E53935'];
-const RECORD_GRADIENT = ['#EC407A', '#D81B60', '#AD1457'];
+// Get backend URL
+const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL 
+  || process.env.EXPO_PUBLIC_BACKEND_URL 
+  || '';
+
+// Colors
 const CYAN_COLOR = '#5CB3CC';
 const DARK_BG = '#0a0a0a';
+const CARD_BG = '#1a1a2e';
 
-// Recognition interval during DJ Set (every 30 seconds)
-const RECOGNITION_INTERVAL = 30000;
-
-interface RecognizedTrack {
-  id: string;
-  title: string;
-  artist: string;
-  timestamp: number;
-  confidence?: number;
+interface TrackResult {
+  success: boolean;
+  title?: string;
+  artist?: string;
   album?: string;
+  genre?: string;
   cover_image?: string;
+  score?: number;
 }
 
 interface LocationInfo {
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   venue?: string;
   city?: string;
   country?: string;
@@ -59,112 +59,90 @@ interface LocationInfo {
 export default function SpynScreen() {
   const { user, token } = useAuth();
   const { t } = useLanguage();
-  const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL;
   
   // States
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [djRecording, setDjRecording] = useState<Audio.Recording | null>(null);
+  const [recording, setRecording] = useState<any>(null);
   const [recognizing, setRecognizing] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [djSetDuration, setDjSetDuration] = useState(0);
-  const [recognizedTracks, setRecognizedTracks] = useState<RecognizedTrack[]>([]);
-  const [isUsbConnected, setIsUsbConnected] = useState(false);
-  const [lastRecognitionTime, setLastRecognitionTime] = useState(0);
-  
-  // Location
+  const [result, setResult] = useState<TrackResult | null>(null);
   const [location, setLocation] = useState<LocationInfo | null>(null);
   const [locationPermission, setLocationPermission] = useState(false);
+  const [identifiedTracks, setIdentifiedTracks] = useState<any[]>([]);
+  const [sessionActive, setSessionActive] = useState(false);
+  const [countdown, setCountdown] = useState(10);
+  const [audioLevel, setAudioLevel] = useState(0);
   
-  // Producer notification modal
-  const [showNotificationModal, setShowNotificationModal] = useState(false);
-  const [notifiedProducer, setNotifiedProducer] = useState<string | null>(null);
+  // Animations
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const barAnims = useRef([...Array(12)].map(() => new Animated.Value(0.3))).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
   
   // Refs
-  const djIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const recognitionIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const tempRecordingRef = useRef<Audio.Recording | null>(null);
-
-  // Animations
-  const glowAnim1 = useRef(new Animated.Value(0)).current;
-  const glowAnim2 = useRef(new Animated.Value(0)).current;
-  const scaleAnim1 = useRef(new Animated.Value(1)).current;
-  const scaleAnim2 = useRef(new Animated.Value(1)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const rotateAnim1 = useRef(new Animated.Value(0)).current;
-  const rotateAnim2 = useRef(new Animated.Value(0)).current;
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Request location permission
     requestLocationPermission();
-    
-    // Start glow animations
-    const glowLoop1 = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim1, { toValue: 1, duration: 2000, useNativeDriver: false }),
-        Animated.timing(glowAnim1, { toValue: 0, duration: 2000, useNativeDriver: false }),
-      ])
-    );
-    
-    const glowLoop2 = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glowAnim2, { toValue: 1, duration: 2000, useNativeDriver: false }),
-        Animated.timing(glowAnim2, { toValue: 0, duration: 2000, useNativeDriver: false }),
-      ])
-    );
+    startIdleAnimations();
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, []);
 
-    // Rotating light animation - continuous spin
-    const rotateLoop1 = Animated.loop(
-      Animated.timing(rotateAnim1, {
+  const startIdleAnimations = () => {
+    // Rotating glow animation
+    Animated.loop(
+      Animated.timing(rotateAnim, {
         toValue: 1,
         duration: 3000,
         easing: Easing.linear,
         useNativeDriver: true,
       })
-    );
+    ).start();
 
-    const rotateLoop2 = Animated.loop(
-      Animated.timing(rotateAnim2, {
-        toValue: 1,
-        duration: 3500,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    );
-
-    const scaleLoop1 = Animated.loop(
+    // Glow pulse animation
+    Animated.loop(
       Animated.sequence([
-        Animated.timing(scaleAnim1, { toValue: 1.03, duration: 1500, useNativeDriver: true }),
-        Animated.timing(scaleAnim1, { toValue: 1, duration: 1500, useNativeDriver: true }),
+        Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: false }),
+        Animated.timing(glowAnim, { toValue: 0.4, duration: 1500, useNativeDriver: false }),
       ])
-    );
+    ).start();
+  };
 
-    const scaleLoop2 = Animated.loop(
+  const startListeningAnimation = () => {
+    // Animate sound bars
+    barAnims.forEach((anim, index) => {
+      const randomDuration = 200 + Math.random() * 300;
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: 0.3 + Math.random() * 0.7,
+            duration: randomDuration,
+            useNativeDriver: false,
+          }),
+          Animated.timing(anim, {
+            toValue: 0.2 + Math.random() * 0.3,
+            duration: randomDuration,
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    });
+
+    // Pulse animation
+    Animated.loop(
       Animated.sequence([
-        Animated.timing(scaleAnim2, { toValue: 1.03, duration: 1700, useNativeDriver: true }),
-        Animated.timing(scaleAnim2, { toValue: 1, duration: 1700, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.1, duration: 500, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
       ])
-    );
+    ).start();
+  };
 
-    glowLoop1.start();
-    setTimeout(() => glowLoop2.start(), 1000);
-    scaleLoop1.start();
-    setTimeout(() => scaleLoop2.start(), 850);
-    rotateLoop1.start();
-    rotateLoop2.start();
+  const stopListeningAnimation = () => {
+    barAnims.forEach(anim => anim.stopAnimation());
+    pulseAnim.stopAnimation();
+    pulseAnim.setValue(1);
+  };
 
-    return () => {
-      glowLoop1.stop();
-      glowLoop2.stop();
-      scaleLoop1.stop();
-      scaleLoop2.stop();
-      rotateLoop1.stop();
-      rotateLoop2.stop();
-      if (djIntervalRef.current) clearInterval(djIntervalRef.current);
-      if (recognitionIntervalRef.current) clearInterval(recognitionIntervalRef.current);
-    };
-  }, []);
-
-  // Request location permission and get current location
   const requestLocationPermission = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -186,26 +164,21 @@ export default function SpynScreen() {
       const lat = currentLocation.coords.latitude;
       const lng = currentLocation.coords.longitude;
       
-      // Try Google Places API first for nearby venues (clubs, bars, etc.)
+      // Try Google Places API for venue name
       let venueName = undefined;
       try {
         const response = await axios.get(
           `${BACKEND_URL}/api/nearby-places`,
-          {
-            params: { lat, lng },
-            headers: { Authorization: `Bearer ${token}` },
-            timeout: 10000,
-          }
+          { params: { lat, lng }, timeout: 10000 }
         );
-        
         if (response.data.success && response.data.venue) {
           venueName = response.data.venue;
         }
-      } catch (placeError) {
-        console.log('Google Places lookup failed, using reverse geocode:', placeError);
+      } catch (e) {
+        console.log('Places lookup failed');
       }
       
-      // Fallback to reverse geocode for city/country
+      // Fallback to reverse geocode
       const [address] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
       
       setLocation({
@@ -215,75 +188,34 @@ export default function SpynScreen() {
         city: address?.city || address?.region || undefined,
         country: address?.country || undefined,
       });
-      
-      console.log('Location updated:', { lat, lng, venue: venueName, city: address?.city });
     } catch (error) {
       console.error('Location update error:', error);
-    }
-  };
-
-  const startPulse = () => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.1, duration: 800, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-      ])
-    ).start();
-  };
-
-  const stopPulse = () => {
-    pulseAnim.stopAnimation();
-    pulseAnim.setValue(1);
-  };
-
-  // ==================== NOTIFY PRODUCER ====================
-  const notifyProducer = async (trackInfo: any, locationInfo: LocationInfo | null) => {
-    try {
-      // Call Base44 function to notify producer
-      const notificationData = {
-        track_title: trackInfo.title,
-        track_artist: trackInfo.artist,
-        track_album: trackInfo.album || '',
-        track_cover: trackInfo.cover_image || '',
-        dj_id: user?.id,
-        dj_name: user?.full_name || 'Unknown DJ',
-        venue: locationInfo?.venue || 'Unknown Venue',
-        city: locationInfo?.city || 'Unknown City',
-        country: locationInfo?.country || 'Unknown Country',
-        latitude: locationInfo?.latitude,
-        longitude: locationInfo?.longitude,
-        played_at: new Date().toISOString(),
-      };
-
-      // Send to backend which will call Base44 notification function
-      await axios.post(
-        `${BACKEND_URL}/api/notify-producer`,
-        notificationData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Show notification modal
-      setNotifiedProducer(trackInfo.artist);
-      setShowNotificationModal(true);
-      
-      // Auto-hide after 3 seconds
-      setTimeout(() => setShowNotificationModal(false), 3000);
-      
-    } catch (error) {
-      console.error('Failed to notify producer:', error);
-      // Don't show error to user, notification is a secondary feature
     }
   };
 
   // ==================== SPYN DETECTION ====================
   const startDetection = async () => {
     try {
-      // Update location before recording
       if (locationPermission) {
         await updateLocation();
       }
 
-      // For web, use native MediaRecorder API
+      setSessionActive(true);
+      setCountdown(10);
+      startListeningAnimation();
+
+      // Start countdown
+      countdownRef.current = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            if (countdownRef.current) clearInterval(countdownRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      // Web implementation
       if (Platform.OS === 'web') {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -295,51 +227,50 @@ export default function SpynScreen() {
           };
           
           mediaRecorder.onstop = async () => {
+            stopListeningAnimation();
             const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            // Convert to base64
             const reader = new FileReader();
             reader.onloadend = async () => {
               const base64Audio = (reader.result as string).split(',')[1];
-              await recognizeAudioBase64(base64Audio);
+              await recognizeAudio(base64Audio);
             };
             reader.readAsDataURL(audioBlob);
-            
-            // Stop all tracks
             stream.getTracks().forEach(track => track.stop());
           };
           
-          setRecording(mediaRecorder as any);
+          setRecording(mediaRecorder);
           mediaRecorder.start();
-          startPulse();
           
           // Auto-stop after 10 seconds
           setTimeout(() => {
             if (mediaRecorder.state === 'recording') {
               mediaRecorder.stop();
               setRecording(null);
-              setRecognizing(true);
             }
           }, 10000);
           
           return;
         } catch (webError) {
           console.error('Web recording error:', webError);
-          Alert.alert('Error', 'Microphone access denied or not available');
+          Alert.alert('Error', 'Microphone access denied');
+          setSessionActive(false);
+          stopListeningAnimation();
           return;
         }
       }
 
-      // For native (iOS/Android), use expo-av
+      // Native implementation
       const { granted } = await Audio.requestPermissionsAsync();
       if (!granted) {
-        Alert.alert('Permission Required', 'Microphone access is needed to identify tracks');
+        Alert.alert('Permission Required', 'Microphone access is needed');
+        setSessionActive(false);
+        stopListeningAnimation();
         return;
       }
 
       await Audio.setAudioModeAsync({ 
         allowsRecordingIOS: true, 
         playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
       });
       
       const { recording: newRecording } = await Audio.Recording.createAsync(
@@ -347,80 +278,51 @@ export default function SpynScreen() {
       );
 
       setRecording(newRecording);
-      startPulse();
 
       // Auto-stop after 10 seconds
       setTimeout(() => stopDetection(), 10000);
     } catch (error) {
       console.error('Recording error:', error);
       Alert.alert('Error', 'Could not start recording');
+      setSessionActive(false);
+      stopListeningAnimation();
     }
   };
 
   const stopDetection = async () => {
     if (!recording) return;
     try {
+      stopListeningAnimation();
+      
+      if (Platform.OS === 'web') {
+        if (recording.state === 'recording') {
+          recording.stop();
+        }
+        setRecording(null);
+        return;
+      }
+
       await recording.stopAndUnloadAsync();
-      stopPulse();
       const uri = recording.getURI();
       setRecording(null);
-      if (uri) await recognizeAudio(uri);
+      
+      if (uri) {
+        const audioBase64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        await recognizeAudio(audioBase64);
+      }
     } catch (error) {
       console.error('Stop recording error:', error);
     }
   };
 
-  const recognizeAudio = async (audioUri: string) => {
+  const recognizeAudio = async (audioBase64: string) => {
     setRecognizing(true);
     setResult(null);
 
     try {
-      const audioBase64 = await FileSystem.readAsStringAsync(audioUri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
-      const response = await axios.post(
-        `${BACKEND_URL}/api/recognize-audio`,
-        { 
-          audio_base64: audioBase64,
-          location: location,
-          dj_id: user?.id,
-          dj_name: user?.full_name,
-        },
-        { 
-          headers: { 
-            'Content-Type': 'application/json', 
-            Authorization: `Bearer ${token}` 
-          },
-          timeout: 30000,
-        }
-      );
-
-      if (response.data.success) {
-        setResult(response.data);
-        
-        // Notify producer if track is recognized
-        if (response.data.title && response.data.artist) {
-          await notifyProducer(response.data, location);
-        }
-      } else {
-        Alert.alert('Not Recognized', 'Could not identify this track. Try with a clearer audio sample.');
-      }
-    } catch (error: any) {
-      console.error('Recognition error:', error);
-      Alert.alert('Error', 'Recognition failed. Check your connection.');
-    } finally {
-      setRecognizing(false);
-    }
-  };
-
-  // Web-specific recognition using base64 directly
-  const recognizeAudioBase64 = async (audioBase64: string) => {
-    setRecognizing(true);
-    setResult(null);
-
-    try {
-      console.log('[SPYN Web] Sending audio to ACRCloud, size:', audioBase64.length);
+      console.log('[SPYN] Sending audio to ACRCloud...');
       
       const response = await axios.post(
         `${BACKEND_URL}/api/recognize-audio`,
@@ -439,246 +341,78 @@ export default function SpynScreen() {
         }
       );
 
-      console.log('[SPYN Web] Response:', response.data);
+      console.log('[SPYN] Response:', response.data);
 
       if (response.data.success) {
         setResult(response.data);
         
-        // Notify producer if track is recognized
+        // Add to identified tracks list
+        setIdentifiedTracks(prev => [{
+          ...response.data,
+          time: new Date().toLocaleTimeString(),
+        }, ...prev]);
+        
+        // Send notification email to producer
         if (response.data.title && response.data.artist) {
-          await notifyProducer(response.data, location);
+          await sendProducerNotification(response.data);
         }
       } else {
-        Alert.alert('Not Recognized', response.data.message || 'Could not identify this track. Try with a clearer audio sample.');
+        Alert.alert(t('spyn.notRecognized') || 'Not Recognized', 
+          t('spyn.tryAgain') || 'Could not identify this track. Try again with clearer audio.');
       }
     } catch (error: any) {
-      console.error('[SPYN Web] Recognition error:', error);
-      Alert.alert('Error', 'Recognition failed. Check your connection.');
+      console.error('[SPYN] Recognition error:', error);
+      Alert.alert('Error', 'Recognition failed. Please try again.');
     } finally {
       setRecognizing(false);
+      setSessionActive(false);
     }
   };
 
-  // ==================== SPYN RECORD SET ====================
-  const startRecordSet = async () => {
+  const sendProducerNotification = async (trackInfo: TrackResult) => {
     try {
-      const { granted } = await Audio.requestPermissionsAsync();
-      if (!granted) {
-        Alert.alert('Permission Required', 'Microphone access is needed');
-        return;
-      }
+      const notificationData = {
+        track_title: trackInfo.title,
+        track_artist: trackInfo.artist,
+        track_cover: trackInfo.cover_image,
+        dj_id: user?.id,
+        dj_name: user?.full_name || 'DJ',
+        dj_avatar: user?.avatar,
+        venue: location?.venue || 'Unknown Venue',
+        city: location?.city || 'Unknown City',
+        country: location?.country || 'Unknown Country',
+        latitude: location?.latitude,
+        longitude: location?.longitude,
+        played_at: new Date().toISOString(),
+      };
 
-      // Update location
-      if (locationPermission) {
-        await updateLocation();
-      }
-
-      await Audio.setAudioModeAsync({ 
-        allowsRecordingIOS: true, 
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-      });
-      
-      const { recording: newRecording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      await axios.post(
+        `${BACKEND_URL}/api/notify-producer`,
+        notificationData,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      setDjRecording(newRecording);
-      setDjSetDuration(0);
-      setRecognizedTracks([]);
-      setLastRecognitionTime(0);
       
-      djIntervalRef.current = setInterval(() => {
-        setDjSetDuration(prev => prev + 1);
-      }, 1000);
-
-      recognitionIntervalRef.current = setInterval(() => {
-        recognizeCurrentTrack();
-      }, RECOGNITION_INTERVAL);
-
-      setTimeout(() => recognizeCurrentTrack(), 5000);
-
-      Alert.alert(
-        '🎧 SPYN Record Set',
-        `Recording started${location ? ` at ${location.venue || location.city || 'your location'}` : ''}...\nTracks will be identified automatically every 30 seconds.`,
-        [{ text: 'OK' }]
-      );
+      console.log('[SPYN] Producer notified successfully');
     } catch (error) {
-      console.error('DJ Set error:', error);
-      Alert.alert('Error', 'Could not start recording');
+      console.error('[SPYN] Failed to notify producer:', error);
     }
   };
 
-  const recognizeCurrentTrack = async () => {
-    if (!djRecording) return;
-    
-    try {
-      const currentTime = djSetDuration;
-      if (currentTime - lastRecognitionTime < 25) return;
-      setLastRecognitionTime(currentTime);
-
-      await Audio.setAudioModeAsync({ 
-        allowsRecordingIOS: true, 
-        playsInSilentModeIOS: true 
-      });
-      
-      const { recording: tempRecording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      tempRecordingRef.current = tempRecording;
-
-      await new Promise(resolve => setTimeout(resolve, 10000));
-      
-      if (tempRecordingRef.current) {
-        await tempRecordingRef.current.stopAndUnloadAsync();
-        const uri = tempRecordingRef.current.getURI();
-        tempRecordingRef.current = null;
-
-        if (uri) {
-          const audioBase64 = await FileSystem.readAsStringAsync(uri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-
-          const response = await axios.post(
-            `${BACKEND_URL}/api/recognize-audio`,
-            { 
-              audio_base64: audioBase64,
-              location: location,
-              dj_id: user?.id,
-              dj_name: user?.full_name,
-            },
-            { 
-              headers: { 
-                'Content-Type': 'application/json', 
-                Authorization: `Bearer ${token}` 
-              },
-              timeout: 30000,
-            }
-          );
-
-          if (response.data.success && response.data.title) {
-            const newTrack: RecognizedTrack = {
-              id: Date.now().toString(),
-              title: response.data.title,
-              artist: response.data.artist || 'Unknown',
-              timestamp: currentTime,
-              confidence: response.data.score,
-              album: response.data.album,
-              cover_image: response.data.cover_image,
-            };
-
-            setRecognizedTracks(prev => {
-              const isDuplicate = prev.some(t => 
-                t.title.toLowerCase() === newTrack.title.toLowerCase() &&
-                t.artist.toLowerCase() === newTrack.artist.toLowerCase()
-              );
-              if (isDuplicate) return prev;
-              
-              // Notify producer for each new track
-              notifyProducer(newTrack, location);
-              
-              return [...prev, newTrack];
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.log('Auto-recognition error:', error);
-    }
+  const resetDetection = () => {
+    setResult(null);
+    setSessionActive(false);
+    setCountdown(10);
   };
 
-  const stopRecordSet = async () => {
-    if (!djRecording) return;
-    
-    try {
-      if (djIntervalRef.current) {
-        clearInterval(djIntervalRef.current);
-        djIntervalRef.current = null;
-      }
-      if (recognitionIntervalRef.current) {
-        clearInterval(recognitionIntervalRef.current);
-        recognitionIntervalRef.current = null;
-      }
-      if (tempRecordingRef.current) {
-        try { await tempRecordingRef.current.stopAndUnloadAsync(); } catch {}
-        tempRecordingRef.current = null;
-      }
-
-      await djRecording.stopAndUnloadAsync();
-      const uri = djRecording.getURI();
-      const finalDuration = djSetDuration;
-      const tracks = [...recognizedTracks];
-      setDjRecording(null);
-
-      if (uri) {
-        const trackListText = tracks.length > 0
-          ? `\n\n✅ ${tracks.length} track(s) identified:\n${tracks.map((t, i) => 
-              `${i + 1}. ${t.title} - ${t.artist} (${formatDuration(t.timestamp)})`
-            ).join('\n')}\n\n📧 Producers have been notified!`
-          : '\n\nNo tracks identified automatically.';
-
-        Alert.alert(
-          '🎵 DJ Set Complete',
-          `Duration: ${formatDuration(finalDuration)}${trackListText}`,
-          [
-            { text: 'Delete', style: 'destructive', onPress: () => { setDjSetDuration(0); setRecognizedTracks([]); }},
-            { text: 'Save', onPress: async () => {
-                const fileName = `dj_set_${Date.now()}.m4a`;
-                const destPath = `${FileSystem.documentDirectory}${fileName}`;
-                await FileSystem.moveAsync({ from: uri, to: destPath });
-                
-                const tracklistPath = `${FileSystem.documentDirectory}dj_set_${Date.now()}_tracklist.json`;
-                await FileSystem.writeAsStringAsync(tracklistPath, JSON.stringify({
-                  duration: finalDuration,
-                  tracks: tracks,
-                  location: location,
-                  dj_name: user?.full_name,
-                  date: new Date().toISOString(),
-                }));
-                
-                Alert.alert('✅ Saved!', 'DJ Set and tracklist saved');
-                setDjSetDuration(0);
-                setRecognizedTracks([]);
-              }
-            }
-          ]
-        );
-      }
-    } catch (error) {
-      console.error('Stop DJ set error:', error);
-    }
-  };
-
-  const toggleUsbConnection = () => {
-    Alert.alert(
-      '🔌 USB / Mixer Connection',
-      isUsbConnected 
-        ? 'Disconnect USB input?'
-        : 'To record from your mixer:\n\n1. Connect a USB or audio cable from the REC/BOOTH output\n2. Use a Lightning/USB-C adapter if needed\n3. The app will capture the direct audio signal\n\nBetter quality than microphone!',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: isUsbConnected ? 'Disconnect' : 'Cable Connected', onPress: () => setIsUsbConnected(!isUsbConnected) }
-      ]
-    );
-  };
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const glowOpacity1 = glowAnim1.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
-  const glowOpacity2 = glowAnim2.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
-  
-  // Rotating light interpolation
-  const rotate1 = rotateAnim1.interpolate({
+  // Rotate interpolation
+  const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
-  const rotate2 = rotateAnim2.interpolate({
+
+  const glowOpacity = glowAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+    outputRange: [0.3, 1],
   });
 
   return (
@@ -690,191 +424,188 @@ export default function SpynScreen() {
           <View style={styles.locationBanner}>
             <Ionicons name="location" size={16} color={CYAN_COLOR} />
             <Text style={styles.locationText}>
-              {location.venue || location.city || 'Your Location'}{location.city && location.venue ? `, ${location.city}` : ''}
+              {location.venue ? `${location.venue}, ` : ''}{location.city || 'Your Location'}
             </Text>
           </View>
         )}
 
-        {/* Main SPYN Buttons */}
-        {!recording && !djRecording && !recognizing && !result && (
-          <View style={styles.spynButtonsSection}>
-            {/* SPYN DETECTION */}
-            <View style={styles.spynButtonWrapper}>
-              {/* Rotating light ring */}
-              <Animated.View style={[styles.rotatingRingContainer, { transform: [{ rotate: rotate1 }] }]}>
+        {/* Main Content */}
+        {!sessionActive && !recognizing && !result && (
+          <>
+            {/* SPYN Detection Button */}
+            <View style={styles.mainButtonContainer}>
+              {/* Rotating glow ring */}
+              <Animated.View style={[styles.glowRingOuter, { transform: [{ rotate }] }]}>
                 <LinearGradient
                   colors={['#FF6B6B', 'transparent', 'transparent', 'transparent']}
-                  style={styles.rotatingRing}
+                  style={styles.gradientRing}
                   start={{ x: 0.5, y: 0 }}
                   end={{ x: 0.5, y: 1 }}
                 />
               </Animated.View>
-              <Animated.View style={[styles.glowRing, { opacity: glowOpacity1, borderColor: '#FF6B6B' }]} />
-              <Animated.View style={{ transform: [{ scale: scaleAnim1 }] }}>
-                <TouchableOpacity onPress={startDetection} activeOpacity={0.85} style={styles.spynButtonTouchable}>
-                  <LinearGradient colors={DETECTION_GRADIENT} style={styles.spynButton} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}>
-                    <Text style={styles.spynText}>SPYN</Text>
-                    <Text style={styles.spynSubtext}>{t('spyn.detection')}</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </Animated.View>
-              <Text style={styles.spynLabel}>{t('spyn.micro')}</Text>
-            </View>
-
-            {/* SPYN RECORD SET */}
-            <View style={styles.spynButtonWrapper}>
-              {/* Rotating light ring */}
-              <Animated.View style={[styles.rotatingRingContainer, { transform: [{ rotate: rotate2 }] }]}>
+              
+              {/* Glow effect */}
+              <Animated.View style={[styles.glowEffect, { opacity: glowOpacity }]} />
+              
+              {/* Main button */}
+              <TouchableOpacity onPress={startDetection} activeOpacity={0.8}>
                 <LinearGradient
-                  colors={['#EC407A', 'transparent', 'transparent', 'transparent']}
-                  style={styles.rotatingRing}
+                  colors={['#FF6B6B', '#E53935']}
+                  style={styles.mainButton}
                   start={{ x: 0.5, y: 0 }}
                   end={{ x: 0.5, y: 1 }}
-                />
-              </Animated.View>
-              <Animated.View style={[styles.glowRing, { opacity: glowOpacity2, borderColor: '#EC407A' }]} />
-              <Animated.View style={{ transform: [{ scale: scaleAnim2 }] }}>
-                <TouchableOpacity onPress={startRecordSet} activeOpacity={0.85} style={styles.spynButtonTouchable}>
-                  <LinearGradient colors={RECORD_GRADIENT} style={styles.spynButton} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}>
-                    <Text style={styles.spynText}>SPYN</Text>
-                    <Text style={styles.spynSubtext}>{t('spyn.recordSet')}</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </Animated.View>
-              <TouchableOpacity onPress={toggleUsbConnection}>
-                <Text style={[styles.spynLabel, isUsbConnected && styles.spynLabelActive]}>
-                  {isUsbConnected ? '🔌 USB Connected' : t('spyn.usbRec')}
-                </Text>
+                >
+                  <Text style={styles.spynText}>SPYN</Text>
+                  <Text style={styles.detectionText}>{t('spyn.detection')}</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
-          </View>
-        )}
 
-        {/* Recognizing */}
-        {recognizing && (
-          <View style={styles.statusContainer}>
-            <ActivityIndicator size="large" color={CYAN_COLOR} />
-            <Text style={styles.statusText}>Analyzing with ACRCloud...</Text>
-            <Text style={styles.statusSubtext}>Identifying track & notifying producer</Text>
-          </View>
-        )}
-
-        {/* Recording Detection */}
-        {recording && (
-          <View style={styles.recordingStatus}>
-            <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-              <LinearGradient colors={DETECTION_GRADIENT} style={styles.recordingCircle}>
-                <Ionicons name="mic" size={50} color="#fff" />
-              </LinearGradient>
-            </Animated.View>
-            <Text style={styles.statusText}>Listening... (10s)</Text>
-            <Text style={styles.statusSubtext}>
-              {location ? `📍 ${location.venue || location.city || 'Your location'}` : 'Getting location...'}
+            <Text style={styles.instructionText}>
+              {t('spyn.tapToIdentify') || 'Tap to identify the track playing'}
             </Text>
-            <TouchableOpacity style={styles.cancelButton} onPress={stopDetection}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
-        {/* DJ Set Recording */}
-        {djRecording && (
-          <View style={styles.djSetContainer}>
-            <View style={styles.recordingHeader}>
-              <View style={styles.recordingDot} />
-              <Text style={styles.recordingLabel}>REC</Text>
-              {isUsbConnected && <View style={styles.usbBadge}><Text style={styles.usbBadgeText}>USB</Text></View>}
-            </View>
-            
-            <Text style={styles.djSetTimer}>{formatDuration(djSetDuration)}</Text>
-            
-            {location && (
-              <View style={styles.locationInfo}>
-                <Ionicons name="location" size={14} color={CYAN_COLOR} />
-                <Text style={styles.locationInfoText}>
-                  {location.venue || location.city || 'Recording location'}
+            {/* Identified Tracks History */}
+            {identifiedTracks.length > 0 && (
+              <View style={styles.historySection}>
+                <Text style={styles.historyTitle}>
+                  {t('spyn.identifiedTracks') || 'Identified Tracks'} ({identifiedTracks.length})
                 </Text>
-              </View>
-            )}
-            
-            {recognizedTracks.length > 0 && (
-              <View style={styles.tracklistContainer}>
-                <Text style={styles.tracklistTitle}>
-                  Tracks Identified ({recognizedTracks.length}) • Producers notified ✉️
-                </Text>
-                {recognizedTracks.slice(-5).map((track, index) => (
-                  <View key={track.id} style={styles.tracklistItem}>
-                    <Text style={styles.tracklistTime}>{formatDuration(track.timestamp)}</Text>
-                    <View style={styles.tracklistInfo}>
-                      <Text style={styles.tracklistTrackTitle} numberOfLines={1}>{track.title}</Text>
-                      <Text style={styles.tracklistArtist} numberOfLines={1}>{track.artist}</Text>
+                {identifiedTracks.slice(0, 5).map((track, index) => (
+                  <View key={index} style={styles.historyItem}>
+                    {track.cover_image && (
+                      <Image source={{ uri: track.cover_image }} style={styles.historyImage} />
+                    )}
+                    <View style={styles.historyInfo}>
+                      <Text style={styles.historyTitle2}>{track.title}</Text>
+                      <Text style={styles.historyArtist}>{track.artist}</Text>
                     </View>
-                    <Ionicons name="mail" size={14} color="#4CAF50" />
+                    <Text style={styles.historyTime}>{track.time}</Text>
                   </View>
                 ))}
               </View>
             )}
-            
-            <TouchableOpacity style={styles.stopButton} onPress={stopRecordSet}>
-              <Ionicons name="stop" size={28} color="#fff" />
-              <Text style={styles.stopButtonText}>Stop Recording</Text>
+          </>
+        )}
+
+        {/* Listening State */}
+        {sessionActive && !recognizing && !result && (
+          <View style={styles.listeningContainer}>
+            {/* Sound Bars Animation */}
+            <View style={styles.soundBarsContainer}>
+              {barAnims.map((anim, index) => (
+                <Animated.View
+                  key={index}
+                  style={[
+                    styles.soundBar,
+                    {
+                      height: anim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [20, 80],
+                      }),
+                      backgroundColor: `hsl(${180 + index * 10}, 70%, 50%)`,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+
+            {/* Microphone Icon */}
+            <Animated.View style={[styles.micContainer, { transform: [{ scale: pulseAnim }] }]}>
+              <LinearGradient
+                colors={['#00BFA5', '#00897B']}
+                style={styles.micButton}
+              >
+                <Ionicons name="mic" size={40} color="#fff" />
+              </LinearGradient>
+            </Animated.View>
+
+            <Text style={styles.listeningText}>{t('spyn.listening') || 'Listening...'}</Text>
+            <Text style={styles.countdownText}>{countdown}s</Text>
+
+            <TouchableOpacity style={styles.cancelButton} onPress={resetDetection}>
+              <Text style={styles.cancelButtonText}>{t('common.cancel') || 'Cancel'}</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Recognition Result */}
+        {/* Recognizing State */}
+        {recognizing && (
+          <View style={styles.analyzingContainer}>
+            <ActivityIndicator size="large" color={CYAN_COLOR} />
+            <Text style={styles.analyzingText}>{t('spyn.analyzing') || 'Analyzing...'}</Text>
+          </View>
+        )}
+
+        {/* Result State */}
         {result && (
           <View style={styles.resultContainer}>
-            <View style={styles.resultIconContainer}>
-              <Ionicons name="checkmark-circle" size={70} color="#4CAF50" />
+            {/* Success Badge */}
+            <View style={styles.successBadge}>
+              <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+              <Text style={styles.successText}>{t('spyn.trackIdentified') || 'Track Identified!'}</Text>
             </View>
-            <Text style={styles.resultTitle}>Track Identified!</Text>
-            
-            <View style={styles.resultCard}>
-              <Text style={styles.resultLabel}>Title</Text>
-              <Text style={styles.resultValue}>{result.title || 'Unknown'}</Text>
-              <Text style={styles.resultLabel}>Artist</Text>
-              <Text style={styles.resultValue}>{result.artist || 'Unknown'}</Text>
-              {result.album && (
-                <>
-                  <Text style={styles.resultLabel}>Album</Text>
-                  <Text style={styles.resultValue}>{result.album}</Text>
-                </>
+
+            {/* Track Card */}
+            <View style={styles.trackCard}>
+              {result.cover_image && (
+                <Image source={{ uri: result.cover_image }} style={styles.trackCover} />
               )}
-              {result.score && (
-                <Text style={styles.confidenceText}>Confidence: {result.score}%</Text>
-              )}
+              <View style={styles.trackInfo}>
+                <Text style={styles.trackTitle}>"{result.title}"</Text>
+                <Text style={styles.trackArtist}>{result.artist}</Text>
+                {result.genre && (
+                  <View style={styles.genreBadge}>
+                    <Text style={styles.genreText}>{result.genre}</Text>
+                  </View>
+                )}
+              </View>
             </View>
-            
-            {notifiedProducer && (
-              <View style={styles.notificationBadge}>
-                <Ionicons name="mail" size={16} color="#4CAF50" />
-                <Text style={styles.notificationText}>
-                  Producer "{notifiedProducer}" has been notified! 📧
-                </Text>
+
+            {/* Location Info */}
+            {location && (
+              <View style={styles.locationInfo}>
+                <View style={styles.locationRow}>
+                  <Ionicons name="location" size={16} color="#FF6B6B" />
+                  <Text style={styles.locationDetail}>
+                    @ {location.venue || location.city}, {location.country}
+                  </Text>
+                </View>
+                <View style={styles.locationRow}>
+                  <Ionicons name="time" size={16} color="#888" />
+                  <Text style={styles.locationDetail}>
+                    {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
+                  </Text>
+                </View>
+                <View style={styles.locationRow}>
+                  <Image 
+                    source={{ uri: user?.avatar || 'https://via.placeholder.com/30' }} 
+                    style={styles.djAvatar} 
+                  />
+                  <Text style={styles.locationDetail}>
+                    Played by DJ <Text style={styles.djName}>{user?.full_name || 'Unknown'}</Text>
+                  </Text>
+                </View>
               </View>
             )}
-            
-            <TouchableOpacity style={styles.resetButton} onPress={() => setResult(null)}>
-              <Text style={styles.resetButtonText}>New Search</Text>
+
+            {/* Producer Notified */}
+            <View style={styles.notifiedBadge}>
+              <Ionicons name="mail" size={18} color="#4CAF50" />
+              <Text style={styles.notifiedText}>
+                {t('spyn.producerNotified') || 'Producer has been notified!'} 📧
+              </Text>
+            </View>
+
+            {/* New Search Button */}
+            <TouchableOpacity style={styles.newSearchButton} onPress={resetDetection}>
+              <Ionicons name="refresh" size={20} color="#fff" />
+              <Text style={styles.newSearchText}>{t('spyn.newSearch') || 'New Search'}</Text>
             </TouchableOpacity>
           </View>
         )}
 
       </ScrollView>
-
-      {/* Producer Notification Modal */}
-      <Modal visible={showNotificationModal} transparent animationType="fade">
-        <View style={styles.notificationModal}>
-          <View style={styles.notificationModalContent}>
-            <Ionicons name="mail" size={40} color="#4CAF50" />
-            <Text style={styles.notificationModalTitle}>Producer Notified!</Text>
-            <Text style={styles.notificationModalText}>
-              {notifiedProducer} has been notified that you're playing their track!
-            </Text>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -884,68 +615,188 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: { padding: Spacing.lg, paddingTop: 60, alignItems: 'center', minHeight: '100%' },
   
-  // Location
-  locationBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: CYAN_COLOR + '20', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginBottom: 20, gap: 6 },
-  locationText: { color: CYAN_COLOR, fontSize: 13, fontWeight: '500' },
+  // Location Banner
+  locationBanner: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: CYAN_COLOR + '20', 
+    paddingHorizontal: 16, 
+    paddingVertical: 10, 
+    borderRadius: 25, 
+    marginBottom: 30, 
+    gap: 8 
+  },
+  locationText: { color: CYAN_COLOR, fontSize: 14, fontWeight: '600' },
   
-  // SPYN Buttons
-  spynButtonsSection: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: Spacing.xl, paddingHorizontal: 20, gap: 40 },
-  spynButtonWrapper: { alignItems: 'center', position: 'relative', flex: 1 },
-  rotatingRingContainer: { position: 'absolute', width: BUTTON_SIZE + 30, height: BUTTON_SIZE + 30, top: -15, alignSelf: 'center' },
-  rotatingRing: { width: BUTTON_SIZE + 30, height: BUTTON_SIZE + 30, borderRadius: (BUTTON_SIZE + 30) / 2, borderWidth: 3, borderColor: 'transparent' },
-  glowRing: { position: 'absolute', width: BUTTON_SIZE + 16, height: BUTTON_SIZE + 16, borderRadius: (BUTTON_SIZE + 16) / 2, borderWidth: 2, top: -8, alignSelf: 'center', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 15, elevation: 10 },
-  spynButtonTouchable: { borderRadius: BUTTON_SIZE / 2, overflow: 'hidden' },
-  spynButton: { width: BUTTON_SIZE, height: BUTTON_SIZE, borderRadius: BUTTON_SIZE / 2, justifyContent: 'center', alignItems: 'center' },
-  spynText: { fontSize: 26, fontWeight: 'bold', color: '#fff', letterSpacing: 2 },
-  spynSubtext: { fontSize: 9, fontWeight: '600', color: 'rgba(255,255,255,0.85)', letterSpacing: 1, marginTop: 4 },
-  spynLabel: { marginTop: 16, fontSize: 13, color: Colors.textMuted, fontWeight: '500' },
-  spynLabelActive: { color: '#4CAF50' },
+  // Main Button
+  mainButtonContainer: { 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    marginBottom: 30,
+    width: BUTTON_SIZE + 40,
+    height: BUTTON_SIZE + 40,
+  },
+  glowRingOuter: {
+    position: 'absolute',
+    width: BUTTON_SIZE + 40,
+    height: BUTTON_SIZE + 40,
+  },
+  gradientRing: {
+    width: '100%',
+    height: '100%',
+    borderRadius: (BUTTON_SIZE + 40) / 2,
+    borderWidth: 3,
+    borderColor: 'transparent',
+  },
+  glowEffect: {
+    position: 'absolute',
+    width: BUTTON_SIZE + 20,
+    height: BUTTON_SIZE + 20,
+    borderRadius: (BUTTON_SIZE + 20) / 2,
+    backgroundColor: '#FF6B6B',
+    shadowColor: '#FF6B6B',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 30,
+    elevation: 20,
+  },
+  mainButton: {
+    width: BUTTON_SIZE,
+    height: BUTTON_SIZE,
+    borderRadius: BUTTON_SIZE / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  spynText: { fontSize: 28, fontWeight: 'bold', color: '#fff', letterSpacing: 3 },
+  detectionText: { fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.9)', letterSpacing: 1, marginTop: 4 },
+  instructionText: { color: Colors.textMuted, fontSize: 14, textAlign: 'center', marginBottom: 40 },
+
+  // Listening State
+  listeningContainer: { alignItems: 'center', marginTop: 20 },
+  soundBarsContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'flex-end', 
+    justifyContent: 'center', 
+    height: 100, 
+    marginBottom: 30,
+    gap: 4,
+  },
+  soundBar: { 
+    width: 8, 
+    borderRadius: 4,
+  },
+  micContainer: { marginBottom: 20 },
+  micButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listeningText: { color: '#00BFA5', fontSize: 20, fontWeight: '600', marginBottom: 8 },
+  countdownText: { color: Colors.textMuted, fontSize: 16 },
+  cancelButton: { 
+    marginTop: 30, 
+    paddingHorizontal: 30, 
+    paddingVertical: 12, 
+    backgroundColor: 'rgba(255,255,255,0.1)', 
+    borderRadius: 25 
+  },
+  cancelButtonText: { color: Colors.textMuted, fontSize: 14 },
+
+  // Analyzing State
+  analyzingContainer: { alignItems: 'center', marginTop: 50 },
+  analyzingText: { color: CYAN_COLOR, fontSize: 18, marginTop: 20 },
+
+  // Result State
+  resultContainer: { width: '100%', alignItems: 'center' },
+  successBadge: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 8, 
+    marginBottom: 20,
+    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 25,
+  },
+  successText: { color: '#4CAF50', fontSize: 16, fontWeight: '600' },
   
-  // Status
-  statusContainer: { alignItems: 'center', gap: 16, marginTop: 40 },
-  statusText: { fontSize: 20, color: CYAN_COLOR, fontWeight: '600' },
-  statusSubtext: { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
-  recordingStatus: { alignItems: 'center', gap: Spacing.md, marginTop: 40 },
-  recordingCircle: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center' },
-  cancelButton: { backgroundColor: Colors.backgroundCard, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.lg, borderRadius: BorderRadius.md, marginTop: Spacing.md, borderWidth: 1, borderColor: CYAN_COLOR },
-  cancelButtonText: { color: CYAN_COLOR, fontSize: 14, fontWeight: '500' },
+  trackCard: { 
+    backgroundColor: CARD_BG, 
+    borderRadius: 16, 
+    padding: 20, 
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: CYAN_COLOR + '40',
+  },
+  trackCover: { width: 100, height: 100, borderRadius: 8 },
+  trackInfo: { flex: 1, marginLeft: 16 },
+  trackTitle: { color: CYAN_COLOR, fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
+  trackArtist: { color: '#fff', fontSize: 16, marginBottom: 8 },
+  genreBadge: { 
+    backgroundColor: CYAN_COLOR + '30', 
+    paddingHorizontal: 12, 
+    paddingVertical: 4, 
+    borderRadius: 15, 
+    alignSelf: 'flex-start' 
+  },
+  genreText: { color: CYAN_COLOR, fontSize: 12 },
   
-  // DJ Set
-  djSetContainer: { alignItems: 'center', gap: Spacing.md, width: '100%', marginTop: 20 },
-  recordingHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  recordingDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: '#ff4444' },
-  recordingLabel: { fontSize: 16, fontWeight: 'bold', color: '#ff4444' },
-  usbBadge: { backgroundColor: '#4CAF50', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, marginLeft: 8 },
-  usbBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-  djSetTimer: { fontSize: 72, fontWeight: 'bold', color: CYAN_COLOR, fontVariant: ['tabular-nums'] },
-  locationInfo: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: -10 },
-  locationInfoText: { color: Colors.textMuted, fontSize: 13 },
-  tracklistContainer: { width: '100%', backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.md, padding: Spacing.md, marginTop: Spacing.md, borderWidth: 1, borderColor: CYAN_COLOR + '40' },
-  tracklistTitle: { fontSize: 14, fontWeight: '600', color: Colors.text, marginBottom: Spacing.sm },
-  tracklistItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.border, gap: 12 },
-  tracklistTime: { fontSize: 12, color: CYAN_COLOR, fontWeight: '600', width: 45 },
-  tracklistInfo: { flex: 1 },
-  tracklistTrackTitle: { fontSize: 14, color: Colors.text, fontWeight: '500' },
-  tracklistArtist: { fontSize: 12, color: Colors.textMuted },
-  stopButton: { backgroundColor: '#ff4444', paddingVertical: Spacing.md, paddingHorizontal: Spacing.xl, borderRadius: BorderRadius.lg, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.lg },
-  stopButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  locationInfo: { 
+    backgroundColor: CARD_BG, 
+    borderRadius: 12, 
+    padding: 16, 
+    width: '100%',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: CYAN_COLOR + '30',
+  },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  locationDetail: { color: '#aaa', fontSize: 14 },
+  djAvatar: { width: 24, height: 24, borderRadius: 12 },
+  djName: { color: CYAN_COLOR, fontWeight: '600' },
   
-  // Result
-  resultContainer: { alignItems: 'center', width: '100%', marginTop: 20 },
-  resultIconContainer: { marginBottom: 16 },
-  resultTitle: { fontSize: 26, fontWeight: 'bold', color: Colors.text, marginBottom: 24 },
-  resultCard: { backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.md, padding: Spacing.lg, width: '100%', gap: 6, borderWidth: 1, borderColor: CYAN_COLOR + '40' },
-  resultLabel: { fontSize: 12, color: Colors.textMuted, marginTop: 8 },
-  resultValue: { fontSize: 18, color: Colors.text, fontWeight: '600' },
-  confidenceText: { fontSize: 13, color: '#4CAF50', marginTop: 12 },
-  notificationBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#4CAF5020', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginTop: 20, gap: 8 },
-  notificationText: { color: '#4CAF50', fontSize: 13, fontWeight: '500' },
-  resetButton: { backgroundColor: CYAN_COLOR, padding: Spacing.md, borderRadius: BorderRadius.md, marginTop: 24, paddingHorizontal: Spacing.xl },
-  resetButtonText: { color: '#000', fontSize: 16, fontWeight: '600' },
+  notifiedBadge: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 8,
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginBottom: 20,
+  },
+  notifiedText: { color: '#4CAF50', fontSize: 14 },
   
-  // Notification Modal
-  notificationModal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  notificationModalContent: { backgroundColor: Colors.backgroundCard, borderRadius: 20, padding: 30, alignItems: 'center', marginHorizontal: 40, borderWidth: 2, borderColor: '#4CAF50' },
-  notificationModalTitle: { fontSize: 20, fontWeight: 'bold', color: Colors.text, marginTop: 16 },
-  notificationModalText: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', marginTop: 8 },
+  newSearchButton: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: CYAN_COLOR, 
+    paddingHorizontal: 30, 
+    paddingVertical: 14, 
+    borderRadius: 25 
+  },
+  newSearchText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+
+  // History Section
+  historySection: { width: '100%', marginTop: 20 },
+  historyTitle: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  historyItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: CARD_BG, 
+    padding: 12, 
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  historyImage: { width: 50, height: 50, borderRadius: 6 },
+  historyInfo: { flex: 1, marginLeft: 12 },
+  historyTitle2: { color: '#fff', fontSize: 14, fontWeight: '500' },
+  historyArtist: { color: Colors.textMuted, fontSize: 12 },
+  historyTime: { color: Colors.textMuted, fontSize: 12 },
 });
