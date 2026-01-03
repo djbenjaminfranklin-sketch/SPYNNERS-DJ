@@ -220,7 +220,11 @@ export const base44Auth = {
         password,
       });
       
-      const { token, user } = response.data;
+      // Base44 returns access_token, not token
+      const token = response.data.access_token || response.data.token;
+      const user = response.data.user;
+      
+      console.log('[Auth] Token received:', token ? 'Yes' : 'No');
       
       // Save to storage
       if (token) {
@@ -234,10 +238,12 @@ export const base44Auth = {
           window.localStorage.setItem(USER_KEY, JSON.stringify(user));
           console.log('[Auth] Token saved to localStorage');
         }
+      } else {
+        console.error('[Auth] No token received from login!');
       }
       
       console.log('[Auth] Login successful, token saved');
-      return response.data;
+      return { token, user };
     } catch (error: any) {
       console.error('[Auth] Login error:', error?.response?.data || error?.message);
       throw new Error(error?.response?.data?.detail || error?.response?.data?.message || 'Login failed');
