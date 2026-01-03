@@ -95,6 +95,8 @@ export default function AdminScreen() {
 
   const fetchAllData = async () => {
     try {
+      console.log('[Admin] Fetching all data...');
+      
       // Try the new getAdminData API first
       const dashboardData = await base44Admin.getDashboard();
       
@@ -119,26 +121,75 @@ export default function AdminScreen() {
           ]);
         }
       } else {
-        // Fallback to old API
-        console.log('[Admin] Falling back to old API');
-        await Promise.all([
-          fetchTracksOld(),
-          fetchDuplicates(),
-          fetchACRCloudStats(),
-        ]);
+        // Fallback - fetch tracks directly from Base44 entities
+        console.log('[Admin] Falling back to direct entity fetch');
+        await fetchTracksFromEntities();
       }
     } catch (error) {
       console.error('[Admin] Error fetching dashboard:', error);
-      // Fallback to old API
-      await Promise.all([
-        fetchTracksOld(),
-        fetchDuplicates(),
-        fetchACRCloudStats(),
-      ]);
+      // Fallback - fetch tracks directly from Base44 entities
+      await fetchTracksFromEntities();
     }
     
     setLoading(false);
     setRefreshing(false);
+  };
+
+  const fetchTracksFromEntities = async () => {
+    try {
+      console.log('[Admin] Fetching tracks from entities...');
+      const response = await axios.get(
+        `${BACKEND_URL}/api/base44/entities/Track`,
+        { 
+          params: { limit: 500 },
+          headers: token ? { Authorization: `Bearer ${token}` } : {} 
+        }
+      );
+      
+      let tracks: PendingTrack[] = [];
+      if (Array.isArray(response.data)) {
+        tracks = response.data;
+      } else if (response.data?.items) {
+        tracks = response.data.items;
+      }
+      
+      console.log('[Admin] Fetched tracks:', tracks.length);
+      
+      // Map the tracks to our format
+      const mappedTracks = tracks.map((track: any) => ({
+        id: track.id || track._id,
+        title: track.title || 'Unknown',
+        artist: track.artist || track.producer_name || 'Unknown',
+        producer_name: track.producer_name,
+        genre: track.genre || 'House',
+        label: track.label,
+        bpm: track.bpm,
+        key: track.key,
+        description: track.description,
+        is_vip: track.is_vip || false,
+        audio_url: track.audio_url || track.audio_file,
+        artwork_url: track.artwork_url || track.cover_image,
+        uploaded_by: track.uploaded_by || track.created_by_id,
+        uploaded_at: track.created_date || track.uploaded_at,
+        status: track.status || 'approved',
+        rejection_reason: track.rejection_reason,
+      }));
+      
+      setAllTracks(mappedTracks);
+      setPendingTracks(mappedTracks.filter((t: PendingTrack) => t.status === 'pending'));
+      
+      // Calculate stats
+      setAdminStats({
+        total_tracks: mappedTracks.length,
+        total_users: 0,
+        pending_tracks: mappedTracks.filter((t: PendingTrack) => t.status === 'pending').length,
+        vip_requests: 0,
+        recent_activity: [],
+      });
+      
+    } catch (error) {
+      console.error('[Admin] Error fetching tracks from entities:', error);
+    }
   };
 
   const fetchTracksOld = async () => {
