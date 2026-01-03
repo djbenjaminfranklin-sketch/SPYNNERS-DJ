@@ -569,13 +569,17 @@ export default function SpynScreen() {
   };
 
   const confirmEndSession = async () => {
+    // Close modal immediately for better UX
+    setShowEndSessionModal(false);
+    
     stopSession();
 
-    // Send emails to all identified track producers via Base44 SDK
+    // Send emails to all identified track producers (non-blocking)
     if (identifiedTracks.length > 0) {
       console.log('[SPYN] Sending emails to producers via Base44...');
       
-      for (const track of identifiedTracks) {
+      // Fire and forget - don't wait for emails
+      identifiedTracks.forEach(async (track) => {
         try {
           await base44Notifications.sendTrackPlayedEmail({
             track_id: track.id || '',
@@ -588,9 +592,9 @@ export default function SpynScreen() {
           });
           console.log(`[SPYN] Email sent for: ${track.title}`);
         } catch (e) {
-          console.log(`[SPYN] Could not send email for: ${track.title}`, e);
+          console.log(`[SPYN] Could not send email for: ${track.title}`);
         }
-      }
+      });
     }
 
     // Award Black Diamond ONLY if valid venue (club, bar, restaurant)
@@ -614,28 +618,6 @@ export default function SpynScreen() {
         if (awardResponse.data.success && !awardResponse.data.already_awarded) {
           console.log('[SPYN] Black Diamond awarded!');
           
-          // Update user's diamond count
-          try {
-            const userId = user?.id || (user as any)?._id;
-            if (userId) {
-              const userResponse = await axios.get(
-                `${BACKEND_URL}/api/base44/entities/User/${userId}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              
-              const currentDiamonds = userResponse.data?.black_diamonds || userResponse.data?.diamonds || 0;
-              
-              await axios.put(
-                `${BACKEND_URL}/api/base44/entities/User/${userId}`,
-                { black_diamonds: currentDiamonds + 1 },
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-            }
-          } catch (e) {
-            console.log('[SPYN] Could not update user diamonds');
-          }
-
-          setShowEndSessionModal(false);
           setShowDiamondModal(true);
           
           Animated.loop(
@@ -663,7 +645,6 @@ export default function SpynScreen() {
       console.log('[SPYN] No Black Diamond: tracks=' + identifiedTracks.length + ', valid_venue=' + location?.is_valid_venue);
     }
 
-    setShowEndSessionModal(false);
     resetSessionState();
   };
 
