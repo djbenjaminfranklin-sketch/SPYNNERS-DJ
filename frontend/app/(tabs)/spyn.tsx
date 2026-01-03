@@ -2038,8 +2038,30 @@ const styles = StyleSheet.create({
   },
   radioText: { 
     color: '#fff', 
-    fontSize: 14 
+    fontSize: 14,
+    marginLeft: 12 
   },
+  
+  // Other DJ input
+  otherDjContainer: {
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  otherDjLabel: {
+    color: '#aaa',
+    fontSize: 13,
+    marginBottom: 8,
+  },
+  otherDjInput: {
+    backgroundColor: '#252540',
+    borderRadius: 12,
+    padding: 14,
+    color: '#fff',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: CYAN_COLOR + '40',
+  },
+  
   warningBox: { 
     flexDirection: 'row', 
     alignItems: 'center', 
