@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -39,11 +39,12 @@ const DARK_BG = '#0a0a0a';
 const CARD_BG = '#1a1a2e';
 const ORANGE_COLOR = '#E8A87C';
 const GREEN_COLOR = '#4CAF50';
+const RED_COLOR = '#E53935';
 
 // Session settings
-const MAX_SESSION_DURATION = 5 * 60 * 60 * 1000;
-const RECOGNITION_INTERVAL = 12000;
-const RECORDING_DURATION = 8000;
+const MAX_SESSION_DURATION = 5 * 60 * 60 * 1000; // 5 hours
+const RECOGNITION_INTERVAL = 12000; // 12 seconds between recognition cycles
+const RECORDING_DURATION = 8000; // 8 seconds of recording
 
 // Venue types that qualify for Black Diamond
 const VALID_VENUE_TYPES = [
@@ -87,29 +88,34 @@ export default function SpynScreen() {
   const { user, token } = useAuth();
   const { t } = useLanguage();
   
+  // Session state
   const [sessionActive, setSessionActive] = useState(false);
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [recognizing, setRecognizing] = useState(false);
-  const [location, setLocation] = useState<LocationInfo | null>(null);
-  const [locationPermission, setLocationPermission] = useState(false);
   const [identifiedTracks, setIdentifiedTracks] = useState<TrackResult[]>([]);
   const [currentTrack, setCurrentTrack] = useState<TrackResult | null>(null);
   const [sessionDuration, setSessionDuration] = useState('00:00:00');
-  const [showEndSessionModal, setShowEndSessionModal] = useState(false);
-  const [showDiamondModal, setShowDiamondModal] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [startedAtTime, setStartedAtTime] = useState('');
+  
+  // Location state
+  const [location, setLocation] = useState<LocationInfo | null>(null);
+  const [locationPermission, setLocationPermission] = useState(false);
   const [locationLoading, setLocationLoading] = useState(true);
   
+  // Modal state
+  const [showEndSessionModal, setShowEndSessionModal] = useState(false);
+  const [showDiamondModal, setShowDiamondModal] = useState(false);
   const [correctedVenue, setCorrectedVenue] = useState('');
   const [whoPlayed, setWhoPlayed] = useState<'me' | 'another' | null>(null);
   
+  // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const barAnims = useRef([...Array(12)].map(() => new Animated.Value(0.3))).current;
-  const glowAnim = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0.4)).current;
   const diamondRotate = useRef(new Animated.Value(0)).current;
   
+  // Refs for session management
   const recognitionLoopRef = useRef<NodeJS.Timeout | null>(null);
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const recordingRef = useRef<any>(null);
@@ -117,15 +123,19 @@ export default function SpynScreen() {
   const isRecordingRef = useRef(false);
   const sessionActiveRef = useRef(false);
   const identifiedTracksRef = useRef<string[]>([]);
-
+  
+  // Animation refs
+  const pulseAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   const rotateAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   const glowAnimRef = useRef<Animated.CompositeAnimation | null>(null);
-  const pulseAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   const barAnimRefs = useRef<Animated.CompositeAnimation[]>([]);
 
+  // ==================== INITIALIZATION ====================
+  
   useEffect(() => {
     requestLocationPermission();
     startIdleAnimations();
+    
     return () => {
       stopSession();
       stopAllAnimations();
@@ -140,6 +150,7 @@ export default function SpynScreen() {
   };
 
   const startIdleAnimations = () => {
+    // Rotating glow ring
     rotateAnimRef.current = Animated.loop(
       Animated.timing(rotateAnim, {
         toValue: 1,
@@ -150,6 +161,7 @@ export default function SpynScreen() {
     );
     rotateAnimRef.current.start();
 
+    // Pulsing glow
     glowAnimRef.current = Animated.loop(
       Animated.sequence([
         Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: false }),
@@ -160,6 +172,7 @@ export default function SpynScreen() {
   };
 
   const startListeningAnimation = () => {
+    // Sound bars animation
     barAnimRefs.current = barAnims.map((anim) => {
       const randomDuration = 150 + Math.random() * 250;
       const animation = Animated.loop(
@@ -180,6 +193,7 @@ export default function SpynScreen() {
       return animation;
     });
 
+    // Continuous pulse animation for mic button
     pulseAnimRef.current = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, { toValue: 1.15, duration: 400, useNativeDriver: true }),
@@ -196,14 +210,17 @@ export default function SpynScreen() {
     pulseAnim.setValue(1);
   };
 
+  // ==================== LOCATION ====================
+
   const requestLocationPermission = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         setLocationPermission(true);
         await updateLocation();
+      } else {
+        setLocationLoading(false);
       }
-      setLocationLoading(false);
     } catch (error) {
       console.error('Location permission error:', error);
       setLocationLoading(false);
@@ -222,8 +239,10 @@ export default function SpynScreen() {
       
       let venueName = undefined;
       let venueType = undefined;
+      let venueTypes: string[] = [];
       let isValidVenue = false;
       
+      // Try to get venue from Google Places API
       try {
         const response = await axios.get(
           `${BACKEND_URL}/api/nearby-places`,
@@ -232,20 +251,21 @@ export default function SpynScreen() {
         if (response.data.success && response.data.venue) {
           venueName = response.data.venue;
           venueType = response.data.venue_type || response.data.types?.[0];
+          venueTypes = response.data.types || [];
           
           // Check if it's a valid venue for Black Diamond
-          const types = response.data.types || [];
-          isValidVenue = types.some((type: string) => 
+          isValidVenue = venueTypes.some((type: string) => 
             VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
           );
         }
       } catch (e) {
-        console.log('Places lookup failed');
+        console.log('Places lookup failed, using reverse geocoding');
       }
       
+      // Get address via reverse geocoding
       const [address] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
       
-      setLocation({
+      const newLocation: LocationInfo = {
         latitude: lat,
         longitude: lng,
         venue: venueName || address?.name || address?.street || undefined,
@@ -253,7 +273,10 @@ export default function SpynScreen() {
         country: address?.country || undefined,
         venue_type: venueType,
         is_valid_venue: isValidVenue,
-      });
+      };
+      
+      console.log('[SPYN] Location updated:', newLocation);
+      setLocation(newLocation);
       setLocationLoading(false);
     } catch (error) {
       console.error('Location update error:', error);
@@ -261,79 +284,78 @@ export default function SpynScreen() {
     }
   };
 
-  // ==================== START SESSION - ONE CLICK ONLY ====================
+  // ==================== SESSION MANAGEMENT ====================
   
-  const startSession = async () => {
-    try {
-      console.log('[SPYN] Starting session immediately...');
-      
-      // Set session active FIRST
-      setSessionActive(true);
-      sessionActiveRef.current = true;
-      setIdentifiedTracks([]);
-      setCurrentTrack(null);
-      identifiedTracksRef.current = [];
-      
-      // Start animations immediately
-      startListeningAnimation();
-      setIsListening(true);
-      
-      const now = new Date();
-      setStartedAtTime(now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-
-      // Update location in background
-      if (locationPermission) {
-        updateLocation();
-      }
-
-      const newSession: SessionInfo = {
-        startTime: now,
-        venue: location?.venue,
-        city: location?.city,
-        country: location?.country,
-      };
-
-      setSession(newSession);
-      setCorrectedVenue(location?.venue || '');
-
-      // Start duration timer
-      durationIntervalRef.current = setInterval(() => {
-        const elapsed = Date.now() - newSession.startTime.getTime();
-        const hours = Math.floor(elapsed / 3600000);
-        const minutes = Math.floor((elapsed % 3600000) / 60000);
-        const seconds = Math.floor((elapsed % 60000) / 1000);
-        setSessionDuration(
-          `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-        );
-
-        if (elapsed >= MAX_SESSION_DURATION) {
-          handleEndSession();
-        }
-      }, 1000);
-
-      // Start recognition IMMEDIATELY
-      console.log('[SPYN] Starting continuous recognition immediately...');
-      performRecognition();
-      
-      // Then set up the loop
-      recognitionLoopRef.current = setInterval(() => {
-        if (sessionActiveRef.current && !isRecordingRef.current) {
-          performRecognition();
-        }
-      }, RECOGNITION_INTERVAL);
-
-    } catch (error) {
-      console.error('Start session error:', error);
-      Alert.alert('Error', 'Could not start session');
+  const handleSpynButtonPress = useCallback(() => {
+    console.log('[SPYN] Button pressed! Starting session immediately...');
+    
+    // Immediately set session active to switch UI
+    setSessionActive(true);
+    sessionActiveRef.current = true;
+    
+    // Reset tracks
+    setIdentifiedTracks([]);
+    setCurrentTrack(null);
+    identifiedTracksRef.current = [];
+    
+    // Start animations
+    startListeningAnimation();
+    
+    // Set start time
+    const now = new Date();
+    setStartedAtTime(now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    
+    // Create session info
+    const newSession: SessionInfo = {
+      startTime: now,
+      venue: location?.venue,
+      city: location?.city,
+      country: location?.country,
+    };
+    setSession(newSession);
+    setCorrectedVenue(location?.venue || '');
+    
+    // Update location in background
+    if (locationPermission) {
+      updateLocation();
     }
-  };
+    
+    // Start duration timer
+    durationIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - now.getTime();
+      const hours = Math.floor(elapsed / 3600000);
+      const minutes = Math.floor((elapsed % 3600000) / 60000);
+      const seconds = Math.floor((elapsed % 60000) / 1000);
+      setSessionDuration(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      );
+      
+      if (elapsed >= MAX_SESSION_DURATION) {
+        handleEndSession();
+      }
+    }, 1000);
+    
+    // Start recognition immediately
+    console.log('[SPYN] Starting first recognition...');
+    performRecognition();
+    
+    // Set up continuous recognition loop
+    recognitionLoopRef.current = setInterval(() => {
+      if (sessionActiveRef.current && !isRecordingRef.current) {
+        performRecognition();
+      }
+    }, RECOGNITION_INTERVAL);
+    
+  }, [location, locationPermission]);
 
   const performRecognition = async () => {
     if (isRecordingRef.current || !sessionActiveRef.current) {
+      console.log('[SPYN] Skipping recognition - already recording or session inactive');
       return;
     }
     
     isRecordingRef.current = true;
+    setRecognizing(true);
     console.log('[SPYN] Starting recognition cycle...');
 
     try {
@@ -343,9 +365,10 @@ export default function SpynScreen() {
         await performNativeRecognition();
       }
     } catch (error) {
-      console.error('Recognition error:', error);
+      console.error('[SPYN] Recognition error:', error);
     } finally {
       isRecordingRef.current = false;
+      setRecognizing(false);
     }
   };
 
@@ -366,7 +389,7 @@ export default function SpynScreen() {
             const reader = new FileReader();
             reader.onloadend = async () => {
               const base64Audio = (reader.result as string).split(',')[1];
-              await recognizeAudio(base64Audio);
+              await sendAudioForRecognition(base64Audio);
               resolve();
             };
             reader.readAsDataURL(audioBlob);
@@ -374,15 +397,17 @@ export default function SpynScreen() {
           };
 
           mediaRecorder.start();
+          console.log('[SPYN] Web recording started...');
 
           setTimeout(() => {
             if (mediaRecorder.state === 'recording') {
               mediaRecorder.stop();
+              console.log('[SPYN] Web recording stopped');
             }
           }, RECORDING_DURATION);
         })
         .catch((error) => {
-          console.error('Web recording error:', error);
+          console.error('[SPYN] Web recording error:', error);
           resolve();
         });
     });
@@ -391,7 +416,10 @@ export default function SpynScreen() {
   const performNativeRecognition = async () => {
     try {
       const { granted } = await Audio.requestPermissionsAsync();
-      if (!granted) return;
+      if (!granted) {
+        console.log('[SPYN] Audio permission not granted');
+        return;
+      }
 
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
@@ -402,27 +430,29 @@ export default function SpynScreen() {
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       recordingRef.current = recording;
+      console.log('[SPYN] Native recording started...');
 
       await new Promise(resolve => setTimeout(resolve, RECORDING_DURATION));
 
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
+      console.log('[SPYN] Native recording stopped, URI:', uri);
 
       if (uri) {
         const audioBase64 = await FileSystem.readAsStringAsync(uri, {
           encoding: 'base64',
         });
-        await recognizeAudio(audioBase64);
+        await sendAudioForRecognition(audioBase64);
       }
     } catch (error) {
-      console.error('Native recording error:', error);
+      console.error('[SPYN] Native recording error:', error);
     }
   };
 
-  const recognizeAudio = async (audioBase64: string) => {
-    setRecognizing(true);
-
+  const sendAudioForRecognition = async (audioBase64: string) => {
     try {
+      console.log('[SPYN] Sending audio to ACRCloud...');
+      
       const response = await axios.post(
         `${BACKEND_URL}/api/recognize-audio`,
         {
@@ -440,49 +470,63 @@ export default function SpynScreen() {
         }
       );
 
-      console.log('[SPYN] ACRCloud Response:', response.data);
+      console.log('[SPYN] ACRCloud Response:', JSON.stringify(response.data, null, 2));
 
       if (response.data.success && response.data.title) {
         const trackKey = `${response.data.title}-${response.data.artist}`.toLowerCase();
         
+        // Check if we already identified this track
         if (!identifiedTracksRef.current.includes(trackKey)) {
-          console.log('[SPYN] New track:', trackKey);
+          console.log('[SPYN] ✅ New track identified:', trackKey);
+          console.log('[SPYN] Cover image URL:', response.data.cover_image);
           
           identifiedTracksRef.current.push(trackKey);
           
           const trackResult: TrackResult = {
-            ...response.data,
+            success: true,
+            title: response.data.title,
+            artist: response.data.artist,
+            album: response.data.album,
+            genre: response.data.genre,
+            cover_image: response.data.cover_image, // Cover from ACRCloud
+            score: response.data.score,
             time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
             id: `${Date.now()}`,
           };
 
           setCurrentTrack(trackResult);
           setIdentifiedTracks(prev => [trackResult, ...prev]);
+        } else {
+          console.log('[SPYN] Track already identified:', trackKey);
         }
+      } else {
+        console.log('[SPYN] No track identified in this cycle');
       }
     } catch (error: any) {
-      console.error('[SPYN] Recognition error:', error?.response?.data || error.message);
-    } finally {
-      setRecognizing(false);
+      console.error('[SPYN] Recognition API error:', error?.response?.data || error.message);
     }
   };
 
   const stopSession = () => {
+    console.log('[SPYN] Stopping session...');
     sessionActiveRef.current = false;
+    
     if (recognitionLoopRef.current) {
       clearInterval(recognitionLoopRef.current);
       recognitionLoopRef.current = null;
     }
+    
     if (durationIntervalRef.current) {
       clearInterval(durationIntervalRef.current);
       durationIntervalRef.current = null;
     }
+    
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
     }
+    
     stopListeningAnimation();
     isRecordingRef.current = false;
-    setIsListening(false);
   };
 
   const handleEndSession = () => {
@@ -498,7 +542,6 @@ export default function SpynScreen() {
       
       for (const track of identifiedTracks) {
         try {
-          // Use the Base44 sendTrackPlayedEmail function
           await base44Notifications.sendTrackPlayedEmail({
             track_id: track.id || '',
             track_title: track.title || 'Unknown Track',
@@ -597,7 +640,10 @@ export default function SpynScreen() {
     setWhoPlayed(null);
     setCorrectedVenue('');
     identifiedTracksRef.current = [];
+    // Keep identified tracks visible for review
   };
+
+  // ==================== ANIMATION INTERPOLATIONS ====================
 
   const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],
@@ -614,29 +660,46 @@ export default function SpynScreen() {
     outputRange: ['0deg', '360deg'],
   });
 
+  // ==================== RENDER ====================
+
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         
-        {/* LOCATION BANNER - ALWAYS VISIBLE */}
+        {/* ==================== LOCATION BANNER - ALWAYS ON TOP ==================== */}
         <View style={styles.locationBanner}>
-          <Ionicons name="location" size={16} color={location?.is_valid_venue ? GREEN_COLOR : CYAN_COLOR} />
+          <Ionicons 
+            name="location" 
+            size={18} 
+            color={location?.is_valid_venue ? GREEN_COLOR : CYAN_COLOR} 
+          />
           {locationLoading ? (
             <Text style={styles.locationText}>Detecting location...</Text>
           ) : location ? (
-            <Text style={[styles.locationText, location?.is_valid_venue && { color: GREEN_COLOR }]}>
-              {location.venue ? `${location.venue}, ` : ''}{location.city || 'Your Location'}
-              {location.is_valid_venue && ' ✓'}
-            </Text>
+            <View style={styles.locationTextContainer}>
+              <Text style={[styles.locationText, location?.is_valid_venue && { color: GREEN_COLOR }]}>
+                {location.venue || location.city || 'Unknown Location'}
+              </Text>
+              {location.city && location.venue && (
+                <Text style={styles.locationSubtext}>{location.city}, {location.country}</Text>
+              )}
+              {location.is_valid_venue && (
+                <View style={styles.validVenueBadge}>
+                  <Ionicons name="checkmark-circle" size={12} color={GREEN_COLOR} />
+                  <Text style={styles.validVenueText}>Club/Bar verified</Text>
+                </View>
+              )}
+            </View>
           ) : (
             <Text style={styles.locationText}>Location not available</Text>
           )}
         </View>
 
-        {/* ==================== IDLE STATE ==================== */}
+        {/* ==================== IDLE STATE - SPYN BUTTON ==================== */}
         {!sessionActive && (
           <>
             <View style={styles.mainButtonContainer}>
+              {/* Rotating outer glow ring */}
               <Animated.View style={[styles.glowRingOuter, { transform: [{ rotate }] }]}>
                 <LinearGradient
                   colors={['#FF6B6B', 'transparent', 'transparent', 'transparent']}
@@ -646,9 +709,15 @@ export default function SpynScreen() {
                 />
               </Animated.View>
               
+              {/* Pulsing glow effect */}
               <Animated.View style={[styles.glowEffect, { opacity: glowOpacity }]} />
               
-              <TouchableOpacity onPress={startSession} activeOpacity={0.8}>
+              {/* Main SPYN button - ONE CLICK TO START */}
+              <TouchableOpacity 
+                onPress={handleSpynButtonPress} 
+                activeOpacity={0.8}
+                style={styles.buttonTouchable}
+              >
                 <LinearGradient
                   colors={['#FF6B6B', '#E53935']}
                   style={styles.mainButton}
@@ -656,7 +725,7 @@ export default function SpynScreen() {
                   end={{ x: 0.5, y: 1 }}
                 >
                   <Text style={styles.spynText}>SPYN</Text>
-                  <Text style={styles.detectionText}>{t('spyn.detection')}</Text>
+                  <Text style={styles.detectionText}>{t('spyn.detection') || 'DETECTION'}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
@@ -670,17 +739,18 @@ export default function SpynScreen() {
         {/* ==================== ACTIVE SESSION ==================== */}
         {sessionActive && (
           <>
+            {/* Session Header */}
             <View style={styles.sessionHeader}>
-              <View style={styles.sessionInfo}>
-                <View style={styles.activeBadge}>
-                  <View style={styles.activeDot} />
-                  <Text style={styles.activeText}>Active Session</Text>
-                </View>
-                <Text style={styles.sessionDuration}>{sessionDuration}</Text>
+              <View style={styles.activeBadge}>
+                <View style={styles.activeDot} />
+                <Text style={styles.activeText}>Session Active</Text>
               </View>
+              <Text style={styles.sessionDuration}>{sessionDuration}</Text>
             </View>
 
+            {/* Listening Animation */}
             <View style={styles.listeningSection}>
+              {/* Sound bars */}
               <View style={styles.soundBarsContainer}>
                 {barAnims.map((anim, index) => (
                   <Animated.View
@@ -699,6 +769,7 @@ export default function SpynScreen() {
                 ))}
               </View>
 
+              {/* Pulsating mic button */}
               <Animated.View style={[styles.micContainer, { transform: [{ scale: pulseAnim }] }]}>
                 <LinearGradient colors={['#00BFA5', '#00897B']} style={styles.micButton}>
                   <Ionicons name="mic" size={36} color="#fff" />
@@ -706,17 +777,17 @@ export default function SpynScreen() {
               </Animated.View>
 
               <Text style={styles.listeningStatus}>
-                {recognizing ? 'Analyzing...' : 'Listening...'}
+                {recognizing ? '🎵 Analyzing audio...' : '🎧 Listening...'}
               </Text>
             </View>
 
-            {/* END SESSION BUTTON - DIRECTLY AFTER MIC */}
+            {/* END SESSION BUTTON - DIRECTLY UNDER MIC */}
             <TouchableOpacity style={styles.endSessionButtonLarge} onPress={handleEndSession}>
-              <Ionicons name="stop-circle" size={20} color="#fff" />
+              <Ionicons name="stop-circle" size={22} color="#fff" />
               <Text style={styles.endSessionButtonText}>End Session</Text>
             </TouchableOpacity>
 
-            {/* Current Track */}
+            {/* Current Track - Show when identified */}
             {currentTrack && (
               <View style={styles.currentTrackContainer}>
                 <View style={styles.successBadge}>
@@ -726,16 +797,28 @@ export default function SpynScreen() {
                 
                 <View style={styles.currentTrackCard}>
                   {currentTrack.cover_image ? (
-                    <Image source={{ uri: currentTrack.cover_image }} style={styles.currentTrackImage} />
+                    <Image 
+                      source={{ uri: currentTrack.cover_image }} 
+                      style={styles.currentTrackImage}
+                      resizeMode="cover"
+                    />
                   ) : (
                     <View style={[styles.currentTrackImage, styles.placeholderImage]}>
                       <Ionicons name="musical-notes" size={32} color="#666" />
                     </View>
                   )}
                   <View style={styles.currentTrackInfo}>
-                    <Text style={styles.currentTrackTitle}>"{currentTrack.title}"</Text>
-                    <Text style={styles.currentTrackArtist}>{currentTrack.artist}</Text>
-                    {currentTrack.album && <Text style={styles.currentTrackAlbum}>{currentTrack.album}</Text>}
+                    <Text style={styles.currentTrackTitle} numberOfLines={2}>
+                      "{currentTrack.title}"
+                    </Text>
+                    <Text style={styles.currentTrackArtist} numberOfLines={1}>
+                      {currentTrack.artist}
+                    </Text>
+                    {currentTrack.album && (
+                      <Text style={styles.currentTrackAlbum} numberOfLines={1}>
+                        {currentTrack.album}
+                      </Text>
+                    )}
                   </View>
                 </View>
               </View>
@@ -744,11 +827,17 @@ export default function SpynScreen() {
             {/* Identified Tracks List */}
             {identifiedTracks.length > 0 && (
               <View style={styles.identifiedSection}>
-                <Text style={styles.sectionTitle}>Identified ({identifiedTracks.length})</Text>
+                <Text style={styles.sectionTitle}>
+                  Identified Tracks ({identifiedTracks.length})
+                </Text>
                 {identifiedTracks.map((track, index) => (
                   <View key={track.id || index} style={styles.trackItem}>
                     {track.cover_image ? (
-                      <Image source={{ uri: track.cover_image }} style={styles.trackImage} />
+                      <Image 
+                        source={{ uri: track.cover_image }} 
+                        style={styles.trackImage}
+                        resizeMode="cover"
+                      />
                     ) : (
                       <View style={[styles.trackImage, styles.placeholderImage]}>
                         <Ionicons name="musical-notes" size={20} color="#666" />
@@ -767,29 +856,45 @@ export default function SpynScreen() {
         )}
       </ScrollView>
 
-      {/* END SESSION MODAL */}
-      <Modal visible={showEndSessionModal} transparent animationType="fade" onRequestClose={() => setShowEndSessionModal(false)}>
+      {/* ==================== END SESSION MODAL ==================== */}
+      <Modal 
+        visible={showEndSessionModal} 
+        transparent 
+        animationType="fade" 
+        onRequestClose={() => setShowEndSessionModal(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.endSessionModalContent}>
-            <TouchableOpacity style={styles.modalCloseButton} onPress={() => setShowEndSessionModal(false)}>
+            <TouchableOpacity 
+              style={styles.modalCloseButton} 
+              onPress={() => setShowEndSessionModal(false)}
+            >
               <Ionicons name="close" size={24} color="#888" />
             </TouchableOpacity>
 
             <Text style={styles.endSessionTitle}>End Session</Text>
-            <Text style={styles.endSessionSubtitle}>Confirm the end of your mixing session.</Text>
+            <Text style={styles.endSessionSubtitle}>
+              Confirm the end of your mixing session.
+            </Text>
 
+            {/* Venue Info Card */}
             <View style={styles.venueCard}>
               <View style={styles.venueHeader}>
-                <View style={[styles.venueDot, { backgroundColor: location?.is_valid_venue ? GREEN_COLOR : '#888' }]} />
+                <View style={[
+                  styles.venueDot, 
+                  { backgroundColor: location?.is_valid_venue ? GREEN_COLOR : '#888' }
+                ]} />
                 <View style={styles.venueTextContainer}>
-                  <Text style={styles.venueName}>{location?.venue || 'Unknown Venue'}</Text>
+                  <Text style={styles.venueName}>
+                    {location?.venue || 'Unknown Venue'}
+                  </Text>
                   <Text style={styles.venueCity}>
-                    {location?.city || 'Unknown'} • {location?.is_valid_venue ? 'Club identifié ✓' : 'Lieu non reconnu'}
+                    {location?.city || 'Unknown'} • {location?.is_valid_venue ? 'Club verified ✓' : 'Unverified location'}
                   </Text>
                 </View>
               </View>
 
-              <Text style={styles.correctLabel}>Corriger le lieu si nécessaire</Text>
+              <Text style={styles.correctLabel}>Correct venue name if needed:</Text>
               <TextInput
                 style={styles.venueInput}
                 value={correctedVenue}
@@ -801,45 +906,68 @@ export default function SpynScreen() {
               <Text style={styles.startedAtText}>Started at {startedAtTime}</Text>
               <View style={styles.tracksCountRow}>
                 <Ionicons name="musical-notes" size={16} color="#888" />
-                <Text style={styles.tracksCountText}>{identifiedTracks.length} tracks identified</Text>
+                <Text style={styles.tracksCountText}>
+                  {identifiedTracks.length} tracks identified
+                </Text>
               </View>
             </View>
 
+            {/* Who Played Selection */}
             <Text style={styles.whoPlayedTitle}>Who played this session?</Text>
             
-            <TouchableOpacity style={[styles.radioOption, whoPlayed === 'me' && styles.radioOptionSelected]} onPress={() => setWhoPlayed('me')}>
+            <TouchableOpacity 
+              style={[styles.radioOption, whoPlayed === 'me' && styles.radioOptionSelected]} 
+              onPress={() => setWhoPlayed('me')}
+            >
               <View style={[styles.radioCircle, whoPlayed === 'me' && styles.radioCircleSelected]} />
               <Text style={styles.radioText}>It was me</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.radioOption, whoPlayed === 'another' && styles.radioOptionSelected]} onPress={() => setWhoPlayed('another')}>
+            <TouchableOpacity 
+              style={[styles.radioOption, whoPlayed === 'another' && styles.radioOptionSelected]} 
+              onPress={() => setWhoPlayed('another')}
+            >
               <View style={[styles.radioCircle, whoPlayed === 'another' && styles.radioCircleSelected]} />
               <Text style={styles.radioText}>Another DJ</Text>
             </TouchableOpacity>
 
+            {/* Warning Messages */}
             {identifiedTracks.length === 0 && (
               <View style={styles.warningBox}>
                 <Ionicons name="warning" size={18} color="#FFB74D" />
-                <Text style={styles.warningText}>No track identified - No Black Diamond</Text>
+                <Text style={styles.warningText}>
+                  No track identified - No Black Diamond awarded
+                </Text>
               </View>
             )}
 
             {identifiedTracks.length > 0 && !location?.is_valid_venue && (
               <View style={styles.warningBox}>
                 <Ionicons name="warning" size={18} color="#FFB74D" />
-                <Text style={styles.warningText}>Location not recognized as club/bar - No Black Diamond</Text>
+                <Text style={styles.warningText}>
+                  Location not recognized as club/bar - No Black Diamond
+                </Text>
+              </View>
+            )}
+
+            {identifiedTracks.length > 0 && location?.is_valid_venue && (
+              <View style={styles.successBox}>
+                <Ionicons name="diamond" size={18} color={CYAN_COLOR} />
+                <Text style={styles.successBoxText}>
+                  You will earn a Black Diamond! 💎
+                </Text>
               </View>
             )}
 
             <TouchableOpacity style={styles.confirmEndButton} onPress={confirmEndSession}>
               <Ionicons name="stop-circle" size={20} color="#fff" />
-              <Text style={styles.confirmEndButtonText}>End Session</Text>
+              <Text style={styles.confirmEndButtonText}>Confirm End Session</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* BLACK DIAMOND MODAL */}
+      {/* ==================== BLACK DIAMOND MODAL ==================== */}
       <Modal visible={showDiamondModal} transparent animationType="fade">
         <View style={styles.diamondModalOverlay}>
           <View style={styles.diamondModalContent}>
@@ -849,7 +977,7 @@ export default function SpynScreen() {
               </View>
             </Animated.View>
             <Text style={styles.diamondTitle}>Félicitations !</Text>
-            <Text style={styles.diamondSubtitle}>Vous avez gagné un Black Diamond</Text>
+            <Text style={styles.diamondSubtitle}>Vous avez gagné un Black Diamond 💎</Text>
           </View>
         </View>
       </Modal>
@@ -857,23 +985,62 @@ export default function SpynScreen() {
   );
 }
 
+// ==================== STYLES ====================
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: DARK_BG },
-  scrollView: { flex: 1 },
-  scrollContent: { padding: Spacing.lg, paddingTop: 60, alignItems: 'center', minHeight: '100%' },
+  container: { 
+    flex: 1, 
+    backgroundColor: DARK_BG 
+  },
+  scrollView: { 
+    flex: 1 
+  },
+  scrollContent: { 
+    padding: Spacing.lg, 
+    paddingTop: 60, 
+    alignItems: 'center', 
+    minHeight: '100%' 
+  },
   
+  // Location Banner - ALWAYS VISIBLE AT TOP
   locationBanner: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     backgroundColor: CYAN_COLOR + '20', 
     paddingHorizontal: 16, 
-    paddingVertical: 10, 
+    paddingVertical: 12, 
     borderRadius: 25, 
     marginBottom: 30, 
-    gap: 8 
+    gap: 10,
+    width: '100%',
+    maxWidth: 350,
   },
-  locationText: { color: CYAN_COLOR, fontSize: 14, fontWeight: '600' },
+  locationTextContainer: {
+    flex: 1,
+  },
+  locationText: { 
+    color: CYAN_COLOR, 
+    fontSize: 15, 
+    fontWeight: '600' 
+  },
+  locationSubtext: {
+    color: CYAN_COLOR + '90',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  validVenueBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  validVenueText: {
+    color: GREEN_COLOR,
+    fontSize: 11,
+    fontWeight: '600',
+  },
   
+  // Main Button Container
   mainButtonContainer: { 
     alignItems: 'center', 
     justifyContent: 'center', 
@@ -881,81 +1048,447 @@ const styles = StyleSheet.create({
     width: BUTTON_SIZE + 50,
     height: BUTTON_SIZE + 50,
   },
-  glowRingOuter: { position: 'absolute', width: BUTTON_SIZE + 50, height: BUTTON_SIZE + 50 },
-  gradientRing: { width: '100%', height: '100%', borderRadius: (BUTTON_SIZE + 50) / 2, borderWidth: 3, borderColor: 'transparent' },
-  glowEffect: { position: 'absolute', width: BUTTON_SIZE + 30, height: BUTTON_SIZE + 30, borderRadius: (BUTTON_SIZE + 30) / 2, backgroundColor: '#FF6B6B' },
-  mainButton: { width: BUTTON_SIZE, height: BUTTON_SIZE, borderRadius: BUTTON_SIZE / 2, justifyContent: 'center', alignItems: 'center' },
-  spynText: { fontSize: 36, fontWeight: 'bold', color: '#fff', letterSpacing: 4 },
-  detectionText: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.9)', letterSpacing: 1, marginTop: 4 },
-  instructionText: { color: Colors.textMuted, fontSize: 14, textAlign: 'center', marginBottom: 40 },
+  glowRingOuter: { 
+    position: 'absolute', 
+    width: BUTTON_SIZE + 50, 
+    height: BUTTON_SIZE + 50 
+  },
+  gradientRing: { 
+    width: '100%', 
+    height: '100%', 
+    borderRadius: (BUTTON_SIZE + 50) / 2, 
+    borderWidth: 3, 
+    borderColor: 'transparent' 
+  },
+  glowEffect: { 
+    position: 'absolute', 
+    width: BUTTON_SIZE + 30, 
+    height: BUTTON_SIZE + 30, 
+    borderRadius: (BUTTON_SIZE + 30) / 2, 
+    backgroundColor: '#FF6B6B' 
+  },
+  buttonTouchable: {
+    zIndex: 10,
+  },
+  mainButton: { 
+    width: BUTTON_SIZE, 
+    height: BUTTON_SIZE, 
+    borderRadius: BUTTON_SIZE / 2, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  spynText: { 
+    fontSize: 36, 
+    fontWeight: 'bold', 
+    color: '#fff', 
+    letterSpacing: 4 
+  },
+  detectionText: { 
+    fontSize: 12, 
+    fontWeight: '600', 
+    color: 'rgba(255,255,255,0.9)', 
+    letterSpacing: 1, 
+    marginTop: 4 
+  },
+  instructionText: { 
+    color: Colors.textMuted, 
+    fontSize: 14, 
+    textAlign: 'center', 
+    marginBottom: 40 
+  },
 
-  sessionHeader: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%', marginBottom: 20 },
-  sessionInfo: { alignItems: 'center' },
-  activeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(76, 175, 80, 0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15, marginBottom: 4 },
-  activeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: GREEN_COLOR },
-  activeText: { color: GREEN_COLOR, fontSize: 12, fontWeight: '600' },
-  sessionDuration: { color: '#fff', fontSize: 28, fontWeight: 'bold', marginTop: 4 },
+  // Session Header
+  sessionHeader: { 
+    alignItems: 'center', 
+    width: '100%', 
+    marginBottom: 20 
+  },
+  activeBadge: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6, 
+    backgroundColor: 'rgba(76, 175, 80, 0.15)', 
+    paddingHorizontal: 14, 
+    paddingVertical: 8, 
+    borderRadius: 20, 
+    marginBottom: 8 
+  },
+  activeDot: { 
+    width: 10, 
+    height: 10, 
+    borderRadius: 5, 
+    backgroundColor: GREEN_COLOR 
+  },
+  activeText: { 
+    color: GREEN_COLOR, 
+    fontSize: 14, 
+    fontWeight: '600' 
+  },
+  sessionDuration: { 
+    color: '#fff', 
+    fontSize: 32, 
+    fontWeight: 'bold', 
+    marginTop: 4 
+  },
 
-  listeningSection: { alignItems: 'center', width: '100%', marginBottom: 15 },
-  soundBarsContainer: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', height: 70, marginBottom: 20, gap: 4 },
-  soundBar: { width: 6, borderRadius: 3 },
-  micContainer: { marginBottom: 12 },
-  micButton: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center' },
-  listeningStatus: { color: '#00BFA5', fontSize: 16, fontWeight: '600' },
+  // Listening Section
+  listeningSection: { 
+    alignItems: 'center', 
+    width: '100%', 
+    marginBottom: 20 
+  },
+  soundBarsContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'flex-end', 
+    justifyContent: 'center', 
+    height: 70, 
+    marginBottom: 20, 
+    gap: 4 
+  },
+  soundBar: { 
+    width: 6, 
+    borderRadius: 3 
+  },
+  micContainer: { 
+    marginBottom: 12 
+  },
+  micButton: { 
+    width: 80, 
+    height: 80, 
+    borderRadius: 40, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  listeningStatus: { 
+    color: '#00BFA5', 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
 
-  endSessionButtonLarge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#E53935', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 30, gap: 10, marginBottom: 25 },
-  endSessionButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  // End Session Button
+  endSessionButtonLarge: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: RED_COLOR, 
+    paddingVertical: 14, 
+    paddingHorizontal: 32, 
+    borderRadius: 30, 
+    gap: 10, 
+    marginBottom: 25,
+    marginTop: 10,
+  },
+  endSessionButtonText: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
 
-  currentTrackContainer: { width: '100%', marginBottom: 20 },
-  successBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
-  successText: { color: GREEN_COLOR, fontSize: 14, fontWeight: '600' },
-  currentTrackCard: { backgroundColor: CARD_BG, borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: GREEN_COLOR + '40' },
-  currentTrackImage: { width: 80, height: 80, borderRadius: 8 },
-  currentTrackInfo: { flex: 1, marginLeft: 14 },
-  currentTrackTitle: { color: CYAN_COLOR, fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
-  currentTrackArtist: { color: '#fff', fontSize: 14, marginBottom: 4 },
-  currentTrackAlbum: { color: Colors.textMuted, fontSize: 12 },
+  // Current Track
+  currentTrackContainer: { 
+    width: '100%', 
+    marginBottom: 20 
+  },
+  successBadge: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6, 
+    marginBottom: 12 
+  },
+  successText: { 
+    color: GREEN_COLOR, 
+    fontSize: 14, 
+    fontWeight: '600' 
+  },
+  currentTrackCard: { 
+    backgroundColor: CARD_BG, 
+    borderRadius: 16, 
+    padding: 16, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: GREEN_COLOR + '40' 
+  },
+  currentTrackImage: { 
+    width: 80, 
+    height: 80, 
+    borderRadius: 8,
+    backgroundColor: '#333',
+  },
+  currentTrackInfo: { 
+    flex: 1, 
+    marginLeft: 14 
+  },
+  currentTrackTitle: { 
+    color: CYAN_COLOR, 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    marginBottom: 4 
+  },
+  currentTrackArtist: { 
+    color: '#fff', 
+    fontSize: 14, 
+    marginBottom: 4 
+  },
+  currentTrackAlbum: { 
+    color: Colors.textMuted, 
+    fontSize: 12 
+  },
 
-  sectionTitle: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 12, alignSelf: 'flex-start' },
-  trackItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: CARD_BG, padding: 12, borderRadius: 12, marginBottom: 8, width: '100%' },
-  trackImage: { width: 50, height: 50, borderRadius: 6 },
-  placeholderImage: { backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
-  trackInfo: { flex: 1, marginLeft: 12 },
-  trackTitle: { color: '#fff', fontSize: 14, fontWeight: '500' },
-  trackArtist: { color: Colors.textMuted, fontSize: 12 },
-  trackTime: { color: Colors.textMuted, fontSize: 11 },
-  identifiedSection: { width: '100%', marginBottom: 20 },
+  // Identified Tracks List
+  identifiedSection: { 
+    width: '100%', 
+    marginBottom: 20 
+  },
+  sectionTitle: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: '600', 
+    marginBottom: 12, 
+    alignSelf: 'flex-start' 
+  },
+  trackItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: CARD_BG, 
+    padding: 12, 
+    borderRadius: 12, 
+    marginBottom: 8, 
+    width: '100%' 
+  },
+  trackImage: { 
+    width: 50, 
+    height: 50, 
+    borderRadius: 6,
+    backgroundColor: '#333',
+  },
+  placeholderImage: { 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  trackInfo: { 
+    flex: 1, 
+    marginLeft: 12 
+  },
+  trackTitle: { 
+    color: '#fff', 
+    fontSize: 14, 
+    fontWeight: '500' 
+  },
+  trackArtist: { 
+    color: Colors.textMuted, 
+    fontSize: 12 
+  },
+  trackTime: { 
+    color: Colors.textMuted, 
+    fontSize: 11 
+  },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  endSessionModalContent: { backgroundColor: CARD_BG, borderRadius: 20, padding: 24, width: '100%', maxWidth: 400, borderWidth: 1, borderColor: CYAN_COLOR + '30' },
-  modalCloseButton: { position: 'absolute', top: 16, right: 16, zIndex: 10 },
-  endSessionTitle: { color: CYAN_COLOR, fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
-  endSessionSubtitle: { color: '#888', fontSize: 14, marginBottom: 20 },
-  venueCard: { backgroundColor: '#252540', borderRadius: 12, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: CYAN_COLOR + '30' },
-  venueHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
-  venueDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: GREEN_COLOR, marginRight: 12, marginTop: 4 },
-  venueTextContainer: { flex: 1 },
-  venueName: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  venueCity: { color: CYAN_COLOR, fontSize: 13, marginTop: 2 },
-  correctLabel: { color: '#888', fontSize: 13, marginBottom: 8 },
-  venueInput: { backgroundColor: '#1a1a2e', borderRadius: 8, padding: 12, color: '#fff', fontSize: 14, borderWidth: 1, borderColor: CYAN_COLOR + '30', marginBottom: 12 },
-  startedAtText: { color: CYAN_COLOR, fontSize: 13, marginBottom: 6 },
-  tracksCountRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  tracksCountText: { color: '#888', fontSize: 13 },
-  whoPlayedTitle: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 12 },
-  radioOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#252540', padding: 14, borderRadius: 10, marginBottom: 10, gap: 12 },
-  radioOptionSelected: { borderWidth: 1, borderColor: CYAN_COLOR },
-  radioCircle: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: CYAN_COLOR },
-  radioCircleSelected: { backgroundColor: CYAN_COLOR },
-  radioText: { color: '#fff', fontSize: 14 },
-  warningBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255, 183, 77, 0.15)', padding: 14, borderRadius: 10, marginTop: 10, marginBottom: 20, gap: 10 },
-  warningText: { color: '#FFB74D', fontSize: 13, flex: 1 },
-  confirmEndButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: ORANGE_COLOR, paddingVertical: 16, borderRadius: 12, marginTop: 10, gap: 10 },
-  confirmEndButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  // Modal Styles
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.85)', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    padding: 20 
+  },
+  endSessionModalContent: { 
+    backgroundColor: CARD_BG, 
+    borderRadius: 20, 
+    padding: 24, 
+    width: '100%', 
+    maxWidth: 400, 
+    borderWidth: 1, 
+    borderColor: CYAN_COLOR + '30' 
+  },
+  modalCloseButton: { 
+    position: 'absolute', 
+    top: 16, 
+    right: 16, 
+    zIndex: 10 
+  },
+  endSessionTitle: { 
+    color: CYAN_COLOR, 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    marginBottom: 8 
+  },
+  endSessionSubtitle: { 
+    color: '#888', 
+    fontSize: 14, 
+    marginBottom: 20 
+  },
+  venueCard: { 
+    backgroundColor: '#252540', 
+    borderRadius: 12, 
+    padding: 16, 
+    marginBottom: 20, 
+    borderWidth: 1, 
+    borderColor: CYAN_COLOR + '30' 
+  },
+  venueHeader: { 
+    flexDirection: 'row', 
+    alignItems: 'flex-start', 
+    marginBottom: 16 
+  },
+  venueDot: { 
+    width: 12, 
+    height: 12, 
+    borderRadius: 6, 
+    marginRight: 12, 
+    marginTop: 4 
+  },
+  venueTextContainer: { 
+    flex: 1 
+  },
+  venueName: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: 'bold' 
+  },
+  venueCity: { 
+    color: CYAN_COLOR, 
+    fontSize: 13, 
+    marginTop: 2 
+  },
+  correctLabel: { 
+    color: '#888', 
+    fontSize: 13, 
+    marginBottom: 8 
+  },
+  venueInput: { 
+    backgroundColor: '#1a1a2e', 
+    borderRadius: 8, 
+    padding: 12, 
+    color: '#fff', 
+    fontSize: 14, 
+    borderWidth: 1, 
+    borderColor: CYAN_COLOR + '30', 
+    marginBottom: 12 
+  },
+  startedAtText: { 
+    color: CYAN_COLOR, 
+    fontSize: 13, 
+    marginBottom: 6 
+  },
+  tracksCountRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 8 
+  },
+  tracksCountText: { 
+    color: '#888', 
+    fontSize: 13 
+  },
+  whoPlayedTitle: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: '600', 
+    marginBottom: 12 
+  },
+  radioOption: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#252540', 
+    padding: 14, 
+    borderRadius: 10, 
+    marginBottom: 10, 
+    gap: 12 
+  },
+  radioOptionSelected: { 
+    borderWidth: 1, 
+    borderColor: CYAN_COLOR 
+  },
+  radioCircle: { 
+    width: 20, 
+    height: 20, 
+    borderRadius: 10, 
+    borderWidth: 2, 
+    borderColor: CYAN_COLOR 
+  },
+  radioCircleSelected: { 
+    backgroundColor: CYAN_COLOR 
+  },
+  radioText: { 
+    color: '#fff', 
+    fontSize: 14 
+  },
+  warningBox: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: 'rgba(255, 183, 77, 0.15)', 
+    padding: 14, 
+    borderRadius: 10, 
+    marginTop: 10, 
+    marginBottom: 10, 
+    gap: 10 
+  },
+  warningText: { 
+    color: '#FFB74D', 
+    fontSize: 13, 
+    flex: 1 
+  },
+  successBox: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: 'rgba(92, 179, 204, 0.15)', 
+    padding: 14, 
+    borderRadius: 10, 
+    marginTop: 10, 
+    marginBottom: 10, 
+    gap: 10 
+  },
+  successBoxText: { 
+    color: CYAN_COLOR, 
+    fontSize: 13, 
+    flex: 1,
+    fontWeight: '600',
+  },
+  confirmEndButton: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: ORANGE_COLOR, 
+    paddingVertical: 16, 
+    borderRadius: 12, 
+    marginTop: 10, 
+    gap: 10 
+  },
+  confirmEndButtonText: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
 
-  diamondModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
-  diamondModalContent: { alignItems: 'center', padding: 40 },
-  diamondIcon: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', marginBottom: 30 },
-  diamondTitle: { color: '#fff', fontSize: 28, fontWeight: 'bold', marginBottom: 10 },
-  diamondSubtitle: { color: CYAN_COLOR, fontSize: 18, textAlign: 'center' },
+  // Diamond Modal
+  diamondModalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.9)', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  diamondModalContent: { 
+    alignItems: 'center', 
+    padding: 40 
+  },
+  diamondIcon: { 
+    width: 120, 
+    height: 120, 
+    borderRadius: 60, 
+    backgroundColor: '#fff', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginBottom: 30 
+  },
+  diamondTitle: { 
+    color: '#fff', 
+    fontSize: 28, 
+    fontWeight: 'bold', 
+    marginBottom: 10 
+  },
+  diamondSubtitle: { 
+    color: CYAN_COLOR, 
+    fontSize: 18, 
+    textAlign: 'center' 
+  },
 });
