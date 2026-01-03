@@ -1690,6 +1690,10 @@ async def process_offline_session(request: OfflineSessionRequest, authorization:
                 
                 result = response.json()
                 status_code = result.get("status", {}).get("code", -1)
+                status_msg = result.get("status", {}).get("msg", "Unknown")
+                
+                print(f"[Offline] ACRCloud response: code={status_code}, msg={status_msg}")
+                print(f"[Offline] Full result: {json.dumps(result, indent=2)[:1000]}")
                 
                 if status_code == 0:
                     # Check for custom_files first (Spynners tracks)
