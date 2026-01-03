@@ -26,6 +26,7 @@ import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { base44Notifications } from '../../src/services/base44Api';
 import { useLocalSearchParams } from 'expo-router';
+import offlineService from '../../src/services/offlineService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BUTTON_SIZE = Math.min(SCREEN_WIDTH * 0.45, 180);
