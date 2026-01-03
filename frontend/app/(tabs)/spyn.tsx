@@ -419,7 +419,7 @@ export default function SpynScreen() {
 
       if (uri) {
         const audioBase64 = await FileSystem.readAsStringAsync(uri, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: 'base64',
         });
         await recognizeAudio(audioBase64);
       }
