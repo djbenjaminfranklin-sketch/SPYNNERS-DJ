@@ -1432,6 +1432,21 @@ const styles = StyleSheet.create({
     fontSize: 16, 
     fontWeight: '600' 
   },
+  offlineCounter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 6,
+    backgroundColor: '#FFB74D20',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  offlineCounterText: {
+    color: '#FFB74D',
+    fontSize: 13,
+    fontWeight: '500',
+  },
 
   // End Session Button
   endSessionButtonLarge: { 
