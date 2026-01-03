@@ -155,6 +155,8 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.uploads': 'Uploads',
     'profile.diamonds': 'Diamonds',
     'profile.favorites': 'Favorites',
+    'profile.user': 'User',
+    'profile.administrator': 'Administrator',
     'profile.logoutConfirm': 'Do you really want to log out?',
     
     // Common
