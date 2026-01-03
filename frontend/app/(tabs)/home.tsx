@@ -574,31 +574,54 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Offline Sessions Card - Only show if there are pending sessions */}
-        {pendingOfflineSessions > 0 && (
-          <TouchableOpacity 
-            style={styles.offlineSessionsCard}
-            onPress={() => router.push('/profile/offline-sessions')}
-            activeOpacity={0.8}
-          >
-            <View style={styles.offlineSessionsLeft}>
-              <View style={styles.offlineIconContainer}>
-                <Ionicons name="cloud-upload" size={24} color="#FFB74D" />
-              </View>
-              <View style={styles.offlineTextContainer}>
-                <Text style={styles.offlineTitle}>
-                  {pendingOfflineSessions} session(s) offline
-                </Text>
-                <Text style={styles.offlineSubtitle}>
-                  En attente de synchronisation
-                </Text>
-              </View>
+        {/* Offline Sessions Card - Show when there are pending sessions OR as reminder */}
+        <TouchableOpacity 
+          style={[
+            styles.offlineSessionsCard,
+            pendingOfflineSessions === 0 && styles.offlineSessionsCardEmpty
+          ]}
+          onPress={() => router.push('/profile/offline-sessions')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.offlineSessionsLeft}>
+            <View style={[
+              styles.offlineIconContainer,
+              pendingOfflineSessions === 0 && styles.offlineIconContainerEmpty
+            ]}>
+              <Ionicons 
+                name={pendingOfflineSessions > 0 ? "cloud-upload" : "cloud-offline-outline"} 
+                size={24} 
+                color={pendingOfflineSessions > 0 ? "#FFB74D" : "#666"} 
+              />
             </View>
+            <View style={styles.offlineTextContainer}>
+              <Text style={[
+                styles.offlineTitle,
+                pendingOfflineSessions === 0 && styles.offlineTitleEmpty
+              ]}>
+                {pendingOfflineSessions > 0 
+                  ? `${pendingOfflineSessions} session(s) offline`
+                  : 'Sessions Offline'
+                }
+              </Text>
+              <Text style={[
+                styles.offlineSubtitle,
+                pendingOfflineSessions === 0 && styles.offlineSubtitleEmpty
+              ]}>
+                {pendingOfflineSessions > 0 
+                  ? 'En attente de synchronisation'
+                  : 'Gérer vos sessions hors ligne'
+                }
+              </Text>
+            </View>
+          </View>
+          {pendingOfflineSessions > 0 && (
             <View style={styles.offlineBadge}>
               <Text style={styles.offlineBadgeText}>{pendingOfflineSessions}</Text>
             </View>
-          </TouchableOpacity>
-        )}
+          )}
+          <Ionicons name="chevron-forward" size={20} color={pendingOfflineSessions > 0 ? "#FFB74D" : "#666"} />
+        </TouchableOpacity>
 
         {/* Upload Track Button - styled like spynners.com */}
         <TouchableOpacity 
