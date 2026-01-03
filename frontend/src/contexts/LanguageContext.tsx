@@ -303,6 +303,12 @@ export const translations = {
     diamonds: 'Diamonds',
     favorites: 'Favoris',
     
+    // Profile
+    uploads: 'Uploads',
+    diamonds: 'Diamonds',
+    user: 'Utilisateur',
+    administrator: 'Administrateur',
+    
     // Auth
     login: 'Connexion',
     signup: 'Inscription',
