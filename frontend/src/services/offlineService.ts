@@ -10,7 +10,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import axios from 'axios';
 
-const BACKEND_URL = 'https://spynapp.preview.emergentagent.com';
+const BACKEND_URL = 'https://spynners-app-1.preview.emergentagent.com';
 const OFFLINE_SESSIONS_KEY = 'offline_spyn_sessions';
 const PUSH_TOKEN_KEY = 'expo_push_token';
 

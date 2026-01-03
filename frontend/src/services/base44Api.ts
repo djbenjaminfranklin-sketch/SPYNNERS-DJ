@@ -20,13 +20,13 @@ const getBackendUrl = () => {
     
     // If on ngrok or other domains, use the full backend URL
     // The backend is accessible via the preview domain
-    return 'https://spynapp.preview.emergentagent.com';
+    return 'https://spynners-app-1.preview.emergentagent.com';
   }
   
   // For mobile (Expo Go), use the configured backend URL
   return Constants.expoConfig?.extra?.backendUrl || 
          process.env.EXPO_PUBLIC_BACKEND_URL || 
-         'https://spynapp.preview.emergentagent.com';
+         'https://spynners-app-1.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();
