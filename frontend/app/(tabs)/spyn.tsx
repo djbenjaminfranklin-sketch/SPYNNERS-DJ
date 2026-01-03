@@ -1263,6 +1263,41 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   
+  // Offline Banner
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFB74D20',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginBottom: 12,
+    gap: 8,
+    width: '100%',
+    maxWidth: 350,
+    borderWidth: 1,
+    borderColor: '#FFB74D40',
+  },
+  offlineBannerText: {
+    color: '#FFB74D',
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+  },
+  pendingBadge: {
+    backgroundColor: '#FFB74D',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  pendingBadgeText: {
+    color: '#000',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  
   // Main Button Container
   mainButtonContainer: { 
     alignItems: 'center', 
