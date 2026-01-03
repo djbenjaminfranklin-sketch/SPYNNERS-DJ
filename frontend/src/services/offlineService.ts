@@ -281,20 +281,21 @@ class OfflineService {
 
   // ==================== SYNC WITH BACKEND ====================
 
-  async syncPendingSessions(token?: string): Promise<{ synced: number; failed: number }> {
+  async syncPendingSessions(token?: string): Promise<{ synced: number; failed: number; results: any[] }> {
     if (this.syncInProgress) {
       console.log('[Offline] Sync already in progress');
-      return { synced: 0, failed: 0 };
+      return { synced: 0, failed: 0, results: [] };
     }
 
     if (!this.isOnline) {
       console.log('[Offline] Cannot sync - offline');
-      return { synced: 0, failed: 0 };
+      return { synced: 0, failed: 0, results: [] };
     }
 
     this.syncInProgress = true;
     let synced = 0;
     let failed = 0;
+    let allResults: any[] = [];
 
     try {
       const sessions = await this.getOfflineSessions();
@@ -344,17 +345,20 @@ class OfflineService {
                   rec.result = response.data.results[idx];
                 }
               });
+              
+              // Add results to allResults
+              allResults = [...allResults, ...response.data.results];
             }
             
             synced += session.recordings.length;
             console.log('[Offline] Session synced:', session.id);
 
             // Send notification about synced tracks
-            const identifiedTracks = response.data.results?.filter((r: any) => r.success) || [];
+            const identifiedTracks = response.data.results?.filter((r: any) => r.success && r.is_spynners_track) || [];
             if (identifiedTracks.length > 0) {
               await this.sendLocalNotification(
                 '🎵 SPYN Session Synced!',
-                `${identifiedTracks.length} track(s) identified from your offline session`,
+                `${identifiedTracks.length} track(s) Spynners identifié(s)`,
                 { sessionId: session.id, tracks: identifiedTracks }
               );
             }
@@ -378,8 +382,8 @@ class OfflineService {
       this.syncInProgress = false;
     }
 
-    console.log('[Offline] Sync complete. Synced:', synced, 'Failed:', failed);
-    return { synced, failed };
+    console.log('[Offline] Sync complete. Synced:', synced, 'Failed:', failed, 'Results:', allResults.length);
+    return { synced, failed, results: allResults };
   }
 
   private async cleanupOldSessions(): Promise<void> {
