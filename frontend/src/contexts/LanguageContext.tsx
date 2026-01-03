@@ -2214,22 +2214,6 @@ const translations: Record<Language, Record<string, string>> = {
     'page.playlistName': '播放列表名称',
     'page.createPlaylistHint': '创建你的第一个播放列表来整理你喜欢的曲目',
     
-    // Profile continued
-    'profile.updateInfo': '更新你的信息',
-    'profile.buyDiamonds': '购买钻石',
-    'profile.manageTracks': '管理你的曲目',
-    'profile.viewPlaylists': '查看你的播放列表',
-    'profile.visitWebsite': '访问 spynners.com',
-    'profile.frequentQuestions': '常见问题',
-    'profile.termsOfUse': '使用条款',
-    'profile.uploads': '上传',
-    'profile.diamonds': '钻石',
-    'profile.favorites': '收藏',
-    'profile.user': '用户',
-    'profile.administrator': '管理员',
-    'profile.manageTracksAdmin': '管理曲目上传',
-    'profile.logoutConfirm': '你确定要退出吗？',
-    
     // Common
     'common.cancel': '取消',
     'common.save': '保存',
