@@ -38,12 +38,28 @@ const createApi = (): AxiosInstance => {
   // Add auth token to requests
   instance.interceptors.request.use(async (config) => {
     try {
-      const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+      let token = null;
+      
+      // Try AsyncStorage first
+      try {
+        token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+      } catch (e) {
+        // AsyncStorage might not work on web SSR
+      }
+      
+      // Fallback to localStorage for web
+      if (!token && typeof window !== 'undefined' && window.localStorage) {
+        token = window.localStorage.getItem(AUTH_TOKEN_KEY);
+      }
+      
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        console.log('[API] Token attached to request');
+      } else {
+        console.log('[API] No token found');
       }
     } catch (e) {
-      // Ignore storage errors (SSR)
+      console.error('[API] Error getting token:', e);
     }
     console.log('[API] Request:', config.method?.toUpperCase(), config.url);
     return config;
