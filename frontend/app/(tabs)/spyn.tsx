@@ -141,6 +141,9 @@ export default function SpynScreen() {
   const [isOffline, setIsOffline] = useState(false);
   const [offlineRecordingsCount, setOfflineRecordingsCount] = useState(0);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [syncResults, setSyncResults] = useState<any[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
   
   // Animation refs
   const pulseAnimRef = useRef<Animated.CompositeAnimation | null>(null);
