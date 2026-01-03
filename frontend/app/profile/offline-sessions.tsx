@@ -377,34 +377,6 @@ export default function OfflineSessionsScreen() {
 
                 {/* Actions */}
                 <View style={styles.sessionActions}>
-                  {/* Force end button for stuck "recording" sessions */}
-                  {session.status === 'recording' && (
-                    <TouchableOpacity
-                      style={[styles.actionButton, styles.syncButton]}
-                      onPress={async () => {
-                        try {
-                          // Force end the session
-                          const sessions = await offlineService.getOfflineSessions();
-                          const targetSession = sessions.find(s => s.id === session.id);
-                          if (targetSession) {
-                            targetSession.status = 'pending_sync';
-                            targetSession.endTime = new Date().toISOString();
-                            const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-                            await AsyncStorage.setItem('spynners_offline_sessions', JSON.stringify(sessions));
-                            await loadSessions();
-                            Alert.alert('✅ Session terminée', 'La session est maintenant prête à être synchronisée.');
-                          }
-                        } catch (error) {
-                          console.error('Force end error:', error);
-                          Alert.alert('Erreur', 'Impossible de terminer la session.');
-                        }
-                      }}
-                    >
-                      <Ionicons name="stop-circle" size={18} color="#fff" />
-                      <Text style={styles.actionButtonText}>Terminer</Text>
-                    </TouchableOpacity>
-                  )}
-
                   {session.status === 'pending_sync' && (
                     <TouchableOpacity
                       style={[styles.actionButton, styles.syncButton]}
