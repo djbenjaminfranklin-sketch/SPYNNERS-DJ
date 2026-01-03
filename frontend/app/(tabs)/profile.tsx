@@ -101,6 +101,12 @@ export default function ProfileScreen() {
       subtitle: t('profile.editDeleteTracks'),
       onPress: () => router.push('/profile/tracks'),
     },
+    {
+      icon: 'cloud-offline-outline',
+      title: 'Sessions Offline',
+      subtitle: 'Gérer les sessions SPYN hors ligne',
+      onPress: () => router.push('/profile/offline-sessions'),
+    },
     ...(isAdmin ? [{
       icon: 'shield-checkmark',
       title: t('profile.adminPanel'),
