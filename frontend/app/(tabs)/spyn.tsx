@@ -797,14 +797,16 @@ const styles = StyleSheet.create({
   locationText: { color: CYAN_COLOR, fontSize: 13, fontWeight: '500' },
   
   // SPYN Buttons
-  spynButtonsSection: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: Spacing.xl, paddingHorizontal: 20, gap: 30 },
+  spynButtonsSection: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: Spacing.xl, paddingHorizontal: 20, gap: 40 },
   spynButtonWrapper: { alignItems: 'center', position: 'relative', flex: 1 },
-  glowRing: { position: 'absolute', width: BUTTON_SIZE + 20, height: BUTTON_SIZE + 20, borderRadius: (BUTTON_SIZE + 20) / 2, borderWidth: 2, top: -10, left: -10, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 20, elevation: 10 },
+  rotatingRingContainer: { position: 'absolute', width: BUTTON_SIZE + 30, height: BUTTON_SIZE + 30, top: -15, alignSelf: 'center' },
+  rotatingRing: { width: BUTTON_SIZE + 30, height: BUTTON_SIZE + 30, borderRadius: (BUTTON_SIZE + 30) / 2, borderWidth: 3, borderColor: 'transparent' },
+  glowRing: { position: 'absolute', width: BUTTON_SIZE + 16, height: BUTTON_SIZE + 16, borderRadius: (BUTTON_SIZE + 16) / 2, borderWidth: 2, top: -8, alignSelf: 'center', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 15, elevation: 10 },
   spynButtonTouchable: { borderRadius: BUTTON_SIZE / 2, overflow: 'hidden' },
   spynButton: { width: BUTTON_SIZE, height: BUTTON_SIZE, borderRadius: BUTTON_SIZE / 2, justifyContent: 'center', alignItems: 'center' },
-  spynText: { fontSize: 28, fontWeight: 'bold', color: '#fff', letterSpacing: 2 },
-  spynSubtext: { fontSize: 10, fontWeight: '600', color: 'rgba(255,255,255,0.85)', letterSpacing: 1, marginTop: 4 },
-  spynLabel: { marginTop: 16, fontSize: 14, color: Colors.textMuted, fontWeight: '500' },
+  spynText: { fontSize: 26, fontWeight: 'bold', color: '#fff', letterSpacing: 2 },
+  spynSubtext: { fontSize: 9, fontWeight: '600', color: 'rgba(255,255,255,0.85)', letterSpacing: 1, marginTop: 4 },
+  spynLabel: { marginTop: 16, fontSize: 13, color: Colors.textMuted, fontWeight: '500' },
   spynLabelActive: { color: '#4CAF50' },
   
   // Status
