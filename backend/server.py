@@ -1215,8 +1215,18 @@ async def base44_invoke_function(
         if authorization:
             headers["Authorization"] = authorization
         
-        # For backend functions like nativeGetAllUsers, use the app's domain
-        if function_name in ["nativeGetAllUsers", "listUsers"]:
+        # List of functions that use spynners.com domain
+        SPYNNERS_FUNCTIONS = [
+            "nativeGetAllUsers", 
+            "listUsers", 
+            "getPublicProfiles",
+            "getAdminData",
+            "sendTrackPlayedEmail",
+            "getLiveTrackPlays"
+        ]
+        
+        # For backend functions, use the app's domain
+        if function_name in SPYNNERS_FUNCTIONS:
             # Use spynners.com domain for app functions
             app_function_url = f"https://spynners.com/api/functions/{function_name}"
             print(f"[Base44] Calling function URL: {app_function_url}")
