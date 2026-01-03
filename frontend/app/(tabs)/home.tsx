@@ -1174,7 +1174,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#252540',
   },
   offlineTitleEmpty: {
-    color: '#888',
+    color: '#FF6B35',
   },
   offlineSubtitleEmpty: {
     color: '#555',
