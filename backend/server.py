@@ -362,18 +362,31 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                                     else:
                                         word_bonus = 0
                                     
-                                    total_score = title_score + artist_bonus + contains_bonus + word_bonus
+                                    # Special bonus for remix tracks - check if original artist matches
+                                    remix_bonus = 0
+                                    if 'remix' in clean_title or 'remix' in t_title_norm:
+                                        # Extract potential original artist from title
+                                        for word in clean_words:
+                                            if len(word) > 3 and word in t_title_norm:
+                                                remix_bonus = 0.15
+                                                break
+                                    
+                                    total_score = title_score + artist_bonus + contains_bonus + word_bonus + remix_bonus
                                     
                                     # Exact match - perfect score
                                     if t_title_norm == clean_title:
                                         total_score = 2.0
                                     
+                                    # Log potential matches for debugging
+                                    if total_score > 0.3:
+                                        print(f"[SPYNNERS] Candidate: '{t.get('title')}' score={total_score:.2f}")
+                                    
                                     if total_score > best_score:
                                         best_score = total_score
                                         best_match = t
                                 
-                                # Accept match if score is above threshold
-                                if best_match and best_score >= 0.6:
+                                # Accept match if score is above threshold (lowered to 0.45)
+                                if best_match and best_score >= 0.45:
                                     spynners_track = best_match
                                     print(f"[SPYNNERS] ✅ Found track by fuzzy match (score: {best_score:.2f}): '{best_match.get('title')}'")
                                 elif best_match:
