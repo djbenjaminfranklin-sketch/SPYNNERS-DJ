@@ -1340,11 +1340,21 @@ async def base44_update_entity(
 @app.post("/api/base44/functions/invoke/{function_name}")
 async def base44_invoke_function(
     function_name: str,
+    request: Request,
     request_body: dict = {},
     authorization: Optional[str] = Header(None)
 ):
     """Proxy function invocation to Base44"""
     try:
+        # Debug: Log all incoming headers
+        print(f"[Base44] Incoming headers: {dict(request.headers)}")
+        print(f"[Base44] Authorization from Header: {authorization}")
+        
+        # Try to get auth from headers directly if Header() didn't work
+        if not authorization:
+            authorization = request.headers.get("authorization") or request.headers.get("Authorization")
+            print(f"[Base44] Authorization from request.headers: {authorization}")
+        
         headers = {
             "Content-Type": "application/json",
             "X-Base44-App-Id": BASE44_APP_ID
