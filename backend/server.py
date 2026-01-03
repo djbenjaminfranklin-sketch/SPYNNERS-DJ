@@ -372,20 +372,6 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                 
                 print(f"[SPYNNERS] Final result: {recognition_result['title']} by {recognition_result['artist']}")
                 print(f"[SPYNNERS] Cover image: {cover_image}")
-                    "album": track.get("album", {}).get("name", ""),
-                    "cover_image": cover_image,
-                    "genre": genre,
-                    "genres": genres,
-                    "release_date": track.get("release_date", ""),
-                    "label": track.get("label", ""),
-                    "duration_ms": track.get("duration_ms", 0),
-                    "score": track.get("score", 0),
-                    "external_ids": track.get("external_ids", {}),
-                    "play_offset_ms": result.get("metadata", {}).get("played_duration", 0) * 1000
-                }
-                
-                print(f"[ACRCloud] Identified: {recognition_result['title']} by {recognition_result['artist']}")
-                print(f"[ACRCloud] Cover image: {cover_image}")
                 
                 # Save to history
                 if authorization:
