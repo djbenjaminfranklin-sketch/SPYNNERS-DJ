@@ -955,6 +955,10 @@ export const base44Admin = {
 // ==================== SPYN NOTIFICATION SERVICE ====================
 
 export const base44Notifications = {
+  /**
+   * Send email to producer when their track is played
+   * Uses Base44 integrations.Core.SendEmail
+   */
   async sendTrackPlayedEmail(params: {
     track_id: string;
     track_title: string;
@@ -966,11 +970,38 @@ export const base44Notifications = {
   }): Promise<any> {
     try {
       console.log('[Notifications] Sending track played email:', params);
-      const response = await api.post('/api/base44/functions/invoke/sendTrackPlayedEmail', params);
+      
+      // First, try to call the sendTrackPlayedEmail cloud function
+      // This function should handle finding the producer's email and sending
+      const response = await api.post('/api/base44/functions/invoke/sendTrackPlayedEmail', {
+        trackTitle: params.track_title,
+        artistName: params.artist_name,
+        djName: params.dj_name,
+        clubName: params.club_name || 'Unknown Venue',
+        location: params.location || 'Unknown Location',
+        playedAt: params.played_at || new Date().toISOString(),
+      });
+      
       console.log('[Notifications] Email sent successfully:', response.data);
       return response.data;
     } catch (error) {
       console.error('[Notifications] Error sending track played email:', error);
+      
+      // Fallback: Create a notification record in the database
+      try {
+        await api.post('/api/base44/entities/Notification', {
+          type: 'track_played',
+          message: `Your track "${params.track_title}" was played by ${params.dj_name} at ${params.club_name || 'a venue'}`,
+          track_title: params.track_title,
+          dj_name: params.dj_name,
+          read: false,
+          created_at: new Date().toISOString(),
+        });
+        console.log('[Notifications] Created notification record as fallback');
+      } catch (e) {
+        console.log('[Notifications] Could not create fallback notification');
+      }
+      
       throw error;
     }
   },
