@@ -154,12 +154,62 @@ export default function SpynScreen() {
     requestLocationPermission();
     requestMicrophonePermission(); // Request mic permission on page load
     startIdleAnimations();
+    initOfflineMode();
     
     return () => {
       stopSession();
       stopAllAnimations();
     };
   }, []);
+
+  // Initialize offline mode
+  const initOfflineMode = async () => {
+    try {
+      // Check network status
+      const isOnline = await offlineService.checkNetworkStatus();
+      setIsOffline(!isOnline);
+      console.log('[SPYN] Network status:', isOnline ? 'ONLINE' : 'OFFLINE');
+      
+      // Get pending sync count
+      const pendingCount = await offlineService.getPendingCount();
+      setPendingSyncCount(pendingCount);
+      
+      if (pendingCount > 0) {
+        console.log('[SPYN] Pending offline recordings:', pendingCount);
+      }
+      
+      // Register for push notifications (for offline sync alerts)
+      await offlineService.registerForPushNotifications();
+      
+    } catch (error) {
+      console.error('[SPYN] Offline init error:', error);
+    }
+  };
+
+  // Monitor network changes
+  useEffect(() => {
+    const checkNetwork = async () => {
+      const online = offlineService.isNetworkAvailable();
+      setIsOffline(!online);
+      
+      // Auto-sync when coming back online
+      if (online && pendingSyncCount > 0) {
+        console.log('[SPYN] Network restored - syncing offline recordings...');
+        const { synced, failed } = await offlineService.syncPendingSessions(token || undefined);
+        if (synced > 0) {
+          Alert.alert(
+            '🎵 Sync Complete!',
+            `${synced} offline recording(s) processed successfully.`,
+            [{ text: 'OK' }]
+          );
+        }
+        setPendingSyncCount(await offlineService.getPendingCount());
+      }
+    };
+    
+    const interval = setInterval(checkNetwork, 5000); // Check every 5 seconds
+    return () => clearInterval(interval);
+  }, [pendingSyncCount, token]);
 
   // Autostart session when coming from home page
   useEffect(() => {
