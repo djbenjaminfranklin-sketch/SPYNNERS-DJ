@@ -20,6 +20,7 @@ import Constants from 'expo-constants';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import { base44Admin } from '../../src/services/base44Api';
 
 type PendingTrack = {
   id: string;
@@ -47,6 +48,14 @@ type DuplicateGroup = {
   tracks: PendingTrack[];
 };
 
+type AdminStats = {
+  total_tracks: number;
+  total_users: number;
+  pending_tracks: number;
+  vip_requests: number;
+  recent_activity: any[];
+};
+
 export default function AdminScreen() {
   const router = useRouter();
   const { user, token } = useAuth();
@@ -55,9 +64,10 @@ export default function AdminScreen() {
   const [allTracks, setAllTracks] = useState<PendingTrack[]>([]);
   const [duplicateGroups, setDuplicateGroups] = useState<DuplicateGroup[]>([]);
   const [acrcloudStats, setAcrcloudStats] = useState<any>(null);
+  const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected' | 'duplicates' | 'acrcloud'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected' | 'duplicates' | 'stats'>('pending');
   const [selectedTrack, setSelectedTrack] = useState<PendingTrack | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -67,10 +77,10 @@ export default function AdminScreen() {
   const [playing, setPlaying] = useState(false);
   const [registeringACR, setRegisteringACR] = useState<string | null>(null);
 
-  const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL;
+  const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
   // Admin emails - add your email here
-  const ADMIN_EMAILS = ['admin@spynners.com', 'contact@spynners.com', user?.email];
+  const ADMIN_EMAILS = ['admin@spynners.com', 'contact@spynners.com', 'djbenjaminfranklin@gmail.com', user?.email];
 
   const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
@@ -84,16 +94,54 @@ export default function AdminScreen() {
   }, [isAdmin]);
 
   const fetchAllData = async () => {
-    await Promise.all([
-      fetchTracks(),
-      fetchDuplicates(),
-      fetchACRCloudStats(),
-    ]);
+    try {
+      // Try the new getAdminData API first
+      const dashboardData = await base44Admin.getDashboard();
+      
+      if (dashboardData?.success) {
+        console.log('[Admin] Dashboard data received:', dashboardData);
+        
+        // Set stats
+        if (dashboardData.stats) {
+          setAdminStats(dashboardData.stats);
+        }
+        
+        // Set pending tracks
+        if (dashboardData.pending_tracks) {
+          setPendingTracks(dashboardData.pending_tracks);
+        }
+        
+        // Set all tracks
+        if (dashboardData.approved_tracks) {
+          setAllTracks([
+            ...(dashboardData.pending_tracks || []),
+            ...(dashboardData.approved_tracks || []),
+          ]);
+        }
+      } else {
+        // Fallback to old API
+        console.log('[Admin] Falling back to old API');
+        await Promise.all([
+          fetchTracksOld(),
+          fetchDuplicates(),
+          fetchACRCloudStats(),
+        ]);
+      }
+    } catch (error) {
+      console.error('[Admin] Error fetching dashboard:', error);
+      // Fallback to old API
+      await Promise.all([
+        fetchTracksOld(),
+        fetchDuplicates(),
+        fetchACRCloudStats(),
+      ]);
+    }
+    
     setLoading(false);
     setRefreshing(false);
   };
 
-  const fetchTracks = async () => {
+  const fetchTracksOld = async () => {
     try {
       const response = await axios.get(
         `${BACKEND_URL}/api/admin/tracks`,
