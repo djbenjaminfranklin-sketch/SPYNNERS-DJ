@@ -304,7 +304,9 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                                 
                                 # Search for matching title (case-insensitive, partial match)
                                 for t in all_tracks:
-                                    t_title = t.get("title", "").lower()
+                                    t_title = (t.get("title") or "").lower()
+                                    if not t_title:
+                                        continue
                                     t_clean = re.sub(r'\s*\([^)]*\)\s*', '', t_title).strip()
                                     
                                     # Match by clean title or if one contains the other
@@ -317,10 +319,12 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                                         break
                                     
                                     # Also try matching by producer name / artist
-                                    t_producer = t.get("producer_name", "").lower()
-                                    if t_producer and t_producer in track_artist.lower():
+                                    t_producer = (t.get("producer_name") or "").lower()
+                                    if t_producer and track_artist and t_producer in track_artist.lower():
                                         # Producer matches, check if title is similar
-                                        if clean_title.lower()[:10] in t_title or t_title[:10] in clean_title.lower():
+                                        t_title_start = t_title[:10] if len(t_title) >= 10 else t_title
+                                        clean_title_start = clean_title.lower()[:10] if len(clean_title) >= 10 else clean_title.lower()
+                                        if clean_title_start in t_title or t_title_start in clean_title.lower():
                                             spynners_track = t
                                             print(f"[SPYNNERS] Found track by producer+title: '{t.get('title')}' by {t.get('producer_name')}")
                                             break
