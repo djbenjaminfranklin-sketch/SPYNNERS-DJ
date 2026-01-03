@@ -245,7 +245,7 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
             )
         
         result = response.json()
-        print(f"[ACRCloud] Response: {result.get('status', {})}")
+        print(f"[ACRCloud] Full response: {json.dumps(result, indent=2)[:500]}")
         
         # Parse ACRCloud response
         if result.get("status", {}).get("code") == 0:
