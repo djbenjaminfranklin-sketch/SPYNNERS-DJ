@@ -1751,12 +1751,13 @@ async def process_offline_session(request: OfflineSessionRequest, authorization:
                             try:
                                 from difflib import SequenceMatcher
                                 
-                                # Fetch tracks from Base44 API
-                                base44_url = "https://spynners.com/api/entities/Track"
+                                # Fetch tracks from Base44 API - use the correct URL format
+                                base44_url = f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Track"
                                 headers = {
-                                    "X-Base44-App-Id": BASE44_APP_ID,
                                     "Content-Type": "application/json"
                                 }
+                                
+                                print(f"[Offline] Fetching tracks from: {base44_url}")
                                 
                                 async with httpx.AsyncClient(timeout=30.0) as http_client:
                                     tracks_response = await http_client.get(
@@ -1764,8 +1765,11 @@ async def process_offline_session(request: OfflineSessionRequest, authorization:
                                         headers=headers
                                     )
                                 
+                                print(f"[Offline] Base44 response status: {tracks_response.status_code}")
+                                
                                 if tracks_response.status_code == 200:
                                     all_tracks = tracks_response.json()
+                                    print(f"[Offline] Got {len(all_tracks)} tracks from Base44")
                                     best_match = None
                                     best_score = 0
                                     
@@ -1783,7 +1787,7 @@ async def process_offline_session(request: OfflineSessionRequest, authorization:
                                         # Combined score
                                         combined_score = (title_ratio * 0.7) + (artist_ratio * 0.3)
                                         
-                                        if combined_score > best_score and combined_score > 0.6:
+                                        if combined_score > best_score and combined_score > 0.5:
                                             best_score = combined_score
                                             best_match = db_track
                                     
@@ -1793,8 +1797,11 @@ async def process_offline_session(request: OfflineSessionRequest, authorization:
                                         producer_id = best_match.get("producer_id")
                                         cover_image = best_match.get("artwork_url")
                                         is_custom = True  # Mark as Spynners track
+                                    else:
+                                        print(f"[Offline] No match found for: {track_title} by {track_artist}")
                                 else:
                                     print(f"[Offline] Failed to fetch tracks from Base44: {tracks_response.status_code}")
+                                    print(f"[Offline] Response: {tracks_response.text[:500]}")
                             except Exception as match_error:
                                 print(f"[Offline] Matching error: {match_error}")
                         
