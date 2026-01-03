@@ -1259,6 +1259,94 @@ async def base44_invoke_function(
         raise HTTPException(status_code=503, detail=f"Base44 service unavailable: {str(e)}")
 
 
+# ==================== DIAMOND REWARDS ====================
+
+class AwardDiamondRequest(BaseModel):
+    user_id: str
+    type: str = "black"  # black, gold, etc
+    reason: str = "spyn_session"
+    session_id: Optional[str] = None
+
+@app.post("/api/award-diamond")
+async def award_diamond(request: AwardDiamondRequest, authorization: Optional[str] = Header(None)):
+    """
+    Award a diamond to a user for completing a SPYN session.
+    Only one black diamond per day can be earned.
+    """
+    try:
+        user_id = request.user_id
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        
+        # Check if user already earned a diamond today
+        existing_award = db["diamond_awards"].find_one({
+            "user_id": user_id,
+            "type": request.type,
+            "date": today
+        })
+        
+        if existing_award:
+            return {
+                "success": False,
+                "message": "Already earned a diamond today",
+                "already_awarded": True
+            }
+        
+        # Record the diamond award
+        award = {
+            "user_id": user_id,
+            "type": request.type,
+            "reason": request.reason,
+            "session_id": request.session_id,
+            "date": today,
+            "awarded_at": datetime.utcnow().isoformat()
+        }
+        db["diamond_awards"].insert_one(award)
+        
+        # Update user's diamond count in Base44
+        if authorization:
+            try:
+                headers = {
+                    "Content-Type": "application/json",
+                    "X-Base44-App-Id": BASE44_APP_ID,
+                    "Authorization": authorization
+                }
+                
+                # Get current user data to increment diamonds
+                async with httpx.AsyncClient(timeout=30.0) as http_client:
+                    # Try to update user's diamonds in Base44
+                    user_response = await http_client.get(
+                        f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{user_id}",
+                        headers=headers
+                    )
+                    
+                    if user_response.status_code == 200:
+                        user_data = user_response.json()
+                        current_diamonds = user_data.get("black_diamonds", 0)
+                        
+                        # Update with incremented diamonds
+                        await http_client.put(
+                            f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{user_id}",
+                            headers=headers,
+                            json={"black_diamonds": current_diamonds + 1}
+                        )
+            except Exception as e:
+                print(f"Could not update user diamonds in Base44: {e}")
+        
+        return {
+            "success": True,
+            "message": "Diamond awarded!",
+            "type": request.type,
+            "date": today
+        }
+        
+    except Exception as e:
+        print(f"Award diamond error: {e}")
+        return {
+            "success": False,
+            "message": f"Failed to award diamond: {str(e)}"
+        }
+
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/api/health")
