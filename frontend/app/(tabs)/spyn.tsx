@@ -492,26 +492,25 @@ export default function SpynScreen() {
   const confirmEndSession = async () => {
     stopSession();
 
-    // Send emails to all identified track producers
+    // Send emails to all identified track producers via Base44 SDK
     if (identifiedTracks.length > 0) {
-      console.log('[SPYN] Sending emails to producers...');
+      console.log('[SPYN] Sending emails to producers via Base44...');
+      
       for (const track of identifiedTracks) {
         try {
-          await axios.post(
-            `${BACKEND_URL}/api/base44/functions/invoke/sendTrackPlayedEmail`,
-            {
-              track_title: track.title,
-              track_artist: track.artist,
-              dj_name: user?.full_name || 'DJ',
-              venue: correctedVenue || location?.venue || 'Unknown',
-              city: location?.city || 'Unknown',
-              country: location?.country || 'Unknown',
-            },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
+          // Use the Base44 sendTrackPlayedEmail function
+          await base44Notifications.sendTrackPlayedEmail({
+            track_id: track.id || '',
+            track_title: track.title || 'Unknown Track',
+            artist_name: track.artist || 'Unknown Artist',
+            dj_name: user?.full_name || 'DJ',
+            club_name: correctedVenue || location?.venue || 'Unknown Venue',
+            location: `${location?.city || 'Unknown'}, ${location?.country || 'Unknown'}`,
+            played_at: new Date().toISOString(),
+          });
           console.log(`[SPYN] Email sent for: ${track.title}`);
         } catch (e) {
-          console.log(`[SPYN] Could not send email for: ${track.title}`);
+          console.log(`[SPYN] Could not send email for: ${track.title}`, e);
         }
       }
     }
@@ -520,6 +519,7 @@ export default function SpynScreen() {
     const canEarnDiamond = identifiedTracks.length > 0 && location?.is_valid_venue;
     
     if (canEarnDiamond) {
+      console.log('[SPYN] Valid venue detected, awarding Black Diamond...');
       try {
         const awardResponse = await axios.post(
           `${BACKEND_URL}/api/award-diamond`,
@@ -534,6 +534,8 @@ export default function SpynScreen() {
         );
         
         if (awardResponse.data.success && !awardResponse.data.already_awarded) {
+          console.log('[SPYN] Black Diamond awarded!');
+          
           // Update user's diamond count
           try {
             const userId = user?.id || (user as any)?._id;
@@ -573,10 +575,14 @@ export default function SpynScreen() {
             resetSessionState();
           }, 3000);
           return;
+        } else {
+          console.log('[SPYN] Diamond already awarded today or failed');
         }
       } catch (e) {
-        console.log('Could not award diamond');
+        console.log('[SPYN] Could not award diamond:', e);
       }
+    } else {
+      console.log('[SPYN] No Black Diamond: tracks=' + identifiedTracks.length + ', valid_venue=' + location?.is_valid_venue);
     }
 
     setShowEndSessionModal(false);
