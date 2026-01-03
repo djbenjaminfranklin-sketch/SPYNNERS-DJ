@@ -727,15 +727,29 @@ export default function SpynScreen() {
     if (offlineRecordingsCount > 0) {
       console.log('[SPYN] Ending offline session with', offlineRecordingsCount, 'recordings');
       const endedSession = await offlineService.endOfflineSession();
+      
       if (endedSession) {
-        Alert.alert(
-          '📴 Offline Session Saved',
-          `${offlineRecordingsCount} recording(s) saved.\nThey will be processed when you're back online.`,
-          [{ text: 'OK' }]
-        );
+        // Check if we're back online
+        const isOnline = await offlineService.checkNetworkStatus();
+        const newPendingCount = await offlineService.getPendingCount();
+        setPendingSyncCount(newPendingCount);
+        setOfflineRecordingsCount(0);
+        
+        if (isOnline && newPendingCount > 0) {
+          // Show sync modal immediately
+          setShowSyncModal(true);
+        } else {
+          // Still offline - just show saved message
+          Alert.alert(
+            '📴 Session Offline Sauvegardée',
+            `${endedSession.recordings.length} enregistrement(s) sauvegardé(s).\nIls seront traités quand vous serez en ligne.`,
+            [{ text: 'OK' }]
+          );
+        }
       }
-      setOfflineRecordingsCount(0);
-      setPendingSyncCount(await offlineService.getPendingCount());
+      
+      resetSessionState();
+      return; // Don't continue with online session logic
     }
 
     // Check if valid venue (restaurant, bar, club, etc.)
