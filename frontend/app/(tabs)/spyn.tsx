@@ -721,11 +721,26 @@ export default function SpynScreen() {
     
     stopSession();
 
+    // End offline session if we were recording offline
+    if (offlineRecordingsCount > 0) {
+      console.log('[SPYN] Ending offline session with', offlineRecordingsCount, 'recordings');
+      const endedSession = await offlineService.endOfflineSession();
+      if (endedSession) {
+        Alert.alert(
+          '📴 Offline Session Saved',
+          `${offlineRecordingsCount} recording(s) saved.\nThey will be processed when you're back online.`,
+          [{ text: 'OK' }]
+        );
+      }
+      setOfflineRecordingsCount(0);
+      setPendingSyncCount(await offlineService.getPendingCount());
+    }
+
     // Check if valid venue (restaurant, bar, club, etc.)
     const isValidVenue = location?.is_valid_venue === true;
     
-    // Send emails to producers ONLY if in a valid venue
-    if (identifiedTracks.length > 0 && token && isValidVenue) {
+    // Send emails to producers ONLY if in a valid venue AND online
+    if (identifiedTracks.length > 0 && token && isValidVenue && !isOffline) {
       console.log('[SPYN] ✅ Valid venue detected - Sending emails to producers...');
       console.log('[SPYN] Venue:', location?.venue, '| Type:', location?.venue_type);
       
@@ -768,12 +783,14 @@ export default function SpynScreen() {
     } else if (identifiedTracks.length > 0 && !isValidVenue) {
       console.log('[SPYN] ⚠️ No emails sent - Not in a valid venue (restaurant/bar/club)');
       console.log('[SPYN] Current location:', location?.venue, '| is_valid_venue:', location?.is_valid_venue);
+    } else if (isOffline) {
+      console.log('[SPYN] ⚠️ No emails sent - Offline mode (will be sent when synced)');
     } else {
       console.log('[SPYN] No emails sent - tracks:', identifiedTracks.length, ', token:', token ? 'Yes' : 'No');
     }
 
-    // Award Black Diamond ONLY if valid venue (club, bar, restaurant)
-    const canEarnDiamond = identifiedTracks.length > 0 && isValidVenue;
+    // Award Black Diamond ONLY if valid venue (club, bar, restaurant) AND online
+    const canEarnDiamond = identifiedTracks.length > 0 && isValidVenue && !isOffline;
     
     if (canEarnDiamond) {
       console.log('[SPYN] Valid venue detected, awarding Black Diamond...');
@@ -817,7 +834,7 @@ export default function SpynScreen() {
         console.log('[SPYN] Could not award diamond:', e);
       }
     } else {
-      console.log('[SPYN] No Black Diamond: tracks=' + identifiedTracks.length + ', valid_venue=' + location?.is_valid_venue);
+      console.log('[SPYN] No Black Diamond: tracks=' + identifiedTracks.length + ', valid_venue=' + location?.is_valid_venue + ', offline=' + isOffline);
     }
 
     resetSessionState();
