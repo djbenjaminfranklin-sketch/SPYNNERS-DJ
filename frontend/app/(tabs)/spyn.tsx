@@ -149,12 +149,16 @@ export default function SpynScreen() {
     setTimeout(() => glowLoop2.start(), 1000);
     scaleLoop1.start();
     setTimeout(() => scaleLoop2.start(), 850);
+    rotateLoop1.start();
+    rotateLoop2.start();
 
     return () => {
       glowLoop1.stop();
       glowLoop2.stop();
       scaleLoop1.stop();
       scaleLoop2.stop();
+      rotateLoop1.stop();
+      rotateLoop2.stop();
       if (djIntervalRef.current) clearInterval(djIntervalRef.current);
       if (recognitionIntervalRef.current) clearInterval(recognitionIntervalRef.current);
     };
