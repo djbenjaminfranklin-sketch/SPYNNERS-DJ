@@ -575,7 +575,7 @@ export default function UploadScreen() {
                 >
                   <Text style={styles.energyIcon}>{level.icon}</Text>
                   <Text style={[styles.energyLabel, energyLevel === level.value && styles.energyLabelSelected]}>
-                    {level.label.split(' ')[0]}
+                    {t(level.labelKey)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -586,13 +586,13 @@ export default function UploadScreen() {
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>{t('upload.mood')}</Text>
             <View style={styles.moodTags}>
-              {MOODS.map((m) => (
+              {MOOD_KEYS.map((m) => (
                 <TouchableOpacity
-                  key={m}
-                  style={[styles.moodTag, mood === m && styles.moodTagSelected]}
-                  onPress={() => setMood(mood === m ? '' : m)}
+                  key={m.value}
+                  style={[styles.moodTag, mood === m.value && styles.moodTagSelected]}
+                  onPress={() => setMood(mood === m.value ? '' : m.value)}
                 >
-                  <Text style={[styles.moodTagText, mood === m && styles.moodTagTextSelected]}>{m}</Text>
+                  <Text style={[styles.moodTagText, mood === m.value && styles.moodTagTextSelected]}>{t(m.labelKey)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
