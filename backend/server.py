@@ -1699,40 +1699,108 @@ async def process_offline_session(request: OfflineSessionRequest, authorization:
                 print(f"[Offline] Full result: {json.dumps(result, indent=2)[:1000]}")
                 
                 if status_code == 0:
-                    # Check for custom_files first (Spynners tracks)
+                    # Check for custom_files first (Spynners tracks), then music, then humming
                     custom_files = result.get("metadata", {}).get("custom_files", [])
                     music = result.get("metadata", {}).get("music", [])
+                    humming = result.get("metadata", {}).get("humming", [])
                     
                     track = None
                     is_custom = False
+                    source = "unknown"
                     
                     if custom_files:
                         track = custom_files[0]
                         is_custom = True
+                        source = "custom_files"
                     elif music:
                         track = music[0]
+                        source = "music"
+                    elif humming:
+                        track = humming[0]
+                        source = "humming"
+                    
+                    print(f"[Offline] Track found in: {source}")
                     
                     if track:
                         track_title = track.get("title", "Unknown")
-                        track_artist = track.get("producer_name") or track.get("artist", "Unknown") if is_custom else ", ".join([a.get("name", "") for a in track.get("artists", [])]) or "Unknown"
+                        
+                        # Get artist name based on source
+                        if is_custom:
+                            track_artist = track.get("producer_name") or track.get("artist", "Unknown")
+                        else:
+                            artists = track.get("artists", [])
+                            if artists:
+                                track_artist = ", ".join([a.get("name", "") for a in artists if a.get("name")])
+                            else:
+                                track_artist = track.get("artist", "Unknown")
+                        
+                        if not track_artist:
+                            track_artist = "Unknown"
+                        
+                        # For non-custom tracks, try to find matching Spynners track
+                        spynners_track_id = None
+                        producer_id = None
+                        cover_image = None
+                        
+                        if is_custom:
+                            spynners_track_id = track.get("spynners_track_id")
+                            producer_id = track.get("producer_id")
+                            cover_image = track.get("artwork_url")
+                        else:
+                            # Try to match with Spynners database using fuzzy matching
+                            try:
+                                from difflib import SequenceMatcher
+                                
+                                # Search in our track database
+                                all_tracks = list(db["tracks"].find({"status": "approved"}))
+                                best_match = None
+                                best_score = 0
+                                
+                                for db_track in all_tracks:
+                                    db_title = db_track.get("title", "").lower()
+                                    acr_title = track_title.lower()
+                                    
+                                    # Calculate similarity
+                                    title_ratio = SequenceMatcher(None, db_title, acr_title).ratio()
+                                    
+                                    # Check artist match too
+                                    db_artist = (db_track.get("producer_name") or db_track.get("artist", "")).lower()
+                                    artist_ratio = SequenceMatcher(None, db_artist, track_artist.lower()).ratio()
+                                    
+                                    # Combined score
+                                    combined_score = (title_ratio * 0.7) + (artist_ratio * 0.3)
+                                    
+                                    if combined_score > best_score and combined_score > 0.6:
+                                        best_score = combined_score
+                                        best_match = db_track
+                                
+                                if best_match:
+                                    print(f"[Offline] Matched to Spynners track: {best_match.get('title')} (score: {best_score:.2f})")
+                                    spynners_track_id = str(best_match.get("_id"))
+                                    producer_id = best_match.get("producer_id")
+                                    cover_image = best_match.get("artwork_url")
+                                    is_custom = True  # Mark as Spynners track
+                            except Exception as match_error:
+                                print(f"[Offline] Matching error: {match_error}")
                         
                         track_result = {
                             "success": True,
                             "title": track_title,
                             "artist": track_artist,
-                            "cover_image": track.get("artwork_url") if is_custom else None,
-                            "spynners_track_id": track.get("spynners_track_id") if is_custom else None,
-                            "producer_id": track.get("producer_id") if is_custom else None,
+                            "cover_image": cover_image,
+                            "spynners_track_id": spynners_track_id,
+                            "producer_id": producer_id,
                             "timestamp": recording.timestamp,
-                            "is_spynners_track": is_custom
+                            "is_spynners_track": is_custom and spynners_track_id is not None,
+                            "source": source
                         }
                         
                         # Only count Spynners tracks
-                        if is_custom and track.get("spynners_track_id"):
+                        if is_custom and spynners_track_id:
                             identified_tracks.append(track_result)
                         
                         results.append(track_result)
-                        print(f"[Offline] ✅ Identified: {track_title} by {track_artist}")
+                        print(f"[Offline] ✅ Identified: {track_title} by {track_artist} (Spynners: {is_custom and spynners_track_id is not None})")
                     else:
                         results.append({
                             "success": False,
