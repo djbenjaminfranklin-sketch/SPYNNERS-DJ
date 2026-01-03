@@ -20,6 +20,7 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    priority: Notifications.AndroidNotificationPriority.HIGH,
   }),
 });
 
