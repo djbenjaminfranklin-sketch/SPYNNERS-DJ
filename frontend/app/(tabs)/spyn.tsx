@@ -616,7 +616,7 @@ export default function SpynScreen() {
         const pending = await offlineService.getPendingCount();
         setPendingSyncCount(pending);
         
-        console.log('[SPYN] ✅ Recording saved offline. Total pending:', pending);
+        console.log('[SPYN] ✅ Recording saved offline. Audio size:', audioBase64.length, 'chars. Total pending:', pending);
         
         // DON'T show as a track - just update the counter
         // The currentTrack should show a clear offline message, not as an identified track
