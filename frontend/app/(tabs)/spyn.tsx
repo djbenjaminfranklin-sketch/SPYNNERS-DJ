@@ -575,21 +575,32 @@ export default function SpynScreen() {
     stopSession();
 
     // Send emails to all identified track producers (non-blocking)
-    if (identifiedTracks.length > 0) {
+    if (identifiedTracks.length > 0 && token) {
       console.log('[SPYN] Sending emails to producers via Base44...');
       
       // Fire and forget - don't wait for emails
       identifiedTracks.forEach(async (track) => {
         try {
-          await base44Notifications.sendTrackPlayedEmail({
-            track_id: track.id || '',
-            track_title: track.title || 'Unknown Track',
-            artist_name: track.artist || 'Unknown Artist',
-            dj_name: user?.full_name || 'DJ',
-            club_name: correctedVenue || location?.venue || 'Unknown Venue',
-            location: `${location?.city || 'Unknown'}, ${location?.country || 'Unknown'}`,
-            played_at: new Date().toISOString(),
-          });
+          // Call directly with token to ensure authentication
+          await axios.post(
+            `${BACKEND_URL}/api/base44/functions/invoke/sendTrackPlayedEmail`,
+            {
+              trackTitle: track.title || 'Unknown Track',
+              artistName: track.artist || 'Unknown Artist',
+              djName: user?.full_name || 'DJ',
+              clubName: correctedVenue || location?.venue || 'Unknown Venue',
+              location: `${location?.city || 'Unknown'}, ${location?.country || 'Unknown'}`,
+              playedAt: new Date().toISOString(),
+              trackId: track.id,
+              producerId: track.producer_id,
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
           console.log(`[SPYN] Email sent for: ${track.title}`);
         } catch (e) {
           console.log(`[SPYN] Could not send email for: ${track.title}`);
