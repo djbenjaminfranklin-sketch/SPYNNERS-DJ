@@ -30,9 +30,13 @@ import { useLocalSearchParams } from 'expo-router';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BUTTON_SIZE = Math.min(SCREEN_WIDTH * 0.45, 180);
 
-const BACKEND_URL = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL 
-  || process.env.EXPO_PUBLIC_BACKEND_URL 
-  || '';
+// Get backend URL - always use the full preview URL to ensure auth headers are transmitted
+const getBackendUrl = () => {
+  // Always use the full preview domain for API calls
+  return 'https://spynapp.preview.emergentagent.com';
+};
+
+const BACKEND_URL = getBackendUrl();
 
 // Colors
 const CYAN_COLOR = '#5CB3CC';
