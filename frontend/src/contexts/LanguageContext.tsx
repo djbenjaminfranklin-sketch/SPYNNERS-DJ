@@ -157,6 +157,7 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.favorites': 'Favorites',
     'profile.user': 'User',
     'profile.administrator': 'Administrator',
+    'profile.manageTracksAdmin': 'Manage track uploads',
     'profile.logoutConfirm': 'Do you really want to log out?',
     
     // Common
