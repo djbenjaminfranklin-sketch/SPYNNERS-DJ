@@ -555,6 +555,52 @@ export default function SpynScreen() {
   };
 
   const sendAudioForRecognition = async (audioBase64: string) => {
+    // Check if we're offline
+    const isOnline = offlineService.isNetworkAvailable();
+    
+    if (!isOnline) {
+      // OFFLINE MODE: Save recording locally
+      console.log('[SPYN] 📴 OFFLINE - Saving recording locally...');
+      
+      try {
+        await offlineService.saveOfflineRecording({
+          audioBase64: audioBase64,
+          timestamp: new Date().toISOString(),
+          location: location ? {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            venue: location.venue,
+            city: location.city,
+            country: location.country,
+            is_valid_venue: location.is_valid_venue,
+          } : undefined,
+          userId: user?.id || '',
+          djName: user?.full_name || 'DJ',
+        });
+        
+        // Update UI
+        setOfflineRecordingsCount(prev => prev + 1);
+        const pending = await offlineService.getPendingCount();
+        setPendingSyncCount(pending);
+        
+        console.log('[SPYN] ✅ Recording saved offline. Total pending:', pending);
+        
+        // Show offline indicator on current track area
+        setCurrentTrack({
+          success: false,
+          title: `Recording #${offlineRecordingsCount + 1}`,
+          artist: 'Saved offline - will sync when online',
+          time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        });
+        
+      } catch (error) {
+        console.error('[SPYN] Failed to save offline recording:', error);
+      }
+      
+      return;
+    }
+    
+    // ONLINE MODE: Send to ACRCloud
     try {
       console.log('[SPYN] Sending audio to ACRCloud...');
       
@@ -615,6 +661,31 @@ export default function SpynScreen() {
       }
     } catch (error: any) {
       console.error('[SPYN] Recognition API error:', error?.response?.data || error.message);
+      
+      // If network error, switch to offline mode
+      if (error.code === 'ECONNABORTED' || error.message?.includes('Network') || !error.response) {
+        console.log('[SPYN] Network error detected - switching to offline mode');
+        setIsOffline(true);
+        
+        // Save this recording offline
+        await offlineService.saveOfflineRecording({
+          audioBase64: audioBase64,
+          timestamp: new Date().toISOString(),
+          location: location ? {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            venue: location.venue,
+            city: location.city,
+            country: location.country,
+            is_valid_venue: location.is_valid_venue,
+          } : undefined,
+          userId: user?.id || '',
+          djName: user?.full_name || 'DJ',
+        });
+        
+        setOfflineRecordingsCount(prev => prev + 1);
+        setPendingSyncCount(await offlineService.getPendingCount());
+      }
     }
   };
 
