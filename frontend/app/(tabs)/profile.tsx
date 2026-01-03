@@ -40,7 +40,10 @@ export default function ProfileScreen() {
   }, [user]);
 
   const loadProfile = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
