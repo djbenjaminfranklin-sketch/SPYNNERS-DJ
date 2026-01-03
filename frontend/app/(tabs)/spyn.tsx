@@ -278,15 +278,62 @@ export default function SpynScreen() {
   // ==================== SPYN DETECTION ====================
   const startDetection = async () => {
     try {
+      // Update location before recording
+      if (locationPermission) {
+        await updateLocation();
+      }
+
+      // For web, use native MediaRecorder API
+      if (Platform.OS === 'web') {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+          const audioChunks: BlobPart[] = [];
+          
+          mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+          };
+          
+          mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            // Convert to base64
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+              const base64Audio = (reader.result as string).split(',')[1];
+              await recognizeAudioBase64(base64Audio);
+            };
+            reader.readAsDataURL(audioBlob);
+            
+            // Stop all tracks
+            stream.getTracks().forEach(track => track.stop());
+          };
+          
+          setRecording(mediaRecorder as any);
+          mediaRecorder.start();
+          startPulse();
+          
+          // Auto-stop after 10 seconds
+          setTimeout(() => {
+            if (mediaRecorder.state === 'recording') {
+              mediaRecorder.stop();
+              setRecording(null);
+              setRecognizing(true);
+            }
+          }, 10000);
+          
+          return;
+        } catch (webError) {
+          console.error('Web recording error:', webError);
+          Alert.alert('Error', 'Microphone access denied or not available');
+          return;
+        }
+      }
+
+      // For native (iOS/Android), use expo-av
       const { granted } = await Audio.requestPermissionsAsync();
       if (!granted) {
         Alert.alert('Permission Required', 'Microphone access is needed to identify tracks');
         return;
-      }
-
-      // Update location before recording
-      if (locationPermission) {
-        await updateLocation();
       }
 
       await Audio.setAudioModeAsync({ 
