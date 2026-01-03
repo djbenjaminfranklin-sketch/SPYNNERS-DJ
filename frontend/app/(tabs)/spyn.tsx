@@ -2072,4 +2072,123 @@ const styles = StyleSheet.create({
     fontSize: 18, 
     textAlign: 'center' 
   },
+  
+  // Sync Modal styles
+  syncModalContent: {
+    backgroundColor: '#1a1a2e',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  syncModalTitle: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  syncModalSubtitle: {
+    color: '#aaa',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  syncModalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: CYAN_COLOR,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    gap: 10,
+    width: '100%',
+    marginTop: 16,
+  },
+  syncModalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  syncModalButtonSecondary: {
+    paddingVertical: 12,
+    marginTop: 8,
+  },
+  syncModalButtonTextSecondary: {
+    color: '#888',
+    fontSize: 14,
+  },
+  syncingContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  syncingText: {
+    color: CYAN_COLOR,
+    fontSize: 16,
+    marginTop: 16,
+  },
+  syncResultsContainer: {
+    width: '100%',
+    maxHeight: 350,
+  },
+  syncResultsTitle: {
+    color: GREEN_COLOR,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  syncResultsList: {
+    maxHeight: 250,
+  },
+  syncResultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#252540',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    gap: 12,
+  },
+  syncResultImage: {
+    width: 45,
+    height: 45,
+    borderRadius: 8,
+  },
+  placeholderImage: {
+    backgroundColor: '#333',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  syncResultInfo: {
+    flex: 1,
+  },
+  syncResultTitle: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  syncResultArtist: {
+    color: '#aaa',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  noResultsContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  noResultsText: {
+    color: '#FFB74D',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 12,
+  },
+  noResultsSubtext: {
+    color: '#888',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 16,
+  },
 });
