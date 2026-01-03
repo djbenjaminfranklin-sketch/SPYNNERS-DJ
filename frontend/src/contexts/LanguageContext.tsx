@@ -2214,26 +2214,6 @@ const translations: Record<Language, Record<string, string>> = {
     'page.playlistName': '播放列表名称',
     'page.createPlaylistHint': '创建你的第一个播放列表来整理你喜欢的曲目',
     
-    // Common
-    'common.cancel': '取消',
-    'common.save': '保存',
-    'common.delete': '删除',
-    'common.edit': '编辑',
-    'common.loading': '加载中...',
-    'common.error': '错误',
-    'common.success': '成功',
-    'common.search': '搜索',
-    'common.noResults': '无结果',
-    'common.language': '语言',
-    'common.selectLanguage': '选择你的语言',
-    'common.tracks': '曲目',
-    'common.members': '成员',
-    'common.online': '在线',
-    'common.unread': '未读',
-    'common.playAll': '播放全部',
-    'common.shuffle': '随机播放',
-    'common.select': '选择',
-    
     // Upload
     'upload.selectAudio': '选择MP3或WAV文件',
     'upload.selectCover': '点击选择封面',
