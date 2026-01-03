@@ -220,9 +220,10 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
             data_type, signature_version, timestamp, ACRCLOUD_ACCESS_SECRET
         )
         
-        # Prepare request
+        # Prepare request - ACRCloud accepts various formats
+        # The audio from iOS/Android recording is typically m4a or aac
         files = {
-            'sample': ('audio.m4a', BytesIO(audio_data), 'audio/m4a')
+            'sample': ('audio.wav', BytesIO(audio_data), 'audio/wav')
         }
         
         data = {
@@ -234,6 +235,8 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
             'signature_version': signature_version
         }
         
+        print(f"[ACRCloud] Sending {len(audio_data)} bytes to ACRCloud...")
+        
         # Send to ACRCloud
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
@@ -243,6 +246,7 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
             )
         
         result = response.json()
+        print(f"[ACRCloud] Response: {result.get('status', {})}")
         
         # Parse ACRCloud response
         if result.get("status", {}).get("code") == 0:
