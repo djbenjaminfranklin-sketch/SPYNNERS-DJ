@@ -171,19 +171,19 @@ export default function LiveRadarScreen() {
         <View style={styles.statItem}>
           <Ionicons name="radio" size={20} color={Colors.primary} />
           <Text style={styles.statValue}>{recentPlays.filter(p => p.is_live).length}</Text>
-          <Text style={styles.statLabel}>Live Now</Text>
+          <Text style={styles.statLabel}>{t('radar.liveNow')}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Ionicons name="play-circle" size={20} color="#4CAF50" />
           <Text style={styles.statValue}>{recentPlays.length}</Text>
-          <Text style={styles.statLabel}>Recent Plays</Text>
+          <Text style={styles.statLabel}>{t('radar.recentPlays')}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Ionicons name="musical-notes" size={20} color="#FF9800" />
           <Text style={styles.statValue}>{myTracksCount}</Text>
-          <Text style={styles.statLabel}>My Tracks</Text>
+          <Text style={styles.statLabel}>{t('radar.myTracks')}</Text>
         </View>
       </View>
 
@@ -195,7 +195,7 @@ export default function LiveRadarScreen() {
         >
           <Ionicons name="globe" size={18} color={activeTab === 'global' ? Colors.primary : Colors.textMuted} />
           <Text style={[styles.tabText, activeTab === 'global' && styles.tabTextActive]}>
-            Global Activity
+            {t('radar.globalActivity')}
           </Text>
         </TouchableOpacity>
         
@@ -205,7 +205,7 @@ export default function LiveRadarScreen() {
         >
           <Ionicons name="person" size={18} color={activeTab === 'my_tracks' ? Colors.primary : Colors.textMuted} />
           <Text style={[styles.tabText, activeTab === 'my_tracks' && styles.tabTextActive]}>
-            My Tracks
+            {t('radar.myTracks')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -220,14 +220,14 @@ export default function LiveRadarScreen() {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Loading live activity...</Text>
+            <Text style={styles.loadingText}>{t('radar.loadingActivity')}</Text>
           </View>
         ) : error ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="warning-outline" size={60} color={Colors.textMuted} />
             <Text style={styles.emptyText}>{error}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={loadData}>
-              <Text style={styles.retryText}>Retry</Text>
+              <Text style={styles.retryText}>{t('common.retry')}</Text>
             </TouchableOpacity>
           </View>
         ) : recentPlays.length === 0 ? (
@@ -235,14 +235,14 @@ export default function LiveRadarScreen() {
             <Ionicons name="radio-outline" size={60} color={Colors.textMuted} />
             <Text style={styles.emptyText}>
               {activeTab === 'my_tracks' 
-                ? 'No recent plays of your tracks' 
-                : 'No recent activity'
+                ? t('radar.noMyTracksPlays')
+                : t('radar.noRecentActivity')
               }
             </Text>
             <Text style={styles.emptySubtext}>
               {activeTab === 'my_tracks'
-                ? 'Upload more tracks to get noticed by DJs!'
-                : 'Check back later for live updates'
+                ? t('radar.uploadMoreTracks')
+                : t('radar.checkBackLater')
               }
             </Text>
           </View>
