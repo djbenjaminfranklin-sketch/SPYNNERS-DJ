@@ -889,6 +889,61 @@ export default function SpynScreen() {
           </View>
         )}
 
+        {/* ==================== PENDING SYNC CARD (when online with pending recordings) ==================== */}
+        {!isOffline && pendingSyncCount > 0 && !sessionActive && (
+          <View style={styles.pendingSyncCard}>
+            <View style={styles.pendingSyncHeader}>
+              <Ionicons name="cloud-upload" size={24} color={CYAN_COLOR} />
+              <View style={styles.pendingSyncInfo}>
+                <Text style={styles.pendingSyncTitle}>
+                  {pendingSyncCount} enregistrement(s) en attente
+                </Text>
+                <Text style={styles.pendingSyncSubtitle}>
+                  Prêts à être identifiés
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity 
+              style={styles.syncButton} 
+              onPress={async () => {
+                console.log('[SPYN] Manual sync triggered');
+                Alert.alert(
+                  '🔄 Synchronisation',
+                  'Envoi des enregistrements en cours...',
+                  [],
+                  { cancelable: false }
+                );
+                const { synced, failed } = await offlineService.syncPendingSessions(token || undefined);
+                const newPending = await offlineService.getPendingCount();
+                setPendingSyncCount(newPending);
+                
+                if (synced > 0) {
+                  Alert.alert(
+                    '🎵 Synchronisation terminée !',
+                    `${synced} enregistrement(s) traité(s) avec succès.${failed > 0 ? `\n${failed} échec(s).` : ''}`,
+                    [{ text: 'OK' }]
+                  );
+                } else if (failed > 0) {
+                  Alert.alert(
+                    '❌ Erreur de synchronisation',
+                    `${failed} enregistrement(s) n'ont pas pu être traités. Réessayez plus tard.`,
+                    [{ text: 'OK' }]
+                  );
+                } else {
+                  Alert.alert(
+                    'ℹ️ Info',
+                    'Aucun enregistrement à synchroniser.',
+                    [{ text: 'OK' }]
+                  );
+                }
+              }}
+            >
+              <Text style={styles.syncButtonText}>Synchroniser maintenant</Text>
+              <Ionicons name="sync" size={18} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* ==================== LOCATION BANNER - ALWAYS ON TOP ==================== */}
         <View style={styles.locationBanner}>
           <Ionicons 
