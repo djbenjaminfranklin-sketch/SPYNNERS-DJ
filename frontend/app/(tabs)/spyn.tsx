@@ -197,22 +197,18 @@ export default function SpynScreen() {
   useEffect(() => {
     // Auto-sync when coming back online with pending recordings
     const syncIfNeeded = async () => {
-      if (!isOffline && pendingSyncCount > 0) {
-        console.log('[SPYN] Network restored - syncing offline recordings...');
-        const { synced, failed } = await offlineService.syncPendingSessions(token || undefined);
-        if (synced > 0) {
-          Alert.alert(
-            '🎵 Sync Complete!',
-            `${synced} offline recording(s) processed successfully.`,
-            [{ text: 'OK' }]
-          );
-        }
-        setPendingSyncCount(await offlineService.getPendingCount());
+      // Refresh pending count whenever network status changes
+      const newPendingCount = await offlineService.getPendingCount();
+      console.log('[SPYN] Refreshing pending count:', newPendingCount, 'isOffline:', isOffline);
+      setPendingSyncCount(newPendingCount);
+      
+      if (!isOffline && newPendingCount > 0) {
+        console.log('[SPYN] Online with pending recordings - showing sync card');
       }
     };
     
     syncIfNeeded();
-  }, [isOffline, pendingSyncCount, token]);
+  }, [isOffline]);
 
   // Autostart session when coming from home page
   useEffect(() => {
