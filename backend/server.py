@@ -1618,6 +1618,205 @@ async def award_diamond(request: AwardDiamondRequest, authorization: Optional[st
         }
 
 
+# ==================== OFFLINE SPYN PROCESSING ====================
+
+class OfflineRecordingData(BaseModel):
+    audioBase64: str
+    timestamp: str
+    location: Optional[dict] = None
+
+class OfflineSessionRequest(BaseModel):
+    sessionId: str
+    recordings: List[OfflineRecordingData]
+    userId: str
+    djName: str
+    startTime: str
+    endTime: Optional[str] = None
+    location: Optional[dict] = None
+
+@app.post("/api/process-offline-session")
+async def process_offline_session(request: OfflineSessionRequest, authorization: Optional[str] = Header(None)):
+    """
+    Process offline SPYN recordings when the device comes back online.
+    Each recording is sent to ACRCloud for identification.
+    """
+    try:
+        print(f"[Offline] Processing session {request.sessionId} with {len(request.recordings)} recordings")
+        
+        results = []
+        identified_tracks = []
+        
+        for idx, recording in enumerate(request.recordings):
+            print(f"[Offline] Processing recording {idx + 1}/{len(request.recordings)}")
+            
+            try:
+                # Decode base64 audio
+                audio_data = base64.b64decode(recording.audioBase64)
+                
+                # ACRCloud API parameters
+                http_method = "POST"
+                http_uri = "/v1/identify"
+                data_type = "audio"
+                signature_version = "1"
+                timestamp = str(int(time.time()))
+                
+                # Generate signature
+                signature = generate_acrcloud_signature(
+                    http_method, http_uri, ACRCLOUD_ACCESS_KEY,
+                    data_type, signature_version, timestamp, ACRCLOUD_ACCESS_SECRET
+                )
+                
+                # Prepare request
+                files = {
+                    'sample': ('audio.wav', BytesIO(audio_data), 'audio/wav')
+                }
+                
+                data = {
+                    'access_key': ACRCLOUD_ACCESS_KEY,
+                    'sample_bytes': len(audio_data),
+                    'timestamp': timestamp,
+                    'signature': signature,
+                    'data_type': data_type,
+                    'signature_version': signature_version
+                }
+                
+                # Send to ACRCloud
+                async with httpx.AsyncClient(timeout=30.0) as acr_client:
+                    response = await acr_client.post(
+                        f"https://{ACRCLOUD_HOST}{http_uri}",
+                        data=data,
+                        files=files
+                    )
+                
+                result = response.json()
+                status_code = result.get("status", {}).get("code", -1)
+                
+                if status_code == 0:
+                    # Check for custom_files first (Spynners tracks)
+                    custom_files = result.get("metadata", {}).get("custom_files", [])
+                    music = result.get("metadata", {}).get("music", [])
+                    
+                    track = None
+                    is_custom = False
+                    
+                    if custom_files:
+                        track = custom_files[0]
+                        is_custom = True
+                    elif music:
+                        track = music[0]
+                    
+                    if track:
+                        track_title = track.get("title", "Unknown")
+                        track_artist = track.get("producer_name") or track.get("artist", "Unknown") if is_custom else ", ".join([a.get("name", "") for a in track.get("artists", [])]) or "Unknown"
+                        
+                        track_result = {
+                            "success": True,
+                            "title": track_title,
+                            "artist": track_artist,
+                            "cover_image": track.get("artwork_url") if is_custom else None,
+                            "spynners_track_id": track.get("spynners_track_id") if is_custom else None,
+                            "producer_id": track.get("producer_id") if is_custom else None,
+                            "timestamp": recording.timestamp,
+                            "is_spynners_track": is_custom
+                        }
+                        
+                        # Only count Spynners tracks
+                        if is_custom and track.get("spynners_track_id"):
+                            identified_tracks.append(track_result)
+                        
+                        results.append(track_result)
+                        print(f"[Offline] ✅ Identified: {track_title} by {track_artist}")
+                    else:
+                        results.append({
+                            "success": False,
+                            "message": "No track in response",
+                            "timestamp": recording.timestamp
+                        })
+                else:
+                    results.append({
+                        "success": False,
+                        "message": result.get("status", {}).get("msg", "Recognition failed"),
+                        "timestamp": recording.timestamp
+                    })
+                    print(f"[Offline] ❌ Not identified: {result.get('status', {}).get('msg', 'Unknown error')}")
+                    
+            except Exception as rec_error:
+                print(f"[Offline] Error processing recording {idx + 1}: {rec_error}")
+                results.append({
+                    "success": False,
+                    "message": str(rec_error),
+                    "timestamp": recording.timestamp
+                })
+        
+        # Store session in database for history
+        offline_session = {
+            "session_id": request.sessionId,
+            "user_id": request.userId,
+            "dj_name": request.djName,
+            "start_time": request.startTime,
+            "end_time": request.endTime,
+            "location": request.location,
+            "recordings_count": len(request.recordings),
+            "identified_count": len(identified_tracks),
+            "results": results,
+            "processed_at": datetime.utcnow().isoformat()
+        }
+        
+        db["offline_sessions"].insert_one(offline_session)
+        
+        # Send notifications for identified Spynners tracks (if in valid venue)
+        location = request.location or {}
+        is_valid_venue = location.get("is_valid_venue", False)
+        
+        if is_valid_venue and identified_tracks and authorization:
+            print(f"[Offline] Valid venue detected - Sending producer notifications for {len(identified_tracks)} tracks")
+            
+            for track in identified_tracks:
+                if track.get("producer_id"):
+                    try:
+                        # Call Base44 sendTrackPlayedEmail function
+                        headers = {
+                            "Content-Type": "application/json",
+                            "X-Base44-App-Id": BASE44_APP_ID,
+                            "Authorization": authorization
+                        }
+                        
+                        email_payload = {
+                            "producerId": track["producer_id"],
+                            "trackTitle": track["title"],
+                            "djName": request.djName,
+                            "city": location.get("city", ""),
+                            "country": location.get("country", ""),
+                            "venue": location.get("venue", ""),
+                            "trackArtworkUrl": track.get("cover_image", ""),
+                            "playedAt": track["timestamp"],
+                        }
+                        
+                        async with httpx.AsyncClient(timeout=30.0) as http_client:
+                            await http_client.post(
+                                f"https://spynners.com/api/functions/sendTrackPlayedEmail",
+                                json=email_payload,
+                                headers=headers
+                            )
+                        print(f"[Offline] ✅ Email sent for: {track['title']}")
+                    except Exception as email_error:
+                        print(f"[Offline] ❌ Email error for {track['title']}: {email_error}")
+        
+        print(f"[Offline] Session processed: {len(results)} recordings, {len(identified_tracks)} Spynners tracks identified")
+        
+        return {
+            "success": True,
+            "sessionId": request.sessionId,
+            "totalRecordings": len(request.recordings),
+            "identifiedTracks": len(identified_tracks),
+            "results": results
+        }
+        
+    except Exception as e:
+        print(f"[Offline] Session processing error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to process offline session: {str(e)}")
+
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/api/health")
