@@ -1386,6 +1386,7 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.favorites': 'Preferiti',
     'profile.user': 'Utente',
     'profile.administrator': 'Amministratore',
+    'profile.manageTracksAdmin': 'Gestisci upload tracce',
     'profile.logoutConfirm': 'Vuoi davvero uscire?',
     
     // Common
