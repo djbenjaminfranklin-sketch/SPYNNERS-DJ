@@ -594,10 +594,13 @@ export default function SpynScreen() {
     
     stopSession();
 
-    // Send emails to all identified track producers (non-blocking)
-    if (identifiedTracks.length > 0 && token) {
-      console.log('[SPYN] Sending emails to producers via Base44...');
-      console.log('[SPYN] Token available:', token ? 'Yes' : 'No');
+    // Check if valid venue (restaurant, bar, club, etc.)
+    const isValidVenue = location?.is_valid_venue === true;
+    
+    // Send emails to producers ONLY if in a valid venue
+    if (identifiedTracks.length > 0 && token && isValidVenue) {
+      console.log('[SPYN] ✅ Valid venue detected - Sending emails to producers...');
+      console.log('[SPYN] Venue:', location?.venue, '| Type:', location?.venue_type);
       
       // Fire and forget - don't wait for emails
       identifiedTracks.forEach(async (track) => {
@@ -635,12 +638,15 @@ export default function SpynScreen() {
           console.log(`[SPYN] ❌ Could not send email for: ${track.title}`, e?.response?.data || e.message);
         }
       });
+    } else if (identifiedTracks.length > 0 && !isValidVenue) {
+      console.log('[SPYN] ⚠️ No emails sent - Not in a valid venue (restaurant/bar/club)');
+      console.log('[SPYN] Current location:', location?.venue, '| is_valid_venue:', location?.is_valid_venue);
     } else {
       console.log('[SPYN] No emails sent - tracks:', identifiedTracks.length, ', token:', token ? 'Yes' : 'No');
     }
 
     // Award Black Diamond ONLY if valid venue (club, bar, restaurant)
-    const canEarnDiamond = identifiedTracks.length > 0 && location?.is_valid_venue;
+    const canEarnDiamond = identifiedTracks.length > 0 && isValidVenue;
     
     if (canEarnDiamond) {
       console.log('[SPYN] Valid venue detected, awarding Black Diamond...');
