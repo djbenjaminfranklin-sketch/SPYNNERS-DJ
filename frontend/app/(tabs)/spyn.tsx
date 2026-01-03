@@ -722,8 +722,8 @@ const styles = StyleSheet.create({
   locationText: { color: CYAN_COLOR, fontSize: 13, fontWeight: '500' },
   
   // SPYN Buttons
-  spynButtonsSection: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginBottom: Spacing.xl, paddingHorizontal: 10 },
-  spynButtonWrapper: { alignItems: 'center', position: 'relative' },
+  spynButtonsSection: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: Spacing.xl, paddingHorizontal: 20, gap: 30 },
+  spynButtonWrapper: { alignItems: 'center', position: 'relative', flex: 1 },
   glowRing: { position: 'absolute', width: BUTTON_SIZE + 20, height: BUTTON_SIZE + 20, borderRadius: (BUTTON_SIZE + 20) / 2, borderWidth: 2, top: -10, left: -10, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 20, elevation: 10 },
   spynButtonTouchable: { borderRadius: BUTTON_SIZE / 2, overflow: 'hidden' },
   spynButton: { width: BUTTON_SIZE, height: BUTTON_SIZE, borderRadius: BUTTON_SIZE / 2, justifyContent: 'center', alignItems: 'center' },
