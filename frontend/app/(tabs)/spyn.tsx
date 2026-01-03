@@ -137,6 +137,11 @@ export default function SpynScreen() {
   const [micPermission, setMicPermission] = useState(false);
   const [micPermissionRequested, setMicPermissionRequested] = useState(false);
   
+  // Offline mode state
+  const [isOffline, setIsOffline] = useState(false);
+  const [offlineRecordingsCount, setOfflineRecordingsCount] = useState(0);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  
   // Animation refs
   const pulseAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   const rotateAnimRef = useRef<Animated.CompositeAnimation | null>(null);
