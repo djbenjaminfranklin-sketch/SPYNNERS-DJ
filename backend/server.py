@@ -254,9 +254,85 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
             if music:
                 track = music[0]
                 
+                # Get ACRCloud ID and track info
+                acr_id = track.get("acrid", "")
+                track_title = track.get("title", "Unknown")
+                track_artist = ", ".join([a.get("name", "") for a in track.get("artists", [])]) or "Unknown"
+                
+                print(f"[ACRCloud] Identified: {track_title} by {track_artist}")
+                print(f"[ACRCloud] ACR ID: {acr_id}")
+                
+                # ==================== SEARCH IN SPYNNERS DATABASE ====================
+                # Try to find the track in Spynners by acrcloud_id first, then by title
+                spynners_track = None
+                cover_image = None
+                producer_email = None
+                
+                try:
+                    # Search by acrcloud_id
+                    if acr_id:
+                        spynners_search_url = f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Track"
+                        async with httpx.AsyncClient(timeout=10.0) as search_client:
+                            search_resp = await search_client.get(
+                                spynners_search_url,
+                                params={"acrcloud_id": acr_id, "limit": 1},
+                                headers={"X-Base44-App-Id": BASE44_APP_ID}
+                            )
+                            if search_resp.status_code == 200:
+                                tracks = search_resp.json()
+                                if tracks and len(tracks) > 0:
+                                    spynners_track = tracks[0]
+                                    print(f"[SPYNNERS] Found track by acrcloud_id: {spynners_track.get('title')}")
+                    
+                    # If not found by acrcloud_id, search by title
+                    if not spynners_track:
+                        async with httpx.AsyncClient(timeout=10.0) as search_client:
+                            # Try exact title match
+                            search_resp = await search_client.get(
+                                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Track",
+                                params={"title": track_title, "limit": 5},
+                                headers={"X-Base44-App-Id": BASE44_APP_ID}
+                            )
+                            if search_resp.status_code == 200:
+                                tracks = search_resp.json()
+                                if tracks and len(tracks) > 0:
+                                    # Find best match
+                                    for t in tracks:
+                                        if t.get("title", "").lower() == track_title.lower():
+                                            spynners_track = t
+                                            print(f"[SPYNNERS] Found track by title: {spynners_track.get('title')}")
+                                            break
+                    
+                    # Get artwork and producer info from Spynners track
+                    if spynners_track:
+                        cover_image = spynners_track.get("artwork_url")
+                        producer_id = spynners_track.get("producer_id")
+                        
+                        print(f"[SPYNNERS] Artwork URL: {cover_image}")
+                        print(f"[SPYNNERS] Producer ID: {producer_id}")
+                        
+                        # Get producer email for notification
+                        if producer_id:
+                            try:
+                                async with httpx.AsyncClient(timeout=5.0) as user_client:
+                                    user_resp = await user_client.get(
+                                        f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{producer_id}",
+                                        headers={"X-Base44-App-Id": BASE44_APP_ID}
+                                    )
+                                    if user_resp.status_code == 200:
+                                        producer = user_resp.json()
+                                        producer_email = producer.get("email")
+                                        print(f"[SPYNNERS] Producer email: {producer_email}")
+                            except Exception as e:
+                                print(f"[SPYNNERS] Could not get producer email: {e}")
+                    else:
+                        print(f"[SPYNNERS] Track NOT found in Spynners database - this may not be a Spynners track")
+                        
+                except Exception as e:
+                    print(f"[SPYNNERS] Error searching Spynners database: {e}")
+                
                 # Log full track data for debugging
                 print(f"[ACRCloud] Full track data keys: {track.keys()}")
-                print(f"[ACRCloud] External metadata: {track.get('external_metadata', {}).keys() if track.get('external_metadata') else 'None'}")
                 
                 # Extract cover image from various sources
                 cover_image = None
