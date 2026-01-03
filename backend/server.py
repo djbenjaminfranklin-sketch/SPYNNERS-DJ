@@ -1666,9 +1666,10 @@ async def process_offline_session(request: OfflineSessionRequest, authorization:
                     data_type, signature_version, timestamp, ACRCLOUD_ACCESS_SECRET
                 )
                 
-                # Prepare request
+                # Prepare request - ACRCloud accepts various formats
+                # The audio could be webm (web), m4a (iOS), or 3gp (Android)
                 files = {
-                    'sample': ('audio.wav', BytesIO(audio_data), 'audio/wav')
+                    'sample': ('audio_sample', BytesIO(audio_data), 'audio/mpeg')
                 }
                 
                 data = {
@@ -1679,6 +1680,8 @@ async def process_offline_session(request: OfflineSessionRequest, authorization:
                     'data_type': data_type,
                     'signature_version': signature_version
                 }
+                
+                print(f"[Offline] Sending {len(audio_data)} bytes to ACRCloud...")
                 
                 # Send to ACRCloud
                 async with httpx.AsyncClient(timeout=30.0) as acr_client:
