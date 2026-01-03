@@ -578,6 +578,16 @@ export default function SpynScreen() {
 
   const glowOpacity1 = glowAnim1.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
   const glowOpacity2 = glowAnim2.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] });
+  
+  // Rotating light interpolation
+  const rotate1 = rotateAnim1.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+  const rotate2 = rotateAnim2.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   return (
     <View style={styles.container}>
@@ -598,32 +608,50 @@ export default function SpynScreen() {
           <View style={styles.spynButtonsSection}>
             {/* SPYN DETECTION */}
             <View style={styles.spynButtonWrapper}>
-              <Animated.View style={[styles.glowRing, { opacity: glowOpacity1, borderColor: '#FF6B6B', shadowColor: '#FF6B6B' }]} />
+              {/* Rotating light ring */}
+              <Animated.View style={[styles.rotatingRingContainer, { transform: [{ rotate: rotate1 }] }]}>
+                <LinearGradient
+                  colors={['#FF6B6B', 'transparent', 'transparent', 'transparent']}
+                  style={styles.rotatingRing}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 1 }}
+                />
+              </Animated.View>
+              <Animated.View style={[styles.glowRing, { opacity: glowOpacity1, borderColor: '#FF6B6B' }]} />
               <Animated.View style={{ transform: [{ scale: scaleAnim1 }] }}>
                 <TouchableOpacity onPress={startDetection} activeOpacity={0.85} style={styles.spynButtonTouchable}>
                   <LinearGradient colors={DETECTION_GRADIENT} style={styles.spynButton} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}>
                     <Text style={styles.spynText}>SPYN</Text>
-                    <Text style={styles.spynSubtext}>DETECTION</Text>
+                    <Text style={styles.spynSubtext}>{t('spyn.detection')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </Animated.View>
-              <Text style={styles.spynLabel}>Micro</Text>
+              <Text style={styles.spynLabel}>{t('spyn.micro')}</Text>
             </View>
 
             {/* SPYN RECORD SET */}
             <View style={styles.spynButtonWrapper}>
-              <Animated.View style={[styles.glowRing, { opacity: glowOpacity2, borderColor: '#EC407A', shadowColor: '#EC407A' }]} />
+              {/* Rotating light ring */}
+              <Animated.View style={[styles.rotatingRingContainer, { transform: [{ rotate: rotate2 }] }]}>
+                <LinearGradient
+                  colors={['#EC407A', 'transparent', 'transparent', 'transparent']}
+                  style={styles.rotatingRing}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 1 }}
+                />
+              </Animated.View>
+              <Animated.View style={[styles.glowRing, { opacity: glowOpacity2, borderColor: '#EC407A' }]} />
               <Animated.View style={{ transform: [{ scale: scaleAnim2 }] }}>
                 <TouchableOpacity onPress={startRecordSet} activeOpacity={0.85} style={styles.spynButtonTouchable}>
                   <LinearGradient colors={RECORD_GRADIENT} style={styles.spynButton} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }}>
                     <Text style={styles.spynText}>SPYN</Text>
-                    <Text style={styles.spynSubtext}>RECORD SET</Text>
+                    <Text style={styles.spynSubtext}>{t('spyn.recordSet')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </Animated.View>
               <TouchableOpacity onPress={toggleUsbConnection}>
                 <Text style={[styles.spynLabel, isUsbConnected && styles.spynLabelActive]}>
-                  {isUsbConnected ? '🔌 USB Connected' : 'USB + Rec'}
+                  {isUsbConnected ? '🔌 USB Connected' : t('spyn.usbRec')}
                 </Text>
               </TouchableOpacity>
             </View>
