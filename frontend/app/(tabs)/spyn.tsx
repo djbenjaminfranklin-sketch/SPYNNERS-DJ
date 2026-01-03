@@ -874,6 +874,21 @@ export default function SpynScreen() {
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         
+        {/* ==================== OFFLINE BANNER ==================== */}
+        {isOffline && (
+          <View style={styles.offlineBanner}>
+            <Ionicons name="cloud-offline" size={18} color="#FFB74D" />
+            <Text style={styles.offlineBannerText}>
+              Mode Offline - Recordings saved locally
+            </Text>
+            {pendingSyncCount > 0 && (
+              <View style={styles.pendingBadge}>
+                <Text style={styles.pendingBadgeText}>{pendingSyncCount}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* ==================== LOCATION BANNER - ALWAYS ON TOP ==================== */}
         <View style={styles.locationBanner}>
           <Ionicons 
