@@ -590,10 +590,22 @@ export default function SpynScreen() {
   };
 
   const sendAudioForRecognition = async (audioBase64: string) => {
+    // FIX: Check if session is ending - prevent race condition creating duplicate sessions
+    if (isEndingSessionRef.current) {
+      console.log('[SPYN] ⚠️ Session is ending - skipping this recording to prevent duplicate sessions');
+      return;
+    }
+    
     // Check if we're offline
     const isOnline = offlineService.isNetworkAvailable();
     
     if (!isOnline) {
+      // Double check again after async operations
+      if (isEndingSessionRef.current) {
+        console.log('[SPYN] ⚠️ Session ended during processing - skipping offline save');
+        return;
+      }
+      
       // OFFLINE MODE: Save recording locally
       console.log('[SPYN] 📴 OFFLINE - Saving recording locally...');
       
