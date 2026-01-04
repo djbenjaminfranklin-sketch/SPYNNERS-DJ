@@ -1666,10 +1666,9 @@ async def process_offline_session(request: OfflineSessionRequest, authorization:
                     data_type, signature_version, timestamp, ACRCLOUD_ACCESS_SECRET
                 )
                 
-                # Prepare request - ACRCloud accepts various formats
-                # The audio could be webm (web), m4a (iOS), or 3gp (Android)
+                # Prepare request - Use same format as online mode
                 files = {
-                    'sample': ('audio_sample', BytesIO(audio_data), 'audio/mpeg')
+                    'sample': ('audio.wav', BytesIO(audio_data), 'audio/wav')
                 }
                 
                 data = {
