@@ -244,15 +244,23 @@ export default function EditProfileScreen() {
       if (sacemNumber.trim()) {
         profileData.sacem_number = sacemNumber.trim();
       }
+      if (email.trim()) {
+        profileData.email = email.trim();
+      }
       
-      // Map profile type
-      if (profileType === 'dj') {
-        profileData.user_type = 'dj';
-      } else if (profileType === 'producer') {
-        profileData.user_type = 'producer';
-      } else if (profileType === 'both') {
+      // Map profile types (array) - send all selected types
+      profileData.profile_types = profileTypes;
+      
+      // Also set a primary user_type for backwards compatibility
+      if (profileTypes.includes('both')) {
         profileData.user_type = 'both';
-      } else if (profileType === 'label') {
+      } else if (profileTypes.includes('dj') && profileTypes.includes('producer')) {
+        profileData.user_type = 'both';
+      } else if (profileTypes.includes('dj')) {
+        profileData.user_type = 'dj';
+      } else if (profileTypes.includes('producer')) {
+        profileData.user_type = 'producer';
+      } else if (profileTypes.includes('label')) {
         profileData.user_type = 'label';
       } else {
         profileData.user_type = 'music_lover';
