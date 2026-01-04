@@ -76,6 +76,26 @@ export default function GlobalPlayer() {
     [playbackDuration, seekTo]
   );
 
+  // Share handler
+  const handleShare = async () => {
+    if (!currentTrack) return;
+    try {
+      const trackUrl = `https://spynners.com/track/${currentTrack.id || currentTrack._id}`;
+      await Share.share({
+        message: `Check out "${currentTrack.title}" by ${getArtistName(currentTrack)} on SPYNNERS! ${trackUrl}`,
+        url: trackUrl,
+        title: currentTrack.title,
+      });
+    } catch (error) {
+      console.error('[Share] Error:', error);
+    }
+  };
+
+  // Playlist handler - just show alert for now
+  const handleAddToPlaylist = () => {
+    Alert.alert('Add to Playlist', 'Go to Home page to add this track to a playlist');
+  };
+
   if (!currentTrack) return null;
 
   // Get cover image URL
