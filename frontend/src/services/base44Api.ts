@@ -327,8 +327,29 @@ export const base44Tracks = {
     is_vip?: boolean;
   }): Promise<Track[]> {
     try {
-      console.log('[Tracks] Fetching tracks via proxy with filters:', filters);
+      console.log('[Tracks] Fetching tracks via native API with filters:', filters);
       
+      // Try native API first
+      try {
+        const nativeResponse = await api.post('/api/tracks/all', {
+          genre: filters?.genre,
+          limit: filters?.limit || 100,
+          offset: 0
+        });
+        
+        if (nativeResponse.data?.success && nativeResponse.data?.tracks) {
+          console.log('[Tracks] Native API returned:', nativeResponse.data.tracks.length, 'tracks');
+          return nativeResponse.data.tracks;
+        }
+        if (Array.isArray(nativeResponse.data)) {
+          console.log('[Tracks] Native API returned array:', nativeResponse.data.length, 'tracks');
+          return nativeResponse.data;
+        }
+      } catch (nativeError) {
+        console.log('[Tracks] Native API failed, falling back to Base44...');
+      }
+      
+      // Fallback to Base44 entities
       const params = new URLSearchParams();
       if (filters?.limit) params.append('limit', filters.limit.toString());
       if (filters?.sort) params.append('sort', filters.sort);
@@ -337,7 +358,7 @@ export const base44Tracks = {
       if (filters?.is_vip !== undefined) params.append('is_vip', filters.is_vip.toString());
 
       const url = `/api/base44/entities/Track${params.toString() ? `?${params.toString()}` : ''}`;
-      console.log('[Tracks] API URL:', url);
+      console.log('[Tracks] Fallback API URL:', url);
       
       const response = await api.get(url);
       
