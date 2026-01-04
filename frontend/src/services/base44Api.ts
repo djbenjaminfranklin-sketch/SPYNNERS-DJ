@@ -705,20 +705,45 @@ export const base44Users = {
 export const base44Playlists = {
   async list(userId?: string): Promise<Playlist[]> {
     try {
-      // Get all playlists (don't filter by user_id as it might not work correctly)
-      const response = await api.get('/api/base44/entities/Playlist?limit=100');
-      const data = response.data;
+      console.log('[Playlists] Fetching playlists via native API...');
+      // Try native API first
+      const response = await api.post('/api/playlists', {
+        limit: 100,
+        offset: 0
+      });
+      
+      // Handle different response formats
+      if (response.data?.success && response.data?.playlists) {
+        return response.data.playlists;
+      }
+      if (Array.isArray(response.data)) return response.data;
+      if (response.data?.items) return response.data.items;
+      
+      // Fallback to Base44 entities
+      console.log('[Playlists] Native API failed, trying Base44 entities...');
+      const fallbackResponse = await api.get('/api/base44/entities/Playlist?limit=100');
+      const data = fallbackResponse.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
       return [];
     } catch (error) {
       console.error('[Playlists] Error listing playlists:', error);
+      // Fallback to Base44 entities
+      try {
+        const fallbackResponse = await api.get('/api/base44/entities/Playlist?limit=100');
+        const data = fallbackResponse.data;
+        if (Array.isArray(data)) return data;
+        if (data?.items) return data.items;
+      } catch (e) {
+        console.error('[Playlists] Fallback also failed:', e);
+      }
       return [];
     }
   },
 
   async create(playlist: Partial<Playlist>): Promise<Playlist | null> {
     try {
+      // Try native create first, fallback to Base44
       const response = await api.post('/api/base44/entities/Playlist', playlist);
       return response.data;
     } catch (error) {
