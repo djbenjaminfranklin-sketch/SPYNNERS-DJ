@@ -2458,6 +2458,19 @@ async def download_bugfixes():
     else:
         raise HTTPException(status_code=404, detail="Bugfixes file not found")
 
+@app.get("/api/download-backend")
+async def download_backend():
+    """Download the updated backend server.py"""
+    file_path = "/app/backend/server.py"
+    if os.path.exists(file_path):
+        return FileResponse(
+            file_path,
+            media_type="text/plain",
+            filename="server.py"
+        )
+    else:
+        raise HTTPException(status_code=404, detail="Backend file not found")
+
 @app.get("/")
 async def root():
     return {"message": "SPYNNERS API - Use /api/* endpoints"}
