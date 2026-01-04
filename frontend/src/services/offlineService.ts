@@ -262,6 +262,9 @@ class OfflineService {
   async endOfflineSession(sessionId?: string): Promise<OfflineSession | null> {
     console.log('[Offline] endOfflineSession called');
     
+    // Set flag to prevent new recordings
+    this.isSessionEnding = true;
+    
     const sessions = await this.getOfflineSessions();
     
     // Use provided sessionId, or currentSessionId, or find any recording session
@@ -281,6 +284,11 @@ class OfflineService {
       
       console.log('[Offline] Session ended successfully');
       
+      // Reset flag after a short delay
+      setTimeout(() => {
+        this.isSessionEnding = false;
+      }, 2000);
+      
       return session;
     } else if (session) {
       console.log('[Offline] Session found but status is:', session.status);
@@ -288,8 +296,9 @@ class OfflineService {
       console.log('[Offline] No session found to end. currentSessionId:', this.currentSessionId);
     }
     
-    // Clear current session ID anyway
+    // Clear current session ID and reset flag
     this.currentSessionId = null;
+    this.isSessionEnding = false;
     
     return null;
   }
