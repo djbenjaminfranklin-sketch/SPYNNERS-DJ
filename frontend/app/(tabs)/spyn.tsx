@@ -805,13 +805,17 @@ export default function SpynScreen() {
     // Check if valid venue (restaurant, bar, club, etc.)
     const isValidVenue = location?.is_valid_venue === true;
     
-    // Send emails to producers ONLY if in a valid venue AND online
-    if (identifiedTracks.length > 0 && token && isValidVenue && !isOffline) {
-      console.log('[SPYN] ✅ Valid venue detected - Sending emails to producers...');
-      console.log('[SPYN] Venue:', location?.venue, '| Type:', location?.venue_type);
+    // Send emails to producers - send even if venue not validated (user might be at home testing)
+    // Only skip if offline
+    if (identifiedTracks.length > 0 && token && !isOffline) {
+      console.log('[SPYN] ✅ Sending emails to producers...');
+      console.log('[SPYN] Venue:', location?.venue, '| Valid:', isValidVenue);
       
-      // Fire and forget - don't wait for emails
-      identifiedTracks.forEach(async (track) => {
+      let emailsSent = 0;
+      let emailsFailed = 0;
+      
+      // Send emails to all track producers
+      for (const track of identifiedTracks) {
         try {
           // Determine DJ name based on who played
           const djNameToUse = whoPlayed === 'another' && otherDjName.trim() 
@@ -828,7 +832,7 @@ export default function SpynScreen() {
             // Optional fields
             city: location?.city || '',
             country: location?.country || '',
-            venue: correctedVenue || location?.venue || '',
+            venue: correctedVenue || location?.venue || 'Unknown venue',
             trackArtworkUrl: track.cover_image || '',
             djAvatar: whoPlayed === 'me' ? (user?.avatar || '') : '', // No avatar if another DJ
             playedAt: new Date().toISOString(),
@@ -845,20 +849,34 @@ export default function SpynScreen() {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
               },
+              timeout: 10000,
             }
           );
           console.log(`[SPYN] ✅ Email sent for: ${track.title}`, response.data);
+          emailsSent++;
         } catch (e: any) {
           console.log(`[SPYN] ❌ Could not send email for: ${track.title}`, e?.response?.data || e.message);
+          emailsFailed++;
         }
-      });
-    } else if (identifiedTracks.length > 0 && !isValidVenue) {
-      console.log('[SPYN] ⚠️ No emails sent - Not in a valid venue (restaurant/bar/club)');
-      console.log('[SPYN] Current location:', location?.venue, '| is_valid_venue:', location?.is_valid_venue);
-    } else if (isOffline) {
+      }
+      
+      // Show feedback to user about emails
+      if (emailsSent > 0) {
+        console.log(`[SPYN] 📧 ${emailsSent} email(s) envoyé(s) aux producteurs`);
+      }
+      if (emailsFailed > 0) {
+        console.log(`[SPYN] ⚠️ ${emailsFailed} email(s) n'ont pas pu être envoyés`);
+      }
+      
+    } else if (isOffline && identifiedTracks.length > 0) {
       console.log('[SPYN] ⚠️ No emails sent - Offline mode (will be sent when synced)');
-    } else {
-      console.log('[SPYN] No emails sent - tracks:', identifiedTracks.length, ', token:', token ? 'Yes' : 'No');
+      Alert.alert(
+        'Session sauvegardée',
+        'Les emails aux producteurs seront envoyés quand vous serez en ligne et que vous synchroniserez vos enregistrements.',
+        [{ text: 'OK' }]
+      );
+    } else if (identifiedTracks.length === 0) {
+      console.log('[SPYN] No emails sent - no tracks identified');
     }
 
     // Award Black Diamond ONLY if valid venue (club, bar, restaurant) AND online
