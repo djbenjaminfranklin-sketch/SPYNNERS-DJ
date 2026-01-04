@@ -519,7 +519,13 @@ export default function SpynScreen() {
     return new Promise<void>((resolve) => {
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then((stream) => {
-          const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+          // Try to use a more compatible format
+          let mimeType = 'audio/webm';
+          if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+            mimeType = 'audio/webm;codecs=opus';
+          }
+          
+          const mediaRecorder = new MediaRecorder(stream, { mimeType });
           const audioChunks: BlobPart[] = [];
           mediaRecorderRef.current = mediaRecorder;
 
@@ -528,10 +534,13 @@ export default function SpynScreen() {
           };
 
           mediaRecorder.onstop = async () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const audioBlob = new Blob(audioChunks, { type: mimeType });
+            console.log('[SPYN] Audio blob size:', audioBlob.size, 'bytes, type:', mimeType);
+            
             const reader = new FileReader();
             reader.onloadend = async () => {
               const base64Audio = (reader.result as string).split(',')[1];
+              console.log('[SPYN] Base64 audio length:', base64Audio.length, 'chars');
               await sendAudioForRecognition(base64Audio);
               resolve();
             };
@@ -540,7 +549,7 @@ export default function SpynScreen() {
           };
 
           mediaRecorder.start();
-          console.log('[SPYN] Web recording started...');
+          console.log('[SPYN] Web recording started with mimeType:', mimeType);
 
           setTimeout(() => {
             if (mediaRecorder.state === 'recording') {
