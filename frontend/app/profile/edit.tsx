@@ -317,40 +317,40 @@ export default function EditProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Profile Type - DJ / Producer / Both / Label / Music Lover */}
-        <Text style={styles.sectionTitle}>{t('edit.iAmA')}</Text>
+        {/* Profile Type - Multi-select (DJ + Label, etc.) */}
+        <Text style={styles.sectionTitle}>{t('edit.iAmA')} (multi-select)</Text>
         <View style={styles.profileTypeGrid}>
           <TouchableOpacity 
-            style={[styles.profileTypeButton, profileType === 'dj' && styles.profileTypeActive]}
-            onPress={() => setProfileType('dj')}
+            style={[styles.profileTypeButton, profileTypes.includes('dj') && styles.profileTypeActive]}
+            onPress={() => toggleProfileType('dj')}
           >
-            <Ionicons name="headset" size={24} color={profileType === 'dj' ? '#fff' : Colors.textMuted} />
-            <Text style={[styles.profileTypeText, profileType === 'dj' && styles.profileTypeTextActive]}>{t('edit.dj')}</Text>
+            <Ionicons name="headset" size={24} color={profileTypes.includes('dj') ? '#fff' : Colors.textMuted} />
+            <Text style={[styles.profileTypeText, profileTypes.includes('dj') && styles.profileTypeTextActive]}>{t('edit.dj')}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.profileTypeButton, profileType === 'producer' && styles.profileTypeActive]}
-            onPress={() => setProfileType('producer')}
+            style={[styles.profileTypeButton, profileTypes.includes('producer') && styles.profileTypeActive]}
+            onPress={() => toggleProfileType('producer')}
           >
-            <Ionicons name="musical-notes" size={24} color={profileType === 'producer' ? '#fff' : Colors.textMuted} />
-            <Text style={[styles.profileTypeText, profileType === 'producer' && styles.profileTypeTextActive]}>{t('edit.producer')}</Text>
+            <Ionicons name="musical-notes" size={24} color={profileTypes.includes('producer') ? '#fff' : Colors.textMuted} />
+            <Text style={[styles.profileTypeText, profileTypes.includes('producer') && styles.profileTypeTextActive]}>{t('edit.producer')}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.profileTypeButton, profileType === 'both' && styles.profileTypeActive]}
-            onPress={() => setProfileType('both')}
+            style={[styles.profileTypeButton, profileTypes.includes('both') && styles.profileTypeActive]}
+            onPress={() => toggleProfileType('both')}
           >
-            <Ionicons name="disc" size={24} color={profileType === 'both' ? '#fff' : Colors.textMuted} />
-            <Text style={[styles.profileTypeText, profileType === 'both' && styles.profileTypeTextActive]}>{t('edit.both')}</Text>
+            <Ionicons name="disc" size={24} color={profileTypes.includes('both') ? '#fff' : Colors.textMuted} />
+            <Text style={[styles.profileTypeText, profileTypes.includes('both') && styles.profileTypeTextActive]}>{t('edit.both')}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.profileTypeButton, profileType === 'label' && styles.profileTypeActive]}
-            onPress={() => setProfileType('label')}
+            style={[styles.profileTypeButton, profileTypes.includes('label') && styles.profileTypeActive]}
+            onPress={() => toggleProfileType('label')}
           >
-            <Ionicons name="business" size={24} color={profileType === 'label' ? '#fff' : Colors.textMuted} />
-            <Text style={[styles.profileTypeText, profileType === 'label' && styles.profileTypeTextActive]}>{t('edit.label')}</Text>
+            <Ionicons name="business" size={24} color={profileTypes.includes('label') ? '#fff' : Colors.textMuted} />
+            <Text style={[styles.profileTypeText, profileTypes.includes('label') && styles.profileTypeTextActive]}>{t('edit.label')}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.profileTypeButton, profileType === 'music_lover' && styles.profileTypeActive]}
-            onPress={() => setProfileType('music_lover')}
+            style={[styles.profileTypeButton, profileTypes.includes('music_lover') && styles.profileTypeActive]}
+            onPress={() => toggleProfileType('music_lover')}
           >
             <Ionicons name="heart" size={24} color={profileType === 'music_lover' ? '#fff' : Colors.textMuted} />
             <Text style={[styles.profileTypeText, profileType === 'music_lover' && styles.profileTypeTextActive]}>{t('edit.musicLover')}</Text>
