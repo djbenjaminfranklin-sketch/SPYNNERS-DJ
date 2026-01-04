@@ -9,8 +9,28 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import axios from 'axios';
+import Constants from 'expo-constants';
 
-const BACKEND_URL = 'https://offline-spyn.preview.emergentagent.com';
+// Get backend URL from environment or use current origin
+const getBackendUrl = () => {
+  // Try to get from env
+  const envUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL 
+    || process.env.EXPO_PUBLIC_BACKEND_URL;
+  
+  if (envUrl) {
+    return envUrl;
+  }
+  
+  // On web, use current origin
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  
+  // Fallback
+  return 'https://offline-spyn.preview.emergentagent.com';
+};
+
+const BACKEND_URL = getBackendUrl();
 const OFFLINE_SESSIONS_KEY = 'offline_spyn_sessions';
 const PUSH_TOKEN_KEY = 'expo_push_token';
 
