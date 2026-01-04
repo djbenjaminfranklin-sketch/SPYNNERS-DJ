@@ -71,49 +71,85 @@ export default function ManageTracksScreen() {
     try {
       setLoading(true);
       
-      const userId = user?.id;
-      
-      if (!userId) {
-        console.log('[Tracks] No user ID, cannot fetch tracks');
+      if (!token) {
+        console.log('[Tracks] No token, cannot fetch tracks');
         setLoading(false);
         return;
       }
       
-      console.log('[Tracks] Fetching tracks for user:', userId);
+      console.log('[Tracks] Fetching user tracks via native API...');
       
-      // Fetch all approved tracks
-      const response = await axios.get(
-        `${BACKEND_URL}/api/base44/entities/Track`,
+      // Use the new native API endpoint
+      const response = await axios.post(
+        `${BACKEND_URL}/api/tracks/my`,
         {
-          params: {
-            status: 'approved',
-            limit: 500
-          },
+          status: 'approved',
+          limit: 100,
+          offset: 0
+        },
+        {
           headers: {
             Authorization: `Bearer ${token}`,
-            'X-Base44-App-Id': '691a4d96d819355b52c063f3'
+            'Content-Type': 'application/json'
           }
         }
       );
       
-      if (Array.isArray(response.data)) {
-        // Filter to only show tracks where the user is the producer
-        const userTracks = response.data.filter((track: Track) => 
-          track.producer_id === userId
-        );
+      console.log('[Tracks] API response:', response.data);
+      
+      // Handle the response from native API
+      if (response.data?.success && response.data?.tracks) {
+        const userTracks = response.data.tracks.map((track: any) => ({
+          id: track.id || track._id,
+          title: track.title || 'Unknown',
+          producer_name: track.producer_name || track.artist,
+          producer_id: track.producer_id || track.created_by_id,
+          genre: track.genre || 'House',
+          bpm: track.bpm,
+          artwork_url: track.artwork_url || track.cover_image,
+          audio_url: track.audio_url || track.audio_file,
+          status: track.status || 'approved',
+          plays_count: track.plays_count || 0,
+          downloads_count: track.downloads_count || 0,
+          likes_count: track.likes_count || 0,
+          acrcloud_id: track.acrcloud_id,
+          created_at: track.created_at || track.created_date,
+          isrc: track.isrc,
+        }));
         
-        console.log('[Tracks] Total approved tracks:', response.data.length);
-        console.log('[Tracks] User tracks:', userTracks.length);
-        
-        // Sort by created_at descending
-        const sortedTracks = userTracks.sort((a: Track, b: Track) => {
-          return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime();
-        });
-        setTracks(sortedTracks);
+        console.log('[Tracks] Processed tracks:', userTracks.length);
+        setTracks(userTracks);
+      } else if (Array.isArray(response.data)) {
+        // Fallback: direct array response
+        const userTracks = response.data.map((track: any) => ({
+          id: track.id || track._id,
+          title: track.title || 'Unknown',
+          producer_name: track.producer_name || track.artist,
+          producer_id: track.producer_id || track.created_by_id,
+          genre: track.genre || 'House',
+          bpm: track.bpm,
+          artwork_url: track.artwork_url || track.cover_image,
+          audio_url: track.audio_url || track.audio_file,
+          status: track.status || 'approved',
+          plays_count: track.plays_count || 0,
+          downloads_count: track.downloads_count || 0,
+          likes_count: track.likes_count || 0,
+          acrcloud_id: track.acrcloud_id,
+          created_at: track.created_at || track.created_date,
+          isrc: track.isrc,
+        }));
+        setTracks(userTracks);
+      } else {
+        console.log('[Tracks] No tracks in response');
+        setTracks([]);
       }
-    } catch (error) {
-      console.error('Error fetching tracks:', error);
-      Alert.alert('Error', 'Could not load your tracks');
+    } catch (error: any) {
+      console.error('[Tracks] Error fetching tracks:', error?.response?.data || error.message);
+      // Don't show alert for empty results
+      if (error?.response?.status !== 404) {
+        Alert.alert('Error', 'Could not load your tracks. Please try again.');
+      }
+      setTracks([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
