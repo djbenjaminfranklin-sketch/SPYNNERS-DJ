@@ -54,7 +54,7 @@ const ENERGY_VALUES = ['All Energy Levels', 'Low', 'Medium', 'High', 'Very High'
 const SORT_VALUES = ['Recently Added', 'Most Downloaded', 'Top Rated', 'Oldest'];
 
 export default function HomeScreen() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { t, language, setLanguage } = useLanguage();
   const router = useRouter();
   
