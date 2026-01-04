@@ -70,9 +70,18 @@ class OfflineService {
   private initNetworkListener() {
     this.networkUnsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
       const wasOffline = !this.isOnline;
-      this.isOnline = state.isConnected ?? false;
       
-      console.log('[Offline] Network state changed:', this.isOnline ? 'ONLINE' : 'OFFLINE');
+      // On web, NetInfo may report false negatives. Use navigator.onLine as fallback
+      let connected = state.isConnected ?? false;
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+        // Trust navigator.onLine on web as it's more reliable
+        connected = navigator.onLine;
+      }
+      
+      this.isOnline = connected;
+      
+      console.log('[Offline] Network state changed:', this.isOnline ? 'ONLINE' : 'OFFLINE', 
+        Platform.OS === 'web' ? '(web: navigator.onLine=' + navigator.onLine + ')' : '');
       
       // Notify all registered callbacks
       this.networkChangeCallbacks.forEach(callback => {
@@ -89,6 +98,24 @@ class OfflineService {
         this.autoSyncPendingSessions();
       }
     });
+    
+    // On web, also listen to browser online/offline events
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.addEventListener('online', () => {
+        console.log('[Offline] Browser online event');
+        const wasOffline = !this.isOnline;
+        this.isOnline = true;
+        this.networkChangeCallbacks.forEach(cb => cb(true));
+        if (wasOffline) {
+          this.autoSyncPendingSessions();
+        }
+      });
+      window.addEventListener('offline', () => {
+        console.log('[Offline] Browser offline event');
+        this.isOnline = false;
+        this.networkChangeCallbacks.forEach(cb => cb(false));
+      });
+    }
   }
 
   private async autoSyncPendingSessions() {
