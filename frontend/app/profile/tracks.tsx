@@ -431,19 +431,6 @@ export default function ManageTracksScreen() {
                 </View>
 
                 <View style={styles.modalButtons}>
-                  {!selectedTrack.acrcloud_id && (
-                    <TouchableOpacity
-                      style={[styles.modalButton, { backgroundColor: CYAN_COLOR }]}
-                      onPress={() => {
-                        setShowTrackModal(false);
-                        syncWithACRCloud(selectedTrack);
-                      }}
-                    >
-                      <Ionicons name="sync" size={20} color="#fff" />
-                      <Text style={styles.modalButtonText}>Sync to ACRCloud</Text>
-                    </TouchableOpacity>
-                  )}
-                  
                   <TouchableOpacity
                     style={[styles.modalButton, { backgroundColor: RED_COLOR }]}
                     onPress={() => deleteTrack(selectedTrack)}
