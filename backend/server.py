@@ -1990,120 +1990,362 @@ async def process_offline_session(request: OfflineSessionRequest, authorization:
         raise HTTPException(status_code=500, detail=f"Failed to process offline session: {str(e)}")
 
 
+# ==================== SPYNNERS NATIVE API PROXY ====================
+
+# Helper function to call Spynners native functions
+async def call_spynners_function(function_name: str, body: dict, authorization: str):
+    """Call a Spynners native API function"""
+    url = f"{SPYNNERS_FUNCTIONS_URL}/{function_name}"
+    headers = {
+        "Authorization": authorization,
+        "Content-Type": "application/json"
+    }
+    
+    print(f"[Spynners API] Calling {function_name} with body: {body}")
+    
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.post(url, headers=headers, json=body)
+        print(f"[Spynners API] Response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"[Spynners API] Error: {response.text}")
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+
 # ==================== PROFILE ENDPOINTS ====================
 
 class ProfileUpdateRequest(BaseModel):
-    full_name: Optional[str] = None
+    artist_name: Optional[str] = None
     bio: Optional[str] = None
-    location: Optional[str] = None
-    website: Optional[str] = None
+    nationality: Optional[str] = None
     instagram: Optional[str] = None
     soundcloud: Optional[str] = None
-    spotify: Optional[str] = None
-    genres: Optional[List[str]] = None
-    profile_type: Optional[str] = None
-    is_dj: Optional[bool] = None
-    is_producer: Optional[bool] = None
-    is_label: Optional[bool] = None
-    is_music_lover: Optional[bool] = None
     sacem_number: Optional[str] = None
-    email: Optional[str] = None
-
-@app.get("/api/profile")
-async def get_profile(authorization: str = Header(None)):
-    """Get user profile"""
-    try:
-        if not authorization:
-            raise HTTPException(status_code=401, detail="No authorization header")
-        
-        token = authorization.replace("Bearer ", "")
-        
-        # Get user from Base44
-        headers = {"Authorization": f"Bearer {token}"}
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(
-                f"{BASE44_API_URL}/auth/me",
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                user_data = response.json()
-                return {"success": True, "profile": user_data}
-            else:
-                raise HTTPException(status_code=response.status_code, detail="Could not get profile")
-    except Exception as e:
-        print(f"[Profile] Error getting profile: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    user_type: Optional[str] = None  # dj|producer|both|label|music_lover
 
 @app.post("/api/profile/update")
 async def update_profile(request: ProfileUpdateRequest, authorization: str = Header(None)):
-    """Update user profile via spynners.com API"""
+    """Update user profile via Spynners native API"""
     try:
         if not authorization:
             raise HTTPException(status_code=401, detail="No authorization header")
         
-        # Build update data
-        update_data = {}
-        if request.full_name is not None:
-            update_data["full_name"] = request.full_name
+        body = {}
+        if request.artist_name is not None:
+            body["artist_name"] = request.artist_name
         if request.bio is not None:
-            update_data["bio"] = request.bio
-        if request.location is not None:
-            update_data["location"] = request.location
-        if request.website is not None:
-            update_data["website"] = request.website
+            body["bio"] = request.bio
+        if request.nationality is not None:
+            body["nationality"] = request.nationality
         if request.instagram is not None:
-            update_data["instagram"] = request.instagram
+            body["instagram"] = request.instagram
         if request.soundcloud is not None:
-            update_data["soundcloud"] = request.soundcloud
-        if request.spotify is not None:
-            update_data["spotify"] = request.spotify
-        if request.genres is not None:
-            update_data["genres"] = request.genres
-        if request.profile_type is not None:
-            update_data["profile_type"] = request.profile_type
-        if request.is_dj is not None:
-            update_data["is_dj"] = request.is_dj
-        if request.is_producer is not None:
-            update_data["is_producer"] = request.is_producer
-        if request.is_label is not None:
-            update_data["is_label"] = request.is_label
-        if request.is_music_lover is not None:
-            update_data["is_music_lover"] = request.is_music_lover
+            body["soundcloud"] = request.soundcloud
         if request.sacem_number is not None:
-            update_data["sacem_number"] = request.sacem_number
-        if request.email is not None:
-            update_data["email"] = request.email
+            body["sacem_number"] = request.sacem_number
+        if request.user_type is not None:
+            body["user_type"] = request.user_type
         
-        print(f"[Profile] Updating profile with: {update_data}")
+        result = await call_spynners_function("nativeUpdateProfile", body, authorization)
+        return result
         
-        # Use spynners.com API with the updateProfile function
-        headers = {
-            "Authorization": authorization,
-            "Content-Type": "application/json"
-        }
-        
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Call the updateProfile function on spynners.com
-            response = await client.post(
-                "https://spynners.com/api/functions/updateProfile",
-                headers=headers,
-                json=update_data
-            )
-            
-            print(f"[Profile] spynners.com response: {response.status_code}")
-            
-            if response.status_code == 200:
-                return {"success": True, "message": "Profile updated successfully", "profile": response.json()}
-            else:
-                # If spynners.com function doesn't exist, try direct entity update
-                print(f"[Profile] Function failed, trying direct update...")
-                raise HTTPException(status_code=response.status_code, detail="Profile update failed")
-                
     except HTTPException:
         raise
     except Exception as e:
-        print(f"[Profile] Error updating profile: {e}")
+        print(f"[Profile] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== LIVE TRACK RADAR ====================
+
+class LiveTrackPlaysRequest(BaseModel):
+    track_id: Optional[str] = None
+    producer_id: Optional[str] = None
+
+@app.post("/api/radar/live-plays")
+async def get_live_track_plays(request: LiveTrackPlaysRequest, authorization: str = Header(None)):
+    """Get live track plays for radar map"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        body = {}
+        if request.track_id:
+            body["track_id"] = request.track_id
+        if request.producer_id:
+            body["producer_id"] = request.producer_id
+        
+        result = await call_spynners_function("getLiveTrackPlays", body, authorization)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Radar] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== CHAT / MESSAGES ====================
+
+@app.post("/api/chat/conversations")
+async def get_conversations(authorization: str = Header(None)):
+    """Get user's conversations"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        result = await call_spynners_function("nativeGetConversations", {}, authorization)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Chat] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class GetMessagesRequest(BaseModel):
+    other_user_id: str
+    limit: int = 50
+    offset: int = 0
+
+@app.post("/api/chat/messages")
+async def get_chat_messages(request: GetMessagesRequest, authorization: str = Header(None)):
+    """Get messages from a conversation"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        body = {
+            "other_user_id": request.other_user_id,
+            "limit": request.limit,
+            "offset": request.offset
+        }
+        
+        result = await call_spynners_function("nativeGetChatMessages", body, authorization)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Chat] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class SendMessageRequest(BaseModel):
+    receiver_id: str
+    content: Optional[str] = None
+    audio_url: Optional[str] = None
+    audio_duration: Optional[int] = None
+    attachment_urls: Optional[List[str]] = None
+
+@app.post("/api/chat/send")
+async def send_message(request: SendMessageRequest, authorization: str = Header(None)):
+    """Send a message"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        body = {"receiver_id": request.receiver_id}
+        if request.content:
+            body["content"] = request.content
+        if request.audio_url:
+            body["audio_url"] = request.audio_url
+        if request.audio_duration:
+            body["audio_duration"] = request.audio_duration
+        if request.attachment_urls:
+            body["attachment_urls"] = request.attachment_urls
+        
+        result = await call_spynners_function("nativeSendMessage", body, authorization)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Chat] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== PLAYLISTS ====================
+
+class GetPlaylistsRequest(BaseModel):
+    limit: int = 100
+    offset: int = 0
+
+@app.post("/api/playlists")
+async def get_playlists(request: GetPlaylistsRequest, authorization: str = Header(None)):
+    """Get user's playlists"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        body = {
+            "limit": request.limit,
+            "offset": request.offset
+        }
+        
+        result = await call_spynners_function("nativeGetPlaylists", body, authorization)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Playlists] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== TRACKS ====================
+
+class GetTracksRequest(BaseModel):
+    genre: Optional[str] = None
+    limit: int = 50
+    offset: int = 0
+
+@app.post("/api/tracks/all")
+async def get_all_tracks(request: GetTracksRequest, authorization: str = Header(None)):
+    """Get all tracks (PromoPool)"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        body = {
+            "limit": request.limit,
+            "offset": request.offset
+        }
+        if request.genre:
+            body["genre"] = request.genre
+        
+        result = await call_spynners_function("nativeGetTracks", body, authorization)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Tracks] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class GetMyTracksRequest(BaseModel):
+    status: Optional[str] = None  # approved|pending
+    limit: int = 50
+    offset: int = 0
+
+@app.post("/api/tracks/my")
+async def get_my_tracks(request: GetMyTracksRequest, authorization: str = Header(None)):
+    """Get user's uploaded tracks"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        body = {
+            "limit": request.limit,
+            "offset": request.offset
+        }
+        if request.status:
+            body["status"] = request.status
+        
+        result = await call_spynners_function("nativeGetMyTracks", body, authorization)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Tracks] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== TRACK SHARING ====================
+
+class SendTrackRequest(BaseModel):
+    track_id: str
+    receiver_id: str
+    message: Optional[str] = None
+
+@app.post("/api/tracks/send")
+async def send_track(request: SendTrackRequest, authorization: str = Header(None)):
+    """Send a track to another user"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        body = {
+            "track_id": request.track_id,
+            "receiver_id": request.receiver_id
+        }
+        if request.message:
+            body["message"] = request.message
+        
+        result = await call_spynners_function("nativeSendTrack", body, authorization)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Share] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== TRACK DOWNLOAD ====================
+
+class DownloadTrackRequest(BaseModel):
+    track_id: str
+
+@app.post("/api/tracks/download")
+async def download_track(request: DownloadTrackRequest, authorization: str = Header(None)):
+    """Download a track"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        body = {"track_id": request.track_id}
+        
+        result = await call_spynners_function("nativeDownloadTrack", body, authorization)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Download] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== FAVORITES ====================
+
+class GetFavoritesRequest(BaseModel):
+    limit: int = 100
+    offset: int = 0
+
+@app.post("/api/favorites")
+async def get_favorites(request: GetFavoritesRequest, authorization: str = Header(None)):
+    """Get user's favorite tracks"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        body = {
+            "limit": request.limit,
+            "offset": request.offset
+        }
+        
+        result = await call_spynners_function("nativeGetFavorites", body, authorization)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Favorites] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class ToggleFavoriteRequest(BaseModel):
+    track_id: str
+
+@app.post("/api/favorites/toggle")
+async def toggle_favorite(request: ToggleFavoriteRequest, authorization: str = Header(None)):
+    """Toggle favorite status for a track"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        body = {"track_id": request.track_id}
+        
+        result = await call_spynners_function("nativeToggleFavorite", body, authorization)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Favorites] Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # ==================== HEALTH CHECK ====================
