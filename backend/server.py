@@ -2000,6 +2000,19 @@ async def health_check():
         "timestamp": datetime.utcnow().isoformat()
     }
 
+@app.get("/api/download-project")
+async def download_project():
+    """Download the project ZIP file"""
+    zip_path = "/tmp/spynners-project.zip"
+    if os.path.exists(zip_path):
+        return FileResponse(
+            zip_path,
+            media_type="application/zip",
+            filename="spynners-project.zip"
+        )
+    else:
+        raise HTTPException(status_code=404, detail="Project file not found")
+
 @app.get("/")
 async def root():
     return {"message": "SPYNNERS API - Use /api/* endpoints"}
