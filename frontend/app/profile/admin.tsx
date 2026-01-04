@@ -791,9 +791,9 @@ export default function AdminScreen() {
                   )}
                   <TouchableOpacity
                     style={styles.playButton}
-                    onPress={() => playing ? stopPlayback() : playTrack(selectedTrack)}
+                    onPress={() => isTrackPlaying(selectedTrack.id) ? togglePlayPause() : playTrack(selectedTrack)}
                   >
-                    <Ionicons name={playing ? "pause" : "play"} size={32} color="#fff" />
+                    <Ionicons name={isTrackPlaying(selectedTrack.id) ? "pause" : "play"} size={32} color="#fff" />
                   </TouchableOpacity>
                 </View>
 
