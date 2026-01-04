@@ -207,6 +207,30 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
         # Decode base64 audio
         audio_data = base64.b64decode(request.audio_base64)
         
+        # Detect audio format from magic bytes
+        audio_format = "audio/wav"  # Default
+        audio_extension = "wav"
+        
+        # Check magic bytes for common formats
+        if audio_data[:4] == b'RIFF':
+            audio_format = "audio/wav"
+            audio_extension = "wav"
+        elif audio_data[:4] == b'\x1aE\xdf\xa3':  # WebM/Matroska
+            audio_format = "audio/webm"
+            audio_extension = "webm"
+        elif audio_data[:4] == b'ftyp' or audio_data[4:8] == b'ftyp':  # MP4/M4A
+            audio_format = "audio/mp4"
+            audio_extension = "m4a"
+        elif audio_data[:3] == b'ID3' or audio_data[:2] == b'\xff\xfb':  # MP3
+            audio_format = "audio/mpeg"
+            audio_extension = "mp3"
+        elif audio_data[:4] == b'OggS':  # OGG
+            audio_format = "audio/ogg"
+            audio_extension = "ogg"
+        
+        print(f"[ACRCloud] Audio format detected: {audio_format} ({len(audio_data)} bytes)")
+        print(f"[ACRCloud] First 20 bytes (hex): {audio_data[:20].hex()}")
+        
         # ACRCloud API parameters
         http_method = "POST"
         http_uri = "/v1/identify"
@@ -221,8 +245,9 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
         )
         
         # Prepare request - ACRCloud accepts various formats
+        # Use detected format instead of hardcoded wav
         files = {
-            'sample': ('audio.wav', BytesIO(audio_data), 'audio/wav')
+            'sample': (f'audio.{audio_extension}', BytesIO(audio_data), audio_format)
         }
         
         data = {
@@ -234,7 +259,7 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
             'signature_version': signature_version
         }
         
-        print(f"[ACRCloud] Sending {len(audio_data)} bytes to ACRCloud...")
+        print(f"[ACRCloud] Sending {len(audio_data)} bytes as {audio_format} to ACRCloud...")
         
         # Send to ACRCloud
         async with httpx.AsyncClient(timeout=30.0) as client:
