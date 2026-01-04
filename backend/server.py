@@ -2348,36 +2348,6 @@ async def toggle_favorite(request: ToggleFavoriteRequest, authorization: str = H
         print(f"[Favorites] Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# ==================== LIVE RADAR ====================
-
-class GetLiveTrackPlaysRequest(BaseModel):
-    producer_id: Optional[str] = None
-    limit: int = 100
-
-@app.post("/api/live-plays")
-async def get_live_track_plays(request: GetLiveTrackPlaysRequest, authorization: str = Header(None)):
-    """Get live track plays for radar"""
-    try:
-        if not authorization:
-            raise HTTPException(status_code=401, detail="No authorization header")
-        
-        body = {
-            "limit": request.limit
-        }
-        if request.producer_id:
-            body["producerId"] = request.producer_id
-        
-        result = await call_spynners_function("nativeGetLiveTrackPlays", body, authorization)
-        return result
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"[Live Plays] Error: {e}")
-        # Return empty array on error to not break UI
-        return {"plays": []}
-
-
 # ==================== HEALTH CHECK ====================
 
 @app.get("/api/health")
