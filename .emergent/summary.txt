@@ -1,119 +1,119 @@
 <analysis>
-<original_problem_statement>
-The user wants to continue developing the Spynners Expo/React Native application. The primary goals were to fix numerous bugs in the SPYN Detection feature, implement a Manage Your Tracks page for authenticated users, and start building an offline recognition mode.
 
-Key user requests during this session included:
-1.  **Fix SPYN Feature (Highest Priority):**
-    *   The session must start with a single click (including handling microphone permissions gracefully).
-    *   The location banner must be displayed above the main SPYN button.
-    *   Cover art for identified tracks must be displayed, sourced *only* from the Spynners database.
-    *   ACRCloud must *only* identify tracks that exist in the Spynners custom bucket.
-    *   Continuous detection of multiple tracks in a row must work.
-    *   An email must be sent to the producer *only if* the session occurs in a valid venue type (club, bar, restaurant).
-    *   The End Session modal must not get stuck.
-2.  **Implement Manage Your Tracks Page:**
-    *   Create a new page accessible from the profile.
-    *   The page must list only the tracks owned by the currently logged-in user.
-    *   The list must be filtered to show only tracks with .
-3.  **New Feature: Offline SPYN Mode:**
-    *   The user requested the ability to record SPYN sessions offline.
-    *   The app should record audio, generate a fingerprint, store it locally, and upload it for processing when the network connection is restored.
-4.  **Bugs Reported:**
-    *   The Sign In was not working on Expo Go via the ngrok tunnel.
-    *   Emails were not being sent to producers.
-    *   Many tracks were not being identified, or were identified without cover art.
-    *   The global audio player was reported to restart on its own after being stopped.
+<original_problem_statement>
+The user wants to continue developing the Spynners Expo/React Native application. The primary goal for this session was to implement an Offline SPYN Mode.
+
+Throughout the session, the user's requirements for the Offline Mode evolved based on testing and UX feedback:
+1.  **Initial Goal:** Implement offline recording and sync when the network returns.
+2.  **UX Improvement 1:** The user was confused about how to see results. This led to adding a manual sync button and a pending recordings indicator.
+3.  **UX Improvement 2:** After Expo Go connection issues, the user found the offline status banner wasn't showing, leading to a debug effort and the addition of a visible status badge.
+4.  **UX Improvement 3:** The user requested a dedicated page to manage offline sessions instead of just an automatic sync. This led to the creation of the  page.
+5.  **UX Improvement 4:** The user found the Offline Sessions page in the profile was hard to discover and requested a more visible entry point on the homepage. This led to the creation of the homepage widget.
+6.  **UX Improvement 5:** The user wanted the sync to be automatic upon returning online, without needing to press a button.
+7.  **UX Improvement 6:** The user wanted the session to correctly end and change status immediately upon pressing End Session while offline, with sync happening later.
+
+A new, unrelated bug was also reported and addressed:
+*   When selecting Another DJ in the End Session modal, a text field should appear to enter the DJ's name.
+
+The main challenge became a set of recurring bugs in the offline mode implementation:
+*   Tracks that are identifiable online are not consistently identified when recorded offline.
+*   The app often creates two sessions (one empty/unfinished, one with recordings) for a single offline recording period.
+*   The UI for managing and viewing offline sessions was often out of sync with the actual state.
 
 </original_problem_statement>
 
 **User's preferred language**: Français (French). The next agent MUST respond in French.
 
 **what currently exists?**
--   The SPYN feature () has been heavily modified and now correctly identifies custom tracks from the Spynners library by parsing the  field from the ACRCloud response. It requests microphone permission on page load to enable one-click start.
--   The backend () has an improved fuzzy-matching algorithm to find tracks in the Spynners database even with slight title variations. It correctly retrieves the  and  from the Spynners  entity.
--   The authentication system (, ) has been fundamentally fixed. Two critical bugs were resolved: the auth token was not being saved to  upon login, and the code was expecting a  field instead of the  field returned by the API.
--   A new Manage Your Tracks page () has been created. It fetches tracks and filters them client-side to show only the  tracks belonging to the logged-in user.
--   The groundwork for an **Offline Mode** has been started. The  and  packages have been installed, and a placeholder service file  has been created.
+-   The Offline SPYN Mode feature has been implemented but is unstable.
+-   **Backend:** A new endpoint  was created in  to handle offline recordings. This logic was later removed, and the offline service now calls the standard  endpoint for each saved recording to ensure consistency. The backend logic for recognition was improved to search in ACRCloud's  and  categories (in addition to ) and match against the live Base44 API instead of a local database.
+-   **Frontend Service:**  has been heavily modified. It now manages saving audio chunks and session metadata to . It includes logic for automatic synchronization when the app detects it's back online. A  variable was added to prevent the creation of duplicate sessions.
+-   **Frontend UI ():** The main SPYN page has been updated to handle offline states. It saves recordings locally if the app is offline. A  flag was recently added to prevent a race condition that was creating duplicate sessions.
+-   **Frontend UI ():** A new page at  allows users to view, manually sync, and delete pending offline sessions.
+-   **Frontend UI ():** A widget has been added to the homepage to show the number of pending offline sessions and provide a quick link to the management page.
+-   **Bug Fix:** The End Session modal now correctly shows an input field to enter a DJ's name when Another DJ is selected.
 
 **Last working item**:
-    - Last item agent was working: Beginning the implementation of the Offline SPYN Mode feature. The agent installed the necessary dependencies and created a new service file for offline logic.
-    - Status: NOT STARTED
+    - Last item agent was working: Fixing a recurring bug where starting and stopping one offline session would result in two session entries being created on the Offline Sessions page, one of which would be stuck in the En cours... (recording) state.
+    - Status: IN PROGRESS
     - Agent Testing Done: N
+    - Which testing method agent to use? Manual testing on web preview. The Expo Go tunnel has been highly unreliable.
     - User Testing Done: N
-    - Which testing method agent to use? both. The implementation will require both frontend changes (local storage, network detection) and new backend endpoints. Manual testing on Expo Go with the device in airplane mode will be necessary.
 
 **All Pending/In progress Issue list**:
-  - Issue 1: SPYN Continuous Detection is Not Working (P0)
-  - Issue 2: Global Player Auto-Restarts Bug (P1)
-  - Issue 3: Data Integrity: Missing Cover Art in DB (P2)
-  - Issue 4: Admin Panel Auth is Still a Workaround (P2)
+  - Issue 1: Offline Mode - Two Sessions Created (P0)
+  - Issue 2: Offline Mode - Intermittent Track Identification (P0)
+  - Issue 3: SPYN Continuous Detection is Not Working (P1)
+  - Issue 4: Global Player Auto-Restarts Bug (P2)
 
   Issues Detail:
   - Issue 1: 
-     - Description: The user reported that after the first track is identified, subsequent tracks in the same session are not. This was a key requirement that got lost during the numerous bug fixes.
-     - Attempted fixes: The agent focused heavily on fixing the *initial* recognition and did not explicitly address or test the continuous loop. The current  and  logic likely doesn't correctly re-trigger the recording/recognition cycle.
+     - Description: When a user performs a single offline SPYN session, the application creates two separate session entries in , which appear on the Offline Sessions page. One is often empty and stuck in the recording state, while the other contains the recordings and is in the pending_sync state. This is a critical bug preventing the feature from being usable.
+     - Attempted fixes:
+        1.  A  variable was added to  to try and reuse the same session for all recordings within a single run. This did not solve the problem.
+        2.  A  boolean flag was added to . The hypothesis is that after the user clicks End Session, the final audio chunk from the recording loop is processed and incorrectly creates a new session. The flag is meant to prevent this final chunk from being saved. This is the most recent, untested fix.
      - Next debug checklist:
-        1.  In , review the  and  functions.
-        2.  Ensure that after a successful recognition in , a new  cycle is initiated after a short delay.
-        3.  The  flag must be managed correctly to allow for a new recording to start.
-        4.  Add console logs to trace the flow from  ->  -> next .
-     - Why fix this issue and what will be achieved with the fix? This is a core part of the DJ session use case. Without it, the user has to manually restart a SPYN for every single track.
-     - Status:  NOT STARTED
+        1.  **Test the  flag fix.** Perform a clean test: delete all pending sessions, go offline, start a SPYN session, record for 15-20s, press End Session, go online, and check the Offline Sessions page.
+        2.  If it fails, add extensive  statements in  (inside ) and  (inside ) to trace the  and see exactly when and why a new session is created.
+        3.  Review the logic in  in the  cleanup function for the audio recording. It's possible the final recording chunk is processed after the session state has already been reset.
+     - Why fix this issue and what will be achieved with the fix? This bug makes the offline feature confusing and unusable. Fixing it is essential for the feature to be released.
+     - Status:  IN PROGRESS
      - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? Frontend (on Expo Go with multiple songs).
-     - Blocked on other issue: None
+     - Should Test frontend/backend/both after fix? Frontend
+     - Blocked on other issue: none
 
   - Issue 2: 
-     - Description: The user reported twice that the global audio player, when stopped, sometimes restarts playing on its own.
-     - Attempted fixes: The agent briefly looked at  and  but did not find an obvious cause and deprioritized the issue. The root cause is likely related to state updates or  hooks re-triggering the play function unexpectedly.
+     - Description: Tracks that are correctly identified when using SPYN in online mode are not consistently identified when recorded offline and synced later. The backend logs show that ACRCloud often returns a result from its global  database instead of the user's  bucket, or returns No result.
+     - Attempted fixes:
+        1.  The backend was modified to check for matches in the  and  categories, not just .
+        2.  The backend was changed to use the live Base44 API for fuzzy matching instead of an empty local MongoDB.
+        3.  The  for offline audio uploads in the backend was aligned with the online one ().
+        4.  The frontend was modified to send each offline recording to the same  endpoint used by the online mode.
      - Next debug checklist:
-        1.  Review all components that call  from  context (found in , , ).
-        2.  Check for any  hooks that might be re-running and calling  when their dependencies change.
-        3.  Add extensive logging inside , especially in , , and  to see what triggers them and with what state.
-     - Why fix this issue and what will be achieved with the fix? This is a significant and annoying UX bug that breaks a core feature of the app.
-     - Status:  NOT STARTED
+        1.  Verify the Two Sessions bug is fixed first, as it complicates testing.
+        2.  Capture the base64 audio string from an **online** recording that successfully identifies a track.
+        3.  Capture the base64 audio string from an **offline** recording of the *same track* that fails.
+        4.  Compare the two base64 strings. Are they different lengths? Do they decode to different audio formats? This can be done by adding logging in 's .
+        5.  Investigate the  in . The options for web and iOS/Android might be producing audio of different quality, bitrate, or format, which affects ACRCloud's matching accuracy.
+     - Why fix this issue and what will be achieved with the fix? This is the core purpose of the offline feature. If tracks aren't identified, the feature is useless.
+     - Status:  IN PROGRESS
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? both
+     - Blocked on other issue: Offline Mode - Two Sessions Created
+
+  - Issue 3:
+     - Description: From the initial handoff. The SPYN feature should continuously detect multiple tracks in a row during a single session, but it only detects the first one.
+     - Attempted fixes: None in this session.
+     - Next debug checklist: Review  and  in  to ensure the recognition loop is correctly re-initiated after a track is found.
+     - Why fix this issue and what will be achieved with the fix? This is a core requirement for the DJ session use case.
+     - Status: NOT STARTED
      - Is recurring issue? Y
      - Should Test frontend/backend/both after fix? Frontend
      - Blocked on other issue: None
 
-  - Issue 3:
-     - Description: The user stated that all tracks are required to have cover art, yet some identified tracks appear without it. The agent investigated and found that 34 out of 150 tracks in the Base44  entity have a  or missing .
-     - Attempted fixes: None. This is a data issue, not a code issue. The agent correctly identified the problem lies within the user's database.
-     - Next debug checklist: This is not a code issue to fix. The agent should inform the user again that they need to fix the data for these 34 specific tracks in their Base44 backend.
-     - Why fix this issue and what will be achieved with the fix? It will align the app's behavior with the user's expectations and fix the visual inconsistency.
-     - Status: BLOCKED (on user data correction).
-     - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? NA
-     - Blocked on other issue: None
-
   - Issue 4:
-     - Description: The Admin Panel () still uses a workaround (fetching all tracks) because the intended  API call fails with a  error due to authentication issues. This was noted in the previous handoff and was not addressed.
-     - Attempted fixes: None in this session. The original workaround remains.
-     - Next debug checklist: Review Issue 2 from the previous handoff summary. The root cause is likely the backend proxy in  not forwarding the  header for this specific function call.
-     - Why fix this issue and what will be achieved with the fix? Removes technical debt and allows the Admin Panel to use the more powerful, purpose-built API instead of a fragile workaround.
+     - Description: From the initial handoff. The user reports that the global audio player sometimes restarts on its own after being stopped.
+     - Attempted fixes: None in this session.
+     - Next debug checklist: Add extensive logging to the  to trace what triggers .
+     - Why fix this issue and what will be achieved with the fix? Fixes a significant and annoying UX bug.
      - Status: NOT STARTED
      - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? both
+     - Should Test frontend/backend/both after fix? Frontend
      - Blocked on other issue: None
 
 **In progress Task List**:
   - Task 1: 
-     - Description: Implement Offline SPYN Mode (P1)
-     - Where to resume: The agent has created . The next steps are:
-        1.  Implement network status detection using  in .
-        2.  Modify the  logic: if offline, use  to save the recorded audio chunk to a local file instead of sending it to the backend.
-        3.  Store metadata about the offline recording (filepath, timestamp) in .
-        4.  In , create a function that listens for the network to come back online, reads the pending recordings from , and sends them to a new backend endpoint.
-     - What will be achieved with this? Users will be able to use the SPYN feature even without a stable internet connection.
+     - Description: Finalize and Stabilize Offline SPYN Mode (P0)
+     - Where to resume: The immediate next step is to test the latest fix for the Two Sessions Created bug (the  flag). After that, the focus must shift to solving the Intermittent Track Identification bug.
+     - What will be achieved with this? A stable, reliable, and usable offline recording feature for the app.
      - Status:  IN PROGRESS
      - Should Test frontend/backend/both after fix? both
      - Blocked on something: None
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
-    -   **P0: Offline Mode - Phase 2 (Backend):** Create a new  endpoint in  that accepts an audio file, sends it to ACRCloud, and processes the result.
-    -   **P1: Offline Mode - Phase 3 (Push Notifications):** Configure and implement Expo Push Notifications to inform the user when an offline-recorded track has been identified.
-    -   **P2: Admin-only Upload For Account:** Modify the upload page () to hide or disable the upload for account of feature for non-admin users.
+    -   **P1: Offline Mode - Phase 3 (Push Notifications):** The service has placeholders for push notifications, but they need to be fully implemented to notify the user when a background sync is complete.
+    -   **P2: Admin-only Upload For Account:** From initial handoff. Modify the upload page () to hide or disable the upload for account of feature for non-admin users.
 -   **Future Tasks:**
     -   Complete All Language Translations.
     -   Implement Full Notification Modal ().
@@ -121,98 +121,102 @@ Key user requests during this session included:
     -   Implement Full VIP Page Functionality ().
 
 **Completed work in this session**
-- **SPYN Recognition Fixed:**
-  - Discovered and fixed the critical bug where ACRCloud returns custom tracks in . The backend () now correctly parses this field.
-  - Implemented a fuzzy-matching search algorithm in  to improve track identification from ACRCloud results against the Spynners database.
-- **SPYN UX/UI Fixed:**
-  - Implemented single-click session start by requesting microphone permissions on page load ( in ).
-  - Implemented the autostart feature, allowing the home page button to trigger the session automatically.
-  - Fixed the End Session modal to close reliably.
-  - Added logic to send producer emails and award Black Diamonds *only if* the session is in a valid venue type ().
-- **Authentication System Overhaul:**
-  - **Fixed critical login bug:** Added the missing  call in  to persist the auth token.
-  - **Fixed critical token parsing bug:** Corrected  to use  from the API response instead of the non-existent .
-- **Manage Your Tracks Page Created:**
-  - Created a new page at .
-  - Implemented functionality to fetch and display tracks.
-  - Implemented client-side filtering to show only  tracks belonging to the currently logged-in user.
-- **Tunnel/Environment Issues Resolved:**
-  - Fixed the login flow on  tunnels by ensuring the frontend calls the correct, full backend URL instead of a relative path.
+- **Offline SPYN Mode (Initial Implementation):**
+  - Created backend endpoint and frontend service to record audio while offline and store it in .
+  - Implemented automatic synchronization when the app returns online.
+- **Sessions Offline Page:**
+  - Created a new page at  for users to view, manage, and delete their offline sessions.
+  - Added a link to this page from the user's profile and, more prominently, via a widget on the homepage.
+- **Homepage Offline Widget:**
+  - Added a component to  that displays the number of pending offline sessions and links to the management page.
+- **Another DJ Input Field:**
+  - Added a text input to the End Session modal in  that appears conditionally when a user selects Another DJ, allowing them to specify the DJ's name.
+- **Bug Fixes:**
+  - Fixed the Delete button on the Offline Sessions page, which was not working.
+  - Fixed a bug where the UI would incorrectly show Track Identified for locally saved recordings in offline mode.
+  - The backend was fixed to query the live Base44 API for track matching instead of an empty local MongoDB instance.
 
 **Earlier issues found/mentioned but not fixed**
-   - **Global Player component issues:** The player not appearing on certain pages and the seek bar being broken were mentioned in the initial handoff and the user mentioned the auto-restart issue in this session. These were not fixed.
+   - **SPYN Continuous Detection:** The feature still only detects one track per session.
+   - **Global Player Auto-Restarts:** The bug where the player restarts on its own was reported but not investigated.
    - **Admin Panel Authentication:** The root cause of the  error for the  API was not fixed.
 
+**Known issue recurrence from previous fork**
+  - **Issue recurrence in previous fork:** Global Player bugs (auto-restart, seek bar, visibility) and Admin Panel authentication issues.
+  - **Recurrence count:** 2+ sessions.
+  - **Status:** NOT STARTED
+
 **Code Architecture**
-custom_files?autostart=trueaccess_token
+isEndingSession
 
 **Key Technical Concepts**
-- **ACRCloud Custom Buckets:** A critical discovery was that custom-synced tracks are returned in the  array, not . All recognition logic must check  first.
-- **Authentication Token Lifecycle:** The session revealed a broken auth flow. The correct flow is: Login -> API returns  -> Save  to  -> Auth Context loads token from storage on app start -> Axios interceptor attaches the token to all subsequent API calls.
-- **Fuzzy String Matching:** The backend now uses Python's  to robustly match track titles from ACRCloud against titles in the Spynners database, tolerating minor differences.
-- **Client-Side vs. Server-Side Filtering:** For the Manage Your Tracks page, filtering is currently done on the client side after fetching all approved tracks. This might be inefficient for users with many tracks in the future.
-- **Expo Tunneling Proxies:** API calls from a web preview served via ngrok might not be correctly proxied to the backend service by the Kubernetes ingress. Explicitly setting the full backend URL in the frontend is a required workaround.
+-   **Offline First with **: The core of the new feature. Sessions and base64 audio recordings are stored locally using .
+-   **Race Conditions in React**: The Two Sessions bug highlights a classic race condition between a timed loop (audio recording), user-triggered events (), and React state updates. The  flag is an attempt to mitigate this.
+-   **Network State Detection**: Using  to toggle between online and offline behavior. The implementation required a callback system to reliably update the React UI.
+-   **Audio Encoding Discrepancies**: A key debug path revealed that audio recorded on web () or mobile () might have different characteristics than what ACRCloud expects, especially when compared to the online recording flow. This is the likely cause of the intermittent identification issue.
+-   **Backend API Consistency**: A major bug was fixed by ensuring the offline processing logic in  used the same data source (live Base44 API) as the online logic, rather than an unpopulated local database.
 
 **key DB schema**
-- **Track:** Queried extensively. Key fields used: , , , , ,  ('approved'). It was discovered that  is  for 34 tracks.
+- No database schema changes were made in this session. All work was on the application layer.
 
 **changes in tech stack**
--    and  were added to  for the upcoming offline mode feature.
+- No new packages were added. The implementation relied on existing dependencies like  and .
 
 **All files of reference**
--   : The core recognition logic lives here. The  function is critical.
--   : The heart of the SPYN feature, containing all frontend state management and UI logic.
--   : Manages the user session and token. The  and  functions are critical.
--   : The new Manage Your Tracks page.
--   : Contains the  service and the Axios instance with the auth interceptor.
+-   : The heart of the SPYN feature, containing the new  flag and all offline UI logic.
+-   : Manages the entire lifecycle of offline sessions. The  and  methods are critical.
+-   : The UI for managing the sessions stored by .
+-   : Contains the new widget for offline sessions.
+-   : The  endpoint is now used by both online and offline flows.
 
 **Critical Info for New Agent**
--   **You are starting work on the Offline Mode feature.** The user has approved the plan. Begin by implementing Phase 1 (local recording and storage).
--   **Authentication was critically broken and is now fixed.** The user **MUST** log out and log back in for the fixes to apply and for their auth token to be persisted correctly. Any auth-related issues (like emails failing) are likely because the user is still using an old, non-persisted token.
--   The key to SPYN recognition was discovering that ACRCloud uses the  field for the user's tracks.
--   The emails not sending issue was a combination of the broken auth and a conditional check for being in a valid venue. The auth part is fixed, but the venue check is now active.
--   The missing cover art issue for some tracks is a **data problem** in the user's database (34 tracks have ). Do not treat this as a code bug.
--   The **SPYN continuous detection** and **Global Player auto-restart** bugs are known, high-priority issues that have not been fixed yet.
+-   **Your primary task is to stabilize the Offline SPYN Mode.** It is implemented but buggy.
+-   **You must tackle two critical, interconnected bugs:**
+    1.  **Two Sessions Created (P0):** The agent just added an  flag in  to fix this. **You must test this fix first.**
+    2.  **Intermittent Identification (P0):** Tracks are identified online but fail intermittently when recorded offline. The root cause is almost certainly a difference in the audio data (format, quality, encoding) sent to ACRCloud. The next step is to log and compare the base64 audio from a successful online recording vs. a failed offline one.
+-   **The user's desired flow is:** 1. User records offline and hits End Session. 2. The session is saved locally. 3. When the user later reconnects to the internet and opens the app, the session syncs **automatically** in the background, and results are shown (e.g., in a modal or on the Offline Sessions page).
+-   **Testing Environment:** The Expo Go tunnel via ngrok has been extremely unstable. **Use the web preview for testing.** It's more reliable for checking UI and logic.
+-   The user is technical enough to understand concepts but needs clear, non-technical instructions for testing.
+-   Remember to address the long-pending issues (Continuous Detection, Global Player) once the offline mode is stable.
 
 **documents created in this job**
--   /app/frontend/app/profile/tracks.tsx
--   /app/frontend/src/services/offlineService.ts
+-   
 
 **Last 10 User Messages and any pending HUMAN messages**
--   **10. (Latest)** User wants to start working on the offline mode feature, approves the proposed plan and choice of Expo Push Notifications. (IN PROGRESS)
--   **9.** User reports an error on a manage your track page. (ADDRESSED - Page created and fixed)
--   **8.** User confirms they have a sync button on their website for ACRCloud. (ADDRESSED)
--   **7.** Agent explains why a track is not being recognized (ACRCloud issue) and asks the user to check their ACRCloud console. (ADDRESSED)
--   **6.** User is testing the Bob Sinclar track and reports it's not being recognized. (ADDRESSED - fixed  bug)
--   **5.** User asks how to fix tracks that aren't being identified, specifically BOB SINCLAR-I FEEL FOR YOU. (ADDRESSED)
--   **4.** User confirms email was received but with the wrong cover art (from the agent's test ). (ADDRESSED)
--   **3.** User confirms that the  function exists and handles auth. (ADDRESSED)
--   **2.** User reports multiple issues with the Manage Your Tracks page: shows all tracks, not just the user's, and then shows no tracks at all. (ADDRESSED - filtering logic fixed)
--   **1.** User confirms that SPYN recognition now works, but emails don't send (correctly deducing it's because they are not in a valid venue) and wants to enforce this rule. (ADDRESSED)
+-   **10. (Latest)** User reports the two sessions bug is back and identification still fails. (IN PROGRESS)
+-   **9.** User confirms ACRCloud is configured correctly. (ADDRESSED)
+-   **8.** User reports sync is automatic now, but identification still fails. (IN PROGRESS)
+-   **7.** User insists they played the correct track (CHUPA SIN MANO). (ADDRESSED)
+-   **6.** User confirms they have a sync button on their ACRCloud site. (ADDRESSED)
+-   **5.** User provides the name of the track they are testing with: CHUPA SIN MANO. (ADDRESSED)
+-   **4.** User reports having two sessions and identification still failing. (IN PROGRESS)
+-   **3.** User confirms they don't want a manual Terminer button and the session should end automatically. (ADDRESSED)
+-   **2.** User reports the session is stuck in En cours (recording) state. (IN PROGRESS)
+-   **1.** User reports seeing two sessions and identification still failing. (IN PROGRESS)
 
 **Project Health Check:**
--   **Broken**: Global Player (auto-restarts), SPYN Continuous Detection.
--   **Mocked**: The Admin Panel's data loading is a workaround.
+-   **Broken**: Offline SPYN Mode (unstable, multiple bugs), SPYN Continuous Detection, Global Player (auto-restarts).
+-   **Mocked**: The Admin Panel's data loading is still a workaround.
 
 **3rd Party Integrations**
--   **Base44**: Backend as a Service for user auth, data storage (entities), and serverless functions.
--   **ACRCloud**: External API for audio recognition. Critically, it uses a separate  bucket for the user's tracks.
--   **Google Places API**: External API for venue/location identification.
--   **Expo Push Notifications**: Proposed for the offline mode feature, but not yet implemented.
+-   **Base44**: Backend as a Service for user auth and data.
+-   **ACRCloud**: Audio recognition API. The key issue is the discrepancy between its performance on online vs. offline audio samples.
+-   **Google Places API**: For location data.
+-   **Expo Push Notifications**: Scaffolding exists in  but is not fully implemented.
 
 **Testing status**
--   Testing agent used after significant changes: NO
--   Troubleshoot agent used after agent stuck in loop: YES (implicitly, agent recognized it was 'going in circles' and simplified its approach).
--   Test files created: None
--   Known regressions: None new, but the old Player bugs persist.
+  - Testing agent used after significant changes: NO
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: None
+  - Known regressions: The two sessions created bug is a regression that has appeared multiple times.
 
 **Credentials to test flow:**
 -   **Email:** 
 -   **Password:** 
 
 **What agent forgot to execute**
--   The agent did not fix the **continuous detection** loop for the SPYN feature.
+-   The agent did not fix the **continuous detection** loop for the SPYN feature, a high-priority item from the initial handoff.
 -   The agent did not fix the **global player auto-restarting bug**.
--   The agent did not address the root cause of the **Admin Panel authentication failure**, leaving the workaround in place.
--   The agent did not address the long-standing bugs from the previous fork related to the **Global Player component (seek bar and visibility)**.
+-   The agent did not address the root cause of the **Admin Panel authentication failure**.
+
 </analysis>
