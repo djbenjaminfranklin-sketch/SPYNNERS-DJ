@@ -38,8 +38,6 @@ export default function ReceivedScreen() {
       setLoading(true);
       console.log('[Received] Loading received tracks...');
       
-      const { token } = useAuth();
-      
       // Try to load received tracks via native API
       try {
         const response = await axios.post(
