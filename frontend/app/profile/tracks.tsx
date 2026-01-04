@@ -356,20 +356,6 @@ export default function ManageTracksScreen() {
                 </View>
               </View>
               <View style={styles.trackActions}>
-                {track.acrcloud_id ? (
-                  <Ionicons name="checkmark-circle" size={24} color={GREEN_COLOR} />
-                ) : (
-                  <TouchableOpacity
-                    onPress={() => syncWithACRCloud(track)}
-                    disabled={syncing === track.id}
-                  >
-                    {syncing === track.id ? (
-                      <ActivityIndicator size="small" color={CYAN_COLOR} />
-                    ) : (
-                      <Ionicons name="sync" size={24} color={ORANGE_COLOR} />
-                    )}
-                  </TouchableOpacity>
-                )}
                 <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
               </View>
             </TouchableOpacity>
