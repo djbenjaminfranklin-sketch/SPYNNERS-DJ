@@ -802,6 +802,35 @@ export default function SpynRecordScreen() {
         )}
       </View>
 
+      {/* Audio Source Indicator */}
+      <View style={styles.audioSourceContainer}>
+        <View style={[
+          styles.audioSourceBadge,
+          audioSource === 'external' ? styles.audioSourceExternal : styles.audioSourceInternal
+        ]}>
+          <Ionicons 
+            name={audioSource === 'external' ? 'hardware-chip' : 'mic'} 
+            size={16} 
+            color={audioSource === 'external' ? GREEN_COLOR : '#888'} 
+          />
+          <Text style={[
+            styles.audioSourceText,
+            audioSource === 'external' && styles.audioSourceTextExternal
+          ]}>
+            {audioSourceName}
+          </Text>
+          {audioSource === 'external' && (
+            <View style={styles.externalDot} />
+          )}
+        </View>
+        <TouchableOpacity 
+          style={styles.refreshSourceButton}
+          onPress={detectAudioSources}
+        >
+          <Ionicons name="refresh" size={18} color="#666" />
+        </TouchableOpacity>
+      </View>
+
       {/* Timer */}
       <View style={styles.timerContainer}>
         <Text style={styles.timerText}>{formatDuration(recordingDuration)}</Text>
