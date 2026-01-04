@@ -229,7 +229,27 @@ export default function HomeScreen() {
     try {
       Alert.alert('Download', `Downloading "${track.title}"...`);
       
-      // Get the audio URL
+      const trackId = track.id || track._id || '';
+      
+      // First call the native download API to record the download and get a proper URL
+      try {
+        const response = await axios.post(
+          `${BACKEND_URL}/api/tracks/download`,
+          { track_id: trackId },
+          { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        );
+        
+        if (response.data?.download_url) {
+          // Open the download URL
+          const { Linking } = require('react-native');
+          await Linking.openURL(response.data.download_url);
+          return;
+        }
+      } catch (apiError) {
+        console.log('[Download] Native API failed, falling back to direct URL');
+      }
+      
+      // Fallback: Get the audio URL directly
       const audioUrl = track.audio_url || track.audio_file;
       if (audioUrl) {
         // Open in browser to download
@@ -237,9 +257,9 @@ export default function HomeScreen() {
         await Linking.openURL(audioUrl);
       }
       
-      // Try to record the download
+      // Try to record the download via legacy method
       try { 
-        await base44Tracks.download(track.id || track._id || ''); 
+        await base44Tracks.download(trackId); 
       } catch (e) {
         console.log('[Download] Could not record download:', e);
       }
