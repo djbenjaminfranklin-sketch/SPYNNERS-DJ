@@ -410,10 +410,13 @@ export default function EditProfileScreen() {
 
         <Text style={styles.label}>Email</Text>
         <TextInput
-          style={[styles.input, styles.inputDisabled]}
+          style={styles.input}
           value={email}
-          editable={false}
+          onChangeText={setEmail}
+          placeholder="Email"
           placeholderTextColor={Colors.textMuted}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
 
         <Text style={styles.label}>Phone (optional)</Text>
