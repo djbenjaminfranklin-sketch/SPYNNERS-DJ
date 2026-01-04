@@ -143,11 +143,23 @@ class OfflineService {
   async checkNetworkStatus(): Promise<boolean> {
     try {
       const state = await NetInfo.fetch();
-      this.isOnline = state.isConnected ?? false;
-      console.log('[Offline] checkNetworkStatus:', this.isOnline ? 'ONLINE' : 'OFFLINE', state);
+      
+      // On web, prefer navigator.onLine
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+        this.isOnline = navigator.onLine;
+      } else {
+        this.isOnline = state.isConnected ?? false;
+      }
+      
+      console.log('[Offline] checkNetworkStatus:', this.isOnline ? 'ONLINE' : 'OFFLINE');
       return this.isOnline;
     } catch (error) {
       console.error('[Offline] checkNetworkStatus error:', error);
+      // On web, fallback to navigator.onLine
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+        this.isOnline = navigator.onLine;
+        return this.isOnline;
+      }
       return this.isOnline;
     }
   }
