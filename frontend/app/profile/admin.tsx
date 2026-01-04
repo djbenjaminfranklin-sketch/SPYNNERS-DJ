@@ -242,38 +242,30 @@ export default function AdminScreen() {
     fetchAllData();
   };
 
+  // Use global player for track playback
   const playTrack = async (track: PendingTrack) => {
     try {
-      if (sound) {
-        await sound.unloadAsync();
-        setSound(null);
-        setPlaying(false);
-      }
-
+      // Convert PendingTrack to the format expected by global player
+      const playerTrack = {
+        id: track.id,
+        title: track.title,
+        artist: track.artist || track.producer_name || 'Unknown',
+        audio_url: track.audio_url,
+        artwork_url: track.artwork_url,
+        genre: track.genre,
+      };
+      
       if (track.audio_url) {
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          { uri: track.audio_url },
-          { shouldPlay: true }
-        );
-        setSound(newSound);
-        setPlaying(true);
-        
-        newSound.setOnPlaybackStatusUpdate((status) => {
-          if (status.isLoaded && status.didJustFinish) {
-            setPlaying(false);
-          }
-        });
+        globalPlayTrack(playerTrack as any);
       }
     } catch (error) {
       Alert.alert('Error', 'Could not play track');
     }
   };
 
-  const stopPlayback = async () => {
-    if (sound) {
-      await sound.stopAsync();
-      setPlaying(false);
-    }
+  // Check if current track is playing
+  const isTrackPlaying = (trackId: string) => {
+    return currentTrack?.id === trackId && globalIsPlaying;
   };
 
   const approveTrack = async (trackId: string) => {
