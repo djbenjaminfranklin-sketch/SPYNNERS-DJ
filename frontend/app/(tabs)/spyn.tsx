@@ -749,61 +749,24 @@ export default function SpynScreen() {
     
     stopSession();
 
-    // ALWAYS try to end any offline session
-    console.log('[SPYN] Ending session, checking for offline recordings...');
+    // End the offline session
+    console.log('[SPYN] Ending session...');
     const endedSession = await offlineService.endOfflineSession();
     
     if (endedSession && endedSession.recordings.length > 0) {
       console.log('[SPYN] Offline session ended with', endedSession.recordings.length, 'recordings');
       
-      // Check if we're back online
-      const isOnline = await offlineService.checkNetworkStatus();
-      
-      if (isOnline) {
-        // Sync immediately and show results
-        console.log('[SPYN] Online - syncing now...');
-        
-        Alert.alert(
-          '🔄 Synchronisation',
-          `${endedSession.recordings.length} enregistrement(s) en cours de traitement...`,
-          [],
-          { cancelable: false }
-        );
-        
-        const { synced, failed, results } = await offlineService.syncPendingSessions(token || undefined);
-        
-        // Count Spynners tracks
-        const spynnersTracks = results.filter(r => r.success && r.is_spynners_track);
-        
-        setTimeout(() => {
-          if (spynnersTracks.length > 0) {
-            Alert.alert(
-              '🎵 Tracks Identifiés !',
-              `${spynnersTracks.length} track(s) Spynners identifié(s) :\n\n${spynnersTracks.map(t => `• ${t.title}`).join('\n')}`,
-              [{ text: 'OK' }]
-            );
-          } else {
-            Alert.alert(
-              '✅ Synchronisation terminée',
-              `${synced} enregistrement(s) traité(s).\nAucun track Spynners identifié dans cette session.`,
-              [{ text: 'OK' }]
-            );
-          }
-        }, 500);
-        
-        setPendingSyncCount(await offlineService.getPendingCount());
-      } else {
-        // Still offline
-        Alert.alert(
-          '📴 Session Sauvegardée',
-          `${endedSession.recordings.length} enregistrement(s) sauvegardé(s).\nIls seront traités quand vous serez en ligne.`,
-          [{ text: 'OK' }]
-        );
-      }
+      // Always show confirmation that session is saved
+      Alert.alert(
+        '✅ Session Sauvegardée',
+        `${endedSession.recordings.length} enregistrement(s) sauvegardé(s).\n\nAllez dans "Sessions Offline" depuis la page d'accueil pour synchroniser quand vous aurez du réseau.`,
+        [{ text: 'OK' }]
+      );
       
       setOfflineRecordingsCount(0);
+      setPendingSyncCount(await offlineService.getPendingCount());
     } else {
-      console.log('[SPYN] No offline session to end');
+      console.log('[SPYN] No offline recordings in this session');
     }
 
     // Reset offline counter
