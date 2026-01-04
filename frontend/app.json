@@ -77,6 +77,9 @@
     },
     "extra": {
       "router": {},
+      "backendUrl": "https://offline-spyn.preview.emergentagent.com",
+      "base44AppId": "691a4d96d819355b52c063f3",
+      "acrcloudHost": "identify-eu-west-1.acrcloud.com",
       "eas": {
         "projectId": "bb56295f-5394-4059-91ff-6d45e96eba63"
       }
