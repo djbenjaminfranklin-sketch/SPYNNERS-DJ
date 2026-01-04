@@ -2013,6 +2013,19 @@ async def download_project():
     else:
         raise HTTPException(status_code=404, detail="Project file not found")
 
+@app.get("/api/download-base44")
+async def download_base44():
+    """Download the base44Api.ts file"""
+    file_path = "/app/frontend/src/services/base44Api.ts"
+    if os.path.exists(file_path):
+        return FileResponse(
+            file_path,
+            media_type="text/plain",
+            filename="base44Api.ts"
+        )
+    else:
+        raise HTTPException(status_code=404, detail="File not found")
+
 @app.get("/")
 async def root():
     return {"message": "SPYNNERS API - Use /api/* endpoints"}
