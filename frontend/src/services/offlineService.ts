@@ -202,6 +202,9 @@ class OfflineService {
 
   // ==================== OFFLINE SESSION STORAGE ====================
 
+  // Simple session ID stored in memory during recording
+  private currentSessionId: string | null = null;
+
   async saveOfflineRecording(recording: Omit<OfflineRecording, 'id' | 'status' | 'createdAt'>): Promise<string> {
     const id = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -215,16 +218,18 @@ class OfflineService {
     // Get existing sessions
     const sessions = await this.getOfflineSessions();
     
-    console.log('[Offline] saveOfflineRecording - Total sessions:', sessions.length);
-    console.log('[Offline] saveOfflineRecording - Sessions statuses:', sessions.map(s => `${s.id.slice(-8)}: ${s.status}`).join(', '));
-    
-    // Find current recording session
-    let currentSession = sessions.find(s => s.status === 'recording');
+    // Use memory-stored session ID to find current session
+    let currentSession = this.currentSessionId 
+      ? sessions.find(s => s.id === this.currentSessionId && s.status === 'recording')
+      : null;
     
     if (!currentSession) {
-      console.log('[Offline] No recording session found, creating new one');
+      // Create new session
+      this.currentSessionId = `session_${Date.now()}`;
+      console.log('[Offline] Creating NEW session:', this.currentSessionId);
+      
       currentSession = {
-        id: `session_${Date.now()}`,
+        id: this.currentSessionId,
         recordings: [],
         startTime: new Date().toISOString(),
         location: recording.location,
@@ -234,7 +239,7 @@ class OfflineService {
       };
       sessions.push(currentSession);
     } else {
-      console.log('[Offline] Found existing session:', currentSession.id.slice(-8), 'with', currentSession.recordings.length, 'recordings');
+      console.log('[Offline] Adding to existing session:', this.currentSessionId, '- recordings:', currentSession.recordings.length);
     }
       };
       sessions.push(currentSession);
