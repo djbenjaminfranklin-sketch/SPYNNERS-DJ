@@ -102,6 +102,12 @@ export default function SpynRecordScreen() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [hasPermission, setHasPermission] = useState(false);
   
+  // Audio source state
+  const [audioSource, setAudioSource] = useState<'internal' | 'external'>('internal');
+  const [audioSourceName, setAudioSourceName] = useState<string>('Microphone interne');
+  const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  
   // Analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [identifiedTracks, setIdentifiedTracks] = useState<IdentifiedTrack[]>([]);
@@ -126,13 +132,102 @@ export default function SpynRecordScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const waveAnim = useRef(new Animated.Value(0)).current;
 
-  // Request permissions on mount
+  // Request permissions and detect audio sources on mount
   useEffect(() => {
     requestPermissions();
+    detectAudioSources();
+    
+    // Listen for device changes (plug/unplug)
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices) {
+      navigator.mediaDevices.addEventListener('devicechange', detectAudioSources);
+    }
+    
     return () => {
       cleanup();
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices) {
+        navigator.mediaDevices.removeEventListener('devicechange', detectAudioSources);
+      }
     };
   }, []);
+
+  // Detect available audio input devices
+  const detectAudioSources = async () => {
+    try {
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices) {
+        // First request permission to see device labels
+        try {
+          const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          tempStream.getTracks().forEach(track => track.stop());
+        } catch (e) {
+          console.log('[SPYN Record] Permission needed for device detection');
+        }
+        
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputs = devices.filter(device => device.kind === 'audioinput');
+        
+        console.log('[SPYN Record] Available audio inputs:', audioInputs);
+        setAvailableDevices(audioInputs);
+        
+        // Detect if external device is connected
+        // External devices usually have specific labels
+        const externalDevice = audioInputs.find(device => {
+          const label = device.label.toLowerCase();
+          return (
+            label.includes('usb') ||
+            label.includes('interface') ||
+            label.includes('mixer') ||
+            label.includes('audio in') ||
+            label.includes('line in') ||
+            label.includes('external') ||
+            label.includes('scarlett') ||  // Focusrite
+            label.includes('focusrite') ||
+            label.includes('behringer') ||
+            label.includes('native instruments') ||
+            label.includes('pioneer') ||
+            label.includes('denon') ||
+            label.includes('allen') ||  // Allen & Heath
+            label.includes('mackie') ||
+            label.includes('presonus') ||
+            label.includes('steinberg') ||
+            label.includes('motu') ||
+            label.includes('apogee') ||
+            label.includes('universal audio') ||
+            label.includes('roland') ||
+            label.includes('yamaha') ||
+            label.includes('soundcraft') ||
+            // iPhone specific
+            label.includes('irig') ||
+            label.includes('lightning') ||
+            // Generic external indicators
+            (device.deviceId !== 'default' && !label.includes('built-in') && !label.includes('internal'))
+          );
+        });
+        
+        if (externalDevice) {
+          setAudioSource('external');
+          setAudioSourceName(externalDevice.label || 'Source externe détectée');
+          setSelectedDeviceId(externalDevice.deviceId);
+          console.log('[SPYN Record] ✅ External audio source detected:', externalDevice.label);
+        } else if (audioInputs.length > 0) {
+          // Use first available device (usually default mic)
+          const defaultDevice = audioInputs.find(d => d.deviceId === 'default') || audioInputs[0];
+          setAudioSource('internal');
+          setAudioSourceName(defaultDevice.label || 'Microphone');
+          setSelectedDeviceId(defaultDevice.deviceId);
+        }
+      } else {
+        // Native (iOS/Android) - the system handles external audio routing automatically
+        // When you plug in an external device, iOS routes audio through it
+        setAudioSource('internal');
+        setAudioSourceName('Source audio détectée automatiquement');
+        
+        // On iOS, check for headphone route which indicates external device
+        // This is handled by the Audio API automatically
+      }
+    } catch (error) {
+      console.error('[SPYN Record] Error detecting audio sources:', error);
+    }
+  };
 
   const requestPermissions = async () => {
     try {
