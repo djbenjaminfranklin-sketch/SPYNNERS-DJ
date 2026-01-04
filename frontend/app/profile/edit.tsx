@@ -139,13 +139,21 @@ export default function EditProfileScreen() {
         setFullName(p.full_name || user?.full_name || '');
         setDjName(p.dj_name || '');
         setProducerName(p.producer_name || '');
+        setLabelName(p.label_name || '');
         setBio(p.bio || '');
         setTagline(p.tagline || '');
         setCity(p.city || '');
         setCountry(p.country || '');
         setSelectedGenres(p.genres || []);
-        setIsDJ(p.is_dj ?? true);
-        setIsProducer(p.is_producer ?? true);
+        setSacemNumber(p.sacem_number || '');
+        setEmail(p.email || user?.email || '');
+        setPhone(p.phone || '');
+        // Load profile types - can be array or single value
+        if (p.profile_types && Array.isArray(p.profile_types)) {
+          setProfileTypes(p.profile_types);
+        } else if (p.user_type) {
+          setProfileTypes([p.user_type]);
+        }
         setWebsite(p.website || '');
         setInstagram(p.instagram || '');
         setSoundcloud(p.soundcloud || '');
