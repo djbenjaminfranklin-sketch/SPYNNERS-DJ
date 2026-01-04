@@ -185,64 +185,6 @@ export default function VIPScreen() {
           </View>
         ) : (
           // VIP Tracks Tab only
-          promos.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="gift-outline" size={60} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>{t('vip.noPromos')}</Text>
-              <Text style={styles.emptySubtext}>{t('vip.checkBack')}</Text>
-            </View>
-          ) : (
-            promos.map((promo) => {
-              const promoId = promo.id || promo._id || '';
-              const isPurchased = hasPurchased(promoId);
-              
-              return (
-                <View key={promoId} style={styles.promoCard}>
-                  <LinearGradient 
-                    colors={isPurchased ? ['#4CAF50', '#388E3C'] : ['#7C4DFF', '#651FFF']} 
-                    style={styles.promoGradient}
-                  >
-                    <View style={styles.promoHeader}>
-                      <Ionicons name={isPurchased ? 'checkmark-circle' : 'diamond'} size={24} color="#FFD700" />
-                      <Text style={styles.promoName}>{promo.name}</Text>
-                      {isPurchased && (
-                        <View style={styles.purchasedBadge}>
-                          <Text style={styles.purchasedText}>{t('vip.owned')}</Text>
-                        </View>
-                      )}
-                    </View>
-                    
-                    {promo.description && (
-                      <Text style={styles.promoDescription}>{promo.description}</Text>
-                    )}
-                    
-                    <View style={styles.promoFooter}>
-                      <View style={styles.promoInfo}>
-                        <Text style={styles.promoTracks}>
-                          {(promo.track_ids || []).length} {t('vip.exclusiveTracks')}
-                        </Text>
-                        {promo.duration_days && (
-                          <Text style={styles.promoDuration}>{promo.duration_days} {t('vip.daysAccess')}</Text>
-                        )}
-                      </View>
-                      
-                      <TouchableOpacity 
-                        style={[styles.promoButton, isPurchased && styles.promoButtonDisabled]}
-                        onPress={() => handlePurchase(promo)}
-                        disabled={isPurchased}
-                      >
-                        <Text style={styles.promoButtonText}>
-                          {isPurchased ? t('vip.purchased') : `${promo.price || 0}€`}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </LinearGradient>
-                </View>
-              );
-            })
-          )
-        ) : (
-          // Tracks Tab
           vipTracks.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="musical-notes-outline" size={60} color={Colors.textMuted} />
