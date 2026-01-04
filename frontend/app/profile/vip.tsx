@@ -30,7 +30,7 @@ export default function VIPScreen() {
   const [promos, setPromos] = useState<VIPPromo[]>([]);
   const [vipTracks, setVipTracks] = useState<Track[]>([]);
   const [myPurchases, setMyPurchases] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'promos' | 'tracks'>('promos');
+  const [activeTab, setActiveTab] = useState<'tracks'>('tracks');
 
   useEffect(() => {
     loadData();
