@@ -241,9 +241,6 @@ class OfflineService {
     } else {
       console.log('[Offline] Adding to existing session:', this.currentSessionId, '- recordings:', currentSession.recordings.length);
     }
-      };
-      sessions.push(currentSession);
-    }
     
     currentSession.recordings.push(newRecording);
     
