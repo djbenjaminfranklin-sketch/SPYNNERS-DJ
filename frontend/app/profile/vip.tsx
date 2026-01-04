@@ -183,8 +183,8 @@ export default function VIPScreen() {
             <ActivityIndicator size="large" color="#FFD700" />
             <Text style={styles.loadingText}>{t('vip.loadingVip')}</Text>
           </View>
-        ) : activeTab === 'promos' ? (
-          // Promos Tab
+        ) : (
+          // VIP Tracks Tab only
           promos.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="gift-outline" size={60} color={Colors.textMuted} />
