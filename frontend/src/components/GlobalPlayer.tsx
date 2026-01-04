@@ -160,8 +160,8 @@ export default function GlobalPlayer() {
 
         {/* Controls */}
         <View style={styles.controls}>
-          <TouchableOpacity style={styles.controlBtn}>
-            <Ionicons name="play-skip-back" size={20} color="#fff" />
+          <TouchableOpacity style={styles.controlBtn} onPress={handleShare}>
+            <Ionicons name="share-outline" size={18} color="#fff" />
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.playBtn} onPress={togglePlayPause} disabled={isLoading}>
@@ -172,8 +172,8 @@ export default function GlobalPlayer() {
             )}
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.controlBtn}>
-            <Ionicons name="play-skip-forward" size={20} color="#fff" />
+          <TouchableOpacity style={styles.controlBtn} onPress={handleAddToPlaylist}>
+            <Ionicons name="list-outline" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
 
