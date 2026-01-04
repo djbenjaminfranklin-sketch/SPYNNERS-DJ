@@ -296,7 +296,8 @@ export default function SpynRecordScreen() {
 
   // Generate waveform data from audio analysis
   const updateWaveform = useCallback(() => {
-    if (analyserRef.current) {
+    // For web: use Web Audio API analyser
+    if (Platform.OS === 'web' && analyserRef.current) {
       const bufferLength = analyserRef.current.frequencyBinCount;
       const dataArray = new Uint8Array(bufferLength);
       analyserRef.current.getByteFrequencyData(dataArray);
@@ -319,20 +320,42 @@ export default function SpynRecordScreen() {
       }
       
       setWaveformData(bars);
-    } else {
-      // Generate random waveform for visual feedback when no analyser
+    } else if (isRecording && !isPaused) {
+      // For native mobile: Generate animated waveform based on recording status
+      // This provides visual feedback even though we can't access real audio data
       const bars: WaveformBar[] = [];
+      const time = Date.now() / 1000;
+      
       for (let i = 0; i < 40; i++) {
-        const height = Math.random() * 60 + 10;
+        // Create a wave pattern that looks like real audio
+        const wave1 = Math.sin(time * 2 + i * 0.3) * 30;
+        const wave2 = Math.sin(time * 3.5 + i * 0.2) * 20;
+        const wave3 = Math.sin(time * 1.2 + i * 0.5) * 15;
+        const noise = Math.random() * 15;
+        
+        // Combine waves for more natural look
+        const baseHeight = 25 + wave1 + wave2 + wave3 + noise;
+        const height = Math.max(8, Math.min(85, baseHeight));
+        
+        // Color based on intensity
         let color = CYAN_COLOR;
-        if (height > 50) color = PINK_COLOR;
-        else if (height > 35) color = ORANGE_COLOR;
+        if (height > 65) color = PINK_COLOR;
+        else if (height > 50) color = ORANGE_COLOR;
+        else if (height > 35) color = GREEN_COLOR;
         
         bars.push({ height, color });
       }
+      
+      setWaveformData(bars);
+    } else {
+      // Not recording - show static low bars
+      const bars: WaveformBar[] = [];
+      for (let i = 0; i < 40; i++) {
+        bars.push({ height: 5, color: CYAN_COLOR });
+      }
       setWaveformData(bars);
     }
-  }, []);
+  }, [isRecording, isPaused]);
 
   // Start recording
   const startRecording = async () => {
