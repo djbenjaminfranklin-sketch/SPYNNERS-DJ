@@ -758,6 +758,10 @@ export default function SpynScreen() {
   };
 
   const confirmEndSession = async () => {
+    // FIX: Set flag FIRST to prevent any in-flight recordings from being saved
+    console.log('[SPYN] 🛑 Setting isEndingSessionRef to TRUE - blocking new recordings');
+    isEndingSessionRef.current = true;
+    
     // Close modal immediately for better UX
     setShowEndSessionModal(false);
     
