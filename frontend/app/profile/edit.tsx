@@ -352,8 +352,8 @@ export default function EditProfileScreen() {
             style={[styles.profileTypeButton, profileTypes.includes('music_lover') && styles.profileTypeActive]}
             onPress={() => toggleProfileType('music_lover')}
           >
-            <Ionicons name="heart" size={24} color={profileType === 'music_lover' ? '#fff' : Colors.textMuted} />
-            <Text style={[styles.profileTypeText, profileType === 'music_lover' && styles.profileTypeTextActive]}>{t('edit.musicLover')}</Text>
+            <Ionicons name="heart" size={24} color={profileTypes.includes('music_lover') ? '#fff' : Colors.textMuted} />
+            <Text style={[styles.profileTypeText, profileTypes.includes('music_lover') && styles.profileTypeTextActive]}>{t('edit.musicLover')}</Text>
           </TouchableOpacity>
         </View>
 
