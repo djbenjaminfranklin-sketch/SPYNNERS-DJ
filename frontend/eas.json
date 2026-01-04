@@ -9,21 +9,21 @@
       "distribution": "internal",
       "ios": {
         "simulator": true,
-        "image": "macos-ventura-13.6-xcode-15.2"
+        "image": "macos-sonoma-14.4-xcode-15.3"
       }
     },
     "preview": {
       "distribution": "internal",
       "ios": {
         "simulator": false,
-        "image": "macos-ventura-13.6-xcode-15.2"
+        "image": "macos-sonoma-14.4-xcode-15.3"
       }
     },
     "production": {
       "distribution": "store",
       "ios": {
         "simulator": false,
-        "image": "macos-ventura-13.6-xcode-15.2"
+        "image": "macos-sonoma-14.4-xcode-15.3"
       }
     }
   },
