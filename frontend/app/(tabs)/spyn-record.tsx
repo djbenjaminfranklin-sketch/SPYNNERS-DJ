@@ -43,7 +43,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return process.env.EXPO_PUBLIC_BACKEND_URL || 'https://offline-spyn.preview.emergentagent.com';
+  return process.env.EXPO_PUBLIC_BACKEND_URL || 'https://spyn-rebuild.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

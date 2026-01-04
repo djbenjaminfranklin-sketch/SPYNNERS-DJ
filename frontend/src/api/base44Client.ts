@@ -18,7 +18,7 @@ const getBackendUrl = () => {
   }
   return Constants.expoConfig?.extra?.backendUrl || 
          process.env.EXPO_PUBLIC_BACKEND_URL || 
-         'https://offline-spyn.preview.emergentagent.com';
+         'https://spyn-rebuild.preview.emergentagent.com';
 };
 
 // Storage key for auth token

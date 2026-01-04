@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://offline-spyn.preview.emergentagent.com';
+  return 'https://spyn-rebuild.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

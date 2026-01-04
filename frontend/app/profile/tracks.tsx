@@ -20,7 +20,7 @@ import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import axios from 'axios';
 import Constants from 'expo-constants';
 
-const BACKEND_URL = 'https://offline-spyn.preview.emergentagent.com';
+const BACKEND_URL = 'https://spyn-rebuild.preview.emergentagent.com';
 
 // Colors
 const CYAN_COLOR = '#5CB3CC';
