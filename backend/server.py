@@ -2277,6 +2277,34 @@ async def send_track(request: SendTrackRequest, authorization: str = Header(None
         print(f"[Share] Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# ==================== RECEIVED TRACKS ====================
+
+class GetReceivedTracksRequest(BaseModel):
+    limit: int = 100
+    offset: int = 0
+
+@app.post("/api/tracks/received")
+async def get_received_tracks(request: GetReceivedTracksRequest, authorization: str = Header(None)):
+    """Get tracks received from other users"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        body = {
+            "limit": request.limit,
+            "offset": request.offset
+        }
+        
+        result = await call_spynners_function("nativeGetReceivedTracks", body, authorization)
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Received] Error: {e}")
+        # Return empty array on error
+        return {"tracks": []}
+
 # ==================== TRACK DOWNLOAD ====================
 
 class DownloadTrackRequest(BaseModel):
