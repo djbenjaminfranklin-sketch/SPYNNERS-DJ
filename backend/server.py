@@ -2095,29 +2095,7 @@ async def update_profile(request: ProfileUpdateRequest, authorization: str = Hea
             else:
                 # If spynners.com function doesn't exist, try direct entity update
                 print(f"[Profile] Function failed, trying direct update...")
-                
-                # Get user ID from the existing session in base44Api
-                # The frontend should send the user ID
-                if hasattr(request, 'user_id') and request.user_id:
-                    user_id = request.user_id
-                else:
-                    # Return error - need user ID
-                    raise HTTPException(status_code=400, detail="User ID required for profile update")
-                
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"[Profile] Error updating profile: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-                headers=headers,
-                json=update_data
-            )
-            
-            if update_response.status_code == 200:
-                return {"success": True, "message": "Profile updated successfully", "profile": update_response.json()}
-            else:
-                print(f"[Profile] Update failed: {update_response.text}")
-                raise HTTPException(status_code=update_response.status_code, detail="Could not update profile")
+                raise HTTPException(status_code=response.status_code, detail="Profile update failed")
                 
     except HTTPException:
         raise
