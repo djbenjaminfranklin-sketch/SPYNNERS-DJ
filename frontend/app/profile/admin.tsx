@@ -73,9 +73,10 @@ export default function AdminScreen() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [playing, setPlaying] = useState(false);
   const [registeringACR, setRegisteringACR] = useState<string | null>(null);
+  
+  // Use global player instead of local audio
+  const { playTrack: globalPlayTrack, stopPlayback, currentTrack, isPlaying: globalIsPlaying } = usePlayer();
 
   const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -88,9 +89,6 @@ export default function AdminScreen() {
     if (isAdmin) {
       fetchAllData();
     }
-    return () => {
-      if (sound) sound.unloadAsync();
-    };
   }, [isAdmin]);
 
   const fetchAllData = async () => {
