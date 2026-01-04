@@ -34,11 +34,33 @@ export default function ReceivedScreen() {
       setLoading(true);
       console.log('[Received] Loading received tracks...');
       
-      // For now, show empty state since we don't have a "sent tracks" feature implemented
-      // In a real implementation, this would query tracks sent to the current user
+      const { token } = useAuth();
+      
+      // Try to load received tracks via native API
+      try {
+        const response = await axios.post(
+          `${BACKEND_URL}/api/tracks/received`,
+          { limit: 100, offset: 0 },
+          { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        );
+        
+        if (response.data?.tracks) {
+          setTracks(response.data.tracks);
+          return;
+        }
+        if (Array.isArray(response.data)) {
+          setTracks(response.data);
+          return;
+        }
+      } catch (apiError) {
+        console.log('[Received] Native API not available');
+      }
+      
+      // Fallback: show empty state
       setTracks([]);
     } catch (error) {
       console.error('[Received] Error loading tracks:', error);
+      setTracks([]);
     } finally {
       setLoading(false);
     }
