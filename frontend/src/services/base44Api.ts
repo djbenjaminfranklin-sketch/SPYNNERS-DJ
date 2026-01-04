@@ -7,29 +7,10 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-// Get backend URL from environment
-const getBackendUrl = () => {
-  // Check if we're on the main preview domain (where /api proxy works)
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    
-    // If on the main preview domain, use relative URL (proxy works)
-    if (hostname.includes('preview.emergentagent.com')) {
-      return '';
-    }
-    
-    // If on ngrok or other domains, use the full backend URL
-    // The backend is accessible via the preview domain
-    return 'https://spyn-rebuild.preview.emergentagent.com';
-  }
-  
-  // For mobile (Expo Go), use the configured backend URL
-  return Constants.expoConfig?.extra?.backendUrl || 
-         process.env.EXPO_PUBLIC_BACKEND_URL || 
-         'https://spyn-rebuild.preview.emergentagent.com';
-};
+// Backend URL - hardcoded for reliability in production builds
+const BACKEND_URL = 'https://spyn-rebuild.preview.emergentagent.com';
 
-const BACKEND_URL = getBackendUrl();
+console.log('[API] Using backend URL:', BACKEND_URL);
 
 // Storage keys
 const AUTH_TOKEN_KEY = 'auth_token';
