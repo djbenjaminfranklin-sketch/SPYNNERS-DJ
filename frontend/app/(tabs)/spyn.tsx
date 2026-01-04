@@ -133,6 +133,8 @@ export default function SpynScreen() {
   const sessionActiveRef = useRef(false);
   const identifiedTracksRef = useRef<string[]>([]);
   const autostartTriggeredRef = useRef(false);
+  // FIX: Flag to prevent race condition when ending session
+  const isEndingSessionRef = useRef(false);
   
   // Microphone permission state
   const [micPermission, setMicPermission] = useState(false);
