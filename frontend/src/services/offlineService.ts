@@ -204,8 +204,15 @@ class OfflineService {
 
   // Simple session ID stored in memory during recording
   private currentSessionId: string | null = null;
+  private isSessionEnding: boolean = false;
 
   async saveOfflineRecording(recording: Omit<OfflineRecording, 'id' | 'status' | 'createdAt'>): Promise<string> {
+    // Don't save if session is ending
+    if (this.isSessionEnding) {
+      console.log('[Offline] Session is ending, skipping recording');
+      return '';
+    }
+    
     const id = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     const newRecording: OfflineRecording = {
