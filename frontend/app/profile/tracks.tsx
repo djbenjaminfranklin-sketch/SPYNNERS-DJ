@@ -29,6 +29,7 @@ const CARD_BG = '#1a1a2e';
 const GREEN_COLOR = '#4CAF50';
 const RED_COLOR = '#E53935';
 const ORANGE_COLOR = '#FF9800';
+const BLUE_COLOR = '#2196F3';
 
 interface Track {
   id: string;
