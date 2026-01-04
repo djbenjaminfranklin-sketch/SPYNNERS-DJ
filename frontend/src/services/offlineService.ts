@@ -256,35 +256,36 @@ class OfflineService {
   }
 
   async endOfflineSession(sessionId?: string): Promise<OfflineSession | null> {
-    console.log('[Offline] endOfflineSession called, sessionId:', sessionId);
+    console.log('[Offline] endOfflineSession called');
     
     const sessions = await this.getOfflineSessions();
-    console.log('[Offline] Found', sessions.length, 'sessions');
-    console.log('[Offline] Sessions statuses:', sessions.map(s => `${s.id}: ${s.status}`));
     
-    const session = sessionId 
-      ? sessions.find(s => s.id === sessionId)
+    // Use provided sessionId, or currentSessionId, or find any recording session
+    const targetId = sessionId || this.currentSessionId;
+    let session = targetId 
+      ? sessions.find(s => s.id === targetId)
       : sessions.find(s => s.status === 'recording');
     
-    if (session) {
-      console.log('[Offline] Found session to end:', session.id, 'with status:', session.status);
+    if (session && session.status === 'recording') {
+      console.log('[Offline] Ending session:', session.id, 'with', session.recordings.length, 'recordings');
       session.status = 'pending_sync';
       session.endTime = new Date().toISOString();
       await this.saveOfflineSessions(sessions);
       
-      console.log('[Offline] Session ended and saved:', session.id);
-      console.log('[Offline] Recordings to sync:', session.recordings.length);
+      // Clear current session ID
+      this.currentSessionId = null;
       
-      // Try to sync immediately if online
-      if (this.isOnline) {
-        console.log('[Offline] Online - starting immediate sync');
-        this.syncPendingSessions();
-      }
+      console.log('[Offline] Session ended successfully');
       
       return session;
+    } else if (session) {
+      console.log('[Offline] Session found but status is:', session.status);
     } else {
-      console.log('[Offline] No session found to end');
+      console.log('[Offline] No session found to end. currentSessionId:', this.currentSessionId);
     }
+    
+    // Clear current session ID anyway
+    this.currentSessionId = null;
     
     return null;
   }
