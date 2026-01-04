@@ -400,7 +400,7 @@ export default function EditProfileScreen() {
         )}
 
         {/* Show Producer Name only for Producer or Both */}
-        {(profileType === 'producer' || profileType === 'both') && (
+        {(profileTypes.includes('producer') || profileTypes.includes('both')) && (
           <>
             <Text style={styles.label}>{t('edit.producerName')}</Text>
             <TextInput
@@ -425,7 +425,7 @@ export default function EditProfileScreen() {
         )}
 
         {/* Show Label Name only for Label */}
-        {profileType === 'label' && (
+        {profileTypes.includes('label') && (
           <>
             <Text style={styles.label}>Label Name *</Text>
             <TextInput
