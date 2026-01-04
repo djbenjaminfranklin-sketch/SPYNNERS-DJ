@@ -641,6 +641,13 @@ export default function SpynRecordScreen() {
   // Save recording to device
   const saveRecording = async (fileUri: string) => {
     try {
+      console.log('[SPYN Record] Saving recording from:', fileUri);
+      
+      if (!fileUri) {
+        Alert.alert('Erreur', 'Aucun fichier audio à sauvegarder');
+        return;
+      }
+      
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const fileName = `SPYN_Mix_${timestamp}`;
       
@@ -657,34 +664,80 @@ export default function SpynRecordScreen() {
       } else {
         // Save to media library on native
         const { status } = await MediaLibrary.requestPermissionsAsync();
+        console.log('[SPYN Record] Media library permission:', status);
         
         if (status === 'granted') {
-          // Copy to a permanent location first
-          const newUri = FileSystem.documentDirectory + `${fileName}.m4a`;
-          await FileSystem.copyAsync({ from: fileUri, to: newUri });
-          
-          // Save to media library
-          const asset = await MediaLibrary.createAssetAsync(newUri);
-          
+          try {
+            // First check if source file exists
+            const fileInfo = await FileSystem.getInfoAsync(fileUri);
+            console.log('[SPYN Record] Source file info:', fileInfo);
+            
+            if (!fileInfo.exists) {
+              throw new Error('Source file does not exist');
+            }
+            
+            // Copy to a permanent location first
+            const newUri = FileSystem.documentDirectory + `${fileName}.m4a`;
+            console.log('[SPYN Record] Copying to:', newUri);
+            
+            await FileSystem.copyAsync({ from: fileUri, to: newUri });
+            
+            // Verify the copy
+            const newFileInfo = await FileSystem.getInfoAsync(newUri);
+            console.log('[SPYN Record] New file info:', newFileInfo);
+            
+            if (!newFileInfo.exists) {
+              throw new Error('Failed to copy file');
+            }
+            
+            // Save to media library
+            const asset = await MediaLibrary.createAssetAsync(newUri);
+            console.log('[SPYN Record] Asset created:', asset);
+            
+            Alert.alert(
+              '✅ Mix sauvegardé !',
+              'Votre enregistrement a été sauvegardé dans vos fichiers.',
+              [
+                {
+                  text: 'Partager',
+                  onPress: () => shareRecording(newUri),
+                },
+                { text: 'OK' },
+              ]
+            );
+          } catch (copyError: any) {
+            console.error('[SPYN Record] Copy/save error:', copyError);
+            // Fallback: try sharing directly
+            Alert.alert(
+              'Sauvegarde partielle',
+              'Impossible de sauvegarder dans la bibliothèque. Voulez-vous partager le fichier ?',
+              [
+                {
+                  text: 'Partager',
+                  onPress: () => shareRecording(fileUri),
+                },
+                { text: 'Annuler', style: 'cancel' },
+              ]
+            );
+          }
+        } else {
+          // No permission - offer to share
           Alert.alert(
-            '✅ Mix sauvegardé !',
-            'Votre enregistrement a été sauvegardé dans vos fichiers.',
+            'Permission requise',
+            'Accès à la bibliothèque refusé. Voulez-vous partager le fichier directement ?',
             [
               {
                 text: 'Partager',
-                onPress: () => shareRecording(newUri),
+                onPress: () => shareRecording(fileUri),
               },
-              { text: 'OK' },
+              { text: 'Annuler', style: 'cancel' },
             ]
           );
-        } else {
-          // Fallback to sharing
-          await shareRecording(fileUri);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[SPYN Record] Save error:', error);
-      Alert.alert('Erreur', 'Impossible de sauvegarder l\'enregistrement');
+      Alert.alert('Erreur', `Impossible de sauvegarder: ${error.message || 'Erreur inconnue'}`);
     }
   };
 
