@@ -22,7 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ReceivedScreen() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const router = useRouter();
   const { t } = useLanguage();
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -30,8 +30,10 @@ export default function ReceivedScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    loadReceivedTracks();
-  }, [user]);
+    if (token) {
+      loadReceivedTracks();
+    }
+  }, [user, token]);
 
   const loadReceivedTracks = async () => {
     try {
