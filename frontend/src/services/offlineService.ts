@@ -215,10 +215,14 @@ class OfflineService {
     // Get existing sessions
     const sessions = await this.getOfflineSessions();
     
-    // Find or create current session
+    console.log('[Offline] saveOfflineRecording - Total sessions:', sessions.length);
+    console.log('[Offline] saveOfflineRecording - Sessions statuses:', sessions.map(s => `${s.id.slice(-8)}: ${s.status}`).join(', '));
+    
+    // Find current recording session
     let currentSession = sessions.find(s => s.status === 'recording');
     
     if (!currentSession) {
+      console.log('[Offline] No recording session found, creating new one');
       currentSession = {
         id: `session_${Date.now()}`,
         recordings: [],
@@ -227,6 +231,11 @@ class OfflineService {
         userId: recording.userId,
         djName: recording.djName,
         status: 'recording',
+      };
+      sessions.push(currentSession);
+    } else {
+      console.log('[Offline] Found existing session:', currentSession.id.slice(-8), 'with', currentSession.recordings.length, 'recordings');
+    }
       };
       sessions.push(currentSession);
     }
