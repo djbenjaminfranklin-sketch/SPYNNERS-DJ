@@ -433,6 +433,9 @@ class OfflineService {
     let failed = 0;
     let allResults: any[] = [];
 
+    // Log the backend URL being used
+    console.log('[Offline] 🔗 Using BACKEND_URL:', BACKEND_URL);
+
     try {
       const sessions = await this.getOfflineSessions();
       const pendingSessions = sessions.filter(s => s.status === 'pending_sync');
