@@ -379,7 +379,7 @@ export default function HomeScreen() {
 
   // Navigate to SPYN Record
   const handleSpynRecord = () => {
-    router.push('/(tabs)/spyn');
+    router.push('/(tabs)/spyn-record');
   };
 
   // Render star rating
