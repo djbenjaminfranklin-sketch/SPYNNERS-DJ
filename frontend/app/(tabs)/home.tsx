@@ -160,10 +160,7 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       console.log('[Home] Loading tracks...');
-      
-      // Get token from auth context
-      const { token } = useAuth();
-      console.log('[Home] Token available:', !!token);
+      console.log('[Home] User logged in:', !!user);
       
       const filters: any = { limit: 100 }; // Get more tracks to have better selection
       if (selectedGenre !== 'All Genres') filters.genre = selectedGenre;
