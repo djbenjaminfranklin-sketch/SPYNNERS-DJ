@@ -1987,6 +1987,133 @@ async def process_offline_session(request: OfflineSessionRequest, authorization:
         raise HTTPException(status_code=500, detail=f"Failed to process offline session: {str(e)}")
 
 
+# ==================== PROFILE ENDPOINTS ====================
+
+class ProfileUpdateRequest(BaseModel):
+    full_name: Optional[str] = None
+    bio: Optional[str] = None
+    location: Optional[str] = None
+    website: Optional[str] = None
+    instagram: Optional[str] = None
+    soundcloud: Optional[str] = None
+    spotify: Optional[str] = None
+    genres: Optional[List[str]] = None
+    profile_type: Optional[str] = None
+    is_dj: Optional[bool] = None
+    is_producer: Optional[bool] = None
+    is_label: Optional[bool] = None
+    is_music_lover: Optional[bool] = None
+    sacem_number: Optional[str] = None
+    email: Optional[str] = None
+
+@app.get("/api/profile")
+async def get_profile(authorization: str = Header(None)):
+    """Get user profile"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        token = authorization.replace("Bearer ", "")
+        
+        # Get user from Base44
+        headers = {"Authorization": f"Bearer {token}"}
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{BASE44_API_URL}/auth/me",
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                user_data = response.json()
+                return {"success": True, "profile": user_data}
+            else:
+                raise HTTPException(status_code=response.status_code, detail="Could not get profile")
+    except Exception as e:
+        print(f"[Profile] Error getting profile: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/profile/update")
+async def update_profile(request: ProfileUpdateRequest, authorization: str = Header(None)):
+    """Update user profile"""
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        token = authorization.replace("Bearer ", "")
+        
+        # Build update data
+        update_data = {}
+        if request.full_name is not None:
+            update_data["full_name"] = request.full_name
+        if request.bio is not None:
+            update_data["bio"] = request.bio
+        if request.location is not None:
+            update_data["location"] = request.location
+        if request.website is not None:
+            update_data["website"] = request.website
+        if request.instagram is not None:
+            update_data["instagram"] = request.instagram
+        if request.soundcloud is not None:
+            update_data["soundcloud"] = request.soundcloud
+        if request.spotify is not None:
+            update_data["spotify"] = request.spotify
+        if request.genres is not None:
+            update_data["genres"] = request.genres
+        if request.profile_type is not None:
+            update_data["profile_type"] = request.profile_type
+        if request.is_dj is not None:
+            update_data["is_dj"] = request.is_dj
+        if request.is_producer is not None:
+            update_data["is_producer"] = request.is_producer
+        if request.is_label is not None:
+            update_data["is_label"] = request.is_label
+        if request.is_music_lover is not None:
+            update_data["is_music_lover"] = request.is_music_lover
+        if request.sacem_number is not None:
+            update_data["sacem_number"] = request.sacem_number
+        if request.email is not None:
+            update_data["email"] = request.email
+        
+        print(f"[Profile] Updating profile with: {update_data}")
+        
+        # Update user in Base44
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # First get current user to get ID
+            me_response = await client.get(
+                f"{BASE44_API_URL}/auth/me",
+                headers=headers
+            )
+            
+            if me_response.status_code != 200:
+                raise HTTPException(status_code=me_response.status_code, detail="Could not get user")
+            
+            user_data = me_response.json()
+            user_id = user_data.get("id") or user_data.get("_id")
+            
+            # Update user entity
+            update_response = await client.put(
+                f"{BASE44_API_URL}/entities/User/{user_id}",
+                headers=headers,
+                json=update_data
+            )
+            
+            if update_response.status_code == 200:
+                return {"success": True, "message": "Profile updated successfully", "profile": update_response.json()}
+            else:
+                print(f"[Profile] Update failed: {update_response.text}")
+                raise HTTPException(status_code=update_response.status_code, detail="Could not update profile")
+                
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Profile] Error updating profile: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/api/health")
