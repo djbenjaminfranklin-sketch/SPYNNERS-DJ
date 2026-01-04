@@ -370,7 +370,7 @@ export default function EditProfileScreen() {
         />
 
         {/* Show DJ Name only for DJ or Both */}
-        {(profileType === 'dj' || profileType === 'both') && (
+        {(profileTypes.includes('dj') || profileTypes.includes('both')) && (
           <>
             <Text style={styles.label}>{t('edit.djName')}</Text>
         <TextInput
