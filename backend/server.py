@@ -65,6 +65,9 @@ DB_NAME = os.getenv("DB_NAME", "spynners_db")
 client = MongoClient(MONGO_URL)
 db = client[DB_NAME]
 
+# Spynners Native API Base URL
+SPYNNERS_FUNCTIONS_URL = "https://spynners.base44.app/functions"
+
 # Collections
 users_collection = db["users"]
 tracks_collection = db["tracks"]
