@@ -142,13 +142,28 @@ export default function RankingsScreen() {
       
       const result = await base44Tracks.list(filters);
       
-      // Filter only approved tracks
-      const approvedTracks = (result || []).filter((track: Track) => 
-        track.status === 'approved'
-      );
-      
-      console.log('[Rankings] Loaded approved tracks:', approvedTracks.length);
-      setTracks(approvedTracks);
+      // Handle tracks - don't filter too strictly if status field is missing
+      if (result && result.length > 0) {
+        // Filter approved tracks only if status field exists
+        const processedTracks = result.filter((track: Track) => {
+          // If status field exists, filter by approved
+          if (track.status) {
+            return track.status === 'approved';
+          }
+          // If is_approved field exists, use it
+          if (track.is_approved !== undefined) {
+            return track.is_approved === true;
+          }
+          // Otherwise, include the track (API might not have status field)
+          return true;
+        });
+        
+        console.log('[Rankings] Processed tracks:', processedTracks.length);
+        setTracks(processedTracks);
+      } else {
+        console.log('[Rankings] No tracks returned from API');
+        setTracks([]);
+      }
     } catch (error) {
       console.error('[Rankings] Error loading tracks:', error);
       setTracks([]);
