@@ -159,24 +159,13 @@ export default function VIPScreen() {
         </View>
       </View>
 
-      {/* Tab Selector */}
+      {/* Tab Selector - Only VIP Tracks */}
       <View style={styles.tabContainer}>
         <TouchableOpacity 
-          style={[styles.tab, activeTab === 'promos' && styles.tabActive]}
-          onPress={() => setActiveTab('promos')}
+          style={[styles.tab, styles.tabActive]}
         >
-          <Ionicons name="gift" size={18} color={activeTab === 'promos' ? '#FFD700' : Colors.textMuted} />
-          <Text style={[styles.tabText, activeTab === 'promos' && styles.tabTextActive]}>
-            {t('vip.promos')}
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'tracks' && styles.tabActive]}
-          onPress={() => setActiveTab('tracks')}
-        >
-          <Ionicons name="musical-notes" size={18} color={activeTab === 'tracks' ? '#FFD700' : Colors.textMuted} />
-          <Text style={[styles.tabText, activeTab === 'tracks' && styles.tabTextActive]}>
+          <Ionicons name="musical-notes" size={18} color={'#FFD700'} />
+          <Text style={[styles.tabText, styles.tabTextActive]}>
             {t('vip.vipTracks')}
           </Text>
         </TouchableOpacity>
