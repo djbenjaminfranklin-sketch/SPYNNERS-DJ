@@ -429,6 +429,9 @@ export default function SpynScreen() {
   const handleSpynButtonPress = useCallback(() => {
     console.log('[SPYN] Button pressed! Starting session immediately...');
     
+    // FIX: Make sure the ending flag is reset when starting a new session
+    isEndingSessionRef.current = false;
+    
     // Immediately set session active to switch UI
     setSessionActive(true);
     sessionActiveRef.current = true;
