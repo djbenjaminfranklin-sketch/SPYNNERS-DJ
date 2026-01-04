@@ -971,6 +971,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     letterSpacing: 1,
   },
+  // Audio Source Indicator Styles
+  audioSourceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    gap: 8,
+  },
+  audioSourceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 8,
+  },
+  audioSourceInternal: {
+    backgroundColor: '#1a1a2e',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  audioSourceExternal: {
+    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+    borderWidth: 1,
+    borderColor: GREEN_COLOR + '40',
+  },
+  audioSourceText: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '500',
+    maxWidth: 200,
+  },
+  audioSourceTextExternal: {
+    color: GREEN_COLOR,
+  },
+  externalDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: GREEN_COLOR,
+  },
+  refreshSourceButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#1a1a2e',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   timerContainer: {
     alignItems: 'center',
     paddingVertical: 20,
