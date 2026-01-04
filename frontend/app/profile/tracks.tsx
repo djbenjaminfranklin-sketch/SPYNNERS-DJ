@@ -432,6 +432,37 @@ export default function ManageTracksScreen() {
                 </View>
 
                 <View style={styles.modalButtons}>
+                  {/* Edit Track Button */}
+                  <TouchableOpacity
+                    style={[styles.modalButton, { backgroundColor: BLUE_COLOR }]}
+                    onPress={() => {
+                      setShowTrackModal(false);
+                      router.push(`/profile/edit-track?id=${selectedTrack.id}`);
+                    }}
+                  >
+                    <Ionicons name="create" size={20} color="#fff" />
+                    <Text style={styles.modalButtonText}>Edit Track</Text>
+                  </TouchableOpacity>
+
+                  {/* Sync ACRCloud Button - ONLY for admins */}
+                  {user?.is_admin && (
+                    <TouchableOpacity
+                      style={[styles.modalButton, { backgroundColor: ORANGE_COLOR }]}
+                      onPress={() => syncWithACRCloud(selectedTrack)}
+                      disabled={syncing === selectedTrack.id}
+                    >
+                      {syncing === selectedTrack.id ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Ionicons name="sync" size={20} color="#fff" />
+                      )}
+                      <Text style={styles.modalButtonText}>
+                        {syncing === selectedTrack.id ? 'Syncing...' : 'Sync ACRCloud'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Delete Track Button */}
                   <TouchableOpacity
                     style={[styles.modalButton, { backgroundColor: RED_COLOR }]}
                     onPress={() => deleteTrack(selectedTrack)}
