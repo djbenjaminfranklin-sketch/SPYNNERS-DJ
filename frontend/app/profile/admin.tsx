@@ -772,7 +772,7 @@ export default function AdminScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Track Review</Text>
               <TouchableOpacity onPress={() => {
-                stopPlayback();
+                closePlayer();
                 setShowDetailModal(false);
               }}>
                 <Ionicons name="close" size={28} color={Colors.text} />
