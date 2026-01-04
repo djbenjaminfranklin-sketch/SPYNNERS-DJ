@@ -76,7 +76,7 @@ export default function AdminScreen() {
   const [registeringACR, setRegisteringACR] = useState<string | null>(null);
   
   // Use global player instead of local audio
-  const { playTrack: globalPlayTrack, stopPlayback, currentTrack, isPlaying: globalIsPlaying } = usePlayer();
+  const { playTrack: globalPlayTrack, closePlayer, currentTrack, isPlaying: globalIsPlaying, togglePlayPause } = usePlayer();
 
   const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
