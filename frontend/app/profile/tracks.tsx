@@ -62,10 +62,10 @@ export default function ManageTracksScreen() {
   const [syncing, setSyncing] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.id) {
+    if (token) {
       fetchTracks();
     }
-  }, [user?.id]);
+  }, [token]);
 
   const fetchTracks = async () => {
     try {
