@@ -9,6 +9,8 @@ import {
   Dimensions,
   ActivityIndicator,
   PanResponder,
+  Share,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,7 +19,7 @@ import { Colors } from '../theme/colors';
 import { Track } from '../services/base44Api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PROGRESS_BAR_WIDTH = 100;
+const PROGRESS_BAR_WIDTH = 80;
 
 export default function GlobalPlayer() {
   const {
