@@ -200,46 +200,43 @@ export default function EditProfileScreen() {
 
     setSaving(true);
     try {
-      const profileData = {
-        full_name: fullName.trim(),
-        dj_name: djName.trim(),
-        producer_name: producerName.trim(),
-        email: email,
-        phone: phone.trim(),
-        bio: bio.trim(),
-        tagline: tagline.trim(),
-        city: city.trim(),
-        country: country.trim(),
-        genres: selectedGenres,
-        profile_type: profileType,
-        is_dj: profileType === 'dj' || profileType === 'both',
-        is_producer: profileType === 'producer' || profileType === 'both',
-        is_label: profileType === 'label',
-        is_music_lover: profileType === 'music_lover',
-        label_name: labelName.trim(),
-        sacem_number: sacemNumber.trim(),
-        website: website.trim(),
-        instagram: instagram.trim(),
-        soundcloud: soundcloud.trim(),
-        mixcloud: mixcloud.trim(),
-        spotify: spotify.trim(),
-        beatport: beatport.trim(),
-        youtube: youtube.trim(),
-        facebook: facebook.trim(),
-        twitter: twitter.trim(),
-        tiktok: tiktok.trim(),
-        bandcamp: bandcamp.trim(),
-        resident_advisor: residentAdvisor.trim(),
-        notifications: {
-          new_tracks: notifyNewTracks,
-          messages: notifyMessages,
-          plays: notifyPlays,
-          downloads: notifyDownloads,
-          email_digest: emailDigest,
-        },
-        avatar: avatar,
-        cover_image: coverImage,
-      };
+      // Build profile data in the format expected by Spynners native API
+      const profileData: any = {};
+      
+      // Map fields to the Spynners API format
+      if (djName.trim() || producerName.trim() || fullName.trim()) {
+        profileData.artist_name = djName.trim() || producerName.trim() || fullName.trim();
+      }
+      if (bio.trim()) {
+        profileData.bio = bio.trim();
+      }
+      if (country.trim()) {
+        profileData.nationality = country.trim();
+      }
+      if (instagram.trim()) {
+        profileData.instagram = instagram.trim();
+      }
+      if (soundcloud.trim()) {
+        profileData.soundcloud = soundcloud.trim();
+      }
+      if (sacemNumber.trim()) {
+        profileData.sacem_number = sacemNumber.trim();
+      }
+      
+      // Map profile type
+      if (profileType === 'dj') {
+        profileData.user_type = 'dj';
+      } else if (profileType === 'producer') {
+        profileData.user_type = 'producer';
+      } else if (profileType === 'both') {
+        profileData.user_type = 'both';
+      } else if (profileType === 'label') {
+        profileData.user_type = 'label';
+      } else {
+        profileData.user_type = 'music_lover';
+      }
+
+      console.log('[Profile] Saving with data:', profileData);
 
       const response = await axios.post(
         `${BACKEND_URL}/api/profile/update`,
@@ -256,7 +253,7 @@ export default function EditProfileScreen() {
       }
     } catch (error: any) {
       console.error('Save profile error:', error);
-      Alert.alert('Error', error.message || 'Could not save profile');
+      Alert.alert('Error', error.response?.data?.detail || error.message || 'Could not save profile');
     } finally {
       setSaving(false);
     }
