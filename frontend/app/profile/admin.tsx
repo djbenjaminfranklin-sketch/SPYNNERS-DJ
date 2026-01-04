@@ -14,10 +14,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Audio } from 'expo-av';
 import axios from 'axios';
 import Constants from 'expo-constants';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { usePlayer } from '../../src/contexts/PlayerContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { base44Admin } from '../../src/services/base44Api';
