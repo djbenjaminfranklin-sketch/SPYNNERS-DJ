@@ -15,6 +15,8 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import Constants from 'expo-constants';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage, LANGUAGES, Language } from '../../src/contexts/LanguageContext';
 import { usePlayer } from '../../src/contexts/PlayerContext';
@@ -25,6 +27,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import NotificationModal from '../../src/components/NotificationModal';
 import offlineService from '../../src/services/offlineService';
 
+const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MENU_ITEM_SIZE = (SCREEN_WIDTH - 24 - 40) / 5; // 5 items per row with spacing
 
