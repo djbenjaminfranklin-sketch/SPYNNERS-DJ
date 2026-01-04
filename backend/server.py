@@ -2445,6 +2445,19 @@ async def download_base44():
     else:
         raise HTTPException(status_code=404, detail="File not found")
 
+@app.get("/api/download-bugfixes")
+async def download_bugfixes():
+    """Download the bugfixes ZIP file"""
+    file_path = "/app/backend/spynners-bugfixes.zip"
+    if os.path.exists(file_path):
+        return FileResponse(
+            file_path,
+            media_type="application/zip",
+            filename="spynners-bugfixes.zip"
+        )
+    else:
+        raise HTTPException(status_code=404, detail="Bugfixes file not found")
+
 @app.get("/")
 async def root():
     return {"message": "SPYNNERS API - Use /api/* endpoints"}
