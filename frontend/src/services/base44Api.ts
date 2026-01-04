@@ -1071,6 +1071,26 @@ export const base44Notifications = {
   async getLiveTrackPlays(producerId?: string): Promise<any[]> {
     try {
       console.log('[LiveRadar] Fetching live track plays for producer:', producerId || 'all');
+      
+      // Try native API first
+      try {
+        const response = await api.post('/api/live-plays', {
+          producer_id: producerId || null,
+          limit: 100
+        });
+        console.log('[LiveRadar] Native API response:', response.data);
+        
+        if (response.data?.plays) {
+          return response.data.plays;
+        }
+        if (Array.isArray(response.data)) {
+          return response.data;
+        }
+      } catch (nativeError) {
+        console.log('[LiveRadar] Native API failed, trying Base44...');
+      }
+      
+      // Fallback to Base44 function
       const response = await api.post('/api/base44/functions/invoke/getLiveTrackPlays', {
         producerId: producerId || null,
       });
