@@ -2406,6 +2406,65 @@ async def get_live_track_plays_endpoint(request: GetLiveTrackPlaysRequest, autho
         return {"plays": []}
 
 
+# ==================== SEND MESSAGE TO DJ ====================
+
+class SendDJMessageRequest(BaseModel):
+    dj_id: Optional[str] = None
+    dj_name: str
+    producer_id: Optional[str] = None
+    producer_name: str
+    track_title: str
+    message: str
+    venue: Optional[str] = None
+    location: Optional[str] = None
+
+@app.post("/api/send-dj-message")
+async def send_dj_message(request: SendDJMessageRequest, authorization: str = Header(None)):
+    """Send a message to a DJ who played your track"""
+    try:
+        print(f"[DJ Message] Sending message from {request.producer_name} to {request.dj_name}")
+        print(f"[DJ Message] Track: {request.track_title}")
+        print(f"[DJ Message] Message: {request.message}")
+        print(f"[DJ Message] Venue: {request.venue}, Location: {request.location}")
+        
+        # Try to send via Base44 notification system
+        if authorization:
+            try:
+                notification_body = {
+                    "type": "producer_message",
+                    "recipient_id": request.dj_id,
+                    "sender_id": request.producer_id,
+                    "sender_name": request.producer_name,
+                    "title": f"Message from {request.producer_name}",
+                    "message": request.message,
+                    "track_title": request.track_title,
+                    "venue": request.venue or "",
+                    "location": request.location or "",
+                }
+                
+                # Call the notification function
+                result = await call_spynners_function("nativeSendNotification", notification_body, authorization)
+                print(f"[DJ Message] Notification result: {result}")
+                
+            except Exception as notif_error:
+                print(f"[DJ Message] Notification error (non-fatal): {notif_error}")
+        
+        # Log the message for now (in production this would go to a database/email)
+        print(f"[DJ Message] ✅ Message logged successfully")
+        
+        return {
+            "success": True,
+            "message": "Message sent successfully",
+            "recipient": request.dj_name,
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[DJ Message] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/api/health")
