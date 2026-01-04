@@ -368,81 +368,99 @@ class OfflineService {
         await this.saveOfflineSessions(sessions);
 
         try {
-          // Send all recordings to backend for processing
-          const response = await axios.post(
-            `${BACKEND_URL}/api/process-offline-session`,
-            {
-              sessionId: session.id,
-              recordings: session.recordings.map(r => ({
-                audioBase64: r.audioBase64,
-                timestamp: r.timestamp,
-                location: r.location,
-              })),
-              userId: session.userId,
-              djName: session.djName,
-              startTime: session.startTime,
-              endTime: session.endTime,
-              location: session.location,
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: token ? `Bearer ${token}` : undefined,
-              },
-              timeout: 120000, // 2 minutes for large sessions
-            }
-          );
-
-          if (response.data.success) {
-            session.status = 'synced';
-            session.syncedAt = new Date().toISOString();
+          // Process each recording individually using the SAME endpoint as online mode
+          const sessionResults: any[] = [];
+          
+          for (let i = 0; i < session.recordings.length; i++) {
+            const recording = session.recordings[i];
+            console.log(`[Offline] Processing recording ${i + 1}/${session.recordings.length}`);
             
-            // Update recordings with results
-            if (response.data.results) {
-              session.recordings.forEach((rec, idx) => {
-                if (response.data.results[idx]) {
-                  rec.status = 'synced';
-                  rec.result = response.data.results[idx];
+            try {
+              // Use the SAME endpoint as online mode (/api/recognize-audio)
+              const response = await axios.post(
+                `${BACKEND_URL}/api/recognize-audio`,
+                {
+                  audio_base64: recording.audioBase64,
+                  location: session.location,
+                  dj_id: session.userId,
+                  dj_name: session.djName,
+                },
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: token ? `Bearer ${token}` : undefined,
+                  },
+                  timeout: 30000,
                 }
-              });
-              
-              // Add results to allResults
-              allResults = [...allResults, ...response.data.results];
-            }
-            
-            synced += session.recordings.length;
-            console.log('[Offline] Session synced:', session.id);
-
-            // Send notification about synced tracks
-            const identifiedTracks = response.data.results?.filter((r: any) => r.success && r.is_spynners_track) || [];
-            if (identifiedTracks.length > 0) {
-              await this.sendLocalNotification(
-                '🎵 SPYN Session Synced!',
-                `${identifiedTracks.length} track(s) Spynners identifié(s)`,
-                { sessionId: session.id, tracks: identifiedTracks }
               );
+              
+              const result = response.data;
+              recording.status = 'synced';
+              recording.result = result;
+              
+              if (result.success && result.spynners_track_id) {
+                console.log(`[Offline] ✅ Identified: ${result.title} by ${result.artist}`);
+                sessionResults.push({
+                  success: true,
+                  title: result.title,
+                  artist: result.artist,
+                  cover_image: result.cover_image,
+                  spynners_track_id: result.spynners_track_id,
+                  producer_id: result.producer_id,
+                  is_spynners_track: true,
+                });
+              } else if (result.success) {
+                console.log(`[Offline] Track not in Spynners: ${result.title}`);
+                sessionResults.push({
+                  success: true,
+                  title: result.title,
+                  artist: result.artist,
+                  is_spynners_track: false,
+                });
+              } else {
+                console.log(`[Offline] No track identified`);
+                sessionResults.push({ success: false });
+              }
+              
+              synced++;
+            } catch (recError: any) {
+              console.error(`[Offline] Recording ${i + 1} failed:`, recError.message);
+              recording.status = 'error';
+              sessionResults.push({ success: false, error: recError.message });
+              failed++;
             }
-          } else {
-            session.status = 'pending_sync'; // Retry later
-            failed += session.recordings.length;
           }
-        } catch (error) {
-          console.error('[Offline] Sync error for session:', session.id, error);
+          
+          session.status = 'synced';
+          session.syncedAt = new Date().toISOString();
+          allResults = [...allResults, ...sessionResults];
+          
+          // Send notification about synced tracks
+          const identifiedTracks = sessionResults.filter(r => r.success && r.is_spynners_track);
+          if (identifiedTracks.length > 0) {
+            await this.sendLocalNotification(
+              '🎵 Tracks Identifiés !',
+              `${identifiedTracks.length} track(s) Spynners: ${identifiedTracks.map(t => t.title).join(', ')}`,
+              { sessionId: session.id, tracks: identifiedTracks }
+            );
+          }
+          
+        } catch (error: any) {
+          console.error('[Offline] Session sync error:', error.message);
           session.status = 'pending_sync'; // Retry later
-          failed += session.recordings.length;
         }
 
         await this.saveOfflineSessions(sessions);
       }
 
-      // Clean up old synced sessions (keep for 7 days)
+      // Clean up old synced sessions
       await this.cleanupOldSessions();
 
     } finally {
       this.syncInProgress = false;
     }
 
-    console.log('[Offline] Sync complete. Synced:', synced, 'Failed:', failed, 'Results:', allResults.length);
+    console.log('[Offline] Sync complete. Synced:', synced, 'Failed:', failed);
     return { synced, failed, results: allResults };
   }
 
