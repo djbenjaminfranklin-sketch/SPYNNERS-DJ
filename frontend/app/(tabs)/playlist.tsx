@@ -144,6 +144,22 @@ export default function PlaylistScreen() {
     }
   };
 
+  // Share playlist
+  const handleSharePlaylist = async () => {
+    if (!selectedPlaylist) return;
+    try {
+      const playlistId = selectedPlaylist.id || selectedPlaylist._id;
+      const playlistUrl = `https://spynners.com/playlist/${playlistId}`;
+      await Share.share({
+        message: `Check out my playlist "${selectedPlaylist.name}" on SPYNNERS! ${playlistUrl}`,
+        url: playlistUrl,
+        title: selectedPlaylist.name,
+      });
+    } catch (error) {
+      console.error('[Playlist] Share error:', error);
+    }
+  };
+
   // Get cover image URL
   const getCoverImageUrl = (track: Track): string | null => {
     const url = track.artwork_url || track.cover_image;
