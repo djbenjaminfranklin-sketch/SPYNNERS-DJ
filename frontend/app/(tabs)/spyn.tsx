@@ -909,6 +909,9 @@ export default function SpynScreen() {
     setCorrectedVenue('');
     setOtherDjName('');
     identifiedTracksRef.current = [];
+    // FIX: Reset the ending session flag so a new session can start
+    isEndingSessionRef.current = false;
+    console.log('[SPYN] ✅ Session state reset - isEndingSessionRef set to FALSE');
     // Keep identified tracks visible for review
   };
 
