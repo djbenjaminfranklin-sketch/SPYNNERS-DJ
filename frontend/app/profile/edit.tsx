@@ -67,7 +67,21 @@ export default function EditProfileScreen() {
   const [phone, setPhone] = useState('');
   
   // Profile Type - DJ / Producer / Both / Label / Music Lover
-  const [profileType, setProfileType] = useState<'dj' | 'producer' | 'both' | 'label' | 'music_lover'>('both');
+  const [profileTypes, setProfileTypes] = useState<string[]>(['both']);
+  
+  // Toggle profile type (multi-select)
+  const toggleProfileType = (type: string) => {
+    setProfileTypes(prev => {
+      if (prev.includes(type)) {
+        // Remove if already selected (but keep at least one)
+        const newTypes = prev.filter(t => t !== type);
+        return newTypes.length > 0 ? newTypes : prev;
+      } else {
+        // Add the type
+        return [...prev, type];
+      }
+    });
+  };
   
   // Bio & Description
   const [bio, setBio] = useState('');
