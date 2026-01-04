@@ -83,12 +83,25 @@ class OfflineService {
         }
       });
       
-      // DON'T auto-sync here - wait for user to press End Session
-      // This prevents syncing sessions that are still "recording"
+      // Auto-sync when coming back online with pending sessions
       if (wasOffline && this.isOnline) {
-        console.log('[Offline] Network restored - will sync when user ends session');
+        console.log('[Offline] Network restored - checking for pending sessions...');
+        this.autoSyncPendingSessions();
       }
     });
+  }
+
+  private async autoSyncPendingSessions() {
+    const sessions = await this.getOfflineSessions();
+    const pendingSessions = sessions.filter(s => s.status === 'pending_sync');
+    
+    if (pendingSessions.length > 0) {
+      console.log('[Offline] Found', pendingSessions.length, 'pending sessions - starting auto-sync...');
+      const { synced, failed, results } = await this.syncPendingSessions();
+      console.log('[Offline] Auto-sync complete:', synced, 'synced,', failed, 'failed');
+    } else {
+      console.log('[Offline] No pending sessions to sync');
+    }
   }
 
   // Register a callback to be notified when network status changes
