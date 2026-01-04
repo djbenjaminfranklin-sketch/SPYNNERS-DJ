@@ -365,6 +365,12 @@ export default function PlaylistScreen() {
               </TouchableOpacity>
             </View>
 
+            {/* Share Button */}
+            <TouchableOpacity style={styles.sharePlaylistButton} onPress={handleSharePlaylist}>
+              <Ionicons name="share-social-outline" size={20} color={Colors.primary} />
+              <Text style={styles.sharePlaylistText}>Share Playlist</Text>
+            </TouchableOpacity>
+
             {/* Track List */}
             <View style={styles.trackListContainer}>
               <Text style={styles.trackListTitle}>{t('playlist.tracks')}</Text>
