@@ -165,6 +165,10 @@ class OfflineService {
   }
 
   isNetworkAvailable(): boolean {
+    // On web, always check navigator.onLine for current status
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+      return navigator.onLine;
+    }
     return this.isOnline;
   }
 
