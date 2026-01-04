@@ -760,7 +760,17 @@ export default function HomeScreen() {
                 {/* Track Info */}
                 <View style={styles.trackInfo}>
                   <Text style={styles.trackTitle} numberOfLines={1}>{track.title}</Text>
-                  <Text style={styles.trackArtist} numberOfLines={1}>{artistName} • {track.bpm || '—'} BPM</Text>
+                  <TouchableOpacity onPress={() => {
+                    const producerId = track.producer_id || track.created_by_id;
+                    if (producerId) {
+                      router.push(`/profile/artist?id=${producerId}`);
+                    }
+                  }}>
+                    <Text style={[styles.trackArtist, { textDecorationLine: 'underline' }]} numberOfLines={1}>
+                      {artistName}
+                    </Text>
+                  </TouchableOpacity>
+                  <Text style={styles.trackBpm}>{track.bpm || '—'} BPM</Text>
                   {renderRating(rating)}
                 </View>
 
