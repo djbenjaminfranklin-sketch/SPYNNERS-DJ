@@ -1,210 +1,223 @@
 <analysis>
-<original_problem_statement>
-The user's initial goal was to continue debugging the Offline SPYN Mode, specifically the two sessions created bug and the intermittent track identification bug.
 
-After the agent fixed the two sessions bug, the focus shifted to track identification. This led to a series of environment and deployment issues (ngrok tunnel conflicts, local build problems, TestFlight app crashes).
+**original_problem_statement:**
+The initial goal was to refactor the application to use a new native Spynners API to fix a long list of existing bugs. After a prolonged and difficult series of build failures, the user and agent managed to get a build working on TestFlight by downgrading dependencies. However, the user tested this new build and reported a comprehensive list of bugs, some ofwhich were regressions.
 
-While testing a build on TestFlight, the user discovered and reported a comprehensive list of bugs and missing features across the entire application. The user then requested that the agent switch focus from the offline mode to implementing a new SPYN Record feature for recording full DJ sets.
+The user's current and final request is for the agent to fix this new, definitive list of bugs. The established workflow is for the agent to implement all fixes on the server, and then provide a final ZIP file for the user to build and test, to avoid repeated build failures.
 
-After the agent created a skeleton for the SPYN Record page, the user requested help with local testing, leading to an extensive debugging session for the user's local build environment.
-
-Finally, and most critically, the user provided complete API documentation for the existing  website backend. This revealed that the mobile app's architecture was incorrect (it was trying to replicate logic instead of using the existing backend). The user's final request was for the agent to fix the long list of reported bugs by refactoring the app to use the newly provided native API endpoints.
-
-**PRODUCT REQUIREMENTS (New):**
-The application must be refactored to function as a client for the existing Spynners backend API (provided in message 566). The primary goal is to fix a long list of bugs and implement missing features to achieve parity with the website.
-
-- **Global Player:** Only one track can play at a time across the entire application.
-- **Profile:** Users must be able to save profile changes (including email, SACEM number) and select multiple roles (e.g., DJ and Label).
-- **Track Management:** Manage your track page must load user's tracks. Uploaded track metadata (BPM, artwork) must display correctly.
-- **Live Radar:** Implement a world map showing live track plays, with a messaging feature.
-- **Core Features:** Chat, Playlists, Analytics, Rankings, and VIP sections must be implemented using the new APIs.
-- **UI/UX:** Fix broken internal sharing, download errors, and playlist creation flow. Add Share/Playlist buttons to the global player.
-- **SPYN Record:** The waveform must be reactive, and the save mix functionality must work.
-- **Homepage:** Correctly filter tracks (user confirmed the VIP only issue was their own mistake).
-</original_problem_statement>
+**PRODUCT REQUIREMENTS (from user message 400):**
+- **Upload Page:** The artist's name on an uploaded track should be clickable and navigate to that artist's profile page.
+- **Edit Profile Page:**
+    - The email and SACEM number fields must be editable (not greyed out). (Partial fix for email was applied, SACEM needs checking).
+    - A user must be ableto select multiple roles (e.g., both DJ and Label).
+- **Radar Page:**
+    - Must display a world map.
+    - Red dots should appear on the map when a track is played live.
+    - A feature to send an automatic message to the DJ playing a track needs to be implemented. (An API for live plays exists).
+- **Manage Your Track Page:**
+    - The Sync ACRCloud button should be visible only for admins, not regular users. (Agent attempted a fix, user reports it's still there).
+    - Users must be able to edit their tracks.
+    - Uploaded track metadata (artwork, BPM) must be displayed correctly.
+- **Playlist Page:**
+    - When play is pressed on a playlist, the global player should appear.
+    - A Share Playlist button is needed.
+- **Analytics Page:** Needs more details, similar to the website (requires API investigation).
+- **Global Player:** Needs Share and Add to Playlist buttons.
+- **Home Page:** No tracks are currently being displayed.
+- **Track Actions (on Home Page):** The Download, Share (external), Internal Share, and Add to Playlist buttons must all be functional.
+- **Rankings Page:** Nothing is displayed.
+- **VIP Page:** The Promo tab must be removed. (Agent attempted a fix).
+- **SPYN (Offline Mode):** Pressing End Session does not send an email.
+- **SPYN Record Page:**
+    - The waveform must be reactive to the sound being played.
+    - The Save Mix feature fails with an error.
 
 **User's preferred language**: Français (French). The next agent MUST respond in French.
 
 **what currently exists?**
-- The application's backend () has been significantly refactored to act as a **proxy** to the native Spynners backend functions (e.g., , , etc.) provided by the user. This is a major architectural shift.
-- The Offline SPYN Mode  bug has been fixed by introducing a race condition flag () in .
-- An attempted fix for intermittent track identification in offline mode was implemented by converting uploaded WebM audio to WAV format in the backend using .
-- A new, partially implemented page for SPYN Record exists at . It includes basic UI and logic to detect external audio sources.
-- The user's local machine is now set up to build the app (An Expo user account is required to proceed.
+- A buggy but buildable version of the application. The user has a stable local environment based on **Expo SDK 52** that can successfully build for TestFlight.
+- The backend () acts as a proxy to the native Spynners API and has been extended with several endpoints (live-plays, received tracks, etc.).
+- The agent has started working on the bug list from message 400. It has implemented a new  page and started refactoring the profile edit page for multi-role selection.
+- A critical workflow has been established: the agent implements all code changes on its side and provides a final ZIP. The user is responsible for downloading, unzipping, and running the An Expo user account is required to proceed.
 
 Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username) and deploy it to TestFlight, though the process is fragile.
+Input is required, but stdin is not readable. Failed to display prompt: Email or username command.
 
 **Last working item**:
-    - Last item agent was working: A major refactoring of the entire application to use a newly provided set of native Spynners API endpoints. The agent had just updated the backend  to be a proxy for these new APIs and had begun refactoring the frontend, starting with the profile update logic in .
+    - Last item agent was working: Implementing the multi-role selection feature on the Edit Profile page (). The agent was refactoring the state from a single string () to an array of strings () and updating the UI and save logic accordingly.
     - Status: IN PROGRESS
     - Agent Testing Done: N
-    - Which testing method agent to use? The user is now responsible for testing. The agent should package the code (e.g., in a ZIP file) and provide it to the user, who will then run An Expo user account is required to proceed.
-
-Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username and test on TestFlight.
-    - User Testing Done: N (for the latest refactoring)
+    - Which testing method agent to use? The user will perform all testing via a TestFlight build. The agent's final deliverable is a ZIP file of the  directory.
+    - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Two tracks can play at the same time (P0)
-  - Issue 2: Profile update fails (P0)
-  - Issue 3: Manage your track page shows could not load tracks (P1)
-  - Issue 4: SPYN Record - Waveform is static and saving fails (P1)
-  - Issue 5: Uploaded track metadata (artwork, BPM) not displayed (P1)
-  - Issue 6: Chat is non-functional (P2)
-  - Issue 7: Playlists are empty / non-functional (P2)
-  - Issue 8: Analytics are empty / non-functional (P2)
-  - Issue 9: Download button causes an error (P2)
-  - Issue 10: Internal Share feature fails to load members (P2)
-  - Issue 11: End Session does not send an email (P3)
+This list is derived directly from the user's detailed feedback in message 400.
 
+  - Issue 1: Edit Profile: Allow multiple roles (e.g., DJ and Label) (P0)
+  - Issue 2: Home Page: No tracks are being displayed at all (P0)
+  - Issue 3: SPYN Record: Waveform is static and saving the mix fails (P0)
+  - Issue 4: Rankings Page: Nothing is displayed (P1)
+  - Issue 5: Manage your track: Sync ACRCloud button is still visible for non-admins (P1)
+  - Issue 6: Manage your track: Track metadata (artwork, BPM) not displaying on upload (P1)
+  - Issue 7: Manage your track: Edit track functionality is missing (P1)
+  - Issue 8: Playlist Page: Player does not appear on play, and no share button (P2)
+  - Issue 9: Global Player: Missing Share and Add to Playlist buttons (P2)
+  - Issue 10: Radar Page: Feature is not implemented (World map, live play dots, messaging) (P2)
+  - Issue 11: SPYN (Offline): End Session does not send an email (P2)
+  - Issue 12: Analytics Page: Needs more detail, like the website (P3)
+  - Issue 13: Track Actions: Download, Share, etc., need to be verified (P3)
+  
   Issues Detail:
   - Issue 1: 
-     - Description: User can start a track in one part of the app (e.g., My Uploads on the admin page) and then play another from the global player, causing both to play simultaneously. The core problem is that some pages use a local  instance instead of the global .
-     - Attempted fixes: The agent started refactoring  to use the  hook from  instead of its local sound state. This work is in progress.
+     - Description: On the Edit Profile page, the user can only select one role (DJ, Label, etc.). They need to be able to select multiple.
+     - Attempted fixes: The agent started refactoring . It changed the  state to  (an array), updated the toggle function to handle multiple selections, and began updating the save function and conditional UI rendering to use . This is **in progress**.
      - Next debug checklist: 
-        1. Complete the refactor in .
-        2. Search the entire codebase for other instances of  and replace them with the .
-        3. Ensure the 's  function always unloads the previous sound before loading a new one.
-     - Why fix this issue and what will be achieved with the fix? This is a critical UX bug. Fixing it ensures a coherent audio playback experience.
-     - Status: IN PROGRESS
+        1. Complete the refactor of the  function in  to send the  array to the backend.
+        2. Ensure the  that loads user data correctly populates the  array.
+        3. Verify the conditional rendering for DJ/Label specific fields works with the new array logic.
+     - Why fix this issue and what will be achieved with the fix? Allows users to have multiple roles, which is a core business requirement.
+     - Status:  IN PROGRESS
      - Is recurring issue? N
      - Should Test frontend/backend/both after fix? Frontend
-     - Blocked on other issue: None
+     - Blocked on other issue: none
 
   - Issue 2: 
-     - Description: When a user tries to save changes in their profile (), the request fails with a 404 error.
-     - Attempted fixes: The agent correctly identified that the app was using a non-existent endpoint. After the user provided new API docs, the agent refactored the backend to proxy a  request to the new  function. The frontend  was also updated to call this new endpoint with the correct payload structure.
+     - Description: The main home page is completely empty and does not show any tracks.
+     - Attempted fixes: The agent verified the backend API () is returning data correctly via . The problem is likely in the frontend  file, potentially in how it handles the fetched data, loading state, or authentication token.
      - Next debug checklist: 
-        1. This fix needs to be tested by the user.
-        2. Verify the JWT token is correctly passed from the frontend, through the proxy backend, to the final  endpoint.
-        3. Check backend logs for any errors during the proxy request.
-     - Why fix this issue and what will be achieved with the fix? Allows users to manage their own profiles, a fundamental feature.
-     - Status: IN PROGRESS
+        1. In ,  the response from  inside the  function to see what data arrives.
+        2. Check for JavaScript errors in the  or rendering logic.
+        3. Verify that the  hook provides a valid token when  is called.
+     - Why fix this issue and what will be achieved with the fix? This is a critical bug. The home page is the first thing users see and it's currently broken.
+     - Status:  NOT STARTED
      - Is recurring issue? Y
-     - Should Test frontend/backend/both after fix? Both
-     - Blocked on other issue: None
+     - Should Test frontend/backend/both after fix? Frontend
+     - Blocked on other issue: none
+     
+  - Issue 3:
+     - Description: On the SPYN Record page, the waveform visualization does not react to audio input, and the Save Mix function throws an error.
+     - Attempted fixes: The agent previously reviewed the code and believed it to be complete, but the user's test proves it's not working.
+     - Next debug checklist:
+        1. For the waveform: Investigate the  function in . Check if  is being created correctly and if the  loop is running.
+        2. For saving: Debug the  function. Specifically, check the  and  calls for any thrown exceptions. Check permissions for file system access.
+     - Why fix this issue and what will be achieved with the fix? This is a key feature of the app.
+     - Status: NOT STARTED
+     - Is recurring issue? Y
+     - Should Test frontend/backend/both after fix? Frontend
+     - Blocked on other issue: none
 
-  - The remaining issues (3-11) are all  and their fix requires using the new API documentation provided in message 566. The general approach for each is:
-     - Find the relevant frontend page (e.g.,  for Manage your track).
-     - Identify the failing API call.
-     - Replace it with a call to the corresponding proxy endpoint in  (which in turn calls the  API).
-     - Adjust the frontend to handle the data format returned by the new API.
+  - ... (The remaining issues follow a similar pattern: they are  and require frontend implementation or debugging based on the user's list.)
 
 **In progress Task List**:
   - Task 1: 
-     - Description: Refactor the entire application to use the new Spynners Native API endpoints. (P0)
-     - Where to resume: The agent has already created the proxy endpoints in  and started refactoring . The next step is to go through the user's bug list and refactor each corresponding feature (My Tracks, Chat, Playlists, Radar, etc.) to use the new API structure.
-     - What will be achieved with this? This will align the mobile app with the main website's backend, fixing a large number of data-related bugs and enabling the implementation of missing features.
+     - Description: Fix the entire list of bugs provided by the user in message 400. (P0)
+     - Where to resume: The agent just started the fix for Issue #1 (multi-role selection in ). The next step is to complete that fix, then move on to Issue #2 (empty home page), and continue down the priority list.
+     - What will be achieved with this? A stable, functional application that meets the user's requirements and is ready for a final TestFlight build.
      - Status: IN PROGRESS
-     - Should Test frontend/backend/both after fix? Both
-     - Blocked on something: None. The API documentation has been provided.
+     - Should Test frontend/backend/both after fix? Both (via user on TestFlight)
+     - Blocked on something: Nothing.
 
 **Upcoming and Future Tasks**
-- **Upcoming Tasks:**
-    - **P0: Complete SPYN Record Feature:** Implement the reactive waveform, audio recording to MP3, and saving the file to the user's device. ().
-    - **P1: Implement Live Track Radar:** Create the world map UI and fetch data from the  endpoint. ().
-    - **P2: Implement full Chat, Analytics, Rankings, VIP functionality:** These pages are currently placeholders and need to be built out using the new APIs.
-- **Future Tasks:**
-    - Re-evaluate and stabilize Offline SPYN Mode's track identification. The WebM->WAV conversion was a good step, but it needs verification.
-    - Implement Push Notifications for offline sync completion.
+- **Upcoming Tasks:** The entire user-provided bug list from message 400 is the upcoming work.
+    - P0: Fix empty Home page.
+    - P0: Fix SPYN Record functionality.
+    - P1: Fix Rankings page.
+    - P1: Implement Artist Profile navigation.
+    - P1: Implement Edit Track functionality.
+    - (and so on for the rest of the list)
 
 **Completed work in this session**
-- **Architectural Shift:** Refactored the backend () to be a proxy for a newly-provided set of native Spynners APIs. This is the most critical achievement.
-- **Bug Fix:** The Two Sessions Created offline bug was resolved and confirmed by the user.
-- **Bug Fix Attempt:** An attempt to fix intermittent offline track identification was made by adding WebM-to-WAV conversion on the backend.
-- **Feature Started:** Created the initial page and UI for the SPYN Record feature, including logic for detecting external audio sources.
-- **User Enablement:** Successfully guided the user through an extensive and difficult process of setting up a local development environment, using An Expo user account is required to proceed.
+- **Build Stabilization:** Successfully diagnosed and resolved a series of critical An Expo user account is required to proceed.
 
 Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username, and deploying to TestFlight.
-- **API Integration:** Began integrating the new native APIs, starting with the user profile update feature.
+Input is required, but stdin is not readable. Failed to display prompt: Email or username failures by downgrading the project to a stable **Expo SDK 52** configuration. This was a major breakthrough that unblocked all further progress.
+- **Workflow Establishment:** Created a new, stable workflow where the agent performs all fixes and the user runs a single final build, preventing repeated build issues.
+- **Bug Fix Attempted:** Removed the Promo tab from the VIP page ().
+- **Bug Fix Attempted:** Made the Email field editable in the profile ().
+- **Feature Started:** Made artist names on the Home page clickable, navigating to a new (placeholder)  page.
+- **Feature Started:** Began refactoring the Edit Profile page to support multiple user roles.
 
 **Earlier issues found/mentioned but not fixed**
-All issues from the user's list in message 479 are now the primary backlog. They were not fixed because the agent was asked to work on them sequentially and was interrupted by the need for the new API documentation. Key examples:
-   - **Issue: Manage your track - could not load tracks**
-     - Debug checklist: Refactor  to call the new  proxy endpoint.
-     - Why to solve: Core feature for artists to see their uploaded music.
-   - **Issue: Chat is empty and has no back button**
-     - Debug checklist: Implement UI in the chat component. Use  to list chats and  to load a conversation. Add a  button.
-     - Why to solve: Enables user-to-user communication.
+All issues from the user's list in message 400 are effectively this. They have been moved to the All Pending/In progress Issue list as they are now the active backlog.
 
 **Known issue recurrence from previous fork**
-  - **Issue recurrence in previous fork:** Build and deployment issues (An Expo user account is required to proceed.
+  - Issue recurrence in previous fork: **EAS Build Failures**. The session was dominated by trying to fix An Expo user account is required to proceed.
 
 Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username, ngrok tunnels, app crashes) are a persistent problem due to the complexities of the environment and configuration. The agent and user spent a large portion of the session debugging these.
-  - **Recurrence count:** High (3+ times this session).
-  - **Status:** BLOCKED on environmental factors. The current workaround is for the user to perform builds on their local machine.
+Input is required, but stdin is not readable. Failed to display prompt: Email or username. The root causes were numerous and recurring: ngrok tunnel conflicts, invalid  syntax, but most critically, incompatible dependencies and Node.js version mismatches between the local environment and the EAS servers.
+  - Recurrence count: Extremely high (10+ attempts).
+  - Status: RESOLVED (workaround). The issue was stabilized by **downgrading the entire project to Expo SDK 52** and establishing a  that successfully builds on the user's machine. The next agent must not alter dependency versions to avoid re-introducing this problem.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend as a Frontend (BFF) / Proxy Pattern:** The most significant architectural change. The  no longer contains primary business logic but acts as a secure proxy to the true Spynners backend (). This simplifies frontend calls and hides implementation details.
-- **EAS Build & TestFlight Debugging:** A large part of the session involved a complex, hands-on debugging process with the user to get local builds working and deployed to TestFlight. This includes fixing , ,  dependencies, and native iOS build errors.
-- **React Context for Global State:** The two tracks playing bug highlighted the need to enforce the use of the global  for all audio playback, rather than creating local  instances.
--**Audio Format Conversion:** The use of  in the backend to convert WebM audio to WAV is a key attempted fix for improving ACRCloud recognition accuracy.
-
-**key DB schema**
-  - No DB schema changes were made. All database interactions are now abstracted behind the new native Spynners API.
-
-**changes in tech stack**
-  -  was installed and is now used in the backend for audio conversion.
-
-**All files of reference**
-- : The most critical file. It now contains the proxy logic for all the new native APIs.
-- User-provided API documentation (from messages 566 and 589): This is the source of truth for all future development.
-- : The first frontend page to be refactored to use the new API.
-- : Refactored to use .
-- : New feature page.
--  & : These files were the source of many build errors and have been modified extensively.
-
-**Critical Info for New Agent**
-- **The architecture has completely changed.** Do not try to implement business logic in . Your primary job is to make the frontend use the proxy endpoints in , which in turn call the native APIs documented by the user in messages 566 and 589.
-- **The user's bug list from message 479 is your new backlog.** Tackle them one by one, starting with the highest priority ones, by implementing the correct native API for each.
-- **The development workflow is now collaborative.** You will write the code, zip the project, and the user will download it, run An Expo user account is required to proceed.
+- **Dependency Hell & Version Pinning:** A significant portion of the session was spent debugging An Expo user account is required to proceed.
 
 Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username on their local machine, and test on TestFlight. You must provide clear instructions for the user. Be mindful of their project path: .
-- **The Profile Save and Two Tracks Playing bugs have fixes implemented but require user verification.**
-- For any new feature or bug fix, first check the API documentation provided by the user. If an endpoint exists, use it. Do not try to re-implement logic that the main Spynners backend already handles.
+Input is required, but stdin is not readable. Failed to display prompt: Email or username failures. The final solution involved a major dependency downgrade to **Expo SDK 52** and carefully curating  to find a stable, buildable combination.
+- **Collaborative Build Workflow:** The established process where the agent codes and the user builds is a key concept for this project going forward.
+- **State Refactoring:** The change in  from a single string state () to an array () to support multi-selection is a key ongoing refactor.
+
+**key DB schema**
+- N/A. All database interactions are abstracted via the Spynners native API.
+
+**changes in tech stack**
+- The entire frontend project was effectively downgraded to **Expo SDK 52** and its corresponding dependency versions to achieve a stable build.
+
+**All files of reference**
+- User's bug list in message **400** is the **source of truth** for all remaining work.
+- : **CRITICAL FILE.** This has been carefully modified to allow successful builds. DO NOT CHANGE IT.
+- : The file currently being worked on for multi-role selection.
+- : Needs to be fixed to display tracks.
+- : Needs to be fixed (waveform and save).
+
+**Critical Info for New Agent**
+- **DO NOT MODIFY !** The project has been painstakingly downgraded to Expo SDK 52 to achieve a stable build for the user. Changing dependencies will almost certainly break the build again and waste a lot of time.
+- **YOUR BACKLOG IS MESSAGE 400.** Work through the user's detailed bug list methodically.
+- **THE WORKFLOW IS FIXED:** You will implement all fixes, then notify the user. The user will download the final ZIP file, replace their code, and run An Expo user account is required to proceed.
+
+Log in to EAS with email or username (exit and run eas login --help to see other login options)
+Input is required, but stdin is not readable. Failed to display prompt: Email or username. Do not ask the user to build after every small fix.
+- The  error was likely due to a build configuration issue. The agent's last fix was to hardcode the backend URL in . This may need to be verified.
+- The user is frustrated with repeated build failures. Prioritize stability and completing the full bug list before prompting for a build.
 
 **documents created in this job**
 - 
-- A project ZIP file at  for the user to download.
+- A series of ZIP files for the user, culminating in .
 
 **Last 10 User Messages and any pending HUMAN messages**
-- **10. (Latest)** User reports the app still crashes on TestFlight after the fix for the  file. (IN PROGRESS)
-- **9.** User confirms  was downloaded correctly (1423 lines). (ADDRESSED)
-- **8.** User reports app still crashes. (IN PROGRESS)
-- **7.** User reports build is successful but opens an old version on TestFlight. The agent correctly identifies the build needs to be submitted to the test group. (ADDRESSED)
-- **6.** User reports  is corrupted after a  command. (ADDRESSED)
-- **5.** User asks where the  file is. (ADDRESSED)
-- **4.** User reports TestFlight app is stuck on a white screen. Agent identifies the backend URL is wrong in the build. (IN PROGRESS)
----
-- **The entire exchange from message 479 onwards is a single, large, pending user request:** A list of bugs to fix and features to implement. This is the new primary directive.
+- **10. (Latest)** ok super: User agrees to the workflow of the agent fixing everything before a final build. (ADDRESSED)
+- **9.** si je garde le dossier que j ai cest mieux je penses , et quand tout sera fait on telechargera le nouveau dossier non?: User suggests the correct workflow: they keep their working folder, agent fixes everything, then they download the final product. (ADDRESSED)
+- **8.** Bouton Sync ACRCloud tjrs la mais le reste ok: User confirms the ACRCloud button is still there, but other fixes are okay. (PENDING)
+- **7.** Unknown error. See logs of the Install pods build phase for more information.: User reports another build failure. (ADDRESSED by downgrading to Expo 52)
+- **6.** Je te donne les modifications. Jai tout testé.": User provides the comprehensive bug list (message 400). This is the new primary task. (IN PROGRESS)
+- **5.** "oui il y est": User confirms their `.env` file contains the backend URL. (ADDRESSED)
+- **4.** "login failed": User reports the build was successful, but login is failing. (IN PROGRESS)
+- **3.** "je pense que cetait le build 12 mais je n ai plus le dossier": User confirms build 12 was the last good one but they no longer have the files. (ADDRESSED)
+- **2.** "Absolument plus rien dans chaque page.": User reports the app is completely broken after a build with an incomplete `package.json`. (ADDRESSED)
+- **1.** "Il y a absolument tous les bugs que je tai marqués la première fois. Et en plus de ça, maintenant, je mets play et ça ne fonctionne même plus.: User reports the app is even more broken than before. (ADDRESSED)
 
 **Project Health Check:**
-- **Broken**: Almost all data-driven features (Profile Save, My Tracks, Chat, Playlists, Analytics, Radar, Rankings, VIP) are broken because they were not using the correct backend APIs. The agent has started the refactoring process but it is far from complete. The native build process is also very fragile.
-- **Mocked**: No mocked components, but many pages are placeholders with no data.
+- **Broken**: Many core features are broken or unimplemented as per the user's list in message 400 (Home page, Rankings, SPYN Record, etc.).
+- **Mocked**: The new  page is a placeholder.
 
 **3rd Party Integrations**
-- **Spynners Native Backend:** This is now the primary integration, accessed via proxy calls from  to .
-- **Base44 SDK:** Used for some direct interactions, but mostly superseded by the native Spynners API.
+- **Spynners Native Backend:** The primary integration, via a proxy in .
 - **ACRCloud:** Audio recognition API.
-- **Expo (EAS Build & Go):** Used for development and deployment. The process is unstable.
+- **Expo (EAS Build):** Used for building. The process is now stable but fragile, pinned to Expo 52.
 
 **Testing status**
   - Testing agent used after significant changes: NO
-  - Troubleshoot agent used after agent stuck in loop: YES, for ngrok issues.
-  - Test files created: None
-  - Known regressions: The entire app is in a state of regression pending the full API refactor. iOS builds are consistently failing or crashing.
+  - Troubleshoot agent used after agent stuck in loop: YES, for ngrok/tunnel issues.
+  - Test files created: None.
+  - Known regressions: The build that the user tested had regressions (e.g., audio playback not working, pages being blank) due to incorrect  dependencies during the build-fixing process. The current codebase aims to fix this.
 
 **Credentials to test flow:**
 - **Email:** 
 - **Password:** 
 
 **What agent forgot to execute**
-The agent did not forget but was systematically working through a complex, evolving set of user requests. The main pending work is to complete the massive refactoring task required by the new API documentation to fix the user's extensive bug list.
+The agent did not forget, but was in the middle of executing a very large list of tasks. The main pending work is to complete the user's bug list from message 400. It needs to resume with the multi-role profile fix and then systematically address the rest of the list.
+
 </analysis>

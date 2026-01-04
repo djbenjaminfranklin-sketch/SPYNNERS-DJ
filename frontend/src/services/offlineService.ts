@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://spyn-rebuild.preview.emergentagent.com';
+  return 'https://track-radar-fix.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

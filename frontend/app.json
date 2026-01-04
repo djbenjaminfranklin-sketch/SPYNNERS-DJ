@@ -77,7 +77,7 @@
     },
     "extra": {
       "router": {},
-      "backendUrl": "https://spyn-rebuild.preview.emergentagent.com",
+      "backendUrl": "https://track-radar-fix.preview.emergentagent.com",
       "base44AppId": "691a4d96d819355b52c063f3",
       "acrcloudHost": "identify-eu-west-1.acrcloud.com",
       "eas": {
