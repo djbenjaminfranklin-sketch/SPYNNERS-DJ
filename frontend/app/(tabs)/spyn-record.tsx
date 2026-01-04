@@ -375,28 +375,63 @@ export default function SpynRecordScreen() {
 
   const startWebRecording = async () => {
     try {
+      // Build audio constraints with selected device if available
+      const audioConstraints: MediaTrackConstraints = {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        sampleRate: 44100,
+        channelCount: 2,
+      };
+      
+      // Use selected external device if available
+      if (selectedDeviceId && selectedDeviceId !== 'default') {
+        audioConstraints.deviceId = { exact: selectedDeviceId };
+        console.log('[SPYN Record] Using specific device:', selectedDeviceId);
+      }
+      
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-          sampleRate: 44100,
-          channelCount: 2,
-        } 
+        audio: audioConstraints
       });
       
       mediaStreamRef.current = stream;
       
+      // Log the actual device being used
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack) {
+        const settings = audioTrack.getSettings();
+        console.log('[SPYN Record] ✅ Recording from:', audioTrack.label);
+        console.log('[SPYN Record] Audio settings:', settings);
+        
+        // Update UI with actual source
+        if (audioTrack.label) {
+          const label = audioTrack.label.toLowerCase();
+          if (label.includes('usb') || label.includes('interface') || label.includes('external') ||
+              label.includes('line') || label.includes('mixer') || !label.includes('built-in')) {
+            setAudioSource('external');
+            setAudioSourceName(audioTrack.label);
+          } else {
+            setAudioSource('internal');
+            setAudioSourceName(audioTrack.label);
+          }
+        }
+      }
+      
       // Setup audio analyser for waveform
-      audioContextRef.current = new AudioContext();
+      audioContextRef.current = new AudioContext({ sampleRate: 44100 });
       const source = audioContextRef.current.createMediaStreamSource(stream);
       analyserRef.current = audioContextRef.current.createAnalyser();
       analyserRef.current.fftSize = 256;
       source.connect(analyserRef.current);
       
-      // Setup MediaRecorder
+      // Setup MediaRecorder with best available codec
+      let mimeType = 'audio/webm;codecs=opus';
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=pcm')) {
+        mimeType = 'audio/webm;codecs=pcm'; // Uncompressed for better quality
+      }
+      
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus',
+        mimeType,
         bitsPerSecond: 320000,
       });
       
@@ -411,7 +446,7 @@ export default function SpynRecordScreen() {
       mediaRecorder.start(1000); // Collect data every second
       mediaRecorderRef.current = mediaRecorder;
       
-      console.log('[SPYN Record] Web recording started');
+      console.log('[SPYN Record] Web recording started with mimeType:', mimeType);
     } catch (error) {
       console.error('[SPYN Record] Web recording error:', error);
       throw error;
