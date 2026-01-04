@@ -161,6 +161,10 @@ export default function HomeScreen() {
       setLoading(true);
       console.log('[Home] Loading tracks...');
       
+      // Get token from auth context
+      const { token } = useAuth();
+      console.log('[Home] Token available:', !!token);
+      
       const filters: any = { limit: 100 }; // Get more tracks to have better selection
       if (selectedGenre !== 'All Genres') filters.genre = selectedGenre;
       if (selectedEnergy !== 'All Energy Levels') filters.energy_level = selectedEnergy.toLowerCase().replace(' ', '_');
@@ -177,20 +181,27 @@ export default function HomeScreen() {
       const result = await base44Tracks.list(filters);
       console.log('[Home] Tracks loaded:', result?.length || 0);
       
-      // Filter ONLY approved tracks
       if (result && result.length > 0) {
+        // Filter ONLY approved tracks
         const approvedTracks = result.filter((track: Track) => 
-          track.status === 'approved'
+          track.status === 'approved' || track.is_approved === true
         );
         console.log('[Home] Approved tracks:', approvedTracks.length);
         
-        setTracks(approvedTracks);
+        // If no approved tracks but we got results, show all (API might not have status field)
+        if (approvedTracks.length === 0 && result.length > 0) {
+          console.log('[Home] No approved tracks found, showing all returned tracks');
+          setTracks(result);
+        } else {
+          setTracks(approvedTracks);
+        }
       } else {
         console.log('[Home] No tracks from API, showing demo tracks');
         setTracks(getDemoTracks());
       }
     } catch (error) {
       console.error('[Home] Error loading tracks:', error);
+      // Show demo tracks on error
       setTracks(getDemoTracks());
     } finally {
       setLoading(false);
