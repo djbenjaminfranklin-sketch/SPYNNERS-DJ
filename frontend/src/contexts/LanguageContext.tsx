@@ -898,6 +898,9 @@ const translations: Record<Language, Record<string, string>> = {
     'radar.myTracks': 'Mes Tracks',
     'radar.global': 'Global',
     'radar.noLivePlays': 'Aucun play en direct pour le moment',
+    'radar.saveMessage': 'Enregistrer',
+    'radar.messageSaved': 'Message enregistré',
+    'radar.messageSavedDesc': 'Votre message automatique a été enregistré',
     
     // Offline Sessions
     'offline.title': 'Sessions Offline',
