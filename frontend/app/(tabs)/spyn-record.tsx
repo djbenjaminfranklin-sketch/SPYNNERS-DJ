@@ -549,6 +549,12 @@ export default function SpynRecordScreen() {
   // Reference to track if analysis is in progress
   const isAnalyzingRef = useRef(false);
   const isRecordingRef = useRef(false);
+  const identifiedTracksRef = useRef<IdentifiedTrack[]>([]);
+
+  // Update ref when state changes
+  useEffect(() => {
+    identifiedTracksRef.current = identifiedTracks;
+  }, [identifiedTracks]);
 
   // Analyze current audio - SIMPLIFIED VERSION for iOS
   // On iOS, we cannot have simultaneous recordings, so analysis pauses the main recording
