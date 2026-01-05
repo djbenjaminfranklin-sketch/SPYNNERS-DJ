@@ -17,6 +17,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage, LANGUAGES, Language } from '../../src/contexts/LanguageContext';
 import { usePlayer } from '../../src/contexts/PlayerContext';
@@ -30,6 +31,7 @@ import offlineService from '../../src/services/offlineService';
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MENU_ITEM_SIZE = (SCREEN_WIDTH - 24 - 40) / 5; // 5 items per row with spacing
+const UNLOCKED_TRACKS_KEY = 'vip_unlocked_tracks'; // Same key as VIP page
 
 // Menu items with colors matching spynners.com - 2 rows
 // Labels use translation keys
