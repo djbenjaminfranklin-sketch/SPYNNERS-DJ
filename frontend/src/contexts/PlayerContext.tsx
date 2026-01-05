@@ -84,8 +84,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Flag to prevent concurrent playTrack calls
+  const isLoadingTrackRef = useRef(false);
+
   const playTrack = async (track: Track, trackList?: Track[]) => {
+    // Prevent concurrent calls
+    if (isLoadingTrackRef.current) {
+      console.log('[Player] Already loading a track, ignoring...');
+      return;
+    }
+    
     try {
+      isLoadingTrackRef.current = true;
       setIsLoading(true);
       console.log('[Player] Attempting to play track:', track.title);
       console.log('[Player] Is VIP:', track.is_vip);
