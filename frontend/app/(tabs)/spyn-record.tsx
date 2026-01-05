@@ -729,54 +729,58 @@ export default function SpynRecordScreen() {
           });
         }
       } else {
-        // NATIVE (iOS/Android): Create a SEPARATE short recording for analysis
-        // This way we don't interrupt the main recording
-        console.log('[SPYN Record] Creating separate analysis recording...');
+        // NATIVE (iOS/Android): Stop, read, restart - EXACT SAME AS SPYN
+        console.log('[SPYN Record] Native analysis - stopping current recording...');
         
-        try {
-          // Create a new short recording just for analysis (don't touch the main one)
-          const { recording: analysisRecording } = await Audio.Recording.createAsync(
-            Audio.RecordingOptionsPresets.HIGH_QUALITY
-          );
-          
-          // Record for 8 seconds
-          console.log('[SPYN Record] Recording 8 seconds for analysis...');
-          await new Promise(resolve => setTimeout(resolve, 8000));
-          
-          // Stop the analysis recording
-          await analysisRecording.stopAndUnloadAsync();
-          const uri = analysisRecording.getURI();
-          console.log('[SPYN Record] Analysis recording stopped, URI:', uri);
-          
-          if (uri) {
-            // Read the audio file
-            try {
-              const response = await fetch(uri);
-              const blob = await response.blob();
-              audioBase64 = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  const result = reader.result as string;
-                  resolve(result.split(',')[1] || '');
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-              });
-              console.log('[SPYN Record] Audio read via fetch+blob, length:', audioBase64.length);
-            } catch (blobError) {
-              console.log('[SPYN Record] Blob approach failed, trying FileSystem:', blobError);
-              audioBase64 = await FileSystem.readAsStringAsync(uri, {
-                encoding: FileSystem.EncodingType.Base64,
-              });
-              console.log('[SPYN Record] Audio read via FileSystem, length:', audioBase64.length);
+        if (recordingRef.current) {
+          try {
+            // 1. Stop current recording
+            await recordingRef.current.stopAndUnloadAsync();
+            const uri = recordingRef.current.getURI();
+            console.log('[SPYN Record] Recording stopped, URI:', uri);
+            recordingRef.current = null;
+            
+            if (uri) {
+              // Save for final concatenation
+              recordingSegmentsRef.current.push(uri);
+              
+              // 2. Read audio - EXACT SAME AS SPYN
+              try {
+                const response = await fetch(uri);
+                const blob = await response.blob();
+                audioBase64 = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    const result = reader.result as string;
+                    resolve(result.split(',')[1] || '');
+                  };
+                  reader.onerror = reject;
+                  reader.readAsDataURL(blob);
+                });
+              } catch (blobError) {
+                console.log('[SPYN Record] Blob failed, trying FileSystem');
+                audioBase64 = await FileSystem.readAsStringAsync(uri, {
+                  encoding: FileSystem.EncodingType.Base64,
+                });
+              }
+              console.log('[SPYN Record] Audio read, length:', audioBase64.length);
             }
             
-            // Save URI for final mix concatenation
-            recordingSegmentsRef.current.push(uri);
+            // 3. Restart recording if still in recording mode
+            if (isRecordingRef.current) {
+              await Audio.setAudioModeAsync({
+                allowsRecordingIOS: true,
+                playsInSilentModeIOS: true,
+              });
+              const { recording } = await Audio.Recording.createAsync(
+                Audio.RecordingOptionsPresets.HIGH_QUALITY
+              );
+              recordingRef.current = recording;
+              console.log('[SPYN Record] Recording restarted');
+            }
+          } catch (err) {
+            console.error('[SPYN Record] Recording cycle error:', err);
           }
-        } catch (recordError) {
-          console.error('[SPYN Record] Analysis recording error:', recordError);
-          setCurrentAnalysis('Erreur enregistrement');
         }
       }
       
