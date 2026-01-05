@@ -177,17 +177,19 @@ class OfflineService {
       if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
         this.isOnline = navigator.onLine;
       } else {
-        this.isOnline = state.isConnected ?? false;
+        // On iOS/Android, be optimistic about connectivity
+        // If isConnected is null or isInternetReachable is true, assume online
+        this.isOnline = (state.isConnected === true) || (state.isInternetReachable === true) || (state.isConnected === null);
       }
       
-      console.log('[Offline] checkNetworkStatus:', this.isOnline ? 'ONLINE' : 'OFFLINE');
+      console.log('[Offline] checkNetworkStatus:', this.isOnline ? 'ONLINE' : 'OFFLINE',
+        `(isConnected=${state.isConnected}, isInternetReachable=${state.isInternetReachable})`);
       return this.isOnline;
     } catch (error) {
       console.error('[Offline] checkNetworkStatus error:', error);
-      // On web, fallback to navigator.onLine
-      if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
-        this.isOnline = navigator.onLine;
-        return this.isOnline;
+      // On error, assume we're online (optimistic)
+      this.isOnline = true;
+      return this.isOnline;
       }
       return this.isOnline;
     }
