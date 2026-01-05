@@ -338,12 +338,13 @@ export const base44Auth = {
     }
   },
 
-  async updateUserDiamonds(userId: string, amount: number): Promise<void> {
+  async updateUserDiamonds(userId: string, amount: number, currentBalance?: number): Promise<void> {
     try {
-      console.log('[Auth] Updating user diamonds:', userId, amount);
+      console.log('[Auth] Updating user diamonds:', userId, amount, 'current:', currentBalance);
       const response = await api.post('/api/base44/update-diamonds', {
         user_id: userId,
         amount: amount, // positive to add, negative to deduct
+        current_balance: currentBalance, // pass current balance for reliable calculation
       });
       console.log('[Auth] Diamonds updated:', response.data);
     } catch (error: any) {
