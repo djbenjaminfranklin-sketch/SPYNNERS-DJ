@@ -23,6 +23,8 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { base44Admin } from '../../src/services/base44Api';
 import { isUserAdmin } from '../../src/components/AdminBadge';
 
+const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
+
 type PendingTrack = {
   id: string;
   title: string;
