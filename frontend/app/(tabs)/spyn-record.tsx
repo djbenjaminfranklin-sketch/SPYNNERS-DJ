@@ -407,13 +407,18 @@ export default function SpynRecordScreen() {
 
   const startWebRecording = async () => {
     try {
+      console.log('[SPYN Record] 🎙️ Starting web recording...');
+      
+      // Check if getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('getUserMedia not supported in this browser');
+      }
+      
       // Build audio constraints with selected device if available
       const audioConstraints: MediaTrackConstraints = {
         echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: false,
-        sampleRate: 44100,
-        channelCount: 2,
       };
       
       // Use selected external device if available
@@ -422,9 +427,11 @@ export default function SpynRecordScreen() {
         console.log('[SPYN Record] Using specific device:', selectedDeviceId);
       }
       
+      console.log('[SPYN Record] Requesting microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: audioConstraints
       });
+      console.log('[SPYN Record] ✅ Microphone access granted!');
       
       mediaStreamRef.current = stream;
       
@@ -450,21 +457,26 @@ export default function SpynRecordScreen() {
       }
       
       // Setup audio analyser for waveform
-      audioContextRef.current = new AudioContext({ sampleRate: 44100 });
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      analyserRef.current.fftSize = 256;
-      source.connect(analyserRef.current);
+      try {
+        audioContextRef.current = new AudioContext();
+        const source = audioContextRef.current.createMediaStreamSource(stream);
+        analyserRef.current = audioContextRef.current.createAnalyser();
+        analyserRef.current.fftSize = 256;
+        source.connect(analyserRef.current);
+        console.log('[SPYN Record] ✅ Audio analyser set up');
+      } catch (analyserError) {
+        console.warn('[SPYN Record] Could not set up analyser:', analyserError);
+      }
       
       // Setup MediaRecorder with best available codec
-      let mimeType = 'audio/webm;codecs=opus';
-      if (MediaRecorder.isTypeSupported('audio/webm;codecs=pcm')) {
-        mimeType = 'audio/webm;codecs=pcm'; // Uncompressed for better quality
+      let mimeType = 'audio/webm';
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mimeType = 'audio/webm;codecs=opus';
       }
+      console.log('[SPYN Record] Using mimeType:', mimeType);
       
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType,
-        bitsPerSecond: 320000,
       });
       
       audioChunksRef.current = [];
@@ -472,15 +484,31 @@ export default function SpynRecordScreen() {
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
+          console.log('[SPYN Record] Audio chunk received, size:', event.data.size, 'Total chunks:', audioChunksRef.current.length);
         }
+      };
+      
+      mediaRecorder.onerror = (event) => {
+        console.error('[SPYN Record] MediaRecorder error:', event);
+      };
+      
+      mediaRecorder.onstart = () => {
+        console.log('[SPYN Record] ✅ MediaRecorder started!');
       };
       
       mediaRecorder.start(1000); // Collect data every second
       mediaRecorderRef.current = mediaRecorder;
       
-      console.log('[SPYN Record] Web recording started with mimeType:', mimeType);
-    } catch (error) {
-      console.error('[SPYN Record] Web recording error:', error);
+      console.log('[SPYN Record] ✅ Web recording initialized successfully');
+    } catch (error: any) {
+      console.error('[SPYN Record] ❌ Web recording error:', error);
+      if (error.name === 'NotAllowedError') {
+        Alert.alert('Permission refusée', 'Vous devez autoriser l\'accès au microphone pour enregistrer.');
+      } else if (error.name === 'NotFoundError') {
+        Alert.alert('Microphone non trouvé', 'Aucun microphone n\'a été détecté.');
+      } else {
+        Alert.alert('Erreur', `Impossible d'accéder au microphone: ${error.message}`);
+      }
       throw error;
     }
   };
