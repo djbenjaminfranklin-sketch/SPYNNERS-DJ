@@ -204,6 +204,18 @@ backend:
         agent: "testing"
         comment: "SPYN Notify Producer API tested successfully. Endpoint accepts JSON payload correctly, returns proper JSON response with success field. Gracefully handles Base44 service unavailability (404 error) without crashing. Returns success: false with message 'Notification service unavailable' and status_code: 404, which is expected behavior when Base44 cloud function is not accessible. Endpoint is working correctly."
 
+  - task: "Black Diamonds Fix - Base44 Login API"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Black Diamonds fix tested successfully. Login API POST /api/base44/auth/login with credentials djbenjaminfranklin@gmail.com/Elsamila1979 returns user.data.black_diamonds = 48 as expected. The fix is working correctly and the user now has the proper black diamonds value instead of 0."
+
 frontend:
   - task: "Authentication Flow - Login Screen"
     implemented: true
