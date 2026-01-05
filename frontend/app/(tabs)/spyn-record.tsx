@@ -999,9 +999,18 @@ export default function SpynRecordScreen() {
       ) : (
         identifiedTracks.map((track, index) => (
           <View key={track.id} style={styles.trackItem}>
-            <View style={styles.trackNumber}>
-              <Text style={styles.trackNumberText}>{index + 1}</Text>
-            </View>
+            {/* Cover Image */}
+            {track.coverImage ? (
+              <Image 
+                source={{ uri: track.coverImage }} 
+                style={styles.trackCover}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={[styles.trackCover, styles.trackCoverPlaceholder]}>
+                <Ionicons name="musical-note" size={20} color="#666" />
+              </View>
+            )}
             <View style={styles.trackInfo}>
               <Text style={styles.trackTitle} numberOfLines={1}>{track.title}</Text>
               <Text style={styles.trackArtist} numberOfLines={1}>{track.artist}</Text>
