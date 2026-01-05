@@ -1475,6 +1475,7 @@ const translations: Record<Language, Record<string, string>> = {
     'rankings.topDownloads': 'Más Descargados',
     'rankings.topRated': 'Mejor Valorados',
     'rankings.newReleases': 'Novedades',
+    'rankings.mostPlayed': 'Más Reproducidos',
     'rankings.loading': 'Cargando clasificaciones...',
     'rankings.noTracks': 'No se encontraron tracks',
     'rankings.tryDifferentGenre': 'Intenta seleccionar otro género',
