@@ -833,6 +833,22 @@ const styles = StyleSheet.create({
     minHeight: 60,
     textAlignVertical: 'top',
   },
+  saveMessageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginTop: 12,
+    gap: 8,
+  },
+  saveMessageButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   
   // Stats Bar
   statsBar: {
