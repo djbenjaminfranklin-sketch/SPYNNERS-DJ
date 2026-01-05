@@ -753,13 +753,18 @@ export default function SpynRecordScreen() {
       
       console.log(`[SPYN Record] 📧 Sending email for: ${track.title}, trackId: ${track.spynnersTrackId}`);
       
+      // Format expected by Spynners API
       const emailPayload = {
         trackId: track.spynnersTrackId,
         trackTitle: track.title || 'Unknown Track',
+        artistName: track.artist || 'Unknown Artist',
         djName: djName,
         djAvatar: user?.avatar || '',
         playedAt: new Date().toISOString(),
+        trackArtworkUrl: track.coverImage || '',
       };
+      
+      console.log('[SPYN Record] Email payload:', JSON.stringify(emailPayload));
       
       // Call Spynners API directly instead of going through backend proxy
       const response = await axios.post(
