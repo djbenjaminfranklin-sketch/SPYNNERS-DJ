@@ -603,73 +603,67 @@ export default function SpynRecordScreen() {
           });
         }
       } else {
-        // NATIVE (iOS/Android): Use the current recording for analysis
-        // We pause the recording, read the file, and resume
-        console.log('[SPYN Record] Starting native audio analysis using current recording...');
+        // NATIVE (iOS/Android): Stop recording, analyze, then restart
+        // M4A files need to be finalized to be readable
+        console.log('[SPYN Record] Starting native audio analysis...');
         
         try {
           if (recordingRef.current) {
-            // Pause the recording to access the file
-            console.log('[SPYN Record] Pausing recording for analysis...');
-            await recordingRef.current.pauseAsync();
-            
-            // Get the current recording URI
+            // Stop the recording completely to finalize the file
+            console.log('[SPYN Record] Stopping recording for analysis...');
+            await recordingRef.current.stopAndUnloadAsync();
             const currentUri = recordingRef.current.getURI();
-            console.log('[SPYN Record] Current recording URI:', currentUri);
+            console.log('[SPYN Record] Recording stopped, URI:', currentUri);
+            recordingRef.current = null;
             
             if (currentUri) {
-              // Read the audio file as base64
+              // Read the finalized audio file as base64
               try {
-                // Use LegacyFileSystem to read the file
                 audioBase64 = await LegacyFileSystem.readAsStringAsync(currentUri, {
                   encoding: LegacyFileSystem.EncodingType.Base64,
                 });
-                console.log('[SPYN Record] Audio read from current recording, length:', audioBase64.length);
-                
-                // If the file is too large, we might want to truncate
-                // ACRCloud works best with 10-20 seconds of audio
-                // For now, we'll send the whole thing and let ACRCloud handle it
-                
+                console.log('[SPYN Record] Audio read from finalized file, length:', audioBase64.length);
               } catch (readError) {
                 console.error('[SPYN Record] Error reading recording file:', readError);
-                
-                // Try fetch + blob approach
-                try {
-                  const response = await fetch(currentUri);
-                  const blob = await response.blob();
-                  audioBase64 = await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      const result = reader.result as string;
-                      resolve(result.split(',')[1] || '');
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                  });
-                  console.log('[SPYN Record] Audio read via fetch, length:', audioBase64.length);
-                } catch (fetchError) {
-                  console.error('[SPYN Record] Fetch approach also failed:', fetchError);
-                }
+              }
+              
+              // Delete the temporary file after reading
+              try {
+                await LegacyFileSystem.deleteAsync(currentUri, { idempotent: true });
+              } catch (e) {
+                // Ignore cleanup errors
               }
             }
             
-            // Resume recording
-            console.log('[SPYN Record] Resuming recording...');
-            await recordingRef.current.startAsync();
-            console.log('[SPYN Record] Recording resumed');
+            // Start a new recording to continue
+            if (isRecordingRef.current) {
+              console.log('[SPYN Record] Starting new recording to continue...');
+              try {
+                const { recording: newRecording } = await Audio.Recording.createAsync(
+                  Audio.RecordingOptionsPresets.HIGH_QUALITY
+                );
+                recordingRef.current = newRecording;
+                console.log('[SPYN Record] New recording started');
+              } catch (restartError) {
+                console.error('[SPYN Record] Failed to restart recording:', restartError);
+              }
+            }
           } else {
             console.log('[SPYN Record] No active recording to analyze');
           }
         } catch (analysisError) {
           console.error('[SPYN Record] Native analysis error:', analysisError);
           
-          // Try to resume recording even if analysis failed
-          if (recordingRef.current) {
+          // Try to restart recording even if analysis failed
+          if (isRecordingRef.current && !recordingRef.current) {
             try {
-              await recordingRef.current.startAsync();
-              console.log('[SPYN Record] Recording resumed after error');
-            } catch (resumeError) {
-              console.error('[SPYN Record] Failed to resume recording:', resumeError);
+              const { recording: newRecording } = await Audio.Recording.createAsync(
+                Audio.RecordingOptionsPresets.HIGH_QUALITY
+              );
+              recordingRef.current = newRecording;
+              console.log('[SPYN Record] Recording restarted after error');
+            } catch (restartError) {
+              console.error('[SPYN Record] Failed to restart recording:', restartError);
             }
           }
         }
