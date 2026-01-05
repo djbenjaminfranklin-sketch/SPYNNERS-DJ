@@ -61,6 +61,14 @@ export interface OfflineRecording {
   status: 'pending' | 'syncing' | 'synced' | 'failed';
   result?: any;
   createdAt: string;
+  // Track info for SPYN Record sessions
+  trackInfo?: {
+    title: string;
+    artist: string;
+    coverImage?: string;
+    spynnersTrackId?: string;
+    producerId?: string;
+  };
 }
 
 export interface OfflineSession {
@@ -73,6 +81,10 @@ export interface OfflineSession {
   djName: string;
   status: 'recording' | 'pending_sync' | 'syncing' | 'synced';
   syncedAt?: string;
+  // Additional fields for SPYN Record sessions
+  duration?: number;
+  audioUri?: string;
+  tracksCount?: number;
 }
 
 class OfflineService {
