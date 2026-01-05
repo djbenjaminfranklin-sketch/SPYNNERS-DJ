@@ -8,10 +8,14 @@ interface PlayerContextType {
   playbackPosition: number;
   playbackDuration: number;
   isLoading: boolean;
-  playTrack: (track: Track) => Promise<void>;
+  queue: Track[];
+  currentIndex: number;
+  playTrack: (track: Track, trackList?: Track[]) => Promise<void>;
   togglePlayPause: () => Promise<void>;
   seekTo: (positionMs: number) => Promise<void>;
   closePlayer: () => Promise<void>;
+  playNext: () => Promise<void>;
+  playPrevious: () => Promise<void>;
 }
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -22,6 +26,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [playbackPosition, setPlaybackPosition] = useState(0);
   const [playbackDuration, setPlaybackDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [queue, setQueue] = useState<Track[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const soundRef = useRef<Audio.Sound | null>(null);
 
   // Cleanup on unmount
