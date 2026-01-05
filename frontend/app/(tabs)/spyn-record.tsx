@@ -695,61 +695,47 @@ export default function SpynRecordScreen() {
         
         if (status === 'granted') {
           try {
-            // Copy to a permanent location first (skip file existence check - deprecated API)
-            const newUri = FileSystem.documentDirectory + `${fileName}.m4a`;
-            console.log('[SPYN Record] Copying to:', newUri);
+            // Use the recorded file directly since copy operations are deprecated in SDK 54
+            // Try to create asset directly from the original recording
+            const originalUri = fileUri;
+            console.log('[SPYN Record] Attempting to save from:', originalUri);
             
             try {
-              await FileSystem.copyAsync({ from: fileUri, to: newUri });
-              console.log('[SPYN Record] File copied successfully');
-            } catch (copyErr) {
-              console.log('[SPYN Record] Copy failed, trying direct save:', copyErr);
-              // If copy fails, try to save directly from source
-            }
-            
-            // Try to save to media library
-            try {
-              const asset = await MediaLibrary.createAssetAsync(newUri);
+              // Create asset directly from the original recording file
+              const asset = await MediaLibrary.createAssetAsync(originalUri);
               console.log('[SPYN Record] Asset created:', asset);
               
               Alert.alert(
                 '✅ Mix sauvegardé !',
-                'Votre enregistrement a été sauvegardé dans vos fichiers.',
-                [
-                  {
-                    text: 'Partager',
-                    onPress: () => shareRecording(newUri),
-                  },
-                  { text: 'OK' },
-                ]
+                'Votre enregistrement a été sauvegardé dans votre bibliothèque audio.',
+                [{ text: 'OK' }]
               );
             } catch (mediaErr) {
-              console.log('[SPYN Record] Media save failed, offering share:', mediaErr);
-              // Fallback: offer to share
+              console.log('[SPYN Record] Direct media save failed:', mediaErr);
+              // Offer to share the file instead
               Alert.alert(
-                '📤 Partager votre mix',
-                'Voulez-vous partager votre enregistrement ?',
+                '💾 Mix enregistré',
+                'Le mix a été enregistré. Voulez-vous le sauvegarder via le partage ?',
                 [
                   {
-                    text: 'Partager',
+                    text: 'Sauvegarder',
                     onPress: () => shareRecording(fileUri),
                   },
                   { text: 'OK' },
                 ]
               );
             }
-          } catch (copyError: any) {
-            console.error('[SPYN Record] Copy/save error:', copyError);
-            // Fallback: try sharing directly
+          } catch (saveError: any) {
+            console.error('[SPYN Record] Save error:', saveError);
             Alert.alert(
-              'Sauvegarde partielle',
-              'Impossible de sauvegarder dans la bibliothèque. Voulez-vous partager le fichier ?',
+              '💾 Mix enregistré',
+              'Utilisez le bouton Partager pour sauvegarder votre mix.',
               [
                 {
                   text: 'Partager',
                   onPress: () => shareRecording(fileUri),
                 },
-                { text: 'Annuler', style: 'cancel' },
+                { text: 'OK' },
               ]
             );
           }
