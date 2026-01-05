@@ -384,7 +384,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   menuGradient: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
     padding: Spacing.md,
     justifyContent: 'flex-end',
   },
