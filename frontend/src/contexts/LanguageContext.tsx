@@ -2459,6 +2459,75 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.noTracksNow': 'Keine {status} Tracks im Moment',
     'admin.uploadedBy': 'Von',
     'admin.vip': 'VIP',
+    
+    // Analytics
+    'analytics.title': 'Meine Statistiken',
+    'analytics.noTracks': 'Noch keine Tracks',
+    'analytics.uploadToSee': 'Lade Tracks hoch, um deine Statistiken zu sehen',
+    'analytics.tracks': 'Tracks',
+    'analytics.plays': 'Plays',
+    'analytics.downloads': 'Downloads',
+    'analytics.likes': 'Likes',
+    'analytics.trackStatus': 'Track-Status',
+    'analytics.approved': 'Genehmigt',
+    'analytics.pending': 'Ausstehend',
+    'analytics.rejected': 'Abgelehnt',
+    'analytics.recentActivity': 'Letzte Aktivität',
+    'analytics.livePlays': 'Live Plays',
+    'analytics.today': 'Heute',
+    'analytics.thisWeek': 'Diese Woche',
+    'analytics.topTracks': 'Top Tracks',
+    
+    // Radar
+    'radar.title': 'Track Radar',
+    'radar.liveMap': 'Live Plays Karte',
+    'radar.automaticMessage': 'Automatische Nachricht',
+    'radar.automaticMessageDesc': 'Sende automatisch eine Nachricht an DJs, die deine Tracks spielen',
+    'radar.autoMessagePlaceholder': 'Deine automatische Nachricht...',
+    'radar.live': 'Live',
+    'radar.recent': 'Kürzlich',
+    'radar.myTracks': 'Meine Tracks',
+    'radar.global': 'Global',
+    'radar.noLivePlays': 'Keine Live-Plays im Moment',
+    'radar.saveMessage': 'Speichern',
+    'radar.messageSaved': 'Nachricht gespeichert',
+    'radar.messageSavedDesc': 'Deine automatische Nachricht wurde gespeichert',
+    
+    // Offline Sessions
+    'offline.title': 'Offline-Sitzungen',
+    'offline.noSessions': 'Keine Offline-Sitzungen',
+    'offline.noSessionsDesc': 'Deine SPYN Offline-Sitzungen werden hier angezeigt',
+    'offline.pendingSync': 'Ausstehende Synchronisierung',
+    'offline.synced': 'Synchronisiert',
+    'offline.syncNow': 'Jetzt synchronisieren',
+    'offline.delete': 'Löschen',
+    'offline.tracks': 'Tracks',
+    
+    // Tracks Management
+    'tracks.manageYourTracks': 'Verwalte deine Tracks',
+    'tracks.plays': 'Plays',
+    'tracks.downloads': 'Downloads',
+    'tracks.likes': 'Likes',
+    'tracks.status': 'Status',
+    'tracks.synced': 'Synchronisiert',
+    'tracks.notSynced': 'Nicht synchronisiert',
+    'tracks.editTrack': 'Track bearbeiten',
+    'tracks.deleteTrack': 'Track löschen',
+    'tracks.syncAcrcloud': 'ACRCloud synchronisieren',
+    'tracks.syncing': 'Synchronisiere...',
+    'tracks.searchTracks': 'Tracks suchen...',
+    'tracks.noTracksMatch': 'Keine Tracks entsprechen deiner Suche',
+    'tracks.noTracksYet': 'Du hast noch keine Tracks',
+    'tracks.uploadTrack': 'Track hochladen',
+    'tracks.loadingTracks': 'Lade deine Tracks...',
+    
+    // Library
+    'library.approved': 'Genehmigt',
+    'library.pending': 'Ausstehend',
+    'library.rejected': 'Abgelehnt',
+    
+    // Common
+    'common.loading': 'Laden...',
   },
   
   zh: {
