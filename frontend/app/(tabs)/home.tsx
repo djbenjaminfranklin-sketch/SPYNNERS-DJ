@@ -596,6 +596,7 @@ export default function HomeScreen() {
               <Ionicons name="mic" size={28} color="#fff" />
               <Text style={styles.spynButtonText}>SPYN</Text>
               <Text style={styles.spynButtonSubtext}>Record</Text>
+              <Text style={styles.spynButtonSubtext2}>Detection</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
