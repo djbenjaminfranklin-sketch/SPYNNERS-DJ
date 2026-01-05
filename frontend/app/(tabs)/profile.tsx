@@ -292,6 +292,74 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* ========== ADMIN QUICK ACCESS (ONLY FOR ADMINS) ========== */}
+        {isAdmin && (
+          <View style={styles.adminQuickAccess}>
+            <View style={styles.adminQuickAccessHeader}>
+              <Ionicons name="shield-checkmark" size={20} color="#FFD700" />
+              <Text style={styles.adminQuickAccessTitle}>Admin Panel</Text>
+            </View>
+            <View style={styles.adminMenuGrid}>
+              <TouchableOpacity 
+                style={[styles.adminMenuCard, { backgroundColor: '#00BCD4' }]}
+                onPress={() => router.push('/profile/admin-dashboard')}
+              >
+                <Ionicons name="shield-checkmark" size={24} color="#fff" />
+                <Text style={styles.adminMenuCardTitle}>Dashboard</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.adminMenuCard, { backgroundColor: '#9C27B0' }]}
+                onPress={() => router.push('/profile/admin-users')}
+              >
+                <Ionicons name="people" size={24} color="#fff" />
+                <Text style={styles.adminMenuCardTitle}>Users</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.adminMenuCard, { backgroundColor: '#FFD700' }]}
+                onPress={() => router.push('/profile/admin-diamonds')}
+              >
+                <Ionicons name="diamond" size={24} color="#1a1a2e" />
+                <Text style={[styles.adminMenuCardTitle, { color: '#1a1a2e' }]}>Diamonds</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.adminMenuCard, { backgroundColor: '#E040FB' }]}
+                onPress={() => router.push('/profile/admin-vip')}
+              >
+                <Ionicons name="star" size={24} color="#fff" />
+                <Text style={styles.adminMenuCardTitle}>V.I.P.</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.adminMenuCard, { backgroundColor: '#FF5722' }]}
+                onPress={() => router.push('/profile/admin-categories')}
+              >
+                <Ionicons name="headset" size={24} color="#fff" />
+                <Text style={styles.adminMenuCardTitle}>Categories</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.adminMenuCard, { backgroundColor: '#4CAF50' }]}
+                onPress={() => router.push('/profile/admin-broadcast')}
+              >
+                <Ionicons name="mail" size={24} color="#fff" />
+                <Text style={styles.adminMenuCardTitle}>Email</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.adminMenuCard, { backgroundColor: '#2196F3' }]}
+                onPress={() => router.push('/profile/admin-sessions')}
+              >
+                <Ionicons name="radio" size={24} color="#fff" />
+                <Text style={styles.adminMenuCardTitle}>Sessions</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.adminMenuCard, { backgroundColor: '#00BFA5' }]}
+                onPress={() => router.push('/profile/admin-downloads')}
+              >
+                <Ionicons name="download" size={24} color="#fff" />
+                <Text style={styles.adminMenuCardTitle}>Downloads</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* ========== GENRES SECTION ========== */}
         {profile?.genres && profile.genres.length > 0 && (
           <View style={styles.genresCard}>
