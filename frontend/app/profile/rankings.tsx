@@ -23,7 +23,7 @@ const BACKEND_URL = 'https://black-diamond-api.preview.emergentagent.com';
 export default function RankingsScreen() {
   const router = useRouter();
   const { t, language } = useLanguage();
-  const [activeTab, setActiveTab] = useState('downloads');
+  const [activeTab, setActiveTab] = useState('plays');
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
