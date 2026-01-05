@@ -2825,6 +2825,60 @@ async def send_dj_message(request: SendDJMessageRequest, authorization: str = He
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ==================== BLACK DIAMONDS ====================
+
+class UpdateDiamondsRequest(BaseModel):
+    user_id: str
+    amount: int  # positive to add, negative to deduct
+
+@app.post("/api/base44/update-diamonds")
+async def update_user_diamonds(request: UpdateDiamondsRequest, authorization: str = Header(None)):
+    """
+    Update user's black diamonds balance.
+    Used for VIP track unlocking system.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Diamonds] Updating diamonds for user {request.user_id}: {request.amount}")
+        
+        # Get current user data
+        user_data = await call_spynners_function("nativeGetCurrentUser", {}, authorization)
+        
+        if not user_data:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        current_diamonds = user_data.get('black_diamonds', 0) or 0
+        new_balance = current_diamonds + request.amount
+        
+        if new_balance < 0:
+            raise HTTPException(status_code=400, detail="Insufficient diamonds")
+        
+        # Update user's diamonds via Spynners API
+        update_body = {
+            "userId": request.user_id,
+            "black_diamonds": new_balance,
+        }
+        
+        result = await call_spynners_function("nativeUpdateUser", update_body, authorization)
+        
+        print(f"[Diamonds] Updated: {current_diamonds} -> {new_balance}")
+        
+        return {
+            "success": True,
+            "previous_balance": current_diamonds,
+            "new_balance": new_balance,
+            "amount_changed": request.amount,
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Diamonds] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ==================== ANALYTICS CSV EXPORT ====================
 
 class AnalyticsCSVRequest(BaseModel):
