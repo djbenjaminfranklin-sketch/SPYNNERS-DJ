@@ -681,8 +681,8 @@ export default function SpynRecordScreen() {
     identifiedTracksRef.current = identifiedTracks;
   }, [identifiedTracks]);
 
-  // Analyze current audio - SIMPLIFIED VERSION for iOS
-  // On iOS, we cannot have simultaneous recordings, so analysis pauses the main recording
+  // Analyze current audio segment
+  // Creates a separate short recording for analysis without interrupting the main recording
   const analyzeCurrentAudio = async () => {
     console.log('[SPYN Record] analyzeCurrentAudio called, isRecording:', isRecordingRef.current, 'isPaused:', isPaused, 'isAnalyzing:', isAnalyzingRef.current);
     
