@@ -21,6 +21,7 @@ import { usePlayer } from '../../src/contexts/PlayerContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { base44Admin } from '../../src/services/base44Api';
+import { isUserAdmin } from '../../src/components/AdminBadge';
 
 type PendingTrack = {
   id: string;
