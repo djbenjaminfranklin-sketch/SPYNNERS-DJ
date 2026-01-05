@@ -278,21 +278,21 @@ export default function RankingsScreen() {
       {/* Tab Selector */}
       <View style={styles.tabContainer}>
         <TouchableOpacity 
+          style={[styles.tab, activeTab === 'plays' && styles.tabActive]}
+          onPress={() => setActiveTab('plays')}
+        >
+          <Ionicons name="play-circle" size={18} color={activeTab === 'plays' ? Colors.primary : Colors.textMuted} />
+          <Text style={[styles.tabText, activeTab === 'plays' && styles.tabTextActive]}>
+            {t('rankings.mostPlayed')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
           style={[styles.tab, activeTab === 'downloads' && styles.tabActive]}
           onPress={() => setActiveTab('downloads')}
         >
           <Ionicons name="download" size={18} color={activeTab === 'downloads' ? Colors.primary : Colors.textMuted} />
           <Text style={[styles.tabText, activeTab === 'downloads' && styles.tabTextActive]}>
             {t('rankings.topDownloads')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'rated' && styles.tabActive]}
-          onPress={() => setActiveTab('rated')}
-        >
-          <Ionicons name="star" size={18} color={activeTab === 'rated' ? Colors.primary : Colors.textMuted} />
-          <Text style={[styles.tabText, activeTab === 'rated' && styles.tabTextActive]}>
-            {t('rankings.topRated')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity 
