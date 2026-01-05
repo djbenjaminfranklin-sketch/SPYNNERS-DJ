@@ -560,6 +560,7 @@ const styles = StyleSheet.create({
   detailModalContent: {
     flex: 1,
     paddingTop: 50,
+    paddingBottom: 160, // Leave space for GlobalPlayer
   },
   detailModalHeader: {
     flexDirection: 'row',
