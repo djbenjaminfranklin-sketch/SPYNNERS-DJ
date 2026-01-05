@@ -637,29 +637,35 @@ export default function SpynRecordScreen() {
       console.log('[SPYN Record] Starting native recording...');
       
       // Request permissions first
+      console.log('[SPYN Record] Requesting audio permissions...');
       const { granted } = await Audio.requestPermissionsAsync();
+      console.log('[SPYN Record] Permission result:', granted);
+      
       if (!granted) {
         console.log('[SPYN Record] Audio permission not granted');
         Alert.alert('Permission requise', 'L\'accès au microphone est nécessaire');
-        return;
+        throw new Error('Permission not granted');
       }
       
-      // Set audio mode for recording
+      // Set audio mode for recording - same as SPYN
+      console.log('[SPYN Record] Setting audio mode...');
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
       });
+      console.log('[SPYN Record] Audio mode set successfully');
       
-      // Use the modern API - createAsync
+      // Use the modern API - createAsync with HIGH_QUALITY preset (same as SPYN)
+      console.log('[SPYN Record] Creating recording...');
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
       recordingRef.current = recording;
       
-      console.log('[SPYN Record] ✅ Native recording started successfully');
-    } catch (error) {
-      console.error('[SPYN Record] ❌ Native recording error:', error);
+      console.log('[SPYN Record] ✅ Native recording started successfully, recording object:', !!recording);
+    } catch (error: any) {
+      console.error('[SPYN Record] ❌ Native recording error:', error?.message || error);
+      Alert.alert('Erreur', `Impossible de démarrer l'enregistrement: ${error?.message || 'Erreur inconnue'}`);
       throw error;
     }
   };
