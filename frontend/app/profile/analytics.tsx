@@ -32,6 +32,19 @@ import Constants from 'expo-constants';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// Get backend URL
+const getBackendUrl = () => {
+  const envUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL 
+    || process.env.EXPO_PUBLIC_BACKEND_URL;
+  if (envUrl) return envUrl;
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return '';
+};
+
+const BACKEND_URL = getBackendUrl();
+
 interface TrackStat {
   id: string;
   title: string;
