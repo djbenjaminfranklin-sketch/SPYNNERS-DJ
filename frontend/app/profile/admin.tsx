@@ -364,11 +364,12 @@ const styles = StyleSheet.create({
   menuGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.md,
   },
   menuCard: {
-    width: CARD_SIZE,
-    height: CARD_SIZE,
+    width: (Dimensions.get('window').width - 48) / 2,
+    height: (Dimensions.get('window').width - 48) / 2,
+    marginRight: 8,
+    marginBottom: 16,
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
   },
