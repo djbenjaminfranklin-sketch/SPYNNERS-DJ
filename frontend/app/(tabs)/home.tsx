@@ -945,14 +945,24 @@ export default function HomeScreen() {
             <View style={[styles.searchContainer, { marginVertical: 10 }]}>
               <Ionicons name="search" size={18} color={Colors.textMuted} />
               <TextInput
-                style={styles.searchInput}
+                style={[styles.searchInput, { flex: 1 }]}
                 placeholder={t('common.search') + '...'}
                 placeholderTextColor={Colors.textMuted}
                 value={memberSearchQuery}
-                onChangeText={setMemberSearchQuery}
+                onChangeText={(text) => {
+                  console.log('[SendTrack] Search query:', text);
+                  setMemberSearchQuery(text);
+                }}
                 autoCapitalize="none"
                 autoCorrect={false}
+                editable={true}
+                selectTextOnFocus={true}
               />
+              {memberSearchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setMemberSearchQuery('')}>
+                  <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+                </TouchableOpacity>
+              )}
             </View>
             
             {loadingMembers ? (
