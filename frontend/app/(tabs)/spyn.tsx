@@ -591,10 +591,36 @@ export default function SpynScreen() {
       console.log('[SPYN] Native recording stopped, URI:', uri);
 
       if (uri) {
-        const audioBase64 = await FileSystem.readAsStringAsync(uri, {
-          encoding: 'base64',
-        });
-        await sendAudioForRecognition(audioBase64);
+        try {
+          // Try reading file as base64 - handle deprecated API
+          let audioBase64 = '';
+          try {
+            // Modern approach: use fetch + blob
+            const response = await fetch(uri);
+            const blob = await response.blob();
+            audioBase64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const result = reader.result as string;
+                resolve(result.split(',')[1] || '');
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          } catch (blobError) {
+            console.log('[SPYN] Blob approach failed, trying FileSystem:', blobError);
+            // Fallback to deprecated API with error suppression
+            audioBase64 = await FileSystem.readAsStringAsync(uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+          }
+          
+          if (audioBase64) {
+            await sendAudioForRecognition(audioBase64);
+          }
+        } catch (readError) {
+          console.error('[SPYN] Error reading audio file:', readError);
+        }
       }
     } catch (error) {
       console.error('[SPYN] Native recording error:', error);
