@@ -547,11 +547,17 @@ export default function SpynRecordScreen() {
 
   // Reference to track if analysis is in progress
   const isAnalyzingRef = useRef(false);
+  const isRecordingRef = useRef(false);
 
   // Analyze current audio - SIMPLIFIED VERSION for iOS
   // On iOS, we cannot have simultaneous recordings, so analysis pauses the main recording
   const analyzeCurrentAudio = async () => {
-    if (!isRecording || isPaused) return;
+    console.log('[SPYN Record] analyzeCurrentAudio called, isRecording:', isRecordingRef.current, 'isPaused:', isPaused, 'isAnalyzing:', isAnalyzingRef.current);
+    
+    if (!isRecordingRef.current || isPaused) {
+      console.log('[SPYN Record] Skipping analysis - not recording or paused');
+      return;
+    }
     if (isAnalyzingRef.current) {
       console.log('[SPYN Record] Analysis already in progress, skipping...');
       return;
@@ -560,24 +566,35 @@ export default function SpynRecordScreen() {
     isAnalyzingRef.current = true;
     setIsAnalyzing(true);
     setCurrentAnalysis('Analyse en cours...');
+    console.log('[SPYN Record] 🔍 Starting analysis...');
     
     try {
       let audioBase64 = '';
       
       if (Platform.OS === 'web') {
+        console.log('[SPYN Record] Web platform - getting audio chunks. Total chunks:', audioChunksRef.current.length);
         // Get recent audio chunk for analysis
         if (audioChunksRef.current.length > 0) {
           // Take last 10 seconds of audio (last 10 chunks)
           const recentChunks = audioChunksRef.current.slice(-10);
+          console.log('[SPYN Record] Using', recentChunks.length, 'chunks for analysis');
           const blob = new Blob(recentChunks, { type: 'audio/webm' });
+          console.log('[SPYN Record] Blob created, size:', blob.size);
           
-          audioBase64 = await new Promise<string>((resolve) => {
+          audioBase64 = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => {
               const result = reader.result as string;
-              resolve(result.split(',')[1]);
+              const base64 = result.split(',')[1];
+              console.log('[SPYN Record] Base64 created, length:', base64?.length || 0);
+              resolve(base64 || '');
+            };
+            reader.onerror = (e) => {
+              console.error('[SPYN Record] FileReader error:', e);
+              reject(e);
             };
             reader.readAsDataURL(blob);
+          });
           });
         }
       } else {
