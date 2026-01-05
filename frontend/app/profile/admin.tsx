@@ -215,27 +215,31 @@ export default function AdminScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.menuGrid}>
-          {ADMIN_MENUS.map((menu) => (
+          {ADMIN_MENUS.map((menu, index) => (
             <TouchableOpacity
               key={menu.id}
-              style={[styles.menuCard, { backgroundColor: menu.colors[0] }]}
+              style={[
+                styles.menuCard,
+                { backgroundColor: menu.colors[0] },
+                index % 2 === 0 ? { marginRight: 8 } : { marginLeft: 8 },
+              ]}
               onPress={() => router.push(menu.route as any)}
               activeOpacity={0.8}
             >
-              <View style={styles.menuGradient}>
-                <View style={styles.menuIconContainer}>
-                  <Ionicons name={menu.icon as any} size={32} color="#fff" />
-                </View>
+              <View style={styles.menuIconContainer}>
+                <Ionicons name={menu.icon as any} size={32} color="#fff" />
+              </View>
+              <View style={styles.menuTextContainer}>
                 <Text style={styles.menuTitle}>{menu.title}</Text>
                 <Text style={styles.menuSubtitle}>{menu.subtitle}</Text>
-                
-                {/* Badge for pending items */}
-                {menu.id === 'dashboard' && (stats?.pending_tracks || 0) > 0 && (
-                  <View style={styles.menuBadge}>
-                    <Text style={styles.menuBadgeText}>{stats?.pending_tracks}</Text>
-                  </View>
-                )}
               </View>
+              
+              {/* Badge for pending items */}
+              {menu.id === 'dashboard' && (stats?.pending_tracks || 0) > 0 && (
+                <View style={styles.menuBadge}>
+                  <Text style={styles.menuBadgeText}>{stats?.pending_tracks}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           ))}
         </View>
