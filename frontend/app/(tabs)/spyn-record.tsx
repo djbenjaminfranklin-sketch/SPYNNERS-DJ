@@ -737,38 +737,61 @@ export default function SpynRecordScreen() {
       if (analysisIntervalRef.current) clearInterval(analysisIntervalRef.current);
       if (waveformIntervalRef.current) clearInterval(waveformIntervalRef.current);
       
+      // Update refs
+      isRecordingRef.current = false;
+      
       let fileUri = '';
       
       if (Platform.OS === 'web') {
         fileUri = await stopWebRecording();
+        console.log('[SPYN Record] Web recording stopped, URL:', fileUri);
       } else {
         fileUri = await stopNativeRecording();
+        console.log('[SPYN Record] Native recording stopped, URI:', fileUri);
       }
       
       setIsRecording(false);
       setIsPaused(false);
       
-      // Show save dialog
-      Alert.alert(
-        '🎉 Enregistrement terminé !',
-        `Durée: ${formatDuration(recordingDuration)}\nTracks identifiés: ${identifiedTracks.length}`,
-        [
-          {
-            text: 'Sauvegarder',
-            onPress: () => saveRecording(fileUri),
-          },
-          {
-            text: 'Annuler',
-            style: 'destructive',
-            onPress: () => {
-              // Delete temp file
-              if (fileUri && Platform.OS !== 'web') {
-                LegacyFileSystem.deleteAsync(fileUri, { idempotent: true });
-              }
+      // On web, use confirm dialog since Alert.alert may not work
+      if (Platform.OS === 'web') {
+        const shouldSave = window.confirm(
+          `🎉 Enregistrement terminé !\n\nDurée: ${formatDuration(recordingDuration)}\nTracks identifiés: ${identifiedTracks.length}\n\nVoulez-vous sauvegarder le mix ?`
+        );
+        
+        if (shouldSave && fileUri) {
+          // On web, trigger download
+          const link = document.createElement('a');
+          link.href = fileUri;
+          link.download = `mix_${new Date().toISOString().slice(0, 10)}.webm`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          console.log('[SPYN Record] Mix downloaded');
+        }
+      } else {
+        // On native, use Alert
+        Alert.alert(
+          '🎉 Enregistrement terminé !',
+          `Durée: ${formatDuration(recordingDuration)}\nTracks identifiés: ${identifiedTracks.length}`,
+          [
+            {
+              text: 'Sauvegarder',
+              onPress: () => saveRecording(fileUri),
             },
-          },
-        ]
-      );
+            {
+              text: 'Annuler',
+              style: 'destructive',
+              onPress: () => {
+                // Delete temp file
+                if (fileUri && Platform.OS !== 'web') {
+                  LegacyFileSystem.deleteAsync(fileUri, { idempotent: true });
+                }
+              },
+            },
+          ]
+        );
+      }
       
     } catch (error) {
       console.error('[SPYN Record] Stop error:', error);
