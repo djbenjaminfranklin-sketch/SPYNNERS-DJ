@@ -1470,7 +1470,7 @@ export default function SpynRecordScreen() {
         {isOffline && (
           <View style={styles.offlineBadge}>
             <Ionicons name="cloud-offline" size={14} color="#FF6B6B" />
-            <Text style={styles.offlineText}>Mode Hors-ligne</Text>
+            <Text style={styles.offlineText}>{t('spynRecord.offlineMode')}</Text>
           </View>
         )}
         
