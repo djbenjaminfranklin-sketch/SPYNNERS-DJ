@@ -207,6 +207,11 @@ export default function ProfileScreen() {
           <Text style={styles.name}>
             {profile?.artist_name || profile?.full_name || t('profile.user')}
           </Text>
+          {isAdmin && (
+            <View style={styles.adminBadgeContainer}>
+              <AdminBadge size="large" />
+            </View>
+          )}
           {profile?.bio && (
             <Text style={styles.bio} numberOfLines={2}>{profile.bio}</Text>
           )}
