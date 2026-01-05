@@ -321,9 +321,9 @@ export default function PlaylistScreen() {
         </View>
       </Modal>
 
-      {/* Playlist Detail Modal */}
-      <Modal visible={showDetailModal} transparent animationType="slide">
-        <View style={styles.detailModalOverlay}>
+      {/* Playlist Detail View (not Modal to allow GlobalPlayer to be visible) */}
+      {showDetailModal && (
+        <View style={styles.detailOverlayView}>
           <View style={styles.detailModalContent}>
             <View style={styles.detailModalHeader}>
               <TouchableOpacity onPress={() => setShowDetailModal(false)}>
@@ -361,7 +361,7 @@ export default function PlaylistScreen() {
               <TouchableOpacity style={styles.detailActionButton} onPress={() => {
                 if (playlistTracks.length > 0) {
                   const randomIndex = Math.floor(Math.random() * playlistTracks.length);
-                  playTrack(playlistTracks[randomIndex]);
+                  playTrack(playlistTracks[randomIndex], playlistTracks);
                 }
               }}>
                 <View style={styles.detailActionOutline}>
@@ -442,7 +442,7 @@ export default function PlaylistScreen() {
             </View>
           </View>
         </View>
-      </Modal>
+      )}
     </View>
   );
 }
