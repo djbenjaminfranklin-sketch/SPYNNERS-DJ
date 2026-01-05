@@ -150,19 +150,89 @@ export default function SpynRecordScreen() {
   useEffect(() => {
     requestPermissions();
     detectAudioSources();
+    initOfflineService();
     
     // Listen for device changes (plug/unplug)
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices) {
       navigator.mediaDevices.addEventListener('devicechange', detectAudioSources);
     }
     
+    // Periodically check for USB on mobile
+    const usbCheckInterval = setInterval(() => {
+      if (Platform.OS !== 'web') {
+        detectAudioSources();
+      }
+    }, 5000); // Check every 5 seconds
+    
     return () => {
       cleanup();
+      clearInterval(usbCheckInterval);
       if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices) {
         navigator.mediaDevices.removeEventListener('devicechange', detectAudioSources);
       }
     };
   }, []);
+
+  // Initialize offline service
+  const initOfflineService = async () => {
+    try {
+      // Check network status
+      const networkStatus = await offlineService.getNetworkStatus();
+      setIsOffline(!networkStatus.isOnline);
+      
+      // Register for network changes
+      const unsubscribe = offlineService.onNetworkChange((online) => {
+        setIsOffline(!online);
+        if (online && offlineSessionId) {
+          // Network restored - suggest syncing
+          Alert.alert(
+            'Connexion rétablie',
+            'Voulez-vous synchroniser votre session enregistrée ?',
+            [
+              { text: 'Plus tard', style: 'cancel' },
+              { text: 'Synchroniser', onPress: syncOfflineSession }
+            ]
+          );
+        }
+      });
+      
+      // Check for pending sessions
+      const sessions = await offlineService.getOfflineSessions();
+      const pending = sessions.filter(s => s.status === 'pending_sync');
+      setPendingSyncCount(pending.length);
+      
+      return unsubscribe;
+    } catch (error) {
+      console.error('[SPYN Record] Offline service init error:', error);
+    }
+  };
+
+  // Sync offline session
+  const syncOfflineSession = async () => {
+    if (!offlineSessionId) return;
+    
+    try {
+      setCurrentAnalysis('Synchronisation en cours...');
+      const result = await offlineService.syncSession(offlineSessionId, token || '');
+      
+      if (result.success) {
+        Alert.alert('Succès', 'Session synchronisée avec succès !');
+        setOfflineSessionId(null);
+        
+        // Update pending count
+        const sessions = await offlineService.getOfflineSessions();
+        const pending = sessions.filter(s => s.status === 'pending_sync');
+        setPendingSyncCount(pending.length);
+      } else {
+        Alert.alert('Erreur', 'La synchronisation a échoué. Réessayez plus tard.');
+      }
+    } catch (error) {
+      console.error('[SPYN Record] Sync error:', error);
+      Alert.alert('Erreur', 'Impossible de synchroniser la session.');
+    } finally {
+      setCurrentAnalysis('');
+    }
+  };
 
   // Detect available audio input devices
   const detectAudioSources = async () => {
