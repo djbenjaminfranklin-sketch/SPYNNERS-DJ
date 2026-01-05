@@ -1068,6 +1068,7 @@ const translations: Record<Language, Record<string, string>> = {
     'vip.trackUnlockedDesc': 'Vous pouvez maintenant télécharger ce track à tout moment.',
     'vip.downloadNow': 'Télécharger Maintenant',
     'vip.unlockError': 'Impossible de débloquer le track. Veuillez réessayer.',
+    'vip.diamondUpdateFailed': 'Échec de la mise à jour des Black Diamonds. Veuillez réessayer.',
     'vip.noAudioFile': 'Aucun fichier audio disponible pour ce track.',
     'vip.saveTrack': 'Enregistrer le Track',
     'vip.downloadSuccess': 'Téléchargement Terminé',
