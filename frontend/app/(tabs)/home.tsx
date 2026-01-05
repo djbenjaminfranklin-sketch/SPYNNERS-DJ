@@ -480,8 +480,8 @@ export default function HomeScreen() {
       activeOpacity={0.8}
     >
       <LinearGradient colors={item.colors} style={styles.menuItemGradient}>
-        <Ionicons name={item.icon as any} size={18} color="#fff" />
-        <Text style={styles.menuItemLabel} numberOfLines={1}>{t(item.labelKey)}</Text>
+        <Ionicons name={item.icon as any} size={26} color="#fff" />
+        <Text style={styles.menuItemLabel} numberOfLines={2}>{t(item.labelKey)}</Text>
       </LinearGradient>
     </TouchableOpacity>
   );
