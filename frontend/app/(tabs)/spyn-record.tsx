@@ -613,8 +613,17 @@ export default function SpynRecordScreen() {
       startTimeRef.current = Date.now();
       setIdentifiedTracks([]);
       
+      // Set session start time for display
+      const now = new Date();
+      setSessionStartTime(now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      
       // Reset recording segments for native platforms
       recordingSegmentsRef.current = [];
+      
+      // Update location in background when starting
+      if (locationPermission) {
+        updateLocation();
+      }
       
       // Start duration timer
       durationIntervalRef.current = setInterval(() => {
