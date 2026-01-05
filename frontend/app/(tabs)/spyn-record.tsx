@@ -110,10 +110,16 @@ export default function SpynRecordScreen() {
   const [hasPermission, setHasPermission] = useState(false);
   
   // Audio source state
-  const [audioSource, setAudioSource] = useState<'internal' | 'external'>('internal');
+  const [audioSource, setAudioSource] = useState<'internal' | 'external' | 'usb'>('internal');
   const [audioSourceName, setAudioSourceName] = useState<string>('Microphone interne');
   const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [isCheckingUSB, setIsCheckingUSB] = useState(false);
+  
+  // Offline state
+  const [isOffline, setIsOffline] = useState(false);
+  const [offlineSessionId, setOfflineSessionId] = useState<string | null>(null);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
   
   // Analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
