@@ -2984,15 +2984,35 @@ async def update_user_diamonds(request: UpdateDiamondsRequest, authorization: st
 @app.get("/api/user/diamonds")
 async def get_user_diamonds(authorization: str = Header(None)):
     """
-    Get user's black diamonds balance from Base44/Spynners API.
+    Get user's black diamonds balance from Spynners API.
+    Uses nativeGetCurrentUser to get fresh user data.
     """
     try:
         if not authorization:
             raise HTTPException(status_code=401, detail="Authorization required")
         
-        print(f"[Diamonds] Getting user diamonds...")
+        print(f"[Diamonds] Getting user diamonds via Spynners API...")
         
-        # Get current user data from Base44 auth/me endpoint
+        # Use Spynners nativeGetCurrentUser to get fresh user data
+        try:
+            result = await call_spynners_function("nativeGetCurrentUser", {}, authorization)
+            print(f"[Diamonds] Spynners response: {result}")
+            
+            if result and result.get('success') and result.get('user'):
+                user_data = result['user']
+                diamonds = user_data.get('black_diamonds', 0) or 0
+                print(f"[Diamonds] User has {diamonds} diamonds")
+                
+                return {
+                    "success": True,
+                    "black_diamonds": diamonds,
+                    "user_id": user_data.get('id') or user_data.get('_id'),
+                    "email": user_data.get('email'),
+                }
+        except Exception as spynners_error:
+            print(f"[Diamonds] Spynners API failed: {spynners_error}")
+        
+        # Fallback: Try Base44 auth/me
         headers = {
             "Content-Type": "application/json",
             "X-Base44-App-Id": BASE44_APP_ID
@@ -3007,48 +3027,32 @@ async def get_user_diamonds(authorization: str = Header(None)):
             
             print(f"[Diamonds] Base44 auth/me response status: {response.status_code}")
             
-            if response.status_code != 200:
-                print(f"[Diamonds] Auth failed: {response.text}")
-                raise HTTPException(status_code=response.status_code, detail="Auth failed")
-            
-            user_data = response.json()
+            if response.status_code == 200:
+                user_data = response.json()
+                diamonds = (
+                    user_data.get('data', {}).get('black_diamonds', 0) or
+                    user_data.get('black_diamonds', 0) or 
+                    0
+                )
+                print(f"[Diamonds] User has {diamonds} diamonds from Base44")
+                
+                return {
+                    "success": True,
+                    "black_diamonds": diamonds,
+                    "user_id": user_data.get('id') or user_data.get('_id'),
+                    "email": user_data.get('email'),
+                }
         
-        if not user_data:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        print(f"[Diamonds] Full user data keys: {list(user_data.keys())}")
-        print(f"[Diamonds] Full user data: {user_data}")
-        
-        # Try various field names for black diamonds
-        diamonds = (
-            user_data.get('black_diamonds') or 
-            user_data.get('black_diamond') or 
-            user_data.get('blackDiamonds') or 
-            user_data.get('diamonds') or 
-            user_data.get('balance') or 
-            0
-        )
-        
-        # Also check if the value is a string and convert to int
-        if isinstance(diamonds, str):
-            try:
-                diamonds = int(diamonds)
-            except:
-                diamonds = 0
-        
-        print(f"[Diamonds] User has {diamonds} diamonds")
-        
-        return {
-            "success": True,
-            "black_diamonds": diamonds,
-            "user_id": user_data.get('id') or user_data.get('_id'),
-            "email": user_data.get('email'),
-        }
+        # If both fail, return error
+        raise HTTPException(status_code=404, detail="Could not fetch user data")
         
     except HTTPException:
         raise
     except Exception as e:
         print(f"[Diamonds] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
