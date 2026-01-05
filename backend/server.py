@@ -382,14 +382,48 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                 # For custom files, we already have Spynners data directly
                 if is_custom:
                     cover_image = track.get("artwork_url")
-                    producer_id = track.get("producer_id")
                     spynners_track_id = track.get("spynners_track_id")
                     genre = track.get("genre", "")
+                    producer_id = None
+                    producer_email = None
                     
                     print(f"[ACRCloud] Custom file - artwork_url: {cover_image}")
                     print(f"[ACRCloud] Custom file - spynners_track_id: {spynners_track_id}")
                     
-                    # Build result directly from custom_files data
+                    # Fetch full track details from Spynners to get producer_id
+                    if spynners_track_id:
+                        try:
+                            async with httpx.AsyncClient(timeout=5.0) as spynners_client:
+                                track_resp = await spynners_client.get(
+                                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Track/{spynners_track_id}",
+                                    headers={"X-Base44-App-Id": BASE44_APP_ID}
+                                )
+                                if track_resp.status_code == 200:
+                                    spynners_track_data = track_resp.json()
+                                    producer_id = spynners_track_data.get("producer_id")
+                                    if not cover_image:
+                                        cover_image = spynners_track_data.get("artwork_url")
+                                    if not genre:
+                                        genre = spynners_track_data.get("genre", "")
+                                    print(f"[SPYNNERS] Fetched track details - producer_id: {producer_id}")
+                                    
+                                    # Get producer email
+                                    if producer_id:
+                                        try:
+                                            user_resp = await spynners_client.get(
+                                                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{producer_id}",
+                                                headers={"X-Base44-App-Id": BASE44_APP_ID}
+                                            )
+                                            if user_resp.status_code == 200:
+                                                producer = user_resp.json()
+                                                producer_email = producer.get("email")
+                                                print(f"[SPYNNERS] Producer email: {producer_email}")
+                                        except Exception as e:
+                                            print(f"[SPYNNERS] Could not get producer email: {e}")
+                        except Exception as e:
+                            print(f"[SPYNNERS] Could not fetch track details: {e}")
+                    
+                    # Build result directly from custom_files data + Spynners lookup
                     recognition_result = {
                         "success": True,
                         "title": track_title,
@@ -405,12 +439,14 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                         "bpm": track.get("bpm"),
                         "spynners_track_id": spynners_track_id,
                         "producer_id": producer_id,
+                        "producer_email": producer_email,
                         "acrcloud_id": acr_id,
                         "play_offset_ms": track.get("play_offset_ms", 0),
                         "is_spynners_track": True
                     }
                     
                     print(f"[SPYNNERS] ✅ Direct match from custom_files: {track_title}")
+                    print(f"[SPYNNERS] Producer ID: {producer_id}, Email: {producer_email}")
                     return recognition_result
                 
                 # ==================== SEARCH IN SPYNNERS DATABASE ====================
