@@ -2825,6 +2825,182 @@ async def send_dj_message(request: SendDJMessageRequest, authorization: str = He
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ==================== ANALYTICS CSV EXPORT ====================
+
+class AnalyticsCSVRequest(BaseModel):
+    start_date: Optional[str] = None  # ISO format: YYYY-MM-DD
+    end_date: Optional[str] = None    # ISO format: YYYY-MM-DD
+
+@app.post("/api/analytics/sessions/csv")
+async def export_sessions_csv(request: AnalyticsCSVRequest, authorization: str = Header(None)):
+    """
+    Export DJ sessions as CSV report.
+    Includes: DJ Name, SACEM Number, Date, Time, Venue, Track Title, Artist, ISRC, ISWC
+    """
+    import csv
+    import io
+    from fastapi.responses import Response
+    
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Analytics CSV] Generating CSV report...")
+        print(f"[Analytics CSV] Date range: {request.start_date} to {request.end_date}")
+        
+        # Get user info from token
+        user_info = {}
+        try:
+            # Try to get user info from Spynners
+            user_result = await call_spynners_function("nativeGetCurrentUser", {}, authorization)
+            if user_result:
+                user_info = user_result
+                print(f"[Analytics CSV] User info: {user_info.get('full_name', 'Unknown')}")
+        except Exception as e:
+            print(f"[Analytics CSV] Could not get user info: {e}")
+        
+        dj_name = user_info.get('full_name') or user_info.get('name') or 'DJ'
+        sacem_number = user_info.get('sacem_number') or user_info.get('sacem') or 'N/A'
+        
+        # Get live track plays (these are the DJ's sessions)
+        plays_data = []
+        try:
+            body = {"limit": 1000}  # Get all plays
+            result = await call_spynners_function("nativeGetLiveTrackPlays", body, authorization)
+            
+            if isinstance(result, dict):
+                plays_data = result.get('plays', []) or result.get('data', []) or []
+            elif isinstance(result, list):
+                plays_data = result
+            
+            print(f"[Analytics CSV] Got {len(plays_data)} track plays")
+        except Exception as e:
+            print(f"[Analytics CSV] Error getting live plays: {e}")
+        
+        # Filter by date range if specified
+        filtered_plays = []
+        for play in plays_data:
+            play_date_str = play.get('played_at') or play.get('created_at') or play.get('timestamp')
+            if play_date_str:
+                try:
+                    # Parse the date string
+                    if 'T' in play_date_str:
+                        play_date = datetime.fromisoformat(play_date_str.replace('Z', '+00:00'))
+                    else:
+                        play_date = datetime.strptime(play_date_str, '%Y-%m-%d')
+                    
+                    # Check date range
+                    include = True
+                    if request.start_date:
+                        start = datetime.strptime(request.start_date, '%Y-%m-%d')
+                        if play_date.replace(tzinfo=None) < start:
+                            include = False
+                    if request.end_date:
+                        end = datetime.strptime(request.end_date, '%Y-%m-%d')
+                        # Include the end date (add one day)
+                        end = end.replace(hour=23, minute=59, second=59)
+                        if play_date.replace(tzinfo=None) > end:
+                            include = False
+                    
+                    if include:
+                        filtered_plays.append(play)
+                except Exception as date_error:
+                    print(f"[Analytics CSV] Date parse error: {date_error}")
+                    filtered_plays.append(play)  # Include if can't parse date
+            else:
+                filtered_plays.append(play)  # Include if no date
+        
+        print(f"[Analytics CSV] Filtered to {len(filtered_plays)} plays")
+        
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output, delimiter=';', quoting=csv.QUOTE_ALL)
+        
+        # Write header row
+        headers = [
+            'DJ Name',
+            'SACEM Number',
+            'Date',
+            'Time',
+            'Venue',
+            'Track Title',
+            'Artist',
+            'ISRC',
+            'ISWC'
+        ]
+        writer.writerow(headers)
+        
+        # Write data rows
+        for play in filtered_plays:
+            # Parse date and time
+            play_datetime = play.get('played_at') or play.get('created_at') or play.get('timestamp') or ''
+            date_str = 'N/A'
+            time_str = 'N/A'
+            
+            if play_datetime:
+                try:
+                    if 'T' in play_datetime:
+                        dt = datetime.fromisoformat(play_datetime.replace('Z', '+00:00'))
+                        date_str = dt.strftime('%d/%m/%Y')
+                        time_str = dt.strftime('%H:%M')
+                    else:
+                        date_str = play_datetime
+                except:
+                    date_str = play_datetime[:10] if len(play_datetime) >= 10 else play_datetime
+            
+            # Get venue info
+            venue = play.get('venue') or play.get('club_name') or play.get('location', {})
+            if isinstance(venue, dict):
+                venue = venue.get('venue') or venue.get('name') or 'N/A'
+            venue = venue or 'N/A'
+            
+            # Get track info
+            track_title = play.get('track_title') or play.get('title') or 'N/A'
+            artist = play.get('track_artist') or play.get('artist') or play.get('producer_name') or 'N/A'
+            isrc = play.get('isrc') or play.get('isrc_code') or 'N/A'
+            iswc = play.get('iswc') or play.get('iswc_code') or 'N/A'
+            
+            row = [
+                dj_name,
+                sacem_number,
+                date_str,
+                time_str,
+                venue,
+                track_title,
+                artist,
+                isrc,
+                iswc
+            ]
+            writer.writerow(row)
+        
+        # Get CSV content
+        csv_content = output.getvalue()
+        output.close()
+        
+        # Generate filename with date
+        filename = f"spynners_sessions_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+        
+        print(f"[Analytics CSV] CSV generated: {len(csv_content)} bytes, {len(filtered_plays)} rows")
+        
+        # Return CSV as downloadable file
+        return Response(
+            content=csv_content,
+            media_type="text/csv; charset=utf-8",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Analytics CSV] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to generate CSV: {str(e)}")
+
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/api/health")
