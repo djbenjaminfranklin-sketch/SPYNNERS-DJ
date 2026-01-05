@@ -405,7 +405,7 @@ export default function HomeScreen() {
     
     try {
       // Load ALL members using nativeGetAllUsers with higher limit
-      const users = await base44Users.nativeGetAllUsers({ search: '', limit: 500, offset: 0 });
+      const users = await base44Users.nativeGetAllUsers({ search: '', limit: 1000, offset: 0 });
       const userId = user?.id || user?._id || '';
       
       console.log('[SendTrack] Loaded', users.length, 'users');
