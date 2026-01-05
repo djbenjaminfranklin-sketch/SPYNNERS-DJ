@@ -18,9 +18,7 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import LanguageSelector from '../../src/components/LanguageSelector';
 import { base44Profiles, PublicProfile } from '../../src/services/base44Api';
-
-// Admin emails
-const ADMIN_EMAILS = ['admin@spynners.com', 'contact@spynners.com', 'djbenjaminfranklin@gmail.com'];
+import AdminBadge, { isUserAdmin } from '../../src/components/AdminBadge';
 
 export default function ProfileScreen() {
   const router = useRouter();
