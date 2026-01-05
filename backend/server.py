@@ -3185,16 +3185,33 @@ async def get_admin_stats(authorization: str = Header(None)):
         
         # Get live track plays for sessions data
         try:
-            plays_result = await call_spynners_function("nativeGetLiveTrackPlays", {"limit": 1000}, authorization)
+            # Try both function names
+            plays_result = None
+            try:
+                plays_result = await call_spynners_function("nativeGetLiveTrackPlays", {"limit": 1000}, authorization)
+            except:
+                pass
+            
+            if not plays_result:
+                try:
+                    plays_result = await call_spynners_function("getLiveTrackPlays", {"limit": 1000}, authorization)
+                except:
+                    pass
+            
             if plays_result:
-                plays = plays_result if isinstance(plays_result, list) else plays_result.get('items', [])
+                # Handle different response formats
+                if isinstance(plays_result, dict):
+                    plays = plays_result.get('plays', plays_result.get('items', plays_result.get('data', [])))
+                else:
+                    plays = plays_result if isinstance(plays_result, list) else []
+                
                 stats["total_sessions"] = len(plays)
                 stats["tracks_detected"] = len(plays)
                 
                 # Count unique DJs
                 unique_djs = set()
                 for play in plays:
-                    dj_id = play.get('dj_id') or play.get('user_id')
+                    dj_id = play.get('dj_id') or play.get('user_id') or play.get('dj_name')
                     if dj_id:
                         unique_djs.add(dj_id)
                 stats["unique_djs"] = len(unique_djs)
