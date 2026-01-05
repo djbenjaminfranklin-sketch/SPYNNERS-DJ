@@ -1403,6 +1403,17 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
   },
+  trackCover: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  trackCoverPlaceholder: {
+    backgroundColor: '#252540',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   trackNumber: {
     width: 30,
     height: 30,
