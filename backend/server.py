@@ -748,6 +748,99 @@ async def convert_audio(request: ConvertAudioRequest):
         raise HTTPException(status_code=500, detail=f"Conversion failed: {str(e)}")
 
 
+class ConcatenateAudioRequest(BaseModel):
+    audio_segments: List[str]  # List of base64 encoded audio segments
+    output_format: str = "m4a"  # Output format
+
+@app.post("/api/concatenate-audio")
+async def concatenate_audio(request: ConcatenateAudioRequest):
+    """
+    Concatenate multiple audio segments into a single file
+    Returns the concatenated audio as base64
+    """
+    import subprocess
+    import tempfile
+    import os
+    
+    try:
+        if not request.audio_segments:
+            return {
+                "success": False,
+                "message": "No audio segments provided"
+            }
+        
+        print(f"[Audio Concat] Concatenating {len(request.audio_segments)} segments")
+        
+        # Create temp directory for segments
+        temp_dir = tempfile.mkdtemp()
+        segment_paths = []
+        
+        try:
+            # Save each segment as a temp file
+            for i, segment_base64 in enumerate(request.audio_segments):
+                segment_data = base64.b64decode(segment_base64)
+                segment_path = os.path.join(temp_dir, f"segment_{i:03d}.m4a")
+                
+                with open(segment_path, 'wb') as f:
+                    f.write(segment_data)
+                
+                segment_paths.append(segment_path)
+                print(f"[Audio Concat] Saved segment {i+1}: {len(segment_data)} bytes")
+            
+            # Create ffmpeg concat file
+            concat_file_path = os.path.join(temp_dir, "concat_list.txt")
+            with open(concat_file_path, 'w') as f:
+                for segment_path in segment_paths:
+                    f.write(f"file '{segment_path}'\n")
+            
+            # Output file
+            output_path = os.path.join(temp_dir, f"concatenated.{request.output_format}")
+            
+            # Run ffmpeg concatenation
+            cmd = [
+                'ffmpeg', '-y', '-f', 'concat', '-safe', '0', '-i', concat_file_path,
+                '-c', 'copy',  # Copy streams without re-encoding for speed
+                output_path
+            ]
+            
+            print(f"[Audio Concat] Running: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, timeout=300)  # 5 minute timeout
+            
+            if result.returncode == 0 and os.path.exists(output_path):
+                with open(output_path, 'rb') as f:
+                    concatenated_data = f.read()
+                
+                concatenated_base64 = base64.b64encode(concatenated_data).decode('utf-8')
+                print(f"[Audio Concat] Concatenation successful! Output size: {len(concatenated_data)} bytes")
+                
+                return {
+                    "success": True,
+                    "audio_base64": concatenated_base64,
+                    "format": request.output_format,
+                    "size": len(concatenated_data),
+                    "segments_count": len(request.audio_segments)
+                }
+            else:
+                error_msg = result.stderr.decode()[:500] if result.stderr else "Unknown error"
+                print(f"[Audio Concat] Concatenation failed: {error_msg}")
+                return {
+                    "success": False,
+                    "message": f"Concatenation failed: {error_msg}"
+                }
+                
+        finally:
+            # Cleanup temp files
+            try:
+                import shutil
+                shutil.rmtree(temp_dir)
+            except:
+                pass
+                
+    except Exception as e:
+        print(f"[Audio Concat] Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Concatenation failed: {str(e)}")
+
+
 # ==================== GOOGLE PLACES API ====================
 
 @app.get("/api/nearby-places")
