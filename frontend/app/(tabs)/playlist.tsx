@@ -147,6 +147,7 @@ export default function PlaylistScreen() {
   
   // Play a single track from playlist (with queue)
   const playSingleTrack = async (track: Track) => {
+    console.log('[Playlist] Playing single track, playlistTracks length:', playlistTracks.length);
     await playTrack(track, playlistTracks);
   };
 
