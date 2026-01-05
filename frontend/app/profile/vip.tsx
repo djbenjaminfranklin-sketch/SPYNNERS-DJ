@@ -49,35 +49,23 @@ export default function VIPScreen() {
       setLoading(true);
       const userId = user?.id || user?._id || '';
       
-      // Get user's black diamonds from backend API
+      // Get user's black diamonds - try multiple sources
       let diamonds = 0;
       
-      try {
-        // Call our backend endpoint to get diamonds from Spynners
-        const token = await base44Api.getStoredToken();
-        const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL || ''}/api/user/diamonds`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('[VIP] Diamonds API response:', data);
-          diamonds = data.black_diamonds || 0;
-        } else {
-          console.log('[VIP] Diamonds API failed:', response.status);
-        }
-      } catch (e) {
-        console.log('[VIP] Could not fetch diamonds from API:', e);
+      // First: check user object directly (set during login)
+      diamonds = user?.black_diamonds || 0;
+      console.log('[VIP] Diamonds from user object:', diamonds);
+      
+      // Fallback: check nested data object (Base44 format)
+      if (diamonds === 0 && user?.data?.black_diamonds) {
+        diamonds = user.data.black_diamonds;
+        console.log('[VIP] Diamonds from user.data:', diamonds);
       }
       
-      // Fallback to user object if API failed
+      // Final fallback: other possible field names
       if (diamonds === 0) {
-        diamonds = user?.black_diamonds || user?.blackDiamonds || user?.diamonds || 0;
-        console.log('[VIP] Using fallback diamonds from user object:', diamonds);
+        diamonds = user?.blackDiamonds || user?.diamonds || 0;
+        console.log('[VIP] Diamonds from fallback fields:', diamonds);
       }
       
       setUserDiamonds(diamonds);
