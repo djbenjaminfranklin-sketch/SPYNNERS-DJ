@@ -1405,7 +1405,7 @@ export default function SpynRecordScreen() {
         <View style={styles.emptyTracks}>
           <Ionicons name="musical-notes-outline" size={40} color="#444" />
           <Text style={styles.emptyTracksText}>
-            Les tracks identifiés apparaîtront ici
+            {t('spynRecord.noTracksYet')}
           </Text>
         </View>
       ) : (
