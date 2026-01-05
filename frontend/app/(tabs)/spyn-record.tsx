@@ -504,18 +504,9 @@ export default function SpynRecordScreen() {
       // Start waveform updates
       waveformIntervalRef.current = setInterval(updateWaveform, 100);
       
-      // Enable automatic analysis on ALL platforms now
-      // On native, we pause the recording briefly to read the file
-      analysisIntervalRef.current = setInterval(() => {
-        console.log('[SPYN Record] Auto-analysis triggered');
-        analyzeCurrentAudio();
-      }, ANALYSIS_INTERVAL);
-      
-      // First analysis after 10 seconds (give time for some audio to be recorded)
-      setTimeout(() => {
-        console.log('[SPYN Record] First analysis triggered');
-        analyzeCurrentAudio();
-      }, 10000);
+      // NO automatic analysis during recording - we'll analyze at the end
+      // This ensures continuous recording without interruption
+      console.log('[SPYN Record] Recording mode: Continuous (analysis at end)');
       
       console.log('[SPYN Record] ✅ Recording started successfully');
       
