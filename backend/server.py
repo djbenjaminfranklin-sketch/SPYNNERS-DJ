@@ -2350,7 +2350,11 @@ async def call_spynners_function(function_name: str, body: dict, authorization: 
         print(f"[Spynners API] Response status: {response.status_code}")
         
         if response.status_code == 200:
-            return response.json()
+            data = response.json()
+            # Log a preview of the response
+            data_str = str(data)[:500]
+            print(f"[Spynners API] Response preview: {data_str}")
+            return data
         else:
             print(f"[Spynners API] Error: {response.text}")
             raise HTTPException(status_code=response.status_code, detail=response.text)
