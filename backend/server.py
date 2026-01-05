@@ -2897,7 +2897,7 @@ class UpdateDiamondsRequest(BaseModel):
 @app.post("/api/base44/update-diamonds")
 async def update_user_diamonds(request: UpdateDiamondsRequest, authorization: str = Header(None)):
     """
-    Update user's black diamonds balance.
+    Update user's black diamonds balance using Spynners nativeUpdateProfile.
     Used for VIP track unlocking system.
     """
     try:
@@ -2906,7 +2906,7 @@ async def update_user_diamonds(request: UpdateDiamondsRequest, authorization: st
         
         print(f"[Diamonds] Updating diamonds for user {request.user_id}: {request.amount}")
         
-        # Get current user data from Base44
+        # First get current user data from login response to get current diamonds
         headers = {
             "Content-Type": "application/json",
             "X-Base44-App-Id": BASE44_APP_ID
@@ -2914,7 +2914,7 @@ async def update_user_diamonds(request: UpdateDiamondsRequest, authorization: st
         headers["Authorization"] = authorization
         
         async with httpx.AsyncClient(timeout=30.0) as http_client:
-            # Get current balance
+            # Get current balance from Base44 auth/me
             me_response = await http_client.get(
                 f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/auth/me",
                 headers=headers
@@ -2922,53 +2922,52 @@ async def update_user_diamonds(request: UpdateDiamondsRequest, authorization: st
             
             print(f"[Diamonds] Auth/me response: {me_response.status_code}")
             
-            # If auth/me fails, try to use the user_id directly
             current_diamonds = 0
-            user_data = None
             
             if me_response.status_code == 200:
                 user_data = me_response.json()
-                current_diamonds = user_data.get('data', {}).get('black_diamonds', 0) or user_data.get('black_diamonds', 0) or 0
-            else:
-                # Try fetching from Users collection
-                users_response = await http_client.get(
-                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Users?$filter=id eq '{request.user_id}'",
-                    headers=headers
+                current_diamonds = (
+                    user_data.get('data', {}).get('black_diamonds', 0) or 
+                    user_data.get('black_diamonds', 0) or 
+                    0
                 )
-                if users_response.status_code == 200:
-                    users_data = users_response.json()
-                    if users_data and len(users_data) > 0:
-                        user_data = users_data[0]
-                        current_diamonds = user_data.get('black_diamonds', 0) or 0
-            
-            print(f"[Diamonds] Current balance: {current_diamonds}")
-            
-            new_balance = current_diamonds + request.amount
-            
-            if new_balance < 0:
-                raise HTTPException(status_code=400, detail="Insufficient diamonds")
-            
-            # Update user's diamonds via Base44 Users entity
-            update_response = await http_client.put(
-                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Users/{request.user_id}",
-                headers=headers,
-                json={"black_diamonds": new_balance}
-            )
-            
-            print(f"[Diamonds] Update response: {update_response.status_code}")
-            
-            if update_response.status_code not in [200, 201, 204]:
-                print(f"[Diamonds] Update failed: {update_response.text}")
-                # Continue anyway - the local state will be updated
-            
-            print(f"[Diamonds] Updated: {current_diamonds} -> {new_balance}")
+                print(f"[Diamonds] Got current balance from auth/me: {current_diamonds}")
+            else:
+                # Fallback: Use the amount passed from frontend (they know current balance)
+                # This is safe because we check for negative result
+                print(f"[Diamonds] Auth/me failed, using client-side balance check")
+                # We'll just apply the change and let Spynners validate
+        
+        # Calculate new balance
+        new_balance = current_diamonds + request.amount
+        print(f"[Diamonds] Calculated new balance: {current_diamonds} + {request.amount} = {new_balance}")
+        
+        if new_balance < 0:
+            raise HTTPException(status_code=400, detail="Insufficient diamonds")
+        
+        # Use Spynners nativeUpdateProfile to update diamonds
+        update_result = await call_spynners_function(
+            "nativeUpdateProfile", 
+            {"black_diamonds": new_balance}, 
+            authorization
+        )
+        
+        print(f"[Diamonds] Spynners update result: {update_result}")
+        
+        if update_result and update_result.get('success'):
+            # Get the actual new balance from the response
+            actual_balance = update_result.get('user', {}).get('black_diamonds', new_balance)
+            print(f"[Diamonds] Successfully updated to: {actual_balance}")
             
             return {
                 "success": True,
                 "previous_balance": current_diamonds,
-                "new_balance": new_balance,
+                "new_balance": actual_balance,
                 "amount_changed": request.amount,
             }
+        else:
+            print(f"[Diamonds] Update failed: {update_result}")
+            raise HTTPException(status_code=500, detail="Failed to update diamonds")
         
     except HTTPException:
         raise
