@@ -507,8 +507,29 @@ const styles = StyleSheet.create({
   modalImage: { width: '100%', height: 200, borderRadius: BorderRadius.md, marginBottom: Spacing.md },
   modalTrackTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.text, textAlign: 'center' },
   modalTrackArtist: { fontSize: 14, color: Colors.primary, textAlign: 'center', marginTop: 4 },
+  
+  // Track details
+  trackDetails: { marginTop: Spacing.md, backgroundColor: Colors.backgroundInput, borderRadius: BorderRadius.md, padding: Spacing.md },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  detailLabel: { fontSize: 12, color: Colors.textMuted },
+  detailValue: { fontSize: 12, color: Colors.text, fontWeight: '500' },
+  
+  // Play button
+  playBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, paddingVertical: 12, borderRadius: BorderRadius.md, marginTop: Spacing.md },
+  
   modalActions: { flexDirection: 'row', gap: Spacing.md, marginTop: Spacing.lg },
   approveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#4CAF50', paddingVertical: 12, borderRadius: BorderRadius.md },
   rejectBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#F44336', paddingVertical: 12, borderRadius: BorderRadius.md },
   btnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  btnDisabled: { opacity: 0.6 },
+  
+  // Reject Modal
+  rejectModalContent: { backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.lg, padding: Spacing.lg, width: '85%' },
+  rejectModalTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.text, textAlign: 'center', marginBottom: Spacing.md },
+  rejectInput: { backgroundColor: Colors.backgroundInput, borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: 14, color: Colors.text, height: 100, textAlignVertical: 'top' },
+  rejectModalActions: { flexDirection: 'row', gap: Spacing.md, marginTop: Spacing.lg },
+  cancelBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border },
+  cancelBtnText: { fontSize: 14, color: Colors.textMuted },
+  confirmRejectBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: BorderRadius.md, backgroundColor: '#F44336' },
+  confirmRejectBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 });
