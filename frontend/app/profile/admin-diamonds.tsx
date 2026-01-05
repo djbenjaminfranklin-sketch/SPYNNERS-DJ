@@ -93,7 +93,10 @@ export default function AdminDiamonds() {
         { text: 'Annuler', style: 'cancel' },
         { 
           text: 'Envoyer 10 💎', 
-          onPress: () => Alert.alert('Succès', '10 Black Diamonds envoyés à tous les utilisateurs!') 
+          onPress: async () => {
+            // TODO: Implement bulk send via API
+            Alert.alert('Info', 'Cette fonctionnalité nécessite un endpoint API spécifique.');
+          }
         },
       ]
     );
@@ -105,13 +108,32 @@ export default function AdminDiamonds() {
     setShowSendModal(true);
   };
 
-  const sendDiamonds = () => {
+  const sendDiamonds = async () => {
     if (!diamondAmount || parseInt(diamondAmount) <= 0) {
       Alert.alert('Erreur', 'Veuillez entrer un montant valide');
       return;
     }
-    Alert.alert('Succès', `${diamondAmount} Black Diamonds envoyés à ${selectedUser?.full_name}!`);
-    setShowSendModal(false);
+    
+    if (!selectedUser) return;
+    
+    try {
+      // Send diamonds to user via API
+      const response = await axios.post(`${BACKEND_URL}/api/base44/add-diamonds`, {
+        user_id: selectedUser.id,
+        amount: parseInt(diamondAmount),
+      });
+      
+      if (response.data?.success) {
+        Alert.alert('✅ Succès', `${diamondAmount} Black Diamonds envoyés à ${selectedUser?.full_name}!`);
+        setShowSendModal(false);
+        loadUsers(); // Refresh the list
+      } else {
+        Alert.alert('Erreur', response.data?.error || 'Impossible d\'envoyer les diamonds.');
+      }
+    } catch (error: any) {
+      console.error('[AdminDiamonds] Send error:', error);
+      Alert.alert('Erreur', 'Impossible d\'envoyer les diamonds. Vérifiez votre connexion.');
+    }
   };
 
   if (!isAdmin) {
