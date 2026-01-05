@@ -134,11 +134,18 @@ export default function LiveRadarScreen() {
   
   // Auto-message state
   const [autoMessageEnabled, setAutoMessageEnabled] = useState(false);
-  const [autoMessage, setAutoMessage] = useState('Merci de jouer mon track ! 🎵');
+  const [autoMessage, setAutoMessage] = useState('');
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [selectedPlay, setSelectedPlay] = useState<RadarPlay | null>(null);
   const [customMessage, setCustomMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+  
+  // Initialize auto-message with translation
+  useEffect(() => {
+    if (!autoMessage) {
+      setAutoMessage(t('radar.defaultAutoMessage'));
+    }
+  }, [t]);
   
   // Animation refs for pulsing dots
   const pulseAnims = useRef<Record<string, Animated.Value>>({});
