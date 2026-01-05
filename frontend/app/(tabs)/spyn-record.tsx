@@ -87,6 +87,7 @@ interface IdentifiedTrack {
   elapsedTime: number; // Seconds from start
   coverImage?: string;
   spynnersTrackId?: string;
+  producerId?: string;
 }
 
 interface WaveformBar {
