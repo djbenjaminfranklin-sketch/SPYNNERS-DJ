@@ -355,7 +355,7 @@ export default function AnalyticsScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Analytics</Text>
+        <Text style={styles.headerTitle}>{t('analytics.title')}</Text>
         <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}>
           <Ionicons name="refresh" size={24} color="#fff" />
         </TouchableOpacity>
