@@ -146,8 +146,9 @@ export default function EditTrackScreen() {
       
       console.log('[EditTrack] Saving track:', updateData);
       
+      // Use the new endpoint
       const response = await axios.put(
-        `${BACKEND_URL}/api/base44/entities/Track/${id}`,
+        `${BACKEND_URL}/api/tracks/${id}`,
         updateData,
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
