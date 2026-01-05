@@ -184,14 +184,17 @@ export default function VIPScreen() {
     
     try {
       console.log('[VIP] Unlocking track:', trackId, 'for user:', userId);
+      console.log('[VIP] Current diamonds:', userDiamonds);
       
-      // Deduct diamond via API
+      // Deduct diamond via API - pass current balance for reliable calculation
       try {
-        await base44Api.updateUserDiamonds(userId, -UNLOCK_COST);
-        console.log('[VIP] Diamonds deducted successfully');
-      } catch (diamondError) {
-        console.log('[VIP] Diamonds API error (continuing locally):', diamondError);
-        // Continue anyway - we'll update local state
+        await base44Api.updateUserDiamonds(userId, -UNLOCK_COST, userDiamonds);
+        console.log('[VIP] Diamonds deducted successfully on server');
+      } catch (diamondError: any) {
+        console.log('[VIP] Diamonds API error:', diamondError?.message || diamondError);
+        // Don't continue if the server update failed - show error
+        Alert.alert(t('common.error'), t('vip.diamondUpdateFailed'));
+        return;
       }
       
       // Try to record the purchase (but don't fail if entity doesn't exist)
