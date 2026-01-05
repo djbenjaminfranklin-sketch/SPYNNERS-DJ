@@ -98,21 +98,39 @@ export default function LibraryScreen() {
     }
   };
 
+  // Helper function to get translated status
+  const getTranslatedStatus = (status?: string): string => {
+    switch (status?.toLowerCase()) {
+      case 'approved': return t('library.approved');
+      case 'pending': return t('library.pending');
+      case 'rejected': return t('library.rejected');
+      default: return t('library.pending'); // Default to pending instead of "unknown"
+    }
+  };
+
   const renderTrack = ({ item }: { item: Track }) => {
     const coverUrl = getCoverImageUrl(item);
     const trackId = item.id || item._id || '';
     const isCurrentTrack = currentTrack && (currentTrack.id || currentTrack._id) === trackId;
     
+    // Handle play button press - prevent double play
+    const handlePlayPress = () => {
+      if (isCurrentTrack) {
+        togglePlayPause();
+      } else {
+        playTrack(item, tracks); // Pass all tracks for queue
+      }
+    };
+    
     return (
-      <TouchableOpacity 
+      <View 
         style={[styles.trackCard, isCurrentTrack && styles.trackCardActive]}
-        onPress={() => playTrack(item)}
-        activeOpacity={0.7}
       >
-        {/* Play Button */}
+        {/* Play Button - Only one touchable for play */}
         <TouchableOpacity 
           style={styles.playButton} 
-          onPress={() => isCurrentTrack ? togglePlayPause() : playTrack(item)}
+          onPress={handlePlayPress}
+          activeOpacity={0.7}
         >
           <Ionicons 
             name={isCurrentTrack && isPlaying ? 'pause' : 'play'} 
@@ -144,12 +162,12 @@ export default function LibraryScreen() {
           </View>
         </View>
 
-        {/* Status Badge */}
+        {/* Status Badge - with translation */}
         <View style={styles.statusContainer}>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
             <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
             <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-              {item.status || 'unknown'}
+              {getTranslatedStatus(item.status)}
             </Text>
           </View>
           
@@ -165,7 +183,7 @@ export default function LibraryScreen() {
             </View>
           </View>
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
