@@ -369,6 +369,64 @@ class OfflineService {
     return sessions.filter(s => s.status === 'pending_sync').length;
   }
 
+  // Save a complete offline session (used by SPYN Record)
+  async saveOfflineSession(sessionData: {
+    id: string;
+    userId: string;
+    djName: string;
+    duration: number;
+    recordedAt: string;
+    tracks: Array<{
+      title: string;
+      artist: string;
+      timestamp: string;
+      coverImage?: string;
+      spynnersTrackId?: string;
+      producerId?: string;
+    }>;
+    audioUri?: string;
+    status: 'pending_sync' | 'synced' | 'recording';
+  }): Promise<void> {
+    console.log('[Offline] Saving complete session:', sessionData.id);
+    
+    const sessions = await this.getOfflineSessions();
+    
+    // Create the session object
+    const newSession: OfflineSession = {
+      id: sessionData.id,
+      startTime: sessionData.recordedAt,
+      endTime: sessionData.recordedAt,
+      userId: sessionData.userId,
+      djName: sessionData.djName,
+      status: sessionData.status,
+      recordings: sessionData.tracks.map((track, index) => ({
+        id: `${sessionData.id}_track_${index}`,
+        audioBase64: '', // We don't store audio base64 for tracks, just metadata
+        timestamp: track.timestamp,
+        userId: sessionData.userId,
+        djName: sessionData.djName,
+        status: 'synced',
+        createdAt: sessionData.recordedAt,
+        trackInfo: {
+          title: track.title,
+          artist: track.artist,
+          coverImage: track.coverImage,
+          spynnersTrackId: track.spynnersTrackId,
+          producerId: track.producerId,
+        },
+      })),
+      // Store additional metadata
+      duration: sessionData.duration,
+      audioUri: sessionData.audioUri,
+      tracksCount: sessionData.tracks.length,
+    };
+    
+    sessions.push(newSession);
+    await this.saveOfflineSessions(sessions);
+    
+    console.log('[Offline] Session saved successfully:', sessionData.id, 'with', sessionData.tracks.length, 'tracks');
+  }
+
   async getPendingRecordingsCount(): Promise<number> {
     const sessions = await this.getOfflineSessions();
     return sessions
