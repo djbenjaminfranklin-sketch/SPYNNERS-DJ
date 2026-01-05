@@ -228,9 +228,9 @@ export default function HomeScreen() {
     }
   };
 
-  // Use the global player function
+  // Use the global player function - pass all tracks to enable next/previous
   const handlePlayTrack = async (track: Track) => {
-    await globalPlayTrack(track);
+    await globalPlayTrack(track, tracks);
     // Note: play tracking is disabled due to API permission issues
     // try { await base44Tracks.play(track.id || track._id || ''); } catch {}
   };
