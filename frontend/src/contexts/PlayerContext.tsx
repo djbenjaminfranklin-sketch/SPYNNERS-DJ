@@ -98,6 +98,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         previewTimeoutRef.current = null;
       }
       
+      // CRITICAL: Stop and unload current sound FIRST before anything else
+      if (soundRef.current) {
+        try {
+          console.log('[Player] Stopping previous sound...');
+          await soundRef.current.stopAsync();
+          await soundRef.current.unloadAsync();
+          console.log('[Player] Previous sound stopped and unloaded');
+        } catch (stopError) {
+          console.log('[Player] Error stopping previous sound:', stopError);
+        }
+        soundRef.current = null;
+      }
+      
       // Update queue if trackList provided
       if (trackList && trackList.length > 0) {
         console.log('[Player] Setting queue with', trackList.length, 'tracks');
@@ -111,13 +124,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         // Single track - clear queue but keep current track
         setQueue([track]);
         setCurrentIndex(0);
-      }
-      
-      // Stop and unload current sound
-      if (soundRef.current) {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
       }
 
       const audioUrl = track.audio_url || track.audio_file;
