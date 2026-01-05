@@ -152,6 +152,14 @@ export default function LiveRadarScreen() {
 
   useEffect(() => {
     loadData();
+    
+    // Auto-refresh every 30 seconds for real-time updates
+    const intervalId = setInterval(() => {
+      console.log('[LiveRadar] Auto-refreshing data...');
+      loadData();
+    }, 30000);
+    
+    return () => clearInterval(intervalId);
   }, [activeTab]);
 
   // Create pulse animation for each live play
