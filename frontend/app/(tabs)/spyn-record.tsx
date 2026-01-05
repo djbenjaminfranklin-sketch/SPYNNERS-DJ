@@ -1016,23 +1016,24 @@ export default function SpynRecordScreen() {
         fileUri = await stopNativeRecording();
         console.log('[SPYN Record] Native recording stopped, URI:', fileUri);
         
-        // Read the final file for analysis
+        // Read the final file for analysis using FileSystem (fetch doesn't work on iOS)
         if (fileUri) {
           try {
-            const response = await fetch(fileUri);
-            const blob = await response.blob();
-            audioBase64ForAnalysis = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                const result = reader.result as string;
-                resolve(result.split(',')[1] || '');
-              };
-              reader.onerror = reject;
-              reader.readAsDataURL(blob);
+            console.log('[SPYN Record] Reading final file with FileSystem...');
+            audioBase64ForAnalysis = await FileSystem.readAsStringAsync(fileUri, {
+              encoding: FileSystem.EncodingType.Base64,
             });
             console.log('[SPYN Record] Audio read for analysis, length:', audioBase64ForAnalysis.length);
-          } catch (readErr) {
-            console.error('[SPYN Record] Error reading audio for analysis:', readErr);
+          } catch (fsError) {
+            console.log('[SPYN Record] FileSystem failed, trying LegacyFileSystem:', fsError);
+            try {
+              audioBase64ForAnalysis = await LegacyFileSystem.readAsStringAsync(fileUri, {
+                encoding: LegacyFileSystem.EncodingType.Base64,
+              });
+              console.log('[SPYN Record] Audio read with LegacyFileSystem, length:', audioBase64ForAnalysis.length);
+            } catch (legacyError) {
+              console.error('[SPYN Record] All read methods failed:', legacyError);
+            }
           }
         }
       }
