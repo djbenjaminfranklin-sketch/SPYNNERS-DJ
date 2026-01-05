@@ -122,6 +122,60 @@ export default function AdminDashboard() {
     Alert.alert('Fix Missing BPM', 'Analyse et correction des BPM manquants...');
   };
 
+  // Approve a track
+  const handleApproveTrack = async (track: PendingTrack) => {
+    setProcessing(true);
+    try {
+      await base44Admin.approveTrack(track.id);
+      Alert.alert('✅ Succès', `"${track.title}" a été approuvé !`);
+      setShowDetailModal(false);
+      fetchAllData(); // Refresh the list
+    } catch (error) {
+      console.error('[Admin] Approve error:', error);
+      Alert.alert('Erreur', 'Impossible d\'approuver cette track.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Reject a track
+  const handleRejectTrack = async (track: PendingTrack) => {
+    if (!rejectionReason.trim()) {
+      Alert.alert('Erreur', 'Veuillez indiquer une raison de rejet.');
+      return;
+    }
+    setProcessing(true);
+    try {
+      await base44Admin.rejectTrack(track.id, rejectionReason);
+      Alert.alert('❌ Track Rejetée', `"${track.title}" a été rejetée.`);
+      setShowRejectModal(false);
+      setShowDetailModal(false);
+      setRejectionReason('');
+      fetchAllData(); // Refresh the list
+    } catch (error) {
+      console.error('[Admin] Reject error:', error);
+      Alert.alert('Erreur', 'Impossible de rejeter cette track.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Play track preview
+  const handlePlayTrack = (track: PendingTrack) => {
+    if (track.audio_url) {
+      globalPlayTrack({
+        id: track.id,
+        title: track.title,
+        artist_name: track.producer_name || track.artist,
+        audio_url: track.audio_url,
+        artwork_url: track.artwork_url,
+        genre: track.genre,
+      });
+    } else {
+      Alert.alert('Pas d\'audio', 'Cette track n\'a pas de fichier audio disponible.');
+    }
+  };
+
   const getFilteredTracks = () => {
     switch (activeTab) {
       case 'pending': return allTracks.filter(t => t.status === 'pending');
