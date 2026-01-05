@@ -191,9 +191,6 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.languageSelectorContainer}>
-          <LanguageSelector />
-        </View>
         <View style={styles.profileSection}>
           <View style={[styles.avatar, isAdmin && styles.adminAvatar]}>
             {avatarUrl ? (
