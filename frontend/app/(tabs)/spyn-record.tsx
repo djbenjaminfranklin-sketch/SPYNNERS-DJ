@@ -45,7 +45,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return process.env.EXPO_PUBLIC_BACKEND_URL || 'https://musicapp-fix-1.preview.emergentagent.com';
+  return process.env.EXPO_PUBLIC_BACKEND_URL || 'https://track-reports.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

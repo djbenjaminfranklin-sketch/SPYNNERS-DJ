@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://musicapp-fix-1.preview.emergentagent.com';
+  return 'https://track-reports.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

@@ -18,7 +18,7 @@ const getBackendUrl = () => {
   }
   return Constants.expoConfig?.extra?.backendUrl || 
          process.env.EXPO_PUBLIC_BACKEND_URL || 
-         'https://musicapp-fix-1.preview.emergentagent.com';
+         'https://track-reports.preview.emergentagent.com';
 };
 
 // Storage key for auth token

@@ -19,7 +19,7 @@ def get_backend_url():
                     return line.split('=', 1)[1].strip()
     except:
         pass
-    return "https://musicapp-fix-1.preview.emergentagent.com"
+    return "https://track-reports.preview.emergentagent.com"
 
 BASE_URL = get_backend_url()
 API_URL = f"{BASE_URL}/api"

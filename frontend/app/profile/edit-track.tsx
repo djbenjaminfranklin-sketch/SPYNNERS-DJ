@@ -24,7 +24,7 @@ import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import axios from 'axios';
 import Constants from 'expo-constants';
 
-const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://musicapp-fix-1.preview.emergentagent.com';
+const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://track-reports.preview.emergentagent.com';
 
 // Colors
 const CYAN_COLOR = '#5CB3CC';
