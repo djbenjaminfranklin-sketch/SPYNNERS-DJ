@@ -139,9 +139,26 @@ export interface User {
   full_name: string;
   user_type?: string;
   avatar?: string;
+  avatar_url?: string;
   is_admin?: boolean;
   diamonds?: number;
+  black_diamonds?: number;
   is_vip?: boolean;
+  artist_name?: string;
+  bio?: string;
+  nationality?: string;
+  instagram_url?: string;
+  soundcloud?: string;
+  sacem_number?: string;
+  auto_message_settings?: {
+    message?: string;
+    enabled?: boolean;
+  };
+  preferred_genres?: string[];
+  data?: {
+    black_diamonds?: number;
+    [key: string]: any;
+  };
 }
 
 // ==================== PUBLIC PROFILE TYPE ====================
