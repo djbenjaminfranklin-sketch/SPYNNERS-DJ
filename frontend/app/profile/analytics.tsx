@@ -163,16 +163,19 @@ export default function AnalyticsScreen() {
           ratingCount++;
         }
 
-        // Track status - if no status, assume approved (visible tracks are usually approved)
+        // Track status - check multiple fields for status
         const status = track.status?.toLowerCase()?.trim();
-        if (status === 'approved' || status === 'published' || status === 'active' || !status) {
-          approvedCount++;
-        } else if (status === 'pending' || status === 'review' || status === 'waiting') {
-          pendingCount++;
-        } else if (status === 'rejected' || status === 'declined') {
+        const isApproved = track.is_approved === true;
+        const isPending = track.is_pending === true || status === 'pending' || status === 'review';
+        const isRejected = track.is_rejected === true || status === 'rejected' || status === 'declined';
+        
+        // Count based on actual status
+        if (isRejected) {
           rejectedCount++;
+        } else if (isPending) {
+          pendingCount++;
         } else {
-          // Unknown status - count as approved
+          // If not rejected or pending, consider as approved (most visible tracks are approved)
           approvedCount++;
         }
 
