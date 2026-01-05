@@ -722,6 +722,7 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Profile
     'profile.editProfile': 'Modifier le Profil',
+    'profile.selectYourGenres': 'Sélectionnez vos genres favoris',
     'profile.blackDiamonds': 'Black Diamonds',
     'profile.settings': 'Paramètres',
     'profile.help': 'Aide & Support',
