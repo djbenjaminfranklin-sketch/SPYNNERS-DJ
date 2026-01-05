@@ -384,13 +384,17 @@ export default function SpynRecordScreen() {
       // Start waveform updates
       waveformIntervalRef.current = setInterval(updateWaveform, 100);
       
-      // Start analysis interval
-      analysisIntervalRef.current = setInterval(() => {
-        analyzeCurrentAudio();
-      }, ANALYSIS_INTERVAL);
-      
-      // First analysis after 5 seconds
-      setTimeout(() => analyzeCurrentAudio(), 5000);
+      // On web, enable automatic analysis
+      // On iOS/Android, user must tap the scan button manually (to avoid conflicts)
+      if (Platform.OS === 'web') {
+        // Start analysis interval for web only
+        analysisIntervalRef.current = setInterval(() => {
+          analyzeCurrentAudio();
+        }, ANALYSIS_INTERVAL);
+        
+        // First analysis after 5 seconds
+        setTimeout(() => analyzeCurrentAudio(), 5000);
+      }
       
     } catch (error) {
       console.error('[SPYN Record] Start error:', error);
