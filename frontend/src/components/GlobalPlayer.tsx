@@ -454,4 +454,84 @@ const styles = StyleSheet.create({
     padding: 4,
     marginLeft: 4,
   },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    color: Colors.text,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  createSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 10,
+  },
+  createInput: {
+    flex: 1,
+    backgroundColor: Colors.border,
+    borderRadius: 10,
+    padding: 12,
+    color: Colors.text,
+    fontSize: 14,
+  },
+  createBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  createBtnDisabled: {
+    opacity: 0.5,
+  },
+  playlistList: {
+    flexGrow: 0,
+  },
+  playlistItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: Colors.border,
+    borderRadius: 10,
+    marginBottom: 10,
+    gap: 15,
+  },
+  playlistInfo: {
+    flex: 1,
+  },
+  playlistName: {
+    color: Colors.text,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  playlistCount: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  emptyText: {
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 14,
+  },
 });
