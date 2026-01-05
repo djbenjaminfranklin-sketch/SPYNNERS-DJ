@@ -3228,7 +3228,11 @@ async def get_admin_users(authorization: str = Header(None), limit: int = 500):
         result = await call_spynners_function("nativeGetAllUsers", {"limit": limit}, authorization)
         
         if result:
-            users = result if isinstance(result, list) else result.get('items', [])
+            # Handle different response formats
+            if isinstance(result, dict):
+                users = result.get('users', result.get('items', []))
+            else:
+                users = result if isinstance(result, list) else []
             print(f"[Admin Users] Got {len(users)} users")
             return {"success": True, "users": users, "total": len(users)}
         
