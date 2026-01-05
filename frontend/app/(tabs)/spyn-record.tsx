@@ -1003,20 +1003,105 @@ export default function SpynRecordScreen() {
       setIsRecording(false);
       setIsPaused(false);
       
-      // Analyze the recording
+      // Analyze the recording - we'll analyze multiple segments for better detection
       setCurrentAnalysis('Analyse de la session...');
       const detectedTracks: IdentifiedTrack[] = [];
+      const detectedTitles = new Set<string>(); // To avoid duplicates
       
-      if (audioBase64ForAnalysis && audioBase64ForAnalysis.length > 0) {
+      // For native, we have multiple segments saved during recording
+      // For web, we only have one blob
+      const segmentsToAnalyze = Platform.OS === 'web' 
+        ? (audioBase64ForAnalysis ? [audioBase64ForAnalysis] : [])
+        : recordingSegmentsRef.current;
+      
+      console.log('[SPYN Record] Segments to analyze:', segmentsToAnalyze.length);
+      
+      // Analyze each segment
+      for (let i = 0; i < segmentsToAnalyze.length; i++) {
+        setCurrentAnalysis(`Analyse segment ${i + 1}/${segmentsToAnalyze.length}...`);
+        
         try {
-          console.log('[SPYN Record] Sending audio for analysis...');
+          let segmentBase64 = '';
+          
+          if (Platform.OS === 'web') {
+            segmentBase64 = segmentsToAnalyze[i] as string;
+          } else {
+            // Read segment file
+            const segmentUri = segmentsToAnalyze[i] as string;
+            try {
+              const response = await fetch(segmentUri);
+              const blob = await response.blob();
+              segmentBase64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  const result = reader.result as string;
+                  resolve(result.split(',')[1] || '');
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+            } catch (readErr) {
+              console.error('[SPYN Record] Error reading segment:', readErr);
+              continue;
+            }
+          }
+          
+          if (!segmentBase64 || segmentBase64.length === 0) continue;
+          
+          console.log('[SPYN Record] Analyzing segment', i + 1, 'length:', segmentBase64.length);
+          
+          const response = await axios.post(`${BACKEND_URL}/api/recognize-audio`, {
+            audio_base64: segmentBase64,
+          }, {
+            timeout: 30000,
+          });
+          
+          console.log('[SPYN Record] Segment', i + 1, 'response:', response.data);
+          
+          if (response.data.success && response.data.title) {
+            // Check if we already detected this track
+            const trackKey = response.data.title.toLowerCase();
+            if (!detectedTitles.has(trackKey)) {
+              detectedTitles.add(trackKey);
+              
+              const newTrack: IdentifiedTrack = {
+                id: `${Date.now()}_${i}`,
+                title: response.data.title,
+                artist: response.data.artist,
+                timestamp: formatDuration(Math.floor((i / segmentsToAnalyze.length) * recordingDuration)),
+                elapsedTime: Math.floor((i / segmentsToAnalyze.length) * recordingDuration),
+                coverImage: response.data.cover_image,
+                spynnersTrackId: response.data.spynners_track_id,
+                producerId: response.data.producer_id,
+              };
+              
+              detectedTracks.push(newTrack);
+              setIdentifiedTracks(prev => [...prev, newTrack]);
+              setCurrentAnalysis(`✅ ${response.data.title}`);
+              
+              // Send email for the track
+              sendEmailForTrack(newTrack);
+              
+              console.log('[SPYN Record] ✅ Track identified:', newTrack.title);
+            } else {
+              console.log('[SPYN Record] Track already detected, skipping:', response.data.title);
+            }
+          }
+        } catch (analysisError: any) {
+          console.error('[SPYN Record] Segment', i + 1, 'analysis error:', analysisError?.message);
+        }
+      }
+      
+      // If no segments were analyzed, try the main file
+      if (segmentsToAnalyze.length === 0 && audioBase64ForAnalysis && audioBase64ForAnalysis.length > 0) {
+        setCurrentAnalysis('Analyse du fichier principal...');
+        try {
+          console.log('[SPYN Record] Analyzing main file, length:', audioBase64ForAnalysis.length);
           const response = await axios.post(`${BACKEND_URL}/api/recognize-audio`, {
             audio_base64: audioBase64ForAnalysis,
           }, {
-            timeout: 60000, // 60 seconds for longer recordings
+            timeout: 60000,
           });
-          
-          console.log('[SPYN Record] Analysis response:', response.data);
           
           if (response.data.success && response.data.title) {
             const newTrack: IdentifiedTrack = {
@@ -1031,18 +1116,18 @@ export default function SpynRecordScreen() {
             };
             detectedTracks.push(newTrack);
             setIdentifiedTracks(prev => [...prev, newTrack]);
-            setCurrentAnalysis(`✅ Track identifié: ${newTrack.title}`);
-            
-            // Send email for the track
+            setCurrentAnalysis(`✅ ${newTrack.title}`);
             sendEmailForTrack(newTrack);
-          } else {
-            setCurrentAnalysis('Aucun track détecté');
           }
-        } catch (analysisError: any) {
-          console.error('[SPYN Record] Analysis error:', analysisError);
-          setCurrentAnalysis('Erreur d\'analyse');
+        } catch (err) {
+          console.error('[SPYN Record] Main file analysis error:', err);
         }
       }
+      
+      setCurrentAnalysis(detectedTracks.length > 0 
+        ? `${detectedTracks.length} track(s) identifié(s)` 
+        : 'Aucun track détecté');
+      
       
       // Create offline session with the recording
       setCurrentAnalysis('Création de la session...');
