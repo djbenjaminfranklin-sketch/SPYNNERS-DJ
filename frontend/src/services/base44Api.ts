@@ -485,7 +485,8 @@ export const base44Tracks = {
       });
       return response.data;
     } catch (error) {
-      console.error('[Tracks] Error recording play:', error);
+      // Silently ignore - this is just for analytics and not critical
+      // console.error('[Tracks] Error recording play:', error);
     }
   },
 };
