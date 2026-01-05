@@ -37,7 +37,7 @@ type UserItem = {
 
 export default function AdminUsers() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,10 +67,27 @@ export default function AdminUsers() {
 
   const loadUsers = async () => {
     try {
-      const response = await base44Users.list({ limit: 500 });
-      const userList = Array.isArray(response) ? response : (response?.items || []);
-      setUsers(userList);
-      setFilteredUsers(userList);
+      // Use new backend endpoint for real user data
+      const response = await axios.get(`${BACKEND_URL}/api/admin/users?limit=1000`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data?.success && response.data?.users) {
+        const userList = response.data.users.map((u: any) => ({
+          id: u.id || u._id,
+          full_name: u.full_name || u.name,
+          artist_name: u.artist_name,
+          email: u.email,
+          avatar_url: u.avatar_url || u.avatar,
+          role: u.role,
+          user_type: u.user_type,
+          nationality: u.nationality,
+          black_diamonds: u.black_diamonds || u.data?.black_diamonds || 0,
+          is_admin: u.is_admin || u.role === 'admin',
+        }));
+        setUsers(userList);
+        setFilteredUsers(userList);
+      }
     } catch (error) {
       console.error('[AdminUsers] Error:', error);
     } finally {
