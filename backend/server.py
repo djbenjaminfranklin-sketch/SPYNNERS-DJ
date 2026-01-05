@@ -623,6 +623,108 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
         raise HTTPException(status_code=500, detail=f"Recognition failed: {str(e)}")
 
 
+# ==================== AUDIO CONVERSION ====================
+
+class ConvertAudioRequest(BaseModel):
+    audio_base64: str
+    output_format: str = "mp3"  # mp3, wav, etc.
+
+@app.post("/api/convert-audio")
+async def convert_audio(request: ConvertAudioRequest):
+    """
+    Convert audio from one format to another (e.g., m4a to mp3)
+    Returns the converted audio as base64
+    """
+    import subprocess
+    import tempfile
+    import os
+    
+    try:
+        # Decode base64 audio
+        audio_data = base64.b64decode(request.audio_base64)
+        print(f"[Audio Convert] Received {len(audio_data)} bytes for conversion to {request.output_format}")
+        
+        # Detect input format from magic bytes
+        input_extension = "m4a"  # Default
+        if audio_data[:4] == b'RIFF':
+            input_extension = "wav"
+        elif audio_data[:4] == b'\x1aE\xdf\xa3':
+            input_extension = "webm"
+        elif audio_data[:4] == b'ftyp' or audio_data[4:8] == b'ftyp':
+            input_extension = "m4a"
+        elif audio_data[:3] == b'ID3' or audio_data[:2] == b'\xff\xfb':
+            input_extension = "mp3"
+        elif audio_data[:4] == b'OggS':
+            input_extension = "ogg"
+        
+        print(f"[Audio Convert] Detected input format: {input_extension}")
+        
+        # Create temp files
+        with tempfile.NamedTemporaryFile(suffix=f'.{input_extension}', delete=False) as input_file:
+            input_file.write(audio_data)
+            input_path = input_file.name
+        
+        output_path = input_path.replace(f'.{input_extension}', f'.{request.output_format}')
+        
+        try:
+            # Convert using ffmpeg
+            if request.output_format == "mp3":
+                # High quality MP3 conversion
+                cmd = [
+                    'ffmpeg', '-y', '-i', input_path,
+                    '-ar', '44100',      # 44.1kHz sample rate
+                    '-ac', '2',          # Stereo
+                    '-b:a', '320k',      # 320kbps bitrate
+                    '-codec:a', 'libmp3lame',
+                    output_path
+                ]
+            else:
+                # Generic conversion
+                cmd = [
+                    'ffmpeg', '-y', '-i', input_path,
+                    '-ar', '44100',
+                    '-ac', '2',
+                    output_path
+                ]
+            
+            print(f"[Audio Convert] Running: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, timeout=120)
+            
+            if result.returncode == 0 and os.path.exists(output_path):
+                with open(output_path, 'rb') as f:
+                    converted_data = f.read()
+                
+                converted_base64 = base64.b64encode(converted_data).decode('utf-8')
+                print(f"[Audio Convert] Conversion successful! Output size: {len(converted_data)} bytes")
+                
+                return {
+                    "success": True,
+                    "audio_base64": converted_base64,
+                    "format": request.output_format,
+                    "size": len(converted_data)
+                }
+            else:
+                error_msg = result.stderr.decode()[:500] if result.stderr else "Unknown error"
+                print(f"[Audio Convert] Conversion failed: {error_msg}")
+                return {
+                    "success": False,
+                    "message": f"Conversion failed: {error_msg}"
+                }
+                
+        finally:
+            # Cleanup temp files
+            try:
+                os.unlink(input_path)
+                if os.path.exists(output_path):
+                    os.unlink(output_path)
+            except:
+                pass
+                
+    except Exception as e:
+        print(f"[Audio Convert] Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Conversion failed: {str(e)}")
+
+
 # ==================== GOOGLE PLACES API ====================
 
 @app.get("/api/nearby-places")
