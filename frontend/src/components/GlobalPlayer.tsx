@@ -49,10 +49,10 @@ export default function GlobalPlayer() {
   const [loadingPlaylists, setLoadingPlaylists] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [creatingPlaylist, setCreatingPlaylist] = useState(false);
+  const [progressBarWidth, setProgressBarWidth] = useState(200); // Default width
   const playerAnim = React.useRef(new Animated.Value(0)).current;
   
   const hasQueue = queue.length > 1;
-  console.log('[GlobalPlayer] Queue length:', queue.length, 'hasQueue:', hasQueue);
 
   useEffect(() => {
     Animated.timing(playerAnim, {
