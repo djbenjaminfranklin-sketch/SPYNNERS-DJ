@@ -596,7 +596,6 @@ export default function SpynRecordScreen() {
             };
             reader.readAsDataURL(blob);
           });
-          });
         }
       } else {
         // NATIVE (iOS/Android): Simple approach - just record a new sample
