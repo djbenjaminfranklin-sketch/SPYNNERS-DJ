@@ -59,7 +59,7 @@ export default function VIPScreen() {
         const token = await base44Api.getStoredToken();
         if (token) {
           // Call a simple endpoint to get fresh user data
-          const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL || 'https://dj-control.preview.emergentagent.com'}/api/user/diamonds`, {
+          const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL || 'https://spynsession-fixes.preview.emergentagent.com'}/api/user/diamonds`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,

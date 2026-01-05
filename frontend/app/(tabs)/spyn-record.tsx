@@ -51,7 +51,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return 'https://dj-control.preview.emergentagent.com';
+  return 'https://spynsession-fixes.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 
