@@ -322,7 +322,7 @@ export default function SpynRecordScreen() {
       }
       
       setWaveformData(bars);
-    } else if (isRecording && !isPaused) {
+    } else if (isRecordingRef.current && !isPaused) {
       // For native mobile: Generate animated waveform based on recording status
       // This provides visual feedback even though we can't access real audio data
       const bars: WaveformBar[] = [];
@@ -357,7 +357,7 @@ export default function SpynRecordScreen() {
       }
       setWaveformData(bars);
     }
-  }, [isRecording, isPaused]);
+  }, [isPaused]);
 
   // Start recording
   const startRecording = async () => {
