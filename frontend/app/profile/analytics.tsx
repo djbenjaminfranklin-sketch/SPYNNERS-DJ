@@ -458,7 +458,7 @@ export default function AnalyticsScreen() {
             >
               <LinearGradient colors={[Colors.primary, '#7B1FA2']} style={styles.uploadButtonGradient}>
                 <Ionicons name="cloud-upload" size={20} color="#fff" />
-                <Text style={styles.uploadButtonText}>Upload a track</Text>
+                <Text style={styles.uploadButtonText}>{t('home.uploadTrack')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -470,7 +470,7 @@ export default function AnalyticsScreen() {
                 <LinearGradient colors={['#9C27B0', '#7B1FA2']} style={styles.statGradient}>
                   <Ionicons name="musical-notes" size={28} color="#fff" />
                   <Text style={styles.statValue}>{stats.totalTracks}</Text>
-                  <Text style={styles.statLabel}>Tracks</Text>
+                  <Text style={styles.statLabel}>{t('analytics.tracks')}</Text>
                 </LinearGradient>
               </View>
               
@@ -478,7 +478,7 @@ export default function AnalyticsScreen() {
                 <LinearGradient colors={['#2196F3', '#1976D2']} style={styles.statGradient}>
                   <Ionicons name="play" size={28} color="#fff" />
                   <Text style={styles.statValue}>{stats.totalPlays}</Text>
-                  <Text style={styles.statLabel}>Plays</Text>
+                  <Text style={styles.statLabel}>{t('analytics.plays')}</Text>
                 </LinearGradient>
               </View>
             </View>
@@ -488,7 +488,7 @@ export default function AnalyticsScreen() {
                 <LinearGradient colors={['#4CAF50', '#388E3C']} style={styles.statGradient}>
                   <Ionicons name="download" size={28} color="#fff" />
                   <Text style={styles.statValue}>{stats.totalDownloads}</Text>
-                  <Text style={styles.statLabel}>Downloads</Text>
+                  <Text style={styles.statLabel}>{t('analytics.downloads')}</Text>
                 </LinearGradient>
               </View>
               
@@ -496,32 +496,32 @@ export default function AnalyticsScreen() {
                 <LinearGradient colors={['#E91E63', '#C2185B']} style={styles.statGradient}>
                   <Ionicons name="heart" size={28} color="#fff" />
                   <Text style={styles.statValue}>{stats.totalLikes}</Text>
-                  <Text style={styles.statLabel}>Likes</Text>
+                  <Text style={styles.statLabel}>{t('analytics.likes')}</Text>
                 </LinearGradient>
               </View>
             </View>
 
             {/* Recent Activity */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>🔥 Activité Récente</Text>
+              <Text style={styles.sectionTitle}>🔥 {t('analytics.recentActivity')}</Text>
               <View style={styles.activityCard}>
                 <View style={styles.activityRow}>
                   <View style={styles.activityItem}>
                     <Ionicons name="radio" size={20} color="#F44336" />
                     <Text style={styles.activityValue}>{recentPlays}</Text>
-                    <Text style={styles.activityLabel}>Plays en direct</Text>
+                    <Text style={styles.activityLabel}>{t('analytics.livePlays')}</Text>
                   </View>
                   <View style={styles.activityDivider} />
                   <View style={styles.activityItem}>
                     <Ionicons name="trending-up" size={20} color="#4CAF50" />
                     <Text style={styles.activityValue}>{playsOverTime.today}</Text>
-                    <Text style={styles.activityLabel}>Aujourd'hui</Text>
+                    <Text style={styles.activityLabel}>{t('analytics.today')}</Text>
                   </View>
                   <View style={styles.activityDivider} />
                   <View style={styles.activityItem}>
                     <Ionicons name="calendar" size={20} color="#2196F3" />
                     <Text style={styles.activityValue}>{playsOverTime.thisWeek}</Text>
-                    <Text style={styles.activityLabel}>Cette semaine</Text>
+                    <Text style={styles.activityLabel}>{t('analytics.thisWeek')}</Text>
                   </View>
                 </View>
               </View>
@@ -529,11 +529,11 @@ export default function AnalyticsScreen() {
 
             {/* Track Status Breakdown */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>📊 Statut des Tracks</Text>
+              <Text style={styles.sectionTitle}>📊 {t('analytics.trackStatus')}</Text>
               <View style={styles.statusCard}>
                 <View style={styles.statusRow}>
                   <View style={[styles.statusDot, { backgroundColor: '#4CAF50' }]} />
-                  <Text style={styles.statusLabel}>Approuvés</Text>
+                  <Text style={styles.statusLabel}>{t('analytics.approved')}</Text>
                   <View style={styles.statusBarContainer}>
                     <View style={[styles.statusBar, { 
                       width: `${stats.totalTracks > 0 ? (stats.approvedTracks / stats.totalTracks) * 100 : 0}%`,
@@ -544,7 +544,7 @@ export default function AnalyticsScreen() {
                 </View>
                 <View style={styles.statusRow}>
                   <View style={[styles.statusDot, { backgroundColor: '#FF9800' }]} />
-                  <Text style={styles.statusLabel}>En attente</Text>
+                  <Text style={styles.statusLabel}>{t('analytics.pending')}</Text>
                   <View style={styles.statusBarContainer}>
                     <View style={[styles.statusBar, { 
                       width: `${stats.totalTracks > 0 ? (stats.pendingTracks / stats.totalTracks) * 100 : 0}%`,
@@ -556,7 +556,7 @@ export default function AnalyticsScreen() {
                 {stats.rejectedTracks > 0 && (
                   <View style={styles.statusRow}>
                     <View style={[styles.statusDot, { backgroundColor: '#F44336' }]} />
-                    <Text style={styles.statusLabel}>Refusés</Text>
+                    <Text style={styles.statusLabel}>{t('analytics.rejected')}</Text>
                     <View style={styles.statusBarContainer}>
                       <View style={[styles.statusBar, { 
                         width: `${stats.totalTracks > 0 ? (stats.rejectedTracks / stats.totalTracks) * 100 : 0}%`,
@@ -572,7 +572,7 @@ export default function AnalyticsScreen() {
             {/* Top Tracks */}
             {topTracks.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>🏆 Top Tracks</Text>
+                <Text style={styles.sectionTitle}>🏆 {t('analytics.topTracks')}</Text>
                 <View style={styles.topTracksCard}>
                   {topTracks.map((track, index) => (
                     <View key={track.id} style={styles.topTrackRow}>
