@@ -711,6 +711,9 @@ export default function SpynRecordScreen() {
             setCurrentAnalysis(`✅ ${response.data.title}`);
             
             console.log('[SPYN Record] ✅ NEW Track identified:', newTrack);
+            
+            // Send email immediately to the producer
+            sendEmailForTrack(newTrack);
           } else {
             setCurrentAnalysis(`⏭️ ${response.data.title} (déjà identifié)`);
             console.log('[SPYN Record] Track already identified, skipping:', response.data.title);
@@ -733,75 +736,47 @@ export default function SpynRecordScreen() {
     }
   };
 
-  // Send emails to producers for identified tracks
-  const sendEmailsToProducers = async () => {
-    if (identifiedTracks.length === 0) {
-      console.log('[SPYN Record] No tracks to send emails for');
+  // Send email immediately for a single track
+  const sendEmailForTrack = async (track: IdentifiedTrack) => {
+    if (!track.spynnersTrackId) {
+      console.log(`[SPYN Record] Skipping email for ${track.title} - not a Spynners track`);
       return;
     }
     
     if (!token) {
-      console.log('[SPYN Record] No auth token, skipping email send');
+      console.log('[SPYN Record] No auth token, skipping email');
       return;
     }
     
-    console.log('[SPYN Record] 📧 Sending emails to producers for', identifiedTracks.length, 'tracks...');
-    
-    let emailsSent = 0;
-    let emailsFailed = 0;
-    
-    for (const track of identifiedTracks) {
-      try {
-        // Only send if we have a producer ID (spynnersTrackId indicates it's from Spynners)
-        if (!track.spynnersTrackId) {
-          console.log(`[SPYN Record] Skipping email for ${track.title} - not a Spynners track`);
-          continue;
+    try {
+      const djName = user?.full_name || 'DJ';
+      
+      console.log(`[SPYN Record] 📧 Sending email for: ${track.title}`);
+      
+      const emailPayload = {
+        trackId: track.spynnersTrackId,
+        trackTitle: track.title || 'Unknown Track',
+        djName: djName,
+        djAvatar: user?.avatar || '',
+        playedAt: new Date().toISOString(),
+      };
+      
+      const response = await axios.post(
+        `${BACKEND_URL}/api/base44/functions/invoke/sendTrackPlayedEmail`,
+        emailPayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 10000,
         }
-        
-        const djName = user?.full_name || 'DJ';
-        
-        console.log(`[SPYN Record] Sending email for track: ${track.title}, trackId: ${track.spynnersTrackId}`);
-        
-        const emailPayload = {
-          trackId: track.spynnersTrackId,
-          trackTitle: track.title || 'Unknown Track',
-          djName: djName,
-          djAvatar: user?.avatar || '',
-          playedAt: new Date().toISOString(),
-          // Note: venue info would need to be added if available
-        };
-        
-        console.log('[SPYN Record] Email payload:', JSON.stringify(emailPayload));
-        
-        const response = await axios.post(
-          `${BACKEND_URL}/api/base44/functions/invoke/sendTrackPlayedEmail`,
-          emailPayload,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            timeout: 10000,
-          }
-        );
-        
-        console.log(`[SPYN Record] ✅ Email sent for: ${track.title}`, response.data);
-        emailsSent++;
-      } catch (e: any) {
-        console.log(`[SPYN Record] ❌ Could not send email for: ${track.title}`, e?.response?.data || e.message);
-        emailsFailed++;
-      }
+      );
+      
+      console.log(`[SPYN Record] ✅ Email sent for: ${track.title}`, response.data);
+    } catch (e: any) {
+      console.log(`[SPYN Record] ❌ Email error for: ${track.title}`, e?.response?.data || e.message);
     }
-    
-    // Show feedback to user
-    if (emailsSent > 0) {
-      console.log(`[SPYN Record] 📧 ${emailsSent} email(s) envoyé(s) aux producteurs`);
-    }
-    if (emailsFailed > 0) {
-      console.log(`[SPYN Record] ⚠️ ${emailsFailed} email(s) n'ont pas pu être envoyés`);
-    }
-    
-    return { emailsSent, emailsFailed };
   };
 
   // Stop recording and save
