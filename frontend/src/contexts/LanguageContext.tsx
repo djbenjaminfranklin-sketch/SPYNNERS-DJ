@@ -511,6 +511,7 @@ const translations: Record<Language, Record<string, string>> = {
     'vip.trackUnlockedDesc': 'You can now download this track anytime.',
     'vip.downloadNow': 'Download Now',
     'vip.unlockError': 'Could not unlock track. Please try again.',
+    'vip.diamondUpdateFailed': 'Failed to update Black Diamonds. Please try again.',
     'vip.noAudioFile': 'No audio file available for this track.',
     'vip.saveTrack': 'Save Track',
     'vip.downloadSuccess': 'Download Complete',
