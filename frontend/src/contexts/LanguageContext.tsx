@@ -3043,6 +3043,7 @@ const translations: Record<Language, Record<string, string>> = {
     'radar.saveMessage': '保存',
     'radar.messageSaved': '消息已保存',
     'radar.messageSavedDesc': '你的自动消息已保存',
+    'radar.defaultAutoMessage': '感谢播放我的曲目！🎵',
     
     // Offline Sessions
     'offline.title': '离线会话',
