@@ -362,7 +362,7 @@ export default function SpynRecordScreen() {
   // Start recording
   const startRecording = async () => {
     try {
-      console.log('[SPYN Record] Starting recording...');
+      console.log('[SPYN Record] Starting recording... Platform:', Platform.OS);
       
       if (Platform.OS === 'web') {
         await startWebRecording();
@@ -384,17 +384,20 @@ export default function SpynRecordScreen() {
       // Start waveform updates
       waveformIntervalRef.current = setInterval(updateWaveform, 100);
       
-      // On web, enable automatic analysis
-      // On iOS/Android, user must tap the scan button manually (to avoid conflicts)
-      if (Platform.OS === 'web') {
-        // Start analysis interval for web only
-        analysisIntervalRef.current = setInterval(() => {
-          analyzeCurrentAudio();
-        }, ANALYSIS_INTERVAL);
-        
-        // First analysis after 5 seconds
-        setTimeout(() => analyzeCurrentAudio(), 5000);
-      }
+      // Enable automatic analysis on ALL platforms
+      // Start analysis interval
+      analysisIntervalRef.current = setInterval(() => {
+        console.log('[SPYN Record] Auto-analysis triggered');
+        analyzeCurrentAudio();
+      }, ANALYSIS_INTERVAL);
+      
+      // First analysis after 5 seconds
+      setTimeout(() => {
+        console.log('[SPYN Record] First analysis triggered');
+        analyzeCurrentAudio();
+      }, 5000);
+      
+      console.log('[SPYN Record] ✅ Recording started successfully');
       
     } catch (error) {
       console.error('[SPYN Record] Start error:', error);
