@@ -730,6 +730,9 @@ export default function SpynScreen() {
 
           setCurrentTrack(trackResult);
           setIdentifiedTracks(prev => [trackResult, ...prev]);
+          
+          // Send email immediately to the producer
+          sendEmailForTrack(trackResult);
         } else {
           console.log('[SPYN] Track already identified:', trackKey);
         }
