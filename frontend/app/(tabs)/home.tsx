@@ -1297,7 +1297,7 @@ const styles = StyleSheet.create({
   // Search
   searchSection: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 10, gap: 10 },
   searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.backgroundCard, borderRadius: 8, paddingHorizontal: 12, height: 44, borderWidth: 1, borderColor: Colors.primary },
-  searchInput: { flex: 1, color: Colors.text, fontSize: 14, marginLeft: 8 },
+  searchInput: { flex: 1, color: Colors.text, fontSize: 14, marginLeft: 8, minHeight: 40, paddingVertical: 8 },
   vipButton: { borderRadius: 8, overflow: 'hidden' },
   vipButtonActive: { opacity: 0.8 },
   vipButtonGradient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 12, gap: 6 },
