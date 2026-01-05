@@ -26,7 +26,7 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { base44Tracks, base44Notifications, Track } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as FileSystem from 'expo-file-system';
+import * as LegacyFileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import Constants from 'expo-constants';
 
