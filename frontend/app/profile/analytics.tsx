@@ -458,7 +458,7 @@ export default function AnalyticsScreen() {
             >
               <LinearGradient colors={[Colors.primary, '#7B1FA2']} style={styles.uploadButtonGradient}>
                 <Ionicons name="cloud-upload" size={20} color="#fff" />
-                <Text style={styles.uploadButtonText}>{t('home.uploadTrack')}</Text>
+                <Text style={styles.uploadButtonText}>{t('page.uploadTrack')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
