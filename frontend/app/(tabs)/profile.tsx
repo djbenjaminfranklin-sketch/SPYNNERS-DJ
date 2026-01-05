@@ -30,7 +30,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
 
   // Check if current user is admin
-  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
+  const isAdmin = isUserAdmin(user);
 
   // Load profile data
   useEffect(() => {
