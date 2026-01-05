@@ -707,6 +707,9 @@ export default function SpynRecordScreen() {
               spynnersTrackId: response.data.spynners_track_id,
             };
             
+            // Update ref FIRST to prevent race conditions
+            identifiedTracksRef.current = [...identifiedTracksRef.current, newTrack];
+            
             setIdentifiedTracks(prev => [...prev, newTrack]);
             setCurrentAnalysis(`✅ ${response.data.title}`);
             
