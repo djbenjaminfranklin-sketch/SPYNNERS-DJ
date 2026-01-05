@@ -231,8 +231,8 @@ export default function HomeScreen() {
   // Use the global player function
   const handlePlayTrack = async (track: Track) => {
     await globalPlayTrack(track);
-    // Try to record play count
-    try { await base44Tracks.play(track.id || track._id || ''); } catch {}
+    // Note: play tracking is disabled due to API permission issues
+    // try { await base44Tracks.play(track.id || track._id || ''); } catch {}
   };
 
   // Actions
