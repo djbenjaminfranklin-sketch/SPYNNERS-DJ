@@ -101,7 +101,7 @@ class OfflineService {
       this.isOnline = connected;
       
       console.log('[Offline] Network state changed:', this.isOnline ? 'ONLINE' : 'OFFLINE', 
-        Platform.OS === 'web' ? '(web: navigator.onLine=' + navigator.onLine + ')' : '');
+        Platform.OS === 'web' && typeof navigator !== 'undefined' ? '(web: navigator.onLine=' + navigator.onLine + ')' : '');
       
       // Notify all registered callbacks
       this.networkChangeCallbacks.forEach(callback => {
