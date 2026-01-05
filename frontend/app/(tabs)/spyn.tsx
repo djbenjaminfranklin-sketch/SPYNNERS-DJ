@@ -872,24 +872,30 @@ export default function SpynScreen() {
     
     stopSession();
 
-    // End the offline session
-    console.log('[SPYN] Ending session...');
-    const endedSession = await offlineService.endOfflineSession();
+    // FIX: Only process offline session if we were actually offline during the session
+    // Check if there are any pending offline recordings
+    const pendingCount = await offlineService.getPendingCount();
     
-    if (endedSession && endedSession.recordings.length > 0) {
-      console.log('[SPYN] Offline session ended with', endedSession.recordings.length, 'recordings');
+    if (isOffline && pendingCount > 0) {
+      // We were offline - end the offline session
+      console.log('[SPYN] Ending OFFLINE session...');
+      const endedSession = await offlineService.endOfflineSession();
       
-      // Always show confirmation that session is saved
-      Alert.alert(
-        '✅ Session Sauvegardée',
-        `${endedSession.recordings.length} enregistrement(s) sauvegardé(s).\n\nAllez dans "Sessions Offline" depuis la page d'accueil pour synchroniser quand vous aurez du réseau.`,
-        [{ text: 'OK' }]
-      );
-      
-      setOfflineRecordingsCount(0);
-      setPendingSyncCount(await offlineService.getPendingCount());
+      if (endedSession && endedSession.recordings.length > 0) {
+        console.log('[SPYN] Offline session ended with', endedSession.recordings.length, 'recordings');
+        
+        // Show confirmation that session is saved offline
+        Alert.alert(
+          '✅ Session Sauvegardée (Hors Ligne)',
+          `${endedSession.recordings.length} enregistrement(s) sauvegardé(s).\n\nAllez dans "Sessions Offline" depuis la page d'accueil pour synchroniser quand vous aurez du réseau.`,
+          [{ text: 'OK' }]
+        );
+        
+        setPendingSyncCount(await offlineService.getPendingCount());
+      }
     } else {
-      console.log('[SPYN] No offline recordings in this session');
+      // We were online - normal session end (no offline alert needed)
+      console.log('[SPYN] Session ended ONLINE - no offline recordings');
     }
 
     // Reset offline counter
