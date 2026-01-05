@@ -147,12 +147,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       );
 
       soundRef.current = sound;
+      currentTrackRef.current = track; // Update ref for callbacks
       setCurrentTrack(track);
       setIsPlaying(true);
       setPlaybackPosition(initialPositionMs);
       
       // Set timeout for VIP preview end
-      if (track.is_vip && track.vip_preview_start && track.vip_preview_end) {
+      if (track.is_vip && track.vip_preview_start !== undefined && track.vip_preview_end !== undefined) {
         const previewDurationMs = (track.vip_preview_end - track.vip_preview_start) * 1000;
         console.log('[Player] VIP preview duration:', previewDurationMs / 1000, 'seconds');
         
