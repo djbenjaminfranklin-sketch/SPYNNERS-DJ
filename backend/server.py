@@ -2882,7 +2882,7 @@ async def update_user_diamonds(request: UpdateDiamondsRequest, authorization: st
 @app.get("/api/user/diamonds")
 async def get_user_diamonds(authorization: str = Header(None)):
     """
-    Get user's black diamonds balance from Spynners API.
+    Get user's black diamonds balance from Base44/Spynners API.
     """
     try:
         if not authorization:
@@ -2890,23 +2890,51 @@ async def get_user_diamonds(authorization: str = Header(None)):
         
         print(f"[Diamonds] Getting user diamonds...")
         
-        # Get current user data from Spynners
-        user_data = await call_spynners_function("nativeGetCurrentUser", {}, authorization)
+        # Get current user data from Base44 auth/me endpoint
+        headers = {
+            "Content-Type": "application/json",
+            "X-Base44-App-Id": BASE44_APP_ID
+        }
+        headers["Authorization"] = authorization
+        
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            response = await http_client.get(
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/auth/me",
+                headers=headers
+            )
+            
+            print(f"[Diamonds] Base44 auth/me response status: {response.status_code}")
+            
+            if response.status_code != 200:
+                print(f"[Diamonds] Auth failed: {response.text}")
+                raise HTTPException(status_code=response.status_code, detail="Auth failed")
+            
+            user_data = response.json()
         
         if not user_data:
             raise HTTPException(status_code=404, detail="User not found")
         
+        print(f"[Diamonds] Full user data keys: {list(user_data.keys())}")
+        print(f"[Diamonds] Full user data: {user_data}")
+        
         # Try various field names for black diamonds
         diamonds = (
             user_data.get('black_diamonds') or 
+            user_data.get('black_diamond') or 
             user_data.get('blackDiamonds') or 
             user_data.get('diamonds') or 
             user_data.get('balance') or 
             0
         )
         
+        # Also check if the value is a string and convert to int
+        if isinstance(diamonds, str):
+            try:
+                diamonds = int(diamonds)
+            except:
+                diamonds = 0
+        
         print(f"[Diamonds] User has {diamonds} diamonds")
-        print(f"[Diamonds] Full user data: {user_data}")
         
         return {
             "success": True,
@@ -2919,6 +2947,8 @@ async def get_user_diamonds(authorization: str = Header(None)):
         raise
     except Exception as e:
         print(f"[Diamonds] Error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
