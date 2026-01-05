@@ -1965,6 +1965,7 @@ const translations: Record<Language, Record<string, string>> = {
     'rankings.topDownloads': 'Più Scaricati',
     'rankings.topRated': 'Migliori Valutati',
     'rankings.newReleases': 'Novità',
+    'rankings.mostPlayed': 'Più Riprodotti',
     'rankings.loading': 'Caricamento classifiche...',
     'rankings.noTracks': 'Nessuna traccia trovata',
     'rankings.tryDifferentGenre': 'Prova a selezionare un altro genere',
