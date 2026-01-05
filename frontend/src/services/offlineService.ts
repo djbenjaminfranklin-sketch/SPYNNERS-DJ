@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://audiobug-patrol.preview.emergentagent.com';
+  return 'https://black-diamond-api.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

@@ -51,7 +51,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return 'https://audiobug-patrol.preview.emergentagent.com';
+  return 'https://black-diamond-api.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 
