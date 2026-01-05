@@ -898,8 +898,10 @@ export default function SpynRecordScreen() {
         console.log('[SPYN Record] No audio data to analyze');
       }
     } catch (error: any) {
-      console.error('[SPYN Record] Analysis error:', error?.response?.data || error.message || error);
-      setCurrentAnalysis('Erreur d\'analyse');
+      const errorMessage = error?.response?.data?.detail || error?.response?.data?.message || error?.message || 'Unknown error';
+      console.error('[SPYN Record] Analysis error:', errorMessage);
+      console.error('[SPYN Record] Full error:', JSON.stringify(error?.response?.data || error, null, 2));
+      setCurrentAnalysis(`Erreur: ${errorMessage.substring(0, 50)}`);
     } finally {
       isAnalyzingRef.current = false;
       setIsAnalyzing(false);
