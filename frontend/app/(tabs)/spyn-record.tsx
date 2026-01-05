@@ -371,6 +371,7 @@ export default function SpynRecordScreen() {
       }
       
       setIsRecording(true);
+      isRecordingRef.current = true; // Also update ref for closures
       setIsPaused(false);
       startTimeRef.current = Date.now();
       setIdentifiedTracks([]);
