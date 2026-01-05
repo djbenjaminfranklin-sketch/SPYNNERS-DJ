@@ -272,10 +272,26 @@ export default function HomeScreen() {
 
   // Actions
   const handleDownload = async (track: Track) => {
+    const trackId = track.id || track._id || '';
+    
+    // Check if VIP track is unlocked
+    if (track.is_vip && !isTrackUnlocked(trackId)) {
+      Alert.alert(
+        t('vip.trackLocked'),
+        t('vip.unlockToDownload'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { 
+            text: t('vip.goToVip'), 
+            onPress: () => router.push('/profile/vip')
+          }
+        ]
+      );
+      return;
+    }
+    
     try {
       Alert.alert('Download', `Downloading "${track.title}"...`);
-      
-      const trackId = track.id || track._id || '';
       
       // First call the native download API to record the download and get a proper URL
       try {
