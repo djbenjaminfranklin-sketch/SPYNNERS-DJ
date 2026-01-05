@@ -21,6 +21,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
+// For SDK 54 compatibility, get documentDirectory safely
+const getDocumentDirectory = () => {
+  return FileSystem.documentDirectory || FileSystem.cacheDirectory || '';
+};
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { useAuth } from '../../src/contexts/AuthContext';
