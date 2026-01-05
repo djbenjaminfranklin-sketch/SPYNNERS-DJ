@@ -256,15 +256,21 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
             try:
                 # Convert to WAV using ffmpeg
                 # Use high quality settings for better fingerprinting
-                result = subprocess.run([
+                cmd = [
                     'ffmpeg', '-y', '-i', input_path,
                     '-ar', '44100',  # 44.1kHz sample rate
                     '-ac', '1',      # Mono
                     '-acodec', 'pcm_s16le',  # 16-bit PCM
                     output_path
-                ], capture_output=True, timeout=30)
+                ]
+                print(f"[ACRCloud] Running conversion: {' '.join(cmd)}")
+                
+                result = subprocess.run(cmd, capture_output=True, timeout=30)
                 
                 print(f"[ACRCloud] ffmpeg return code: {result.returncode}")
+                if result.stderr:
+                    stderr_text = result.stderr.decode()
+                    print(f"[ACRCloud] ffmpeg stderr (last 500 chars): {stderr_text[-500:]}")
                 
                 if result.returncode == 0 and os.path.exists(output_path):
                     with open(output_path, 'rb') as f:
@@ -279,8 +285,9 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                     except:
                         pass
                 else:
-                    error_output = result.stderr.decode()[:500] if result.stderr else "No error message"
-                    print(f"[ACRCloud] Conversion failed. stderr: {error_output}")
+                    error_output = result.stderr.decode()[-500:] if result.stderr else "No error message"
+                    print(f"[ACRCloud] Conversion failed. Return code: {result.returncode}")
+                    print(f"[ACRCloud] Error: {error_output}")
                     # Cleanup input file only
                     try:
                         os.unlink(input_path)
@@ -288,6 +295,8 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                         pass
             except Exception as e:
                 print(f"[ACRCloud] Conversion error: {e}")
+                import traceback
+                traceback.print_exc()
                 # Cleanup on error
                 try:
                     if os.path.exists(input_path):
