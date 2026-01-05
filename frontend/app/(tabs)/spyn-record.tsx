@@ -706,6 +706,7 @@ export default function SpynRecordScreen() {
               elapsedTime,
               coverImage: response.data.cover_image,
               spynnersTrackId: response.data.spynners_track_id,
+              producerId: response.data.producer_id,
             };
             
             // Update ref FIRST to prevent race conditions
