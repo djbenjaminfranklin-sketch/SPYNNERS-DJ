@@ -254,9 +254,9 @@ export default function AnalyticsScreen() {
       }
 
       setExportingCSV(true);
-      console.log('[Analytics] Exporting CSV...', { startDate: csvStartDate, endDate: csvEndDate });
+      console.log('[Analytics] Exporting PDF...', { startDate: csvStartDate, endDate: csvEndDate });
 
-      const apiUrl = `${BACKEND_URL}/api/analytics/sessions/csv`;
+      const apiUrl = `${BACKEND_URL}/api/analytics/sessions/pdf`;
       
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -275,49 +275,61 @@ export default function AnalyticsScreen() {
         throw new Error(`Erreur serveur: ${response.status} - ${errorText}`);
       }
 
-      const csvContent = await response.text();
-      console.log('[Analytics] CSV received, size:', csvContent.length);
+      // Get PDF as blob
+      const pdfBlob = await response.blob();
+      console.log('[Analytics] PDF received, size:', pdfBlob.size);
 
       // Handle download based on platform
       if (Platform.OS === 'web') {
-        // Web: Create blob and download
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
+        // Web: Create blob URL and download
+        const url = URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', `spynners_sessions_${new Date().toISOString().slice(0, 10)}.csv`);
+        link.setAttribute('download', `spynners_sessions_${new Date().toISOString().slice(0, 10)}.pdf`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
         
-        Alert.alert('Succès', 'Le rapport CSV a été téléchargé !');
+        Alert.alert('Succès', 'Le rapport PDF a été téléchargé !');
       } else {
-        // Mobile: Save to file system and share
-        const filename = `spynners_sessions_${new Date().toISOString().slice(0, 10)}.csv`;
-        const fileUri = `${LegacyFileSystem.documentDirectory}${filename}`;
-        
-        await LegacyFileSystem.writeAsStringAsync(fileUri, csvContent, {
-          encoding: LegacyFileSystem.EncodingType.UTF8,
-        });
+        // Mobile: Convert blob to base64 and save
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          try {
+            const base64data = reader.result as string;
+            const base64Content = base64data.split(',')[1];
+            
+            const filename = `spynners_sessions_${new Date().toISOString().slice(0, 10)}.pdf`;
+            const fileUri = `${LegacyFileSystem.documentDirectory}${filename}`;
+            
+            await LegacyFileSystem.writeAsStringAsync(fileUri, base64Content, {
+              encoding: LegacyFileSystem.EncodingType.Base64,
+            });
 
-        // Check if sharing is available
-        const isAvailable = await Sharing.isAvailableAsync();
-        if (isAvailable) {
-          await Sharing.shareAsync(fileUri, {
-            mimeType: 'text/csv',
-            dialogTitle: 'Exporter le rapport CSV',
-            UTI: 'public.comma-separated-values-text',
-          });
-        } else {
-          Alert.alert('Succès', `Le fichier a été enregistré dans: ${fileUri}`);
-        }
+            // Check if sharing is available
+            const isAvailable = await Sharing.isAvailableAsync();
+            if (isAvailable) {
+              await Sharing.shareAsync(fileUri, {
+                mimeType: 'application/pdf',
+                dialogTitle: 'Exporter le rapport PDF',
+                UTI: 'com.adobe.pdf',
+              });
+            } else {
+              Alert.alert('Succès', `Le fichier a été enregistré dans: ${fileUri}`);
+            }
+          } catch (saveError: any) {
+            console.error('[Analytics] Save error:', saveError);
+            Alert.alert('Erreur', 'Impossible de sauvegarder le fichier PDF');
+          }
+        };
+        reader.readAsDataURL(pdfBlob);
       }
 
       setShowDatePicker(false);
     } catch (error: any) {
-      console.error('[Analytics] CSV export error:', error);
-      Alert.alert('Erreur', error.message || 'Impossible de générer le rapport CSV');
+      console.error('[Analytics] PDF export error:', error);
+      Alert.alert('Erreur', error.message || 'Impossible de générer le rapport PDF');
     } finally {
       setExportingCSV(false);
     }
