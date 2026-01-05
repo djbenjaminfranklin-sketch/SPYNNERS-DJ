@@ -22,29 +22,27 @@ import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 
 // Genres from spynners.com
 const GENRES = [
-  // House
-  'House', 'Afro House', 'Tech House', 'Deep House', 'Melodic House & Techno',
-  'Progressive House', 'Minimal / Deep Tech', 'Bass House', 'Organic House',
-  'Funky House', 'Jackin House', 'Soulful House', 'Electro House', 'Future House',
-  'Tribal House', 'Latin House', 'Disco House', 'UK Garage',
-  // Techno
-  'Techno', 'Hard Techno', 'Techno (Peak Time)', 'Industrial Techno', 'Acid Techno',
-  'Detroit Techno', 'Dub Techno', 'EBM',
-  // Trance
-  'Trance', 'Psy Trance', 'Progressive Trance', 'Uplifting Trance', 'Vocal Trance',
-  // Bass Music
-  'Drum & Bass', 'Jungle', 'Breakbeat', 'Dubstep', 'UK Bass',
-  // Disco & Funk
-  'Nu Disco', 'Disco', 'Indie Dance', 'Funk',
-  // Electronic
-  'Electronica', 'Downtempo', 'Ambient', 'Chillout', 'Lo-Fi',
-  // Hip-Hop & R&B
-  'Hip-Hop', 'R&B', 'Trap', 'Rap',
-  // Pop & Dance
-  'Pop', 'Dance Pop', 'EDM', 'Big Room',
-  // Other
-  'Reggaeton', 'Dancehall', 'Afrobeats', 'Amapiano', 'Zouk',
-  'World Music', 'Jazz', 'Soul', 'Experimental',
+  'Afro House',
+  'Afro Tech',
+  'Bass / Club',
+  'Deep House',
+  'Funky House',
+  'Funky House / Groove House',
+  'HOUSE',
+  'Indie Dance',
+  'Latin House',
+  'Mainstage',
+  'Melodic House',
+  'Melodic House & Techno',
+  'Minimal / Deep Tech',
+  'Progressive House',
+  'Remix Afro House',
+  'Remix Deep House',
+  'Remix Melodic House & Techno',
+  'Soulful House',
+  'Tech House',
+  'Techno (Peak Time / Driving)',
+  'Trance (Main Floor)',
 ];
 
 export default function EditProfileScreen() {
