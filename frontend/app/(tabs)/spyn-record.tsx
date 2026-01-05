@@ -51,7 +51,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return 'https://spynners-unlocks.preview.emergentagent.com';
+  return 'https://dj-control.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 

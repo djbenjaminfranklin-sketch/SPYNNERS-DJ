@@ -18,7 +18,7 @@ const getBackendUrl = () => {
   }
   return Constants.expoConfig?.extra?.backendUrl || 
          process.env.EXPO_PUBLIC_BACKEND_URL || 
-         'https://spynners-unlocks.preview.emergentagent.com';
+         'https://dj-control.preview.emergentagent.com';
 };
 
 // Storage key for auth token

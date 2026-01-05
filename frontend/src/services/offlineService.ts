@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://spynners-unlocks.preview.emergentagent.com';
+  return 'https://dj-control.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();
