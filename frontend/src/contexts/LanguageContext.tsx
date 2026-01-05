@@ -909,10 +909,12 @@ const translations: Record<Language, Record<string, string>> = {
     'radar.liveMap': 'Carte des plays en direct',
     'radar.automaticMessage': 'Message automatique',
     'radar.automaticMessageDesc': 'Envoyez automatiquement un message aux DJs qui jouent vos tracks',
+    'radar.autoMessagePlaceholder': 'Votre message automatique...',
     'radar.live': 'En direct',
     'radar.recent': 'Récents',
     'radar.myTracks': 'Mes Tracks',
     'radar.global': 'Global',
+    'radar.noLivePlays': 'Aucun play en direct pour le moment',
     
     // Offline Sessions
     'offline.title': 'Sessions Offline',
