@@ -1017,6 +1017,7 @@ export default function HomeScreen() {
                 ) : filteredMembers.slice(0, 100).map((member: any) => {
                   const memberId = member.id || member._id || '';
                   const memberName = member.full_name || member.name || member.email?.split('@')[0] || 'Unknown';
+                  const memberIsAdmin = isUserAdmin(member);
                   return (
                     <TouchableOpacity
                       key={memberId}
@@ -1026,7 +1027,10 @@ export default function HomeScreen() {
                       <View style={styles.memberAvatar}>
                         <Ionicons name="person" size={20} color={Colors.textMuted} />
                       </View>
-                      <Text style={styles.memberName}>{memberName}</Text>
+                      <View style={styles.memberNameContainer}>
+                        <Text style={styles.memberName}>{memberName}</Text>
+                        {memberIsAdmin && <AdminBadge size="small" />}
+                      </View>
                       <Ionicons name="send" size={18} color={Colors.primary} />
                     </TouchableOpacity>
                   );
