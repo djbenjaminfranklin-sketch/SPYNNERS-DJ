@@ -102,6 +102,7 @@ interface WaveformBar {
 
 export default function SpynRecordScreen() {
   const { user, token } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
 
   // Recording state
