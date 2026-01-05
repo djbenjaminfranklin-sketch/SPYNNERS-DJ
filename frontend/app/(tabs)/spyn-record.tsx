@@ -20,11 +20,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system';
-// For SDK 54 compatibility, get documentDirectory safely
-const getDocumentDirectory = () => {
-  return FileSystem.documentDirectory || FileSystem.cacheDirectory || '';
-};
+// Import legacy FileSystem API for SDK 54 compatibility
+import * as LegacyFileSystem from 'expo-file-system/legacy';
+import { Paths, File } from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { useAuth } from '../../src/contexts/AuthContext';
