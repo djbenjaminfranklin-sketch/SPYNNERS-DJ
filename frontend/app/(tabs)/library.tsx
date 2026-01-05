@@ -88,16 +88,6 @@ export default function LibraryScreen() {
     return track.producer_name || track.artist_name || 'Unknown Artist';
   };
 
-  // Get status badge color
-  const getStatusColor = (status?: string): string => {
-    switch (status) {
-      case 'approved': return '#4CAF50';
-      case 'pending': return '#FF9800';
-      case 'rejected': return '#F44336';
-      default: return Colors.textMuted;
-    }
-  };
-
   // Helper function to get translated status
   const getTranslatedStatus = (status?: string): string => {
     // Debug: log status value
