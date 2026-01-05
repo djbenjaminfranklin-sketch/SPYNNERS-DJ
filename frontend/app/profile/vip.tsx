@@ -21,9 +21,11 @@ import { usePlayer } from '../../src/contexts/PlayerContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Constants
 const UNLOCK_COST = 1; // 1 Black Diamond per track
+const UNLOCKED_TRACKS_KEY = 'vip_unlocked_tracks';
 
 export default function VIPScreen() {
   const router = useRouter();
