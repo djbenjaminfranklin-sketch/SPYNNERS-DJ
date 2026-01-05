@@ -324,61 +324,22 @@ export default function SpynRecordScreen() {
           setSelectedDeviceId(defaultDevice.deviceId);
         }
       } else {
-        // Native (iOS/Android) - Check for external audio input
-        // iOS automatically routes audio through connected devices (Lightning, USB-C, Bluetooth)
-        // We need to check the current audio route
-        
+        // Native (iOS/Android) - iOS automatically routes audio through connected devices
+        // No need for test recording - just check if we have permission and inform user
         try {
-          // Configure audio for external input detection
-          await Audio.setAudioModeAsync({
-            allowsRecordingIOS: true,
-            playsInSilentModeIOS: true,
-            staysActiveInBackground: true,
-            interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-            interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
-            shouldDuckAndroid: false,
-            playThroughEarpieceAndroid: false,
-          });
-          
-          // Try to detect if external audio is connected by checking recording capabilities
-          // On iOS/Android, when you plug in a USB audio interface or Lightning adapter,
-          // the system automatically uses it as the input source
-          
-          // Check if there's an active audio session that might indicate external device
           const status = await Audio.getPermissionsAsync();
           
           if (status.granted) {
-            // Create a test recording to check the audio route
-            const testRecording = new Audio.Recording();
-            try {
-              await testRecording.prepareToRecordAsync(RECORDING_OPTIONS);
-              const recordingStatus = await testRecording.getStatusAsync();
-              
-              // If we can record, check the URI pattern for external device indicators
-              // iOS creates different URIs for different input sources
-              if (recordingStatus.canRecord) {
-                console.log('[SPYN Record] Audio input available, checking for external source...');
-                
-                // On iOS, the system handles routing automatically
-                // If a USB/Lightning audio interface is connected, iOS routes audio through it
-                // We can detect this by checking if the default input is not the built-in mic
-                
-                // For now, we'll show a message asking user to confirm external source
-                // The actual routing is handled by iOS automatically
-                
-                setAudioSource('internal');
-                setAudioSourceName('Source audio (auto-détection iOS)');
-                
-                // Add indicator for potential USB detection
-                console.log('[SPYN Record] iOS audio routing active - external devices will be used automatically if connected');
-              }
-              
-              await testRecording.stopAndUnloadAsync();
-            } catch (testError) {
-              console.log('[SPYN Record] Test recording cleanup:', testError);
-            }
+            console.log('[SPYN Record] Audio permission granted - iOS will auto-route external devices');
+            // On iOS, when a USB/Lightning audio interface is connected, 
+            // the system automatically uses it as the input source
+            setAudioSource('internal');
+            setAudioSourceName('Source audio (auto iOS)');
+            console.log('[SPYN Record] iOS audio routing active - external devices will be used automatically if connected');
+          } else {
+            setAudioSource('internal');
+            setAudioSourceName('Microphone (permission requise)');
           }
-          
         } catch (error) {
           console.log('[SPYN Record] Native audio detection error:', error);
           setAudioSource('internal');
