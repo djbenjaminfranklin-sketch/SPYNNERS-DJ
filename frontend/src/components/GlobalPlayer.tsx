@@ -36,18 +36,84 @@ export default function GlobalPlayer() {
     seekTo,
     closePlayer,
   } = usePlayer();
+  
+  const { user } = useAuth();
 
-  const [isDragging, setIsDragging] = React.useState(false);
-  const [dragPosition, setDragPosition] = React.useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragPosition, setDragPosition] = useState(0);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [loadingPlaylists, setLoadingPlaylists] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [creatingPlaylist, setCreatingPlaylist] = useState(false);
   const playerAnim = React.useRef(new Animated.Value(0)).current;
 
-  React.useEffect(() => {
+  useEffect(() => {
     Animated.timing(playerAnim, {
       toValue: currentTrack ? 1 : 0,
       duration: 300,
       useNativeDriver: true,
     }).start();
   }, [currentTrack]);
+  
+  // Load playlists when modal opens
+  useEffect(() => {
+    if (showPlaylistModal && user) {
+      loadPlaylists();
+    }
+  }, [showPlaylistModal, user]);
+  
+  const loadPlaylists = async () => {
+    if (!user) return;
+    setLoadingPlaylists(true);
+    try {
+      const userId = user.id || user._id;
+      const data = await base44Playlists.list(userId);
+      setPlaylists(data);
+    } catch (error) {
+      console.error('[GlobalPlayer] Error loading playlists:', error);
+    } finally {
+      setLoadingPlaylists(false);
+    }
+  };
+  
+  const handleAddToPlaylist = async (playlistId: string) => {
+    if (!currentTrack) return;
+    try {
+      const trackId = currentTrack.id || currentTrack._id;
+      await base44Playlists.addTrack(playlistId, trackId);
+      Alert.alert('✅ Succès', 'Track ajoutée à la playlist !');
+      setShowPlaylistModal(false);
+    } catch (error) {
+      console.error('[GlobalPlayer] Error adding to playlist:', error);
+      Alert.alert('Erreur', 'Impossible d\'ajouter la track à la playlist');
+    }
+  };
+  
+  const handleCreatePlaylist = async () => {
+    if (!newPlaylistName.trim() || !user || !currentTrack) return;
+    setCreatingPlaylist(true);
+    try {
+      const userId = user.id || user._id;
+      const trackId = currentTrack.id || currentTrack._id;
+      const newPlaylist = await base44Playlists.create({
+        name: newPlaylistName.trim(),
+        created_by: userId,
+        tracks: [trackId],
+        is_public: false,
+      });
+      if (newPlaylist) {
+        Alert.alert('✅ Succès', `Playlist "${newPlaylistName}" créée avec la track !`);
+        setNewPlaylistName('');
+        setShowPlaylistModal(false);
+      }
+    } catch (error) {
+      console.error('[GlobalPlayer] Error creating playlist:', error);
+      Alert.alert('Erreur', 'Impossible de créer la playlist');
+    } finally {
+      setCreatingPlaylist(false);
+    }
+  };
 
   // Pan responder for progress bar
   const panResponder = React.useMemo(
@@ -95,9 +161,9 @@ export default function GlobalPlayer() {
     }
   };
 
-  // Playlist handler - just show alert for now
-  const handleAddToPlaylist = () => {
-    Alert.alert('Add to Playlist', 'Go to Home page to add this track to a playlist');
+  // Open playlist modal
+  const openPlaylistModal = () => {
+    setShowPlaylistModal(true);
   };
 
   if (!currentTrack) return null;
