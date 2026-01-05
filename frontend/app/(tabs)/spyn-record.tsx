@@ -816,26 +816,17 @@ export default function SpynRecordScreen() {
           
           // Save to offline storage for later sync
           try {
-            if (!offlineSessionId) {
-              // Create new offline session
-              const newSessionId = await offlineService.startOfflineSession(
-                user?.id || 'unknown',
-                user?.full_name || 'DJ'
-              );
-              setOfflineSessionId(newSessionId);
-              console.log('[SPYN Record] Created offline session:', newSessionId);
-            }
-            
-            // Add recording to offline session
-            await offlineService.addRecordingToSession(offlineSessionId!, {
-              id: `rec_${Date.now()}`,
+            // Use the offline service to save the recording
+            await offlineService.saveOfflineRecording({
               audioBase64: audioBase64,
               timestamp: new Date().toISOString(),
               userId: user?.id || 'unknown',
               djName: user?.full_name || 'DJ',
-              status: 'pending',
-              createdAt: new Date().toISOString(),
             });
+            
+            // Update pending count
+            const pendingCount = await offlineService.getPendingCount();
+            setPendingSyncCount(pendingCount);
             
             setCurrentAnalysis('📴 Audio enregistré localement');
             console.log('[SPYN Record] Audio saved to offline session');
