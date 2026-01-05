@@ -810,17 +810,41 @@ export default function HomeScreen() {
                   {renderRating(rating)}
                 </View>
 
-                {/* VIP Badge */}
+                {/* VIP Badge - Show lock icon if not unlocked */}
                 {track.is_vip && (
-                  <View style={styles.vipBadge}>
-                    <Ionicons name="diamond" size={14} color="#FFD700" />
-                  </View>
+                  <TouchableOpacity 
+                    style={[
+                      styles.vipBadge, 
+                      isTrackUnlocked(track.id || track._id || '') && styles.vipBadgeUnlocked
+                    ]}
+                    onPress={() => {
+                      if (!isTrackUnlocked(track.id || track._id || '')) {
+                        router.push('/profile/vip');
+                      }
+                    }}
+                  >
+                    <Ionicons 
+                      name={isTrackUnlocked(track.id || track._id || '') ? "diamond" : "lock-closed"} 
+                      size={14} 
+                      color={isTrackUnlocked(track.id || track._id || '') ? "#FFD700" : "#FF6B6B"} 
+                    />
+                  </TouchableOpacity>
                 )}
 
                 {/* Action Buttons */}
                 <View style={styles.trackActions}>
-                  <TouchableOpacity style={styles.actionBtn} onPress={() => handleDownload(track)}>
-                    <Ionicons name="download-outline" size={18} color={Colors.primary} />
+                  <TouchableOpacity 
+                    style={[
+                      styles.actionBtn,
+                      track.is_vip && !isTrackUnlocked(track.id || track._id || '') && styles.actionBtnDisabled
+                    ]} 
+                    onPress={() => handleDownload(track)}
+                  >
+                    <Ionicons 
+                      name={track.is_vip && !isTrackUnlocked(track.id || track._id || '') ? "lock-closed-outline" : "download-outline"} 
+                      size={18} 
+                      color={track.is_vip && !isTrackUnlocked(track.id || track._id || '') ? Colors.textMuted : Colors.primary} 
+                    />
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.actionBtn} onPress={() => handleShare(track)}>
                     <Ionicons name="share-social-outline" size={18} color={Colors.textMuted} />
