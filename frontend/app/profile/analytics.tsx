@@ -370,11 +370,11 @@ export default function AnalyticsScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Exporter le rapport CSV</Text>
-            <Text style={styles.modalSubtitle}>Sélectionnez une plage de dates (optionnel)</Text>
+            <Text style={styles.modalTitle}>{t('csv.exportTitle')}</Text>
+            <Text style={styles.modalSubtitle}>{t('csv.exportSubtitle')}</Text>
             
             <View style={styles.dateInputContainer}>
-              <Text style={styles.dateLabel}>Date de début (AAAA-MM-JJ)</Text>
+              <Text style={styles.dateLabel}>{t('csv.startDate')}</Text>
               <TextInput
                 style={styles.dateInput}
                 value={csvStartDate}
