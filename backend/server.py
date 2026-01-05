@@ -3023,6 +3023,80 @@ async def get_user_diamonds(authorization: str = Header(None)):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# Admin endpoint to add diamonds to any user
+class AdminAddDiamondsRequest(BaseModel):
+    user_id: str
+    amount: int
+
+@app.post("/api/base44/add-diamonds")
+async def admin_add_diamonds(request: AdminAddDiamondsRequest, authorization: str = Header(None)):
+    """
+    Admin endpoint to add black diamonds to any user.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin Diamonds] Adding {request.amount} diamonds to user {request.user_id}")
+        
+        # Get user's current balance by fetching their profile
+        # For now, we'll use a direct approach via the User entity
+        try:
+            # Get user data
+            headers = {
+                "Content-Type": "application/json",
+                "X-Base44-App-Id": BASE44_APP_ID,
+                "Authorization": authorization
+            }
+            
+            async with httpx.AsyncClient(timeout=30.0) as http_client:
+                # Get user by ID
+                user_response = await http_client.get(
+                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{request.user_id}",
+                    headers=headers
+                )
+                
+                if user_response.status_code == 200:
+                    user_data = user_response.json()
+                    current_diamonds = user_data.get('black_diamonds', 0) or user_data.get('data', {}).get('black_diamonds', 0) or 0
+                    new_balance = current_diamonds + request.amount
+                    
+                    print(f"[Admin Diamonds] Current: {current_diamonds}, New: {new_balance}")
+                    
+                    # Update user diamonds via entity update
+                    update_response = await http_client.put(
+                        f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{request.user_id}",
+                        headers=headers,
+                        json={"black_diamonds": new_balance}
+                    )
+                    
+                    if update_response.status_code in [200, 201]:
+                        return {
+                            "success": True,
+                            "user_id": request.user_id,
+                            "previous_balance": current_diamonds,
+                            "new_balance": new_balance,
+                            "amount_added": request.amount
+                        }
+                    else:
+                        print(f"[Admin Diamonds] Update failed: {update_response.text}")
+                        raise HTTPException(status_code=500, detail="Failed to update user diamonds")
+                else:
+                    print(f"[Admin Diamonds] User not found: {user_response.text}")
+                    raise HTTPException(status_code=404, detail="User not found")
+                    
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"[Admin Diamonds] Error fetching user: {e}")
+            raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Diamonds] Error: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
