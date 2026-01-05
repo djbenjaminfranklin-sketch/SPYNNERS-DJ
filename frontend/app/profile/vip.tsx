@@ -51,23 +51,36 @@ export default function VIPScreen() {
       setLoading(true);
       const userId = user?.id || user?._id || '';
       
-      // Get user's black diamonds - try multiple sources
+      // Get user's black diamonds - ALWAYS fetch fresh from server
       let diamonds = 0;
       
-      // First: check user object directly (set during login)
-      diamonds = user?.black_diamonds || 0;
-      console.log('[VIP] Diamonds from user object:', diamonds);
-      
-      // Fallback: check nested data object (Base44 format)
-      if (diamonds === 0 && user?.data?.black_diamonds) {
-        diamonds = user.data.black_diamonds;
-        console.log('[VIP] Diamonds from user.data:', diamonds);
+      // First: Try to get fresh data from server by re-logging in
+      try {
+        const token = await base44Api.getStoredToken();
+        if (token) {
+          // Call a simple endpoint to get fresh user data
+          const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL || 'https://black-diamond-api.preview.emergentagent.com'}/api/user/diamonds`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            diamonds = data.black_diamonds || 0;
+            console.log('[VIP] Fresh diamonds from API:', diamonds);
+          }
+        }
+      } catch (apiError) {
+        console.log('[VIP] Could not fetch fresh diamonds:', apiError);
       }
       
-      // Final fallback: other possible field names
+      // Fallback: check user object (may be stale)
       if (diamonds === 0) {
-        diamonds = user?.blackDiamonds || user?.diamonds || 0;
-        console.log('[VIP] Diamonds from fallback fields:', diamonds);
+        diamonds = user?.black_diamonds || user?.data?.black_diamonds || user?.blackDiamonds || user?.diamonds || 0;
+        console.log('[VIP] Diamonds from user object (fallback):', diamonds);
       }
       
       setUserDiamonds(diamonds);
