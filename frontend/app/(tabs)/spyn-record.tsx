@@ -730,7 +730,7 @@ export default function SpynRecordScreen() {
         }
       } else {
         // NATIVE (iOS/Android): Stop recording, analyze, then restart
-        // Using the same approach as SPYN which works reliably
+        // Using the EXACT same approach as SPYN which works reliably
         console.log('[SPYN Record] Starting native audio analysis...');
         
         try {
@@ -747,7 +747,7 @@ export default function SpynRecordScreen() {
               recordingSegmentsRef.current.push(currentUri);
               console.log('[SPYN Record] Segment saved. Total segments:', recordingSegmentsRef.current.length);
               
-              // Read the finalized audio file - use same method as SPYN
+              // Read the finalized audio file - EXACT SAME METHOD AS SPYN
               try {
                 // Modern approach: use fetch + blob (same as SPYN)
                 const response = await fetch(currentUri);
@@ -764,9 +764,9 @@ export default function SpynRecordScreen() {
                 console.log('[SPYN Record] Audio read via fetch+blob, length:', audioBase64.length);
               } catch (blobError) {
                 console.log('[SPYN Record] Blob approach failed, trying FileSystem:', blobError);
-                // Fallback to FileSystem
-                audioBase64 = await LegacyFileSystem.readAsStringAsync(currentUri, {
-                  encoding: LegacyFileSystem.EncodingType.Base64,
+                // Fallback to FileSystem - EXACT SAME AS SPYN
+                audioBase64 = await FileSystem.readAsStringAsync(currentUri, {
+                  encoding: FileSystem.EncodingType.Base64,
                 });
                 console.log('[SPYN Record] Audio read via FileSystem, length:', audioBase64.length);
               }
