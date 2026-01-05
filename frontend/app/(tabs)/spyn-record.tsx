@@ -1063,27 +1063,33 @@ export default function SpynRecordScreen() {
           if (Platform.OS === 'web') {
             segmentBase64 = segmentsToAnalyze[i] as string;
           } else {
-            // Read segment file
+            // Read segment file using FileSystem (more reliable on iOS)
             const segmentUri = segmentsToAnalyze[i] as string;
+            console.log('[SPYN Record] Reading segment:', segmentUri);
             try {
-              const response = await fetch(segmentUri);
-              const blob = await response.blob();
-              segmentBase64 = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  const result = reader.result as string;
-                  resolve(result.split(',')[1] || '');
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
+              // Use FileSystem directly - more reliable than fetch on iOS
+              segmentBase64 = await FileSystem.readAsStringAsync(segmentUri, {
+                encoding: FileSystem.EncodingType.Base64,
               });
-            } catch (readErr) {
-              console.error('[SPYN Record] Error reading segment:', readErr);
-              continue;
+              console.log('[SPYN Record] Segment read with FileSystem, length:', segmentBase64.length);
+            } catch (fsError) {
+              console.log('[SPYN Record] FileSystem failed, trying LegacyFileSystem:', fsError);
+              try {
+                segmentBase64 = await LegacyFileSystem.readAsStringAsync(segmentUri, {
+                  encoding: LegacyFileSystem.EncodingType.Base64,
+                });
+                console.log('[SPYN Record] Segment read with LegacyFileSystem, length:', segmentBase64.length);
+              } catch (legacyError) {
+                console.error('[SPYN Record] All read methods failed:', legacyError);
+                continue;
+              }
             }
           }
           
-          if (!segmentBase64 || segmentBase64.length === 0) continue;
+          if (!segmentBase64 || segmentBase64.length === 0) {
+            console.log('[SPYN Record] Segment', i + 1, 'is empty, skipping');
+            continue;
+          }
           
           console.log('[SPYN Record] Analyzing segment', i + 1, 'length:', segmentBase64.length);
           
