@@ -130,17 +130,17 @@ export default function GlobalPlayer() {
         onPanResponderGrant: (evt) => {
           setIsDragging(true);
           const { locationX } = evt.nativeEvent;
-          const percentage = Math.max(0, Math.min(1, locationX / PROGRESS_BAR_WIDTH));
+          const percentage = Math.max(0, Math.min(1, locationX / progressBarWidth));
           setDragPosition(percentage * playbackDuration);
         },
         onPanResponderMove: (evt) => {
           const { locationX } = evt.nativeEvent;
-          const percentage = Math.max(0, Math.min(1, locationX / PROGRESS_BAR_WIDTH));
+          const percentage = Math.max(0, Math.min(1, locationX / progressBarWidth));
           setDragPosition(percentage * playbackDuration);
         },
         onPanResponderRelease: async (evt) => {
           const { locationX } = evt.nativeEvent;
-          const percentage = Math.max(0, Math.min(1, locationX / PROGRESS_BAR_WIDTH));
+          const percentage = Math.max(0, Math.min(1, locationX / progressBarWidth));
           const newPosition = Math.floor(percentage * playbackDuration);
           await seekTo(newPosition);
           setIsDragging(false);
@@ -149,8 +149,16 @@ export default function GlobalPlayer() {
           setIsDragging(false);
         },
       }),
-    [playbackDuration, seekTo]
+    [playbackDuration, seekTo, progressBarWidth]
   );
+
+  // Handle progress bar layout to get real width
+  const handleProgressBarLayout = (event: any) => {
+    const { width } = event.nativeEvent.layout;
+    if (width > 0) {
+      setProgressBarWidth(width);
+    }
+  };
 
   // Share handler
   const handleShare = async () => {
