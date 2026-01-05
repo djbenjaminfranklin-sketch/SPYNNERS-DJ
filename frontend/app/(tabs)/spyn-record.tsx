@@ -250,6 +250,12 @@ export default function SpynRecordScreen() {
 
   // Detect available audio input devices
   const detectAudioSources = async () => {
+    // Skip detection if we're currently recording
+    if (isRecording || isRecordingRef.current) {
+      console.log('[SPYN Record] Skipping audio source detection during recording');
+      return;
+    }
+    
     try {
       setIsCheckingUSB(true);
       
