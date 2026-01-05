@@ -610,66 +610,75 @@ export default function SpynRecordScreen() {
           });
         }
       } else {
-        // NATIVE (iOS/Android): Simple approach - just record a new sample
-        // Note: This will briefly pause the main recording
-        console.log('[SPYN Record] Starting native audio analysis...');
+        // NATIVE (iOS/Android): Use the current recording for analysis
+        // We pause the recording, read the file, and resume
+        console.log('[SPYN Record] Starting native audio analysis using current recording...');
         
         try {
-          // First, ensure audio mode is set
-          await Audio.setAudioModeAsync({
-            allowsRecordingIOS: true,
-            playsInSilentModeIOS: true,
-          });
-          
-          // Create a new recording for analysis
-          console.log('[SPYN Record] Creating analysis recording...');
-          const { recording: analysisRecording } = await Audio.Recording.createAsync(
-            Audio.RecordingOptionsPresets.HIGH_QUALITY
-          );
-          console.log('[SPYN Record] Analysis recording started...');
-          
-          // Record for 8 seconds
-          await new Promise(resolve => setTimeout(resolve, 8000));
-          
-          // Stop and get the audio
-          await analysisRecording.stopAndUnloadAsync();
-          const analysisUri = analysisRecording.getURI();
-          console.log('[SPYN Record] Analysis recording stopped, URI:', analysisUri);
-          
-          if (analysisUri) {
-            // Read the audio file as base64
-            try {
-              // Try modern approach: fetch + blob
-              const response = await fetch(analysisUri);
-              const blob = await response.blob();
-              audioBase64 = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  const result = reader.result as string;
-                  resolve(result.split(',')[1] || '');
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-              });
-              console.log('[SPYN Record] Audio converted to base64, length:', audioBase64.length);
-            } catch (blobError) {
-              console.log('[SPYN Record] Blob approach failed, trying LegacyFileSystem:', blobError);
-              // Fallback to LegacyFileSystem API
-              audioBase64 = await LegacyFileSystem.readAsStringAsync(analysisUri, {
-                encoding: LegacyFileSystem.EncodingType.Base64,
-              });
-              console.log('[SPYN Record] Audio read via LegacyFileSystem, length:', audioBase64.length);
+          if (recordingRef.current) {
+            // Pause the recording to access the file
+            console.log('[SPYN Record] Pausing recording for analysis...');
+            await recordingRef.current.pauseAsync();
+            
+            // Get the current recording URI
+            const currentUri = recordingRef.current.getURI();
+            console.log('[SPYN Record] Current recording URI:', currentUri);
+            
+            if (currentUri) {
+              // Read the audio file as base64
+              try {
+                // Use LegacyFileSystem to read the file
+                audioBase64 = await LegacyFileSystem.readAsStringAsync(currentUri, {
+                  encoding: LegacyFileSystem.EncodingType.Base64,
+                });
+                console.log('[SPYN Record] Audio read from current recording, length:', audioBase64.length);
+                
+                // If the file is too large, we might want to truncate
+                // ACRCloud works best with 10-20 seconds of audio
+                // For now, we'll send the whole thing and let ACRCloud handle it
+                
+              } catch (readError) {
+                console.error('[SPYN Record] Error reading recording file:', readError);
+                
+                // Try fetch + blob approach
+                try {
+                  const response = await fetch(currentUri);
+                  const blob = await response.blob();
+                  audioBase64 = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      const result = reader.result as string;
+                      resolve(result.split(',')[1] || '');
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                  });
+                  console.log('[SPYN Record] Audio read via fetch, length:', audioBase64.length);
+                } catch (fetchError) {
+                  console.error('[SPYN Record] Fetch approach also failed:', fetchError);
+                }
+              }
             }
             
-            // Clean up the analysis recording file
+            // Resume recording
+            console.log('[SPYN Record] Resuming recording...');
+            await recordingRef.current.startAsync();
+            console.log('[SPYN Record] Recording resumed');
+          } else {
+            console.log('[SPYN Record] No active recording to analyze');
+          }
+        } catch (analysisError) {
+          console.error('[SPYN Record] Native analysis error:', analysisError);
+          
+          // Try to resume recording even if analysis failed
+          if (recordingRef.current) {
             try {
-              await LegacyFileSystem.deleteAsync(analysisUri, { idempotent: true });
-            } catch (e) {
-              // Ignore cleanup errors
+              await recordingRef.current.startAsync();
+              console.log('[SPYN Record] Recording resumed after error');
+            } catch (resumeError) {
+              console.error('[SPYN Record] Failed to resume recording:', resumeError);
             }
           }
-        } catch (recordError) {
-          console.error('[SPYN Record] Native analysis recording error:', recordError);
         }
       }
       
