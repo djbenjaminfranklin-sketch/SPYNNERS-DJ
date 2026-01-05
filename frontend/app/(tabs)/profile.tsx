@@ -302,7 +302,7 @@ export default function ProfileScreen() {
           <View style={styles.genresCard}>
             <View style={styles.genresHeader}>
               <Ionicons name="musical-note" size={18} color={Colors.text} />
-              <Text style={styles.genresTitle}>Genres Préférés</Text>
+              <Text style={styles.genresTitle}>{t('profile.favoriteGenres')}</Text>
             </View>
             <View style={styles.genresList}>
               {profile.genres.map((genre, index) => (
@@ -319,7 +319,7 @@ export default function ProfileScreen() {
           <View style={styles.socialCard}>
             <View style={styles.socialHeader}>
               <Ionicons name="share-social" size={18} color={Colors.text} />
-              <Text style={styles.socialTitle}>Réseaux Sociaux</Text>
+              <Text style={styles.socialTitle}>{t('profile.socialLinks')}</Text>
             </View>
             <View style={styles.socialGrid}>
               {Object.entries(profile.social_links).map(([key, value]) => {
