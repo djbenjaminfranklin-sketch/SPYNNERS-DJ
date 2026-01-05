@@ -298,9 +298,9 @@ export default function OfflineSessionsScreen() {
         {sessions.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="cloud-offline-outline" size={80} color="#333" />
-            <Text style={styles.emptyTitle}>Aucune session offline</Text>
+            <Text style={styles.emptyTitle}>{t('offline.noSessions')}</Text>
             <Text style={styles.emptySubtitle}>
-              Vos sessions SPYN enregistrées hors ligne apparaîtront ici
+              {t('offline.noSessionsDesc')}
             </Text>
           </View>
         ) : (
