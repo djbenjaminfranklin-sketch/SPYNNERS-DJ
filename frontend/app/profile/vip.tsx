@@ -49,40 +49,35 @@ export default function VIPScreen() {
       setLoading(true);
       const userId = user?.id || user?._id || '';
       
-      // Get user's black diamonds - try multiple sources
+      // Get user's black diamonds from backend API
       let diamonds = 0;
       
-      // First try from user object with various field names
-      diamonds = user?.black_diamonds || user?.blackDiamonds || user?.diamonds || user?.balance || 0;
-      console.log('[VIP] Initial diamonds from user object:', diamonds, user);
-      
-      // If still 0, try to fetch from Users collection directly
-      if (diamonds === 0 && userId) {
-        try {
-          // Fetch directly from Users entity
-          const users = await base44Users.list({ limit: 100 });
-          const currentUser = users.find((u: any) => 
-            u.id === userId || u._id === userId || u.email === user?.email
-          );
-          
-          if (currentUser) {
-            console.log('[VIP] Found user in Users collection:', JSON.stringify(currentUser, null, 2));
-            diamonds = currentUser.black_diamonds || currentUser.blackDiamonds || currentUser.diamonds || 0;
-          }
-        } catch (e) {
-          console.log('[VIP] Could not fetch from Users collection:', e);
+      try {
+        // Call our backend endpoint to get diamonds from Spynners
+        const token = await base44Api.getStoredToken();
+        const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL || ''}/api/user/diamonds`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('[VIP] Diamonds API response:', data);
+          diamonds = data.black_diamonds || 0;
+        } else {
+          console.log('[VIP] Diamonds API failed:', response.status);
         }
+      } catch (e) {
+        console.log('[VIP] Could not fetch diamonds from API:', e);
       }
       
-      // If still 0, try from profile API
-      if (diamonds === 0 && userId) {
-        try {
-          const profile = await base44Api.getProfile(userId);
-          console.log('[VIP] Profile data:', JSON.stringify(profile, null, 2));
-          diamonds = profile?.black_diamonds || profile?.blackDiamonds || profile?.diamonds || 0;
-        } catch (e) {
-          console.log('[VIP] Could not fetch profile for diamonds:', e);
-        }
+      // Fallback to user object if API failed
+      if (diamonds === 0) {
+        diamonds = user?.black_diamonds || user?.blackDiamonds || user?.diamonds || 0;
+        console.log('[VIP] Using fallback diamonds from user object:', diamonds);
       }
       
       setUserDiamonds(diamonds);
