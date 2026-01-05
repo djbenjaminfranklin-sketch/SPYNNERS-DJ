@@ -818,7 +818,7 @@ export default function SpynScreen() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          timeout: 10000,
+          timeout: 30000, // 30 seconds timeout
         }
       );
       
