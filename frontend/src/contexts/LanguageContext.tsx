@@ -369,6 +369,9 @@ const translations: Record<Language, Record<string, string>> = {
     'radar.myTracks': 'My Tracks',
     'radar.global': 'Global',
     'radar.noLivePlays': 'No live plays at the moment',
+    'radar.saveMessage': 'Save Message',
+    'radar.messageSaved': 'Message Saved',
+    'radar.messageSavedDesc': 'Your automatic message has been saved',
     
     // Offline Sessions
     'offline.title': 'Offline Sessions',
