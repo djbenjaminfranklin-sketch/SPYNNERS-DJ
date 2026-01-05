@@ -404,39 +404,39 @@ export default function ManageTracksScreen() {
                   <View style={styles.modalStatItem}>
                     <Ionicons name="play" size={20} color={CYAN_COLOR} />
                     <Text style={styles.modalStatValue}>{selectedTrack.plays_count || 0}</Text>
-                    <Text style={styles.modalStatLabel}>Plays</Text>
+                    <Text style={styles.modalStatLabel}>{t('tracks.plays')}</Text>
                   </View>
                   <View style={styles.modalStatItem}>
                     <Ionicons name="download" size={20} color={CYAN_COLOR} />
                     <Text style={styles.modalStatValue}>{selectedTrack.downloads_count || 0}</Text>
-                    <Text style={styles.modalStatLabel}>Downloads</Text>
+                    <Text style={styles.modalStatLabel}>{t('tracks.downloads')}</Text>
                   </View>
                   <View style={styles.modalStatItem}>
                     <Ionicons name="heart" size={20} color={CYAN_COLOR} />
                     <Text style={styles.modalStatValue}>{selectedTrack.likes_count || 0}</Text>
-                    <Text style={styles.modalStatLabel}>Likes</Text>
+                    <Text style={styles.modalStatLabel}>{t('tracks.likes')}</Text>
                   </View>
                 </View>
 
                 <View style={styles.modalDetails}>
                   <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Status</Text>
+                    <Text style={styles.detailLabel}>{t('tracks.status')}</Text>
                     <Text style={[styles.detailValue, { color: getStatusColor(selectedTrack.status) }]}>
-                      {selectedTrack.status || 'Unknown'}
+                      {getTranslatedStatus(selectedTrack.status)}
                     </Text>
                   </View>
                   <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>BPM</Text>
+                    <Text style={styles.detailLabel}>{t('tracks.bpm')}</Text>
                     <Text style={styles.detailValue}>{selectedTrack.bpm || 'N/A'}</Text>
                   </View>
                   <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>ISRC</Text>
+                    <Text style={styles.detailLabel}>{t('tracks.isrc')}</Text>
                     <Text style={styles.detailValue}>{selectedTrack.isrc || 'N/A'}</Text>
                   </View>
                   <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>ACRCloud</Text>
+                    <Text style={styles.detailLabel}>{t('tracks.acrcloud')}</Text>
                     <Text style={[styles.detailValue, { color: selectedTrack.acrcloud_id ? GREEN_COLOR : ORANGE_COLOR }]}>
-                      {selectedTrack.acrcloud_id ? 'Synced' : 'Not Synced'}
+                      {selectedTrack.acrcloud_id ? t('tracks.synced') : t('tracks.notSynced')}
                     </Text>
                   </View>
                 </View>
@@ -451,7 +451,7 @@ export default function ManageTracksScreen() {
                     }}
                   >
                     <Ionicons name="create" size={20} color="#fff" />
-                    <Text style={styles.modalButtonText}>Edit Track</Text>
+                    <Text style={styles.modalButtonText}>{t('tracks.editTrack')}</Text>
                   </TouchableOpacity>
 
                   {/* Sync ACRCloud Button - ONLY for admins */}
@@ -467,7 +467,7 @@ export default function ManageTracksScreen() {
                         <Ionicons name="sync" size={20} color="#fff" />
                       )}
                       <Text style={styles.modalButtonText}>
-                        {syncing === selectedTrack.id ? 'Syncing...' : 'Sync ACRCloud'}
+                        {syncing === selectedTrack.id ? t('tracks.syncing') : t('tracks.syncAcrcloud')}
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -478,7 +478,7 @@ export default function ManageTracksScreen() {
                     onPress={() => deleteTrack(selectedTrack)}
                   >
                     <Ionicons name="trash" size={20} color="#fff" />
-                    <Text style={styles.modalButtonText}>Delete Track</Text>
+                    <Text style={styles.modalButtonText}>{t('tracks.deleteTrack')}</Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>
