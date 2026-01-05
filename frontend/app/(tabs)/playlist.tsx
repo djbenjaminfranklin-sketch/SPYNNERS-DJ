@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.text },
   headerSubtitle: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
   addButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  listContent: { padding: 12 },
+  listContent: { padding: 12, paddingBottom: 100 },
   playlistCard: {
     flexDirection: 'row',
     alignItems: 'center',
