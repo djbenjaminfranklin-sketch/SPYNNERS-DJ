@@ -49,9 +49,25 @@ export default function VIPScreen() {
       setLoading(true);
       const userId = user?.id || user?._id || '';
       
-      // Get user's black diamonds
-      const diamonds = user?.black_diamonds || user?.diamonds || 0;
+      // Get user's black diamonds - try multiple field names
+      let diamonds = 0;
+      
+      // First try from user object
+      diamonds = user?.black_diamonds || user?.blackDiamonds || user?.diamonds || user?.balance || 0;
+      
+      // If still 0, try to fetch from profile API
+      if (diamonds === 0 && userId) {
+        try {
+          const profile = await base44Api.getProfile(userId);
+          console.log('[VIP] Profile data:', JSON.stringify(profile, null, 2));
+          diamonds = profile?.black_diamonds || profile?.blackDiamonds || profile?.diamonds || 0;
+        } catch (e) {
+          console.log('[VIP] Could not fetch profile for diamonds:', e);
+        }
+      }
+      
       setUserDiamonds(diamonds);
+      console.log('[VIP] User diamonds:', diamonds, 'from user object:', user?.black_diamonds);
       
       // Load VIP tracks
       const allTracks = await base44Tracks.list({ limit: 200 });
