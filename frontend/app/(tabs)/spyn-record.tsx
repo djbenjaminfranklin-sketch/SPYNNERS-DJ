@@ -682,7 +682,6 @@ export default function SpynRecordScreen() {
   }, [identifiedTracks]);
 
   // Analyze current audio segment
-  // Creates a separate short recording for analysis without interrupting the main recording
   const analyzeCurrentAudio = async () => {
     console.log('[SPYN Record] analyzeCurrentAudio called, isRecording:', isRecordingRef.current, 'isPaused:', isPaused, 'isAnalyzing:', isAnalyzingRef.current);
     
