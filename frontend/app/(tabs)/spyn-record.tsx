@@ -1573,7 +1573,7 @@ export default function SpynRecordScreen() {
       {/* Identified Tracks */}
       <View style={styles.tracksSection}>
         <View style={styles.tracksSectionHeader}>
-          <Text style={styles.sectionLabel}>TRACKS IDENTIFIÉS</Text>
+          <Text style={styles.sectionLabel}>{t('spynRecord.identifiedTracks')}</Text>
           <View style={styles.tracksCount}>
             <Text style={styles.tracksCountText}>{identifiedTracks.length}</Text>
           </View>
