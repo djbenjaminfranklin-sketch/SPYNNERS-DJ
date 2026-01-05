@@ -45,8 +45,14 @@ const GREEN_COLOR = '#00FF88';
 const PURPLE_COLOR = '#9D4EDD';
 const DARK_BG = '#0a0a1a';
 
-// Backend URL - hardcoded for reliability on mobile
-const BACKEND_URL = 'https://track-reports.preview.emergentagent.com';
+// Backend URL - use current origin on web, hardcoded for mobile
+const getBackendUrl = () => {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return 'https://track-reports.preview.emergentagent.com';
+};
+const BACKEND_URL = getBackendUrl();
 
 // Recording settings for high quality
 const RECORDING_OPTIONS = {
