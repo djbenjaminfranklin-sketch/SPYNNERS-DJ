@@ -23,7 +23,6 @@ import { Colors } from '../theme/colors';
 import { Track, Playlist, base44Playlists } from '../services/base44Api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PROGRESS_BAR_WIDTH = 80;
 
 export default function GlobalPlayer() {
   const {
