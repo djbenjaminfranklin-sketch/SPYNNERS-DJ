@@ -251,35 +251,59 @@ export default function AdminCategories() {
         style={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF5722" />}
       >
-        {filteredUsers.slice(0, 50).map((u) => (
+        <Text style={styles.resultCount}>
+          {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''} trouvé{filteredUsers.length > 1 ? 's' : ''}
+        </Text>
+        {filteredUsers.slice(0, 100).map((u) => (
           <View key={u.id} style={styles.userCard}>
-            <View style={styles.userAvatar}>
-              <Text style={styles.avatarText}>{u.full_name?.charAt(0).toUpperCase() || 'U'}</Text>
-            </View>
+            {u.avatar_url ? (
+              <Image source={{ uri: u.avatar_url }} style={styles.userAvatarImg} />
+            ) : (
+              <View style={styles.userAvatar}>
+                <Text style={styles.avatarText}>{u.full_name?.charAt(0).toUpperCase() || 'U'}</Text>
+              </View>
+            )}
             <View style={styles.userInfo}>
               <View style={styles.userNameRow}>
                 <Text style={styles.userName}>{u.artist_name || u.full_name}</Text>
                 {isUserAdmin(u) && <AdminBadge size="small" />}
               </View>
               <Text style={styles.userEmail}>{u.email}</Text>
-              <View style={styles.categoryButtons}>
-                {categories.map((cat) => (
-                  <TouchableOpacity key={cat.id} style={[styles.catBtn, { borderColor: cat.color }]}>
-                    <Ionicons name={cat.icon as any} size={12} color={cat.color} />
-                  </TouchableOpacity>
-                ))}
-              </View>
+              {u.nationality && (
+                <Text style={styles.userNationality}>📍 {u.nationality}</Text>
+              )}
             </View>
-            <View style={[styles.userTypeBadge, { backgroundColor: u.user_type === 'dj' ? '#4CAF50' : '#757575' }]}>
-              <Text style={styles.userTypeText}>{u.user_type?.toUpperCase() || 'N/A'}</Text>
+            <View style={[styles.userTypeBadge, { backgroundColor: getUserTypeColor(u.user_type) }]}>
+              <Text style={styles.userTypeText}>{formatUserType(u.user_type)}</Text>
             </View>
           </View>
         ))}
+        {filteredUsers.length > 100 && (
+          <Text style={styles.moreText}>+{filteredUsers.length - 100} autres utilisateurs...</Text>
+        )}
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   );
 }
+
+// Helper functions
+const getUserTypeColor = (userType?: string): string => {
+  const type = (userType || '').toLowerCase();
+  if (type.includes('star')) return '#FFD700';
+  if (type.includes('resident')) return '#1a237e';
+  if (type.includes('guest')) return '#9C27B0';
+  if (type === 'producer') return '#4CAF50';
+  if (type === 'dj_producer' || type === 'djproducer') return '#00BCD4';
+  if (type === 'dj') return '#2196F3';
+  if (type.includes('music')) return '#E91E63';
+  return '#757575';
+};
+
+const formatUserType = (userType?: string): string => {
+  if (!userType) return 'N/A';
+  return userType.replace(/_/g, ' ').toUpperCase();
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
