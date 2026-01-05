@@ -832,10 +832,10 @@ export default function SpynScreen() {
     const isValidVenue = location?.is_valid_venue === true;
     
     // Send emails to producers - send even if venue not validated (user might be at home testing)
-    // Only skip if offline
-    if (identifiedTracks.length > 0 && token && !isOffline) {
+    // Note: We try to send emails regardless of offline status since API calls are clearly working
+    if (identifiedTracks.length > 0 && token) {
       console.log('[SPYN] ✅ Sending emails to producers...');
-      console.log('[SPYN] Venue:', location?.venue, '| Valid:', isValidVenue);
+      console.log('[SPYN] Venue:', location?.venue, '| Valid:', isValidVenue, '| isOffline:', isOffline);
       
       let emailsSent = 0;
       let emailsFailed = 0;
