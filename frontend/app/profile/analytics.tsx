@@ -295,10 +295,10 @@ export default function AnalyticsScreen() {
       } else {
         // Mobile: Save to file system and share
         const filename = `spynners_sessions_${new Date().toISOString().slice(0, 10)}.csv`;
-        const fileUri = `${FileSystem.documentDirectory}${filename}`;
+        const fileUri = `${LegacyFileSystem.documentDirectory}${filename}`;
         
-        await FileSystem.writeAsStringAsync(fileUri, csvContent, {
-          encoding: FileSystem.EncodingType.UTF8,
+        await LegacyFileSystem.writeAsStringAsync(fileUri, csvContent, {
+          encoding: LegacyFileSystem.EncodingType.UTF8,
         });
 
         // Check if sharing is available
