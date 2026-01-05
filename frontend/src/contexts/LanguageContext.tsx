@@ -348,8 +348,35 @@ const translations: Record<Language, Record<string, string>> = {
     'analytics.trackStatus': 'Track Status',
     'analytics.approved': 'Approved',
     'analytics.pending': 'Pending',
+    'analytics.rejected': 'Rejected',
     'analytics.plays': 'Plays',
     'analytics.likes': 'Likes',
+    'analytics.tracks': 'Tracks',
+    'analytics.recentActivity': 'Recent Activity',
+    'analytics.livePlays': 'Live Plays',
+    'analytics.today': 'Today',
+    'analytics.thisWeek': 'This Week',
+    'analytics.topTracks': 'Top Tracks',
+    
+    // Radar
+    'radar.title': 'Track Radar',
+    'radar.liveMap': 'Live Plays Map',
+    'radar.automaticMessage': 'Automatic Message',
+    'radar.automaticMessageDesc': 'Automatically send a message to DJs who play your tracks',
+    'radar.live': 'Live',
+    'radar.recent': 'Recent',
+    'radar.myTracks': 'My Tracks',
+    'radar.global': 'Global',
+    
+    // Offline Sessions
+    'offline.title': 'Offline Sessions',
+    'offline.noSessions': 'No offline sessions',
+    'offline.noSessionsDesc': 'Your offline SPYN sessions will appear here',
+    'offline.pendingSync': 'Pending Sync',
+    'offline.synced': 'Synced',
+    'offline.syncNow': 'Sync Now',
+    'offline.delete': 'Delete',
+    'offline.tracks': 'tracks',
     
     // Tracks Management
     'tracks.manageYourTracks': 'Manage Your Tracks',
