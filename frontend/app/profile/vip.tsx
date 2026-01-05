@@ -266,14 +266,39 @@ export default function VIPScreen() {
         return;
       }
       
-      // Download the file
+      // For mobile: Use expo-file-system with cacheDirectory (more reliable)
       const safeTitle = (track.title || 'track').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
       const filename = `${safeTitle}.mp3`;
-      const fileUri = `${FileSystem.documentDirectory}${filename}`;
       
+      // Use cacheDirectory instead of documentDirectory (more reliable on mobile)
+      const cacheDir = FileSystem.cacheDirectory;
+      if (!cacheDir) {
+        // Fallback: Just open the audio URL directly
+        Alert.alert(
+          t('vip.downloadReady'),
+          t('vip.downloadReadyDesc'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { 
+              text: t('vip.openInBrowser'), 
+              onPress: () => {
+                // Open URL in browser for download
+                import('expo-linking').then(Linking => {
+                  Linking.openURL(audioUrl);
+                });
+              }
+            }
+          ]
+        );
+        return;
+      }
+      
+      const fileUri = `${cacheDir}${filename}`;
       console.log('[VIP] Downloading to:', fileUri);
       
-      const downloadResult = await FileSystem.downloadAsync(audioUrl, fileUri);
+      // Use the legacy API explicitly
+      const FileSystemLegacy = await import('expo-file-system/legacy');
+      const downloadResult = await FileSystemLegacy.downloadAsync(audioUrl, fileUri);
       
       console.log('[VIP] Download result status:', downloadResult.status);
       
@@ -283,12 +308,12 @@ export default function VIPScreen() {
         console.log('[VIP] Sharing available:', isAvailable);
         
         if (isAvailable) {
-          await Sharing.shareAsync(fileUri, {
+          await Sharing.shareAsync(downloadResult.uri, {
             mimeType: 'audio/mpeg',
             dialogTitle: t('vip.saveTrack'),
           });
         } else {
-          Alert.alert(t('vip.downloadSuccess'), `${t('vip.savedTo')}: ${fileUri}`);
+          Alert.alert(t('vip.downloadSuccess'), t('vip.downloadSuccessDesc'));
         }
       } else {
         console.log('[VIP] Download failed with status:', downloadResult.status);
@@ -296,7 +321,28 @@ export default function VIPScreen() {
       }
     } catch (error: any) {
       console.error('[VIP] Download error:', error?.message || error);
-      Alert.alert(t('common.error'), t('vip.downloadError'));
+      
+      // Fallback: Offer to open in browser
+      const audioUrl = track.audio_url || track.audio_file || track.file_url;
+      if (audioUrl) {
+        Alert.alert(
+          t('common.error'),
+          t('vip.downloadErrorTryBrowser'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            { 
+              text: t('vip.openInBrowser'), 
+              onPress: () => {
+                import('expo-linking').then(Linking => {
+                  Linking.openURL(audioUrl);
+                });
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert(t('common.error'), t('vip.downloadError'));
+      }
     } finally {
       setDownloading(null);
     }
