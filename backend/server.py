@@ -264,20 +264,34 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
                     output_path
                 ], capture_output=True, timeout=30)
                 
+                print(f"[ACRCloud] ffmpeg return code: {result.returncode}")
+                
                 if result.returncode == 0 and os.path.exists(output_path):
                     with open(output_path, 'rb') as f:
                         audio_data = f.read()
                     audio_format = "audio/wav"
                     audio_extension = "wav"
                     print(f"[ACRCloud] Conversion successful! New size: {len(audio_data)} bytes")
+                    # Cleanup now that we have the data
+                    try:
+                        os.unlink(input_path)
+                        os.unlink(output_path)
+                    except:
+                        pass
                 else:
-                    print(f"[ACRCloud] Conversion failed: {result.stderr.decode()[:200]}")
+                    error_output = result.stderr.decode()[:500] if result.stderr else "No error message"
+                    print(f"[ACRCloud] Conversion failed. stderr: {error_output}")
+                    # Cleanup input file only
+                    try:
+                        os.unlink(input_path)
+                    except:
+                        pass
             except Exception as e:
                 print(f"[ACRCloud] Conversion error: {e}")
-            finally:
-                # Cleanup temp files
+                # Cleanup on error
                 try:
-                    os.unlink(input_path)
+                    if os.path.exists(input_path):
+                        os.unlink(input_path)
                     if os.path.exists(output_path):
                         os.unlink(output_path)
                 except:
