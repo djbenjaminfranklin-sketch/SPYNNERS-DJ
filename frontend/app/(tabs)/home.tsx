@@ -950,13 +950,15 @@ export default function HomeScreen() {
                 placeholderTextColor={Colors.textMuted}
                 value={memberSearchQuery}
                 onChangeText={setMemberSearchQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
               />
             </View>
             
             {loadingMembers ? (
               <ActivityIndicator size="small" color={Colors.primary} style={{ marginVertical: 20 }} />
             ) : (
-              <ScrollView style={{ maxHeight: 300 }}>
+              <ScrollView style={{ maxHeight: 300 }} keyboardShouldPersistTaps="handled">
                 {filteredMembers.slice(0, 50).map((member: any) => {
                   const memberId = member.id || member._id || '';
                   const memberName = member.full_name || member.name || member.email?.split('@')[0] || 'Unknown';
