@@ -743,8 +743,9 @@ export default function SpynRecordScreen() {
 
   // Send email immediately for a single track
   const sendEmailForTrack = async (track: IdentifiedTrack) => {
-    if (!track.spynnersTrackId) {
-      console.log(`[SPYN Record] Skipping email for ${track.title} - not a Spynners track`);
+    // Need either producerId or spynnersTrackId to send email
+    if (!track.spynnersTrackId && !track.producerId) {
+      console.log(`[SPYN Record] Skipping email for ${track.title} - no track ID or producer ID`);
       return;
     }
     
@@ -756,11 +757,12 @@ export default function SpynRecordScreen() {
     try {
       const djName = user?.full_name || 'DJ';
       
-      console.log(`[SPYN Record] 📧 Sending email for: ${track.title}, trackId: ${track.spynnersTrackId}`);
+      console.log(`[SPYN Record] 📧 Sending email for: ${track.title}, trackId: ${track.spynnersTrackId}, producerId: ${track.producerId}`);
       
       // Format expected by Spynners API
       const emailPayload = {
         trackId: track.spynnersTrackId,
+        producerId: track.producerId,
         trackTitle: track.title || 'Unknown Track',
         artistName: track.artist || 'Unknown Artist',
         djName: djName,
