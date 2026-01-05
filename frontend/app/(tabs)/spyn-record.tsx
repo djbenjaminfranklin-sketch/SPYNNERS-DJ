@@ -864,66 +864,9 @@ export default function SpynRecordScreen() {
         
         Alert.alert('✅ Téléchargement lancé', 'Votre mix a été téléchargé.');
       } else {
-        // Save to media library on native
-        const { status } = await MediaLibrary.requestPermissionsAsync();
-        console.log('[SPYN Record] Media library permission:', status);
-        
-        if (status === 'granted') {
-          try {
-            // Use the recorded file directly since copy operations are deprecated in SDK 54
-            // Try to create asset directly from the original recording
-            const originalUri = fileUri;
-            console.log('[SPYN Record] Attempting to save from:', originalUri);
-            
-            try {
-              // Create asset directly from the original recording file
-              const asset = await MediaLibrary.createAssetAsync(originalUri);
-              console.log('[SPYN Record] Asset created:', asset);
-              
-              Alert.alert(
-                '✅ Mix sauvegardé !',
-                'Votre enregistrement a été sauvegardé dans votre bibliothèque audio.',
-                [{ text: 'OK' }]
-              );
-            } catch (mediaErr) {
-              console.log('[SPYN Record] Direct media save failed:', mediaErr);
-              // Offer to share the file instead
-              Alert.alert(
-                '💾 Mix enregistré',
-                'Le mix a été enregistré. Voulez-vous le sauvegarder via le partage ?',
-                [
-                  {
-                    text: 'Sauvegarder',
-                    onPress: () => shareRecording(fileUri),
-                  },
-                  { text: 'OK' },
-                ]
-              );
-            }
-          } catch (saveError: any) {
-            console.error('[SPYN Record] Save error:', saveError);
-            Alert.alert(
-              '💾 Mix enregistré',
-              'Utilisez le bouton Partager pour sauvegarder votre mix.',
-              [
-                {
-                  text: 'Partager',
-                  onPress: () => shareRecording(fileUri),
-                },
-                { text: 'OK' },
-              ]
-            );
-          }
-        } else {
-          // No permission - offer to share
-          Alert.alert(
-            'Permission requise',
-            'Accès à la bibliothèque refusé. Voulez-vous partager le fichier directement ?',
-            [
-              {
-                text: 'Partager',
-                onPress: () => shareRecording(fileUri),
-              },
+        // On iOS/Android, use sharing directly since MediaLibrary doesn't support m4a well
+        console.log('[SPYN Record] Using share method for audio file');
+        await shareRecording(fileUri);
               { text: 'Annuler', style: 'cancel' },
             ]
           );
