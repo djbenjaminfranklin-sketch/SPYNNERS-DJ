@@ -82,25 +82,73 @@ export default function AdminDashboard() {
 
   const fetchAllData = async () => {
     try {
-      const dashboardData = await base44Admin.getDashboard();
-      if (dashboardData?.success) {
-        if (dashboardData.stats) {
-          setAdminStats({
-            total_tracks: dashboardData.stats.total_tracks || 0,
-            total_users: dashboardData.stats.total_users || 0,
-            pending_tracks: dashboardData.stats.pending_tracks || 0,
-            vip_requests: dashboardData.stats.vip_requests || 0,
-            approved_tracks: dashboardData.stats.approved_tracks || 0,
-            rejected_tracks: dashboardData.stats.rejected_tracks || 0,
-            unreleased_tracks: dashboardData.stats.unreleased_tracks || 0,
-          });
-        }
-        if (dashboardData.pending_tracks) {
-          setAllTracks([...(dashboardData.pending_tracks || []), ...(dashboardData.approved_tracks || [])]);
-        }
+      // Fetch real admin stats from backend
+      const statsResponse = await axios.get(`${BACKEND_URL}/api/admin/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (statsResponse.data?.success && statsResponse.data?.stats) {
+        const stats = statsResponse.data.stats;
+        setAdminStats({
+          total_tracks: stats.total_tracks || 0,
+          total_users: stats.total_users || 0,
+          pending_tracks: stats.pending_tracks || 0,
+          vip_requests: stats.vip_tracks || 0,
+          approved_tracks: stats.approved_tracks || 0,
+          rejected_tracks: stats.rejected_tracks || 0,
+          unreleased_tracks: 0,
+        });
+      }
+      
+      // Fetch real tracks from backend
+      const tracksResponse = await axios.get(`${BACKEND_URL}/api/admin/tracks`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (tracksResponse.data?.success && tracksResponse.data?.tracks) {
+        setAllTracks(tracksResponse.data.tracks.map((track: any) => ({
+          id: track.id || track._id,
+          title: track.title,
+          artist: track.artist_name || track.artist,
+          producer_name: track.producer_name || track.artist_name,
+          genre: track.genre || 'Unknown',
+          label: track.label,
+          bpm: track.bpm,
+          key: track.key,
+          description: track.description,
+          is_vip: track.is_vip || false,
+          audio_url: track.audio_url,
+          artwork_url: track.artwork_url,
+          uploaded_by: track.uploaded_by || track.user_id,
+          uploaded_at: track.created_at,
+          status: track.status || 'approved',
+          rejection_reason: track.rejection_reason,
+        })));
       }
     } catch (error) {
       console.error('[AdminDashboard] Error:', error);
+      // Fallback to old method if new endpoints fail
+      try {
+        const dashboardData = await base44Admin.getDashboard();
+        if (dashboardData?.success) {
+          if (dashboardData.stats) {
+            setAdminStats({
+              total_tracks: dashboardData.stats.total_tracks || 0,
+              total_users: dashboardData.stats.total_users || 0,
+              pending_tracks: dashboardData.stats.pending_tracks || 0,
+              vip_requests: dashboardData.stats.vip_requests || 0,
+              approved_tracks: dashboardData.stats.approved_tracks || 0,
+              rejected_tracks: dashboardData.stats.rejected_tracks || 0,
+              unreleased_tracks: dashboardData.stats.unreleased_tracks || 0,
+            });
+          }
+          if (dashboardData.pending_tracks) {
+            setAllTracks([...(dashboardData.pending_tracks || []), ...(dashboardData.approved_tracks || [])]);
+          }
+        }
+      } catch (fallbackError) {
+        console.error('[AdminDashboard] Fallback error:', fallbackError);
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
