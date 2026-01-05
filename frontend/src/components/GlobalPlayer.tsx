@@ -371,29 +371,26 @@ const styles = StyleSheet.create({
     bottom: 70, // Above tab bar
     left: 0,
     right: 0,
-    height: 80,
+    height: 100,
     zIndex: 1000,
   },
   gradient: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 12,
-    gap: 10,
+    paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
-  trackInfo: {
+  mainRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    minWidth: 0,
-    gap: 10,
+    marginBottom: 8,
   },
   cover: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
+    width: 45,
+    height: 45,
+    borderRadius: 6,
+    marginRight: 10,
   },
   coverPlaceholder: {
     backgroundColor: Colors.border,
@@ -402,7 +399,7 @@ const styles = StyleSheet.create({
   },
   textInfo: {
     flex: 1,
-    minWidth: 0,
+    marginRight: 10,
   },
   title: {
     color: Colors.text,
@@ -410,36 +407,62 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   artist: {
-    color: Colors.primary,
+    color: Colors.textMuted,
     fontSize: 12,
     marginTop: 2,
   },
-  controls: {
+  playbackControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
-  controlBtn: {
-    padding: 4,
+  skipBtn: {
+    padding: 6,
   },
   playBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    marginHorizontal: 4,
   },
-  progressSection: {
+  closeBtn: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
   },
   time: {
     color: Colors.textMuted,
     fontSize: 10,
     minWidth: 32,
     textAlign: 'center',
+  },
+  progressContainer: {
+    flex: 1,
+    height: 20,
+    justifyContent: 'center',
+    marginHorizontal: 4,
+  },
+  progressTrack: {
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+    borderRadius: 2,
+  },
+  actionBtn: {
+    padding: 6,
+    marginLeft: 4,
+  },
   },
   progressContainer: {
     width: PROGRESS_BAR_WIDTH,
