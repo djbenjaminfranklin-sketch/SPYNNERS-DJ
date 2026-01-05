@@ -402,7 +402,7 @@ export default function AnalyticsScreen() {
                 style={styles.modalCancelButton} 
                 onPress={() => setShowDatePicker(false)}
               >
-                <Text style={styles.modalCancelText}>Annuler</Text>
+                <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -415,7 +415,7 @@ export default function AnalyticsScreen() {
                 ) : (
                   <>
                     <Ionicons name="download-outline" size={18} color="#fff" />
-                    <Text style={styles.modalExportText}>Exporter</Text>
+                    <Text style={styles.modalExportText}>{t('csv.export')}</Text>
                   </>
                 )}
               </TouchableOpacity>
