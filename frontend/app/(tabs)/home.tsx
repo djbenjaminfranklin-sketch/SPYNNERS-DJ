@@ -913,46 +913,6 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* Language Selection Modal */}
-      <Modal visible={showLanguageModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{t('common.language')}</Text>
-            <Text style={styles.modalSubtitle}>{t('common.selectLanguage')}</Text>
-            
-            {LANGUAGES.map((lang) => (
-              <TouchableOpacity 
-                key={lang.code}
-                style={[
-                  styles.langOption,
-                  language === lang.code && styles.langOptionActive
-                ]}
-                onPress={() => {
-                  console.log('[Language] Changing language to:', lang.code);
-                  setLanguage(lang.code);
-                  setShowLanguageModal(false);
-                }}
-              >
-                <Text style={styles.langOptionFlag}>{lang.flag}</Text>
-                <Text style={[
-                  styles.langOptionText,
-                  language === lang.code && styles.langOptionTextActive
-                ]}>
-                  {lang.name}
-                </Text>
-                {language === lang.code && (
-                  <Ionicons name="checkmark-circle" size={22} color={Colors.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
-            
-            <TouchableOpacity style={styles.modalCancel} onPress={() => setShowLanguageModal(false)}>
-              <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
       {/* Notification Modal */}
       <NotificationModal 
         visible={showNotificationModal} 
