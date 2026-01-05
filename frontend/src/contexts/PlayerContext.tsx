@@ -30,17 +30,20 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const soundRef = useRef<Audio.Sound | null>(null);
 
+  // Reference for VIP preview timeout
+  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (soundRef.current) {
         soundRef.current.unloadAsync();
       }
+      if (previewTimeoutRef.current) {
+        clearTimeout(previewTimeoutRef.current);
+      }
     };
   }, []);
-
-  // Reference for VIP preview timeout
-  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const onPlaybackStatusUpdate = (status: any) => {
     if (status.isLoaded) {
