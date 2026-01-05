@@ -91,8 +91,9 @@ export default function EditTrackScreen() {
       setLoading(true);
       console.log('[EditTrack] Loading track:', trackId);
       
+      // Use the new endpoint
       const response = await axios.get(
-        `${BACKEND_URL}/api/base44/entities/Track/${trackId}`,
+        `${BACKEND_URL}/api/tracks/${trackId}`,
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         }
