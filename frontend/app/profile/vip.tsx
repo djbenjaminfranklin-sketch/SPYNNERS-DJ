@@ -49,13 +49,32 @@ export default function VIPScreen() {
       setLoading(true);
       const userId = user?.id || user?._id || '';
       
-      // Get user's black diamonds - try multiple field names
+      // Get user's black diamonds - try multiple sources
       let diamonds = 0;
       
-      // First try from user object
+      // First try from user object with various field names
       diamonds = user?.black_diamonds || user?.blackDiamonds || user?.diamonds || user?.balance || 0;
+      console.log('[VIP] Initial diamonds from user object:', diamonds, user);
       
-      // If still 0, try to fetch from profile API
+      // If still 0, try to fetch from Users collection directly
+      if (diamonds === 0 && userId) {
+        try {
+          // Fetch directly from Users entity
+          const users = await base44Users.list({ limit: 100 });
+          const currentUser = users.find((u: any) => 
+            u.id === userId || u._id === userId || u.email === user?.email
+          );
+          
+          if (currentUser) {
+            console.log('[VIP] Found user in Users collection:', JSON.stringify(currentUser, null, 2));
+            diamonds = currentUser.black_diamonds || currentUser.blackDiamonds || currentUser.diamonds || 0;
+          }
+        } catch (e) {
+          console.log('[VIP] Could not fetch from Users collection:', e);
+        }
+      }
+      
+      // If still 0, try from profile API
       if (diamonds === 0 && userId) {
         try {
           const profile = await base44Api.getProfile(userId);
@@ -67,7 +86,7 @@ export default function VIPScreen() {
       }
       
       setUserDiamonds(diamonds);
-      console.log('[VIP] User diamonds:', diamonds, 'from user object:', user?.black_diamonds);
+      console.log('[VIP] Final diamonds count:', diamonds);
       
       // Load VIP tracks
       const allTracks = await base44Tracks.list({ limit: 200 });
@@ -87,7 +106,7 @@ export default function VIPScreen() {
         }
       }
       
-      console.log('[VIP] Loaded', vipTracksList.length, 'VIP tracks, diamonds:', diamonds);
+      console.log('[VIP] Loaded', vipTracksList.length, 'VIP tracks');
     } catch (error) {
       console.error('[VIP] Error loading data:', error);
     } finally {
