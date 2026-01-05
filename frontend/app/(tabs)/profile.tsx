@@ -105,12 +105,6 @@ export default function ProfileScreen() {
       subtitle: t('profile.offlineSessionsDesc'),
       onPress: () => router.push('/profile/offline-sessions'),
     },
-    ...(isAdmin ? [{
-      icon: 'shield-checkmark',
-      title: t('profile.adminPanel'),
-      subtitle: t('profile.adminDesc'),
-      onPress: () => router.push('/profile/admin'),
-    }] : []),
     {
       icon: 'log-out-outline',
       title: t('profile.logout'),
