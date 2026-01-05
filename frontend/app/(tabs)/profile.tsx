@@ -288,12 +288,12 @@ export default function ProfileScreen() {
           <View style={styles.statBox}>
             <Ionicons name="play-circle" size={24} color="#4CAF50" />
             <Text style={styles.statNumber}>{profile?.stats?.total_plays || 0}</Text>
-            <Text style={styles.statLabel}>Plays</Text>
+            <Text style={styles.statLabel}>{t('analytics.plays')}</Text>
           </View>
           <View style={styles.statBox}>
             <Ionicons name="download" size={24} color="#2196F3" />
             <Text style={styles.statNumber}>{profile?.stats?.total_downloads || 0}</Text>
-            <Text style={styles.statLabel}>Downloads</Text>
+            <Text style={styles.statLabel}>{t('analytics.downloads')}</Text>
           </View>
         </View>
 
