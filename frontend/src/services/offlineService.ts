@@ -618,6 +618,48 @@ class OfflineService {
     }
   }
 
+  // Send email for identified track
+  private async sendTrackEmail(
+    track: { title: string; artist: string; producer_id?: string; spynners_track_id?: string; cover_image?: string },
+    session: OfflineSession,
+    token?: string
+  ): Promise<void> {
+    try {
+      const emailPayload = {
+        djId: session.userId,
+        djName: session.djName,
+        producerId: track.producer_id || '',
+        trackId: track.spynners_track_id || '',
+        trackTitle: track.title,
+        artistName: track.artist,
+        venue: session.location?.venue || 'Session Offline',
+        city: session.location?.city || '',
+        country: session.location?.country || '',
+        timestamp: session.endTime || session.startTime,
+        trackArtworkUrl: track.cover_image || '',
+      };
+      
+      console.log('[Offline] Sending email for track:', track.title);
+      
+      // Call Spynners API directly
+      const response = await axios.post(
+        'https://spynners.com/api/functions/sendTrackPlayedEmail',
+        emailPayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+          timeout: 30000,
+        }
+      );
+      
+      console.log(`[Offline] ✅ Email sent for: ${track.title}`, response.data);
+    } catch (error: any) {
+      console.error(`[Offline] ❌ Email error for: ${track.title}`, error?.response?.data || error.message);
+    }
+  }
+
   // ==================== CLEANUP ====================
 
   destroy() {
