@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://track-radar-fix.preview.emergentagent.com';
+  return 'https://spynners-builder.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

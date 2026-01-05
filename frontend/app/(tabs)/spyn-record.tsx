@@ -43,7 +43,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return process.env.EXPO_PUBLIC_BACKEND_URL || 'https://track-radar-fix.preview.emergentagent.com';
+  return process.env.EXPO_PUBLIC_BACKEND_URL || 'https://spynners-builder.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();
