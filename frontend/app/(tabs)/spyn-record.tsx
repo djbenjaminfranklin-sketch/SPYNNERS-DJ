@@ -2,6 +2,7 @@
  * SPYN Record - Professional DJ Set Recording
  * Records high-quality audio from mixer input, analyzes tracks in real-time
  * Saves MP3 320kbps locally to device
+ * Supports USB audio interfaces and offline mode
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -18,9 +19,11 @@ import {
   SafeAreaView,
   StatusBar,
   Image,
+  NativeModules,
+  NativeEventEmitter,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Audio } from 'expo-av';
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 // Import legacy FileSystem API for SDK 54 compatibility
 import * as LegacyFileSystem from 'expo-file-system/legacy';
 import * as MediaLibrary from 'expo-media-library';
@@ -29,6 +32,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
+import offlineService from '../../src/services/offlineService';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
