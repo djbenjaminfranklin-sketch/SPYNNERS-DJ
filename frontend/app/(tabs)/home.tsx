@@ -129,6 +129,31 @@ export default function HomeScreen() {
   // Offline sessions state
   const [pendingOfflineSessions, setPendingOfflineSessions] = useState(0);
   const [isSyncingOffline, setIsSyncingOffline] = useState(false);
+  
+  // VIP unlocked tracks state (shared with VIP page)
+  const [unlockedTracks, setUnlockedTracks] = useState<string[]>([]);
+  
+  // Check if a track is unlocked
+  const isTrackUnlocked = (trackId: string): boolean => {
+    return unlockedTracks.includes(trackId);
+  };
+  
+  // Load unlocked tracks from AsyncStorage
+  const loadUnlockedTracks = async () => {
+    const userId = user?.id || user?._id || '';
+    if (!userId) return;
+    
+    try {
+      const storedUnlocks = await AsyncStorage.getItem(`${UNLOCKED_TRACKS_KEY}_${userId}`);
+      if (storedUnlocks) {
+        const unlocks = JSON.parse(storedUnlocks);
+        setUnlockedTracks(unlocks);
+        console.log('[Home] Loaded unlocked tracks:', unlocks.length);
+      }
+    } catch (e) {
+      console.log('[Home] Could not load unlocked tracks:', e);
+    }
+  };
 
   // Load pending offline sessions count
   useEffect(() => {
@@ -147,6 +172,11 @@ export default function HomeScreen() {
     const interval = setInterval(loadOfflineCount, 10000);
     return () => clearInterval(interval);
   }, []);
+  
+  // Load unlocked tracks when user changes
+  useEffect(() => {
+    loadUnlockedTracks();
+  }, [user]);
 
   useEffect(() => {
     loadTracks();
