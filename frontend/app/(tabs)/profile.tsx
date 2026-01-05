@@ -754,5 +754,47 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 
+  // Admin Quick Access Grid
+  adminQuickAccess: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: '#1a2a3a',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#FFD70050',
+  },
+  adminQuickAccessHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  adminQuickAccessTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFD700',
+  },
+  adminMenuGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  adminMenuCard: {
+    width: '23%',
+    aspectRatio: 1,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 8,
+  },
+  adminMenuCardTitle: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: '#fff',
+    marginTop: 6,
+    textAlign: 'center',
+  },
+
   version: { textAlign: 'center', color: Colors.textMuted, fontSize: 12, paddingBottom: 32, marginTop: 16 },
 });
