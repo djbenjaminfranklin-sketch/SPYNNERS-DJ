@@ -205,6 +205,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'Success',
     'common.search': 'Search',
     'common.noResults': 'No results',
+    'common.results': 'results',
     'common.language': 'Language',
     'common.selectLanguage': 'Select your language',
     'common.tracks': 'tracks',
