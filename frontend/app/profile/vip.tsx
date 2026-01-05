@@ -78,16 +78,38 @@ export default function VIPScreen() {
       const vipTracksList = allTracks.filter((t: Track) => t.is_vip === true);
       setVipTracks(vipTracksList);
       
-      // Load user's unlocked tracks from local storage or API
+      // Load user's unlocked tracks from LOCAL STORAGE (primary)
       if (userId) {
         try {
-          const purchases = await base44VIP.listMyPurchases(userId);
-          const unlockedIds = purchases
-            .filter((p: any) => p.track_id)
-            .map((p: any) => p.track_id);
-          setUnlockedTracks(unlockedIds);
+          // Load from AsyncStorage first (most reliable)
+          const storedUnlocks = await AsyncStorage.getItem(`${UNLOCKED_TRACKS_KEY}_${userId}`);
+          let localUnlocks: string[] = [];
+          if (storedUnlocks) {
+            localUnlocks = JSON.parse(storedUnlocks);
+            console.log('[VIP] Loaded unlocks from storage:', localUnlocks.length);
+          }
+          
+          // Also try API (backup)
+          try {
+            const purchases = await base44VIP.listMyPurchases(userId);
+            const apiUnlocks = purchases
+              .filter((p: any) => p.track_id)
+              .map((p: any) => p.track_id);
+            
+            // Merge both sources (no duplicates)
+            const allUnlocks = [...new Set([...localUnlocks, ...apiUnlocks])];
+            setUnlockedTracks(allUnlocks);
+            
+            // Update storage with merged list
+            await AsyncStorage.setItem(`${UNLOCKED_TRACKS_KEY}_${userId}`, JSON.stringify(allUnlocks));
+            console.log('[VIP] Total unlocked tracks:', allUnlocks.length);
+          } catch (apiError) {
+            console.log('[VIP] API purchases failed, using local only:', apiError);
+            setUnlockedTracks(localUnlocks);
+          }
         } catch (e) {
-          console.log('[VIP] Could not load purchases:', e);
+          console.log('[VIP] Could not load unlocks:', e);
+          setUnlockedTracks([]);
         }
       }
       
