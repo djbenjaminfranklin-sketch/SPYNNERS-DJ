@@ -2985,7 +2985,7 @@ async def update_user_diamonds(request: UpdateDiamondsRequest, authorization: st
 async def get_user_diamonds(authorization: str = Header(None)):
     """
     Get user's black diamonds balance from Spynners API.
-    Uses nativeGetCurrentUser to get fresh user data.
+    Uses nativeUpdateProfile with empty update to get fresh user data.
     """
     try:
         if not authorization:
@@ -2993,9 +2993,10 @@ async def get_user_diamonds(authorization: str = Header(None)):
         
         print(f"[Diamonds] Getting user diamonds via Spynners API...")
         
-        # Use Spynners nativeGetCurrentUser to get fresh user data
+        # Use Spynners nativeUpdateProfile with empty body to get user data
+        # This works because it returns the user object in the response
         try:
-            result = await call_spynners_function("nativeGetCurrentUser", {}, authorization)
+            result = await call_spynners_function("nativeUpdateProfile", {}, authorization)
             print(f"[Diamonds] Spynners response: {result}")
             
             if result and result.get('success') and result.get('user'):
@@ -3012,38 +3013,7 @@ async def get_user_diamonds(authorization: str = Header(None)):
         except Exception as spynners_error:
             print(f"[Diamonds] Spynners API failed: {spynners_error}")
         
-        # Fallback: Try Base44 auth/me
-        headers = {
-            "Content-Type": "application/json",
-            "X-Base44-App-Id": BASE44_APP_ID
-        }
-        headers["Authorization"] = authorization
-        
-        async with httpx.AsyncClient(timeout=30.0) as http_client:
-            response = await http_client.get(
-                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/auth/me",
-                headers=headers
-            )
-            
-            print(f"[Diamonds] Base44 auth/me response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                user_data = response.json()
-                diamonds = (
-                    user_data.get('data', {}).get('black_diamonds', 0) or
-                    user_data.get('black_diamonds', 0) or 
-                    0
-                )
-                print(f"[Diamonds] User has {diamonds} diamonds from Base44")
-                
-                return {
-                    "success": True,
-                    "black_diamonds": diamonds,
-                    "user_id": user_data.get('id') or user_data.get('_id'),
-                    "email": user_data.get('email'),
-                }
-        
-        # If both fail, return error
+        # If Spynners fails, return error
         raise HTTPException(status_code=404, detail="Could not fetch user data")
         
     except HTTPException:
