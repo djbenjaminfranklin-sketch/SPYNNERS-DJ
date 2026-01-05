@@ -261,8 +261,14 @@ export const base44Auth = {
     try {
       const response = await api.get('/api/base44/auth/me');
       return response.data;
-    } catch (error) {
-      console.error('[Auth] Error getting current user:', error);
+    } catch (error: any) {
+      // 404 is expected when user is not logged in - don't show error
+      if (error?.response?.status === 404) {
+        console.log('[Auth] No active session (user not logged in)');
+        return null;
+      }
+      // Only log actual errors
+      console.error('[Auth] Error getting current user:', error?.message || error);
       return null;
     }
   },
