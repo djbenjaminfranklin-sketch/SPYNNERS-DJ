@@ -186,6 +186,7 @@ export default function SpynRecordScreen() {
     requestPermissions();
     detectAudioSources();
     initOfflineService();
+    requestLocationPermission();
     
     // Listen for device changes (plug/unplug)
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices) {
@@ -209,6 +210,88 @@ export default function SpynRecordScreen() {
       }
     };
   }, []);
+
+  // ==================== LOCATION ====================
+
+  const requestLocationPermission = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        setLocationPermission(true);
+        await updateLocation();
+      } else {
+        setLocationLoading(false);
+      }
+    } catch (error) {
+      console.error('[SPYN Record] Location permission error:', error);
+      setLocationLoading(false);
+    }
+  };
+
+  const updateLocation = async () => {
+    try {
+      setLocationLoading(true);
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      
+      const lat = currentLocation.coords.latitude;
+      const lng = currentLocation.coords.longitude;
+      
+      let venueName = undefined;
+      let venueType = undefined;
+      let venueTypes: string[] = [];
+      let isValidVenue = false;
+      
+      // Valid venue types for Black Diamond
+      const VALID_VENUE_TYPES = [
+        'night_club', 'bar', 'restaurant', 'cafe', 'casino',
+        'establishment', 'food', 'point_of_interest', 'event_venue',
+        'nightclub', 'club', 'lounge', 'pub', 'disco'
+      ];
+      
+      // Try to get venue from Google Places API
+      try {
+        const response = await axios.get(
+          `${BACKEND_URL}/api/nearby-places`,
+          { params: { lat, lng }, timeout: 10000 }
+        );
+        if (response.data.success && response.data.venue) {
+          venueName = response.data.venue;
+          venueType = response.data.venue_type || response.data.types?.[0];
+          venueTypes = response.data.types || [];
+          
+          // Check if it's a valid venue for Black Diamond
+          isValidVenue = venueTypes.some((type: string) => 
+            VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+          );
+        }
+      } catch (e) {
+        console.log('[SPYN Record] Places lookup failed, using reverse geocoding');
+      }
+      
+      // Get address via reverse geocoding
+      const [address] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+      
+      const newLocation = {
+        latitude: lat,
+        longitude: lng,
+        venue: venueName || address?.name || address?.street || undefined,
+        city: address?.city || address?.region || undefined,
+        country: address?.country || undefined,
+        venue_type: venueType,
+        is_valid_venue: isValidVenue,
+      };
+      
+      console.log('[SPYN Record] Location updated:', newLocation);
+      setLocation(newLocation);
+      setCorrectedVenue(newLocation.venue || '');
+      setLocationLoading(false);
+    } catch (error) {
+      console.error('[SPYN Record] Location update error:', error);
+      setLocationLoading(false);
+    }
+  };
 
   // Initialize offline service
   const initOfflineService = async () => {
