@@ -889,12 +889,15 @@ export default function SpynRecordScreen() {
           if (response.data.success) {
             console.log('[SPYN Record] Conversion successful, MP3 size:', response.data.size);
             
-            // Save the MP3 file locally
-            const mp3Path = `${Paths.cache}/${fileName}.mp3`;
+            // Save the MP3 file locally - use LegacyFileSystem for cacheDirectory
+            const cacheDir = LegacyFileSystem.cacheDirectory || '';
+            const mp3Path = `${cacheDir}${fileName}.mp3`;
+            console.log('[SPYN Record] Saving MP3 to:', mp3Path);
+            
             await LegacyFileSystem.writeAsStringAsync(mp3Path, response.data.audio_base64, {
               encoding: LegacyFileSystem.EncodingType.Base64,
             });
-            console.log('[SPYN Record] MP3 saved to:', mp3Path);
+            console.log('[SPYN Record] MP3 saved successfully');
             
             // Share the MP3 file
             setCurrentAnalysis('');
