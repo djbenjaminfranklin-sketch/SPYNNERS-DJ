@@ -2893,6 +2893,7 @@ async def send_dj_message(request: SendDJMessageRequest, authorization: str = He
 class UpdateDiamondsRequest(BaseModel):
     user_id: str
     amount: int  # positive to add, negative to deduct
+    current_balance: Optional[int] = None  # Optional: frontend can pass current balance
 
 @app.post("/api/base44/update-diamonds")
 async def update_user_diamonds(request: UpdateDiamondsRequest, authorization: str = Header(None)):
@@ -2905,38 +2906,40 @@ async def update_user_diamonds(request: UpdateDiamondsRequest, authorization: st
             raise HTTPException(status_code=401, detail="Authorization required")
         
         print(f"[Diamonds] Updating diamonds for user {request.user_id}: {request.amount}")
+        print(f"[Diamonds] Frontend passed current_balance: {request.current_balance}")
         
-        # First get current user data from login response to get current diamonds
-        headers = {
-            "Content-Type": "application/json",
-            "X-Base44-App-Id": BASE44_APP_ID
-        }
-        headers["Authorization"] = authorization
+        # Use frontend-provided balance if available (more reliable)
+        current_diamonds = request.current_balance
         
-        async with httpx.AsyncClient(timeout=30.0) as http_client:
-            # Get current balance from Base44 auth/me
-            me_response = await http_client.get(
-                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/auth/me",
-                headers=headers
-            )
+        if current_diamonds is None:
+            # Fallback: try to get from Base44 auth/me
+            headers = {
+                "Content-Type": "application/json",
+                "X-Base44-App-Id": BASE44_APP_ID
+            }
+            headers["Authorization"] = authorization
             
-            print(f"[Diamonds] Auth/me response: {me_response.status_code}")
-            
-            current_diamonds = 0
-            
-            if me_response.status_code == 200:
-                user_data = me_response.json()
-                current_diamonds = (
-                    user_data.get('data', {}).get('black_diamonds', 0) or 
-                    user_data.get('black_diamonds', 0) or 
-                    0
+            async with httpx.AsyncClient(timeout=30.0) as http_client:
+                me_response = await http_client.get(
+                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/auth/me",
+                    headers=headers
                 )
-                print(f"[Diamonds] Got current balance from auth/me: {current_diamonds}")
-            else:
-                # Fallback: Use the amount passed from frontend (they know current balance)
-                # This is safe because we check for negative result
-                print(f"[Diamonds] Auth/me failed, using client-side balance check")
-                # We'll just apply the change and let Spynners validate
+                
+                print(f"[Diamonds] Auth/me response: {me_response.status_code}")
+                
+                if me_response.status_code == 200:
+                    user_data = me_response.json()
+                    current_diamonds = (
+                        user_data.get('data', {}).get('black_diamonds', 0) or 
+                        user_data.get('black_diamonds', 0) or 
+                        0
+                    )
+                    print(f"[Diamonds] Got balance from auth/me: {current_diamonds}")
+                else:
+                    print(f"[Diamonds] Auth/me failed, cannot determine balance")
+                    raise HTTPException(status_code=400, detail="Cannot determine current balance. Please re-login.")
+        
+        print(f"[Diamonds] Current balance: {current_diamonds}")
         
         # Calculate new balance
         new_balance = current_diamonds + request.amount
