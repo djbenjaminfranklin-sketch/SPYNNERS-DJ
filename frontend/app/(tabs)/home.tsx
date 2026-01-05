@@ -1314,9 +1314,11 @@ const styles = StyleSheet.create({
   trackTitle: { color: Colors.text, fontSize: 14, fontWeight: '600' },
   trackArtist: { color: Colors.primary, fontSize: 12, marginTop: 2 },
   ratingContainer: { flexDirection: 'row', marginTop: 4, gap: 1 },
-  vipBadge: { position: 'absolute', top: 10, right: 10 },
+  vipBadge: { position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.6)', padding: 4, borderRadius: 4 },
+  vipBadgeUnlocked: { backgroundColor: 'rgba(255,215,0,0.2)' },
   trackActions: { flexDirection: 'row', gap: 4 },
   actionBtn: { width: 32, height: 32, borderRadius: 6, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' },
+  actionBtnDisabled: { opacity: 0.5 },
   
   // Bottom Player
   bottomPlayer: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 70 },
