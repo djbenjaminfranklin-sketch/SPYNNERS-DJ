@@ -3139,7 +3139,11 @@ async def get_admin_stats(authorization: str = Header(None)):
         try:
             users_result = await call_spynners_function("nativeGetAllUsers", {"limit": 1000}, authorization)
             if users_result:
-                users = users_result if isinstance(users_result, list) else users_result.get('items', [])
+                # Handle different response formats
+                if isinstance(users_result, dict):
+                    users = users_result.get('users', users_result.get('items', []))
+                else:
+                    users = users_result if isinstance(users_result, list) else []
                 stats["total_users"] = len(users)
                 print(f"[Admin Stats] Total users: {stats['total_users']}")
         except Exception as e:
@@ -3149,7 +3153,11 @@ async def get_admin_stats(authorization: str = Header(None)):
         try:
             tracks_result = await call_spynners_function("nativeGetTracks", {"limit": 1000}, authorization)
             if tracks_result:
-                tracks = tracks_result if isinstance(tracks_result, list) else tracks_result.get('items', [])
+                # Handle different response formats
+                if isinstance(tracks_result, dict):
+                    tracks = tracks_result.get('tracks', tracks_result.get('items', []))
+                else:
+                    tracks = tracks_result if isinstance(tracks_result, list) else []
                 stats["total_tracks"] = len(tracks)
                 
                 # Count by status
