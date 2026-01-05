@@ -1052,6 +1052,15 @@ export default function SpynRecordScreen() {
         : recordingSegmentsRef.current;
       
       console.log('[SPYN Record] Segments to analyze:', segmentsToAnalyze.length);
+      console.log('[SPYN Record] audioBase64ForAnalysis length:', audioBase64ForAnalysis?.length || 0);
+      
+      // If we have no segments but have the main audio, analyze that
+      if (segmentsToAnalyze.length === 0 && audioBase64ForAnalysis && audioBase64ForAnalysis.length > 0) {
+        console.log('[SPYN Record] No segments, using main audio file');
+        segmentsToAnalyze.push(audioBase64ForAnalysis);
+      }
+      
+      console.log('[SPYN Record] Final segments to analyze:', segmentsToAnalyze.length);
       
       // Analyze each segment
       for (let i = 0; i < segmentsToAnalyze.length; i++) {
