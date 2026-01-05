@@ -92,19 +92,25 @@ export default function VIPScreen() {
       setVipTracks(vipTracksList);
       
       // Load user's unlocked tracks from LOCAL STORAGE (primary)
+      console.log('[VIP] Loading unlocks for userId:', userId);
       if (userId) {
         try {
           // Load from AsyncStorage first (most reliable)
-          const storedUnlocks = await AsyncStorage.getItem(`${UNLOCKED_TRACKS_KEY}_${userId}`);
+          const storageKey = `${UNLOCKED_TRACKS_KEY}_${userId}`;
+          console.log('[VIP] AsyncStorage key:', storageKey);
+          const storedUnlocks = await AsyncStorage.getItem(storageKey);
           let localUnlocks: string[] = [];
           if (storedUnlocks) {
             localUnlocks = JSON.parse(storedUnlocks);
-            console.log('[VIP] Loaded unlocks from storage:', localUnlocks.length);
+            console.log('[VIP] Loaded unlocks from storage:', localUnlocks);
+          } else {
+            console.log('[VIP] No unlocks in AsyncStorage');
           }
           
           // Also try API (backup)
           try {
             const purchases = await base44VIP.listMyPurchases(userId);
+            console.log('[VIP] API purchases:', purchases);
             const apiUnlocks = purchases
               .filter((p: any) => p.track_id)
               .map((p: any) => p.track_id);
