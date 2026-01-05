@@ -32,9 +32,13 @@ export default function GlobalPlayer() {
     playbackPosition,
     playbackDuration,
     isLoading,
+    queue,
+    currentIndex,
     togglePlayPause,
     seekTo,
     closePlayer,
+    playNext,
+    playPrevious,
   } = usePlayer();
   
   const { user } = useAuth();
@@ -47,6 +51,8 @@ export default function GlobalPlayer() {
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [creatingPlaylist, setCreatingPlaylist] = useState(false);
   const playerAnim = React.useRef(new Animated.Value(0)).current;
+  
+  const hasQueue = queue.length > 1;
 
   useEffect(() => {
     Animated.timing(playerAnim, {
