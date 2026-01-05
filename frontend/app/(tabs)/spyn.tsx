@@ -745,9 +745,14 @@ export default function SpynScreen() {
     } catch (error: any) {
       console.error('[SPYN] Recognition API error:', error?.response?.data || error.message);
       
-      // If network error, switch to offline mode
-      if (error.code === 'ECONNABORTED' || error.message?.includes('Network') || !error.response) {
-        console.log('[SPYN] Network error detected - switching to offline mode');
+      // FIX: Only switch to offline mode if we're TRULY offline (no network at all)
+      // Don't save as offline for API errors, timeouts, or server errors
+      const isNetworkError = error.code === 'ERR_NETWORK' || 
+                             error.message === 'Network Error' ||
+                             (typeof navigator !== 'undefined' && !navigator.onLine);
+      
+      if (isNetworkError) {
+        console.log('[SPYN] TRUE network error detected - switching to offline mode');
         setIsOffline(true);
         
         // Save this recording offline
@@ -768,6 +773,9 @@ export default function SpynScreen() {
         
         setOfflineRecordingsCount(prev => prev + 1);
         setPendingSyncCount(await offlineService.getPendingCount());
+      } else {
+        // API error but network is available - just log and continue, don't create offline session
+        console.log('[SPYN] API error but network is available - not saving offline');
       }
     }
   };
