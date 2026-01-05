@@ -9,54 +9,69 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import { base44VIP, base44Tracks, Track, VIPPromo } from '../../src/services/base44Api';
+import { base44VIP, base44Tracks, Track, base44Api } from '../../src/services/base44Api';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { usePlayer } from '../../src/contexts/PlayerContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+
+// Constants
+const UNLOCK_COST = 1; // 1 Black Diamond per track
 
 export default function VIPScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { playTrack, currentTrack, isPlaying, togglePlayPause } = usePlayer();
   const { t } = useLanguage();
   
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [promos, setPromos] = useState<VIPPromo[]>([]);
   const [vipTracks, setVipTracks] = useState<Track[]>([]);
-  const [myPurchases, setMyPurchases] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'tracks'>('tracks');
+  const [unlockedTracks, setUnlockedTracks] = useState<string[]>([]);
+  const [userDiamonds, setUserDiamonds] = useState(0);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const userId = user?.id || user?._id || '';
       
-      // Load VIP promos
-      const promosData = await base44VIP.listPromos();
-      setPromos(promosData.filter((p: VIPPromo) => p.is_active !== false));
+      // Get user's black diamonds
+      const diamonds = user?.black_diamonds || user?.diamonds || 0;
+      setUserDiamonds(diamonds);
       
-      // Load VIP tracks (tracks that are in promos)
+      // Load VIP tracks
       const allTracks = await base44Tracks.list({ limit: 200 });
       const vipTracksList = allTracks.filter((t: Track) => t.is_vip === true);
       setVipTracks(vipTracksList);
       
-      // Load user's purchases
+      // Load user's unlocked tracks from local storage or API
       if (userId) {
-        const purchases = await base44VIP.listMyPurchases(userId);
-        setMyPurchases(purchases);
+        try {
+          const purchases = await base44VIP.listMyPurchases(userId);
+          const unlockedIds = purchases
+            .filter((p: any) => p.track_id)
+            .map((p: any) => p.track_id);
+          setUnlockedTracks(unlockedIds);
+        } catch (e) {
+          console.log('[VIP] Could not load purchases:', e);
+        }
       }
       
-      console.log('[VIP] Loaded', promosData.length, 'promos,', vipTracksList.length, 'VIP tracks');
+      console.log('[VIP] Loaded', vipTracksList.length, 'VIP tracks, diamonds:', diamonds);
     } catch (error) {
       console.error('[VIP] Error loading data:', error);
     } finally {
@@ -66,50 +81,139 @@ export default function VIPScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
+    if (refreshUser) await refreshUser();
     await loadData();
     setRefreshing(false);
   };
 
-  // Check if user has purchased a promo
-  const hasPurchased = (promoId: string): boolean => {
-    return myPurchases.some((p: any) => p.promo_id === promoId);
+  // Check if track is unlocked
+  const isTrackUnlocked = (trackId: string): boolean => {
+    return unlockedTracks.includes(trackId);
   };
 
-  // Handle purchase
-  const handlePurchase = async (promo: VIPPromo) => {
-    const promoId = promo.id || promo._id || '';
+  // Handle unlock attempt
+  const handleUnlockPress = (track: Track) => {
+    const trackId = track.id || track._id || '';
     
-    if (hasPurchased(promoId)) {
-      Alert.alert('Already Purchased', 'You already own this VIP promo!');
+    if (isTrackUnlocked(trackId)) {
+      // Already unlocked - download directly
+      handleDownload(track);
       return;
     }
     
-    Alert.alert(
-      'Purchase VIP Promo',
-      `Get access to "${promo.name}" for ${promo.price || 0}€?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Purchase', 
-          onPress: async () => {
-            try {
-              const userId = user?.id || user?._id || '';
-              await base44VIP.createPurchase({
-                user_id: userId,
-                promo_id: promoId,
-                purchased_at: new Date().toISOString(),
-                amount: promo.price,
-              });
-              Alert.alert('Success', 'VIP Promo purchased successfully!');
-              loadData();
-            } catch (error) {
-              console.error('[VIP] Purchase error:', error);
-              Alert.alert('Error', 'Could not complete purchase. Please try again.');
+    // Show unlock confirmation
+    setSelectedTrack(track);
+    setShowUnlockModal(true);
+  };
+
+  // Unlock track with black diamond
+  const handleUnlock = async () => {
+    if (!selectedTrack) return;
+    
+    const trackId = selectedTrack.id || selectedTrack._id || '';
+    const userId = user?.id || user?._id || '';
+    
+    if (userDiamonds < UNLOCK_COST) {
+      Alert.alert(
+        t('vip.notEnoughDiamonds'),
+        t('vip.needMoreDiamonds'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { 
+            text: t('vip.buyDiamonds'), 
+            onPress: () => {
+              setShowUnlockModal(false);
+              router.push('/profile/diamonds');
             }
           }
-        },
-      ]
-    );
+        ]
+      );
+      return;
+    }
+    
+    try {
+      // Deduct diamond via API
+      await base44Api.updateUserDiamonds(userId, -UNLOCK_COST);
+      
+      // Record the purchase/unlock
+      await base44VIP.createPurchase({
+        user_id: userId,
+        track_id: trackId,
+        purchased_at: new Date().toISOString(),
+        amount: UNLOCK_COST,
+        type: 'track_unlock',
+      });
+      
+      // Update local state
+      setUnlockedTracks([...unlockedTracks, trackId]);
+      setUserDiamonds(prev => prev - UNLOCK_COST);
+      
+      // Refresh user data
+      if (refreshUser) await refreshUser();
+      
+      setShowUnlockModal(false);
+      
+      Alert.alert(
+        t('vip.trackUnlocked'),
+        t('vip.trackUnlockedDesc'),
+        [
+          { text: 'OK' },
+          { 
+            text: t('vip.downloadNow'), 
+            onPress: () => handleDownload(selectedTrack)
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('[VIP] Unlock error:', error);
+      Alert.alert(t('common.error'), t('vip.unlockError'));
+    }
+  };
+
+  // Download track
+  const handleDownload = async (track: Track) => {
+    const trackId = track.id || track._id || '';
+    
+    if (!isTrackUnlocked(trackId)) {
+      handleUnlockPress(track);
+      return;
+    }
+    
+    try {
+      setDownloading(trackId);
+      
+      const audioUrl = track.audio_url || track.file_url;
+      if (!audioUrl) {
+        Alert.alert(t('common.error'), t('vip.noAudioFile'));
+        return;
+      }
+      
+      // Download the file
+      const filename = `${track.title.replace(/[^a-zA-Z0-9]/g, '_')}.mp3`;
+      const fileUri = `${FileSystem.documentDirectory}${filename}`;
+      
+      const downloadResult = await FileSystem.downloadAsync(audioUrl, fileUri);
+      
+      if (downloadResult.status === 200) {
+        // Share/save the file
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (isAvailable) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'audio/mpeg',
+            dialogTitle: t('vip.saveTrack'),
+          });
+        } else {
+          Alert.alert(t('vip.downloadSuccess'), `${t('vip.savedTo')}: ${fileUri}`);
+        }
+      } else {
+        throw new Error('Download failed');
+      }
+    } catch (error) {
+      console.error('[VIP] Download error:', error);
+      Alert.alert(t('common.error'), t('vip.downloadError'));
+    } finally {
+      setDownloading(null);
+    }
   };
 
   // Get cover image URL
@@ -138,37 +242,44 @@ export default function VIPScreen() {
         <View style={{ width: 40 }} />
       </LinearGradient>
 
-      {/* Stats Banner */}
-      <View style={styles.statsBanner}>
-        <View style={styles.statItem}>
-          <Ionicons name="gift" size={20} color={Colors.primary} />
-          <Text style={styles.statValue}>{promos.length}</Text>
-          <Text style={styles.statLabel}>{t('vip.promos')}</Text>
+      {/* Diamond Balance Banner */}
+      <View style={styles.diamondBanner}>
+        <View style={styles.diamondInfo}>
+          <View style={styles.diamondIconContainer}>
+            <Ionicons name="diamond" size={32} color="#1a1a2e" />
+          </View>
+          <View>
+            <Text style={styles.diamondLabel}>{t('vip.yourBalance')}</Text>
+            <Text style={styles.diamondValue}>{userDiamonds} Black Diamonds</Text>
+          </View>
         </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Ionicons name="musical-notes" size={20} color="#FFD700" />
-          <Text style={styles.statValue}>{vipTracks.length}</Text>
-          <Text style={styles.statLabel}>{t('vip.vipTracks')}</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
-          <Text style={styles.statValue}>{myPurchases.length}</Text>
-          <Text style={styles.statLabel}>{t('vip.purchased')}</Text>
-        </View>
+        <TouchableOpacity 
+          style={styles.buyButton}
+          onPress={() => router.push('/profile/diamonds')}
+        >
+          <Ionicons name="add-circle" size={20} color="#fff" />
+          <Text style={styles.buyButtonText}>{t('vip.buyMore')}</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Tab Selector - Only VIP Tracks */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity 
-          style={[styles.tab, styles.tabActive]}
-        >
-          <Ionicons name="musical-notes" size={18} color={'#FFD700'} />
-          <Text style={[styles.tabText, styles.tabTextActive]}>
-            {t('vip.vipTracks')}
-          </Text>
-        </TouchableOpacity>
+      {/* Info Banner */}
+      <View style={styles.infoBanner}>
+        <Ionicons name="information-circle" size={20} color={Colors.primary} />
+        <Text style={styles.infoText}>
+          {t('vip.unlockInfo').replace('{cost}', String(UNLOCK_COST))}
+        </Text>
+      </View>
+
+      {/* Stats */}
+      <View style={styles.statsRow}>
+        <View style={styles.statBox}>
+          <Text style={styles.statNumber}>{vipTracks.length}</Text>
+          <Text style={styles.statLabel}>{t('vip.vipTracks')}</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Text style={styles.statNumber}>{unlockedTracks.length}</Text>
+          <Text style={styles.statLabel}>{t('vip.unlocked')}</Text>
+        </View>
       </View>
 
       {/* Content */}
@@ -183,64 +294,163 @@ export default function VIPScreen() {
             <ActivityIndicator size="large" color="#FFD700" />
             <Text style={styles.loadingText}>{t('vip.loadingVip')}</Text>
           </View>
+        ) : vipTracks.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="musical-notes-outline" size={60} color={Colors.textMuted} />
+            <Text style={styles.emptyText}>{t('vip.noVipTracks')}</Text>
+            <Text style={styles.emptySubtext}>{t('vip.checkBackLater')}</Text>
+          </View>
         ) : (
-          // VIP Tracks Tab only
-          vipTracks.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="musical-notes-outline" size={60} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>{t('vip.noVipTracks')}</Text>
-              <Text style={styles.emptySubtext}>{t('vip.purchasePromo')}</Text>
-            </View>
-          ) : (
-            vipTracks.map((track) => {
-              const trackId = track.id || track._id || '';
-              const isCurrentTrack = currentTrack && (currentTrack.id || currentTrack._id) === trackId;
-              const coverUrl = getCoverImageUrl(track);
-              
-              return (
+          vipTracks.map((track) => {
+            const trackId = track.id || track._id || '';
+            const isCurrentTrack = currentTrack && (currentTrack.id || currentTrack._id) === trackId;
+            const coverUrl = getCoverImageUrl(track);
+            const unlocked = isTrackUnlocked(trackId);
+            const isDownloading = downloading === trackId;
+            
+            return (
+              <View key={trackId} style={[styles.trackCard, isCurrentTrack && styles.trackCardActive]}>
+                {/* VIP/Lock Badge */}
+                <View style={[styles.statusBadge, unlocked ? styles.unlockedBadge : styles.lockedBadge]}>
+                  <Ionicons 
+                    name={unlocked ? "checkmark-circle" : "lock-closed"} 
+                    size={12} 
+                    color={unlocked ? "#4CAF50" : "#FFD700"} 
+                  />
+                </View>
+                
+                {/* Play Button */}
                 <TouchableOpacity 
-                  key={trackId}
-                  style={[styles.trackCard, isCurrentTrack && styles.trackCardActive]}
+                  style={styles.playButton}
                   onPress={() => playTrack(track)}
-                  activeOpacity={0.7}
                 >
-                  <View style={styles.vipBadge}>
-                    <Ionicons name="diamond" size={12} color="#FFD700" />
-                  </View>
-                  
-                  <View style={styles.trackCover}>
-                    {coverUrl ? (
-                      <Image source={{ uri: coverUrl }} style={styles.coverImage} />
-                    ) : (
-                      <View style={styles.coverPlaceholder}>
-                        <Ionicons name="musical-notes" size={20} color={Colors.textMuted} />
-                      </View>
-                    )}
-                  </View>
-                  
-                  <View style={styles.trackInfo}>
-                    <Text style={[styles.trackTitle, isCurrentTrack && styles.trackTitleActive]} numberOfLines={1}>
-                      {track.title}
-                    </Text>
-                    <Text style={styles.trackArtist} numberOfLines={1}>{getArtistName(track)}</Text>
-                    <Text style={styles.trackGenre}>{track.genre}</Text>
-                  </View>
-                  
-                  {isCurrentTrack && isPlaying ? (
-                    <TouchableOpacity onPress={togglePlayPause}>
-                      <Ionicons name="pause-circle" size={36} color="#FFD700" />
-                    </TouchableOpacity>
+                  <Ionicons 
+                    name={isCurrentTrack && isPlaying ? 'pause' : 'play'} 
+                    size={20} 
+                    color="#fff" 
+                  />
+                </TouchableOpacity>
+                
+                {/* Cover */}
+                <View style={styles.trackCover}>
+                  {coverUrl ? (
+                    <Image source={{ uri: coverUrl }} style={styles.coverImage} />
                   ) : (
-                    <Ionicons name="play-circle-outline" size={36} color={Colors.textMuted} />
+                    <View style={styles.coverPlaceholder}>
+                      <Ionicons name="musical-notes" size={20} color={Colors.textMuted} />
+                    </View>
+                  )}
+                </View>
+                
+                {/* Track Info */}
+                <View style={styles.trackInfo}>
+                  <Text style={[styles.trackTitle, isCurrentTrack && styles.trackTitleActive]} numberOfLines={1}>
+                    {track.title}
+                  </Text>
+                  <Text style={styles.trackArtist} numberOfLines={1}>{getArtistName(track)}</Text>
+                  <Text style={styles.trackGenre}>{track.genre}</Text>
+                </View>
+                
+                {/* Unlock/Download Button */}
+                <TouchableOpacity 
+                  style={[
+                    styles.actionButton, 
+                    unlocked ? styles.downloadButton : styles.unlockButton
+                  ]}
+                  onPress={() => handleUnlockPress(track)}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : unlocked ? (
+                    <>
+                      <Ionicons name="download" size={16} color="#fff" />
+                      <Text style={styles.actionButtonText}>{t('vip.download')}</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Ionicons name="diamond" size={14} color="#1a1a2e" />
+                      <Text style={styles.unlockButtonText}>{UNLOCK_COST}</Text>
+                    </>
                   )}
                 </TouchableOpacity>
-              );
-            })
-          )
+              </View>
+            );
+          })
         )}
         
         <View style={{ height: 30 }} />
       </ScrollView>
+
+      {/* Unlock Confirmation Modal */}
+      <Modal
+        visible={showUnlockModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowUnlockModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIcon}>
+              <Ionicons name="diamond" size={40} color="#FFD700" />
+            </View>
+            
+            <Text style={styles.modalTitle}>{t('vip.unlockTrack')}</Text>
+            
+            {selectedTrack && (
+              <View style={styles.modalTrackInfo}>
+                <Text style={styles.modalTrackTitle}>{selectedTrack.title}</Text>
+                <Text style={styles.modalTrackArtist}>{getArtistName(selectedTrack)}</Text>
+              </View>
+            )}
+            
+            <View style={styles.modalCost}>
+              <Text style={styles.modalCostLabel}>{t('vip.cost')}:</Text>
+              <View style={styles.modalCostValue}>
+                <Ionicons name="diamond" size={20} color="#1a1a2e" />
+                <Text style={styles.modalCostNumber}>{UNLOCK_COST}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.modalBalance}>
+              <Text style={styles.modalBalanceLabel}>{t('vip.yourBalance')}:</Text>
+              <Text style={[
+                styles.modalBalanceValue,
+                userDiamonds < UNLOCK_COST && styles.modalBalanceInsufficient
+              ]}>
+                {userDiamonds} Black Diamonds
+              </Text>
+            </View>
+            
+            {userDiamonds < UNLOCK_COST && (
+              <Text style={styles.modalWarning}>
+                {t('vip.insufficientDiamonds')}
+              </Text>
+            )}
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalCancelButton}
+                onPress={() => setShowUnlockModal(false)}
+              >
+                <Text style={styles.modalCancelText}>{t('common.cancel')}</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[
+                  styles.modalConfirmButton,
+                  userDiamonds < UNLOCK_COST && styles.modalConfirmButtonDisabled
+                ]}
+                onPress={handleUnlock}
+                disabled={userDiamonds < UNLOCK_COST}
+              >
+                <Ionicons name="lock-open" size={18} color="#fff" />
+                <Text style={styles.modalConfirmText}>{t('vip.unlock')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -259,123 +469,123 @@ const styles = StyleSheet.create({
   headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerTitle: { fontSize: 22, fontWeight: '700', color: '#fff' },
   
-  // Stats Banner
-  statsBanner: {
+  // Diamond Banner
+  diamondBanner: {
     flexDirection: 'row',
-    backgroundColor: Colors.backgroundCard,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFD700',
     marginHorizontal: 12,
     marginTop: 12,
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
-    borderColor: '#FFD70040',
   },
-  statItem: { flex: 1, alignItems: 'center', gap: 4 },
-  statValue: { fontSize: 20, fontWeight: '700', color: Colors.text },
-  statLabel: { fontSize: 10, color: Colors.textMuted },
-  statDivider: { width: 1, backgroundColor: Colors.border },
-  
-  // Tabs
-  tabContainer: { 
-    flexDirection: 'row', 
-    paddingHorizontal: 12, 
-    paddingVertical: 12, 
-    gap: 10 
-  },
-  tab: { 
-    flex: 1, 
+  diamondInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
+  },
+  diamondIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
-    paddingVertical: 12, 
-    paddingHorizontal: 12,
-    borderRadius: 10, 
-    backgroundColor: Colors.backgroundCard,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  tabActive: { 
-    backgroundColor: '#FFD70020',
-    borderColor: '#FFD700',
-  },
-  tabText: { fontSize: 13, color: Colors.textMuted, fontWeight: '500' },
-  tabTextActive: { color: '#FFD700', fontWeight: '600' },
-  
-  // Content
-  content: { flex: 1, paddingHorizontal: 12 },
-  loadingContainer: { padding: 60, alignItems: 'center' },
-  loadingText: { color: Colors.textMuted, marginTop: 12 },
-  emptyContainer: { padding: 60, alignItems: 'center' },
-  emptyText: { color: Colors.text, fontSize: 18, fontWeight: '600', marginTop: 16 },
-  emptySubtext: { color: Colors.textMuted, fontSize: 14, marginTop: 4 },
-  
-  // Promo Card
-  promoCard: {
-    marginBottom: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  promoGradient: {
-    padding: 20,
-  },
-  promoHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
   },
-  promoName: {
-    flex: 1,
+  diamondLabel: {
+    fontSize: 12,
+    color: '#1a1a2e',
+    opacity: 0.8,
+  },
+  diamondValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#fff',
+    color: '#1a1a2e',
   },
-  purchasedBadge: {
-    backgroundColor: '#FFD700',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  purchasedText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#000',
-  },
-  promoDescription: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  promoFooter: {
+  buyButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#1a1a2e',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    gap: 6,
+  },
+  buyButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  
+  // Info Banner
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.backgroundCard,
+    marginHorizontal: 12,
+    marginTop: 10,
+    borderRadius: 8,
+    padding: 12,
+    gap: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 12,
+    color: Colors.textMuted,
+    lineHeight: 18,
+  },
+  
+  // Stats
+  statsRow: {
+    flexDirection: 'row',
+    marginHorizontal: 12,
+    marginTop: 10,
+    gap: 10,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: Colors.backgroundCard,
+    borderRadius: 10,
+    padding: 14,
     alignItems: 'center',
   },
-  promoInfo: {},
-  promoTracks: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  promoDuration: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
-    marginTop: 2,
-  },
-  promoButton: {
-    backgroundColor: '#FFD700',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  promoButtonDisabled: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
-  },
-  promoButtonText: {
-    fontSize: 16,
+  statNumber: {
+    fontSize: 24,
     fontWeight: '700',
-    color: '#000',
+    color: Colors.text,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginTop: 4,
+  },
+  
+  // Content
+  content: { flex: 1, padding: 12 },
+  loadingContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    paddingVertical: 60 
+  },
+  loadingText: { color: Colors.textMuted, marginTop: 12 },
+  emptyContainer: { 
+    alignItems: 'center', 
+    paddingVertical: 60 
+  },
+  emptyText: { 
+    color: Colors.text, 
+    fontSize: 16, 
+    fontWeight: '600', 
+    marginTop: 16 
+  },
+  emptySubtext: { 
+    color: Colors.textMuted, 
+    fontSize: 13, 
+    marginTop: 8 
   },
   
   // Track Card
@@ -384,38 +594,239 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.backgroundCard,
     borderRadius: 12,
-    padding: 12,
+    padding: 10,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#FFD70040',
-    gap: 12,
-    position: 'relative',
+    borderColor: Colors.border,
   },
   trackCardActive: {
     borderColor: '#FFD700',
-    backgroundColor: '#FFD70010',
+    borderWidth: 2,
   },
-  vipBadge: {
+  statusBadge: {
     position: 'absolute',
-    top: 8,
-    left: 8,
+    top: -6,
+    left: -6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  lockedBadge: {
+    backgroundColor: '#1a1a2e',
+    borderWidth: 2,
+    borderColor: '#FFD700',
+  },
+  unlockedBadge: {
+    backgroundColor: '#1a1a2e',
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+  },
+  playButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  trackCover: {
+    width: 50,
+    height: 50,
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginRight: 10,
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  coverPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  trackInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  trackTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  trackTitleActive: {
+    color: '#FFD700',
+  },
+  trackArtist: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  trackGenre: {
+    fontSize: 10,
+    color: Colors.primary,
+    marginTop: 2,
+  },
+  
+  // Action Buttons
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 4,
+  },
+  unlockButton: {
+    backgroundColor: '#FFD700',
+  },
+  downloadButton: {
+    backgroundColor: '#4CAF50',
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  unlockButtonText: {
+    color: '#1a1a2e',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
     backgroundColor: Colors.backgroundCard,
-    padding: 4,
-    borderRadius: 4,
-    zIndex: 1,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
   },
-  trackCover: { width: 50, height: 50, borderRadius: 8, overflow: 'hidden' },
-  coverImage: { width: '100%', height: '100%' },
-  coverPlaceholder: { 
-    width: '100%', 
-    height: '100%', 
-    backgroundColor: Colors.border, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  modalIcon: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#FFD70020',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  trackInfo: { flex: 1, minWidth: 0 },
-  trackTitle: { fontSize: 14, fontWeight: '600', color: Colors.text },
-  trackTitleActive: { color: '#FFD700' },
-  trackArtist: { fontSize: 12, color: '#FFD700', marginTop: 2 },
-  trackGenre: { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 16,
+  },
+  modalTrackInfo: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTrackTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  modalTrackArtist: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginTop: 4,
+  },
+  modalCost: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFD70020',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+    gap: 10,
+  },
+  modalCostLabel: {
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
+  modalCostValue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  modalCostNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1a1a2e',
+  },
+  modalBalance: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  modalBalanceLabel: {
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  modalBalanceValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4CAF50',
+  },
+  modalBalanceInsufficient: {
+    color: '#F44336',
+  },
+  modalWarning: {
+    fontSize: 12,
+    color: '#F44336',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: Colors.textMuted,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalConfirmButton: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingVertical: 14,
+    borderRadius: 10,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  modalConfirmButtonDisabled: {
+    backgroundColor: Colors.textMuted,
+    opacity: 0.5,
+  },
+  modalConfirmText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
