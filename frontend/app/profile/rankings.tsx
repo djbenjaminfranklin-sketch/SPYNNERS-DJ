@@ -137,11 +137,11 @@ export default function RankingsScreen() {
       // Determine sort field based on tab
       let sortBy = 'download_count';
       switch (activeTab) {
+        case 'plays':
+          sortBy = 'play_count';
+          break;
         case 'downloads':
           sortBy = 'download_count';
-          break;
-        case 'rated':
-          sortBy = 'average_rating';
           break;
         case 'recent':
           sortBy = 'created_date';
