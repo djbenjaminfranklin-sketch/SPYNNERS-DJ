@@ -266,9 +266,13 @@ export default function GlobalPlayer() {
           <TouchableOpacity style={styles.controlBtn} onPress={openPlaylistModal}>
             <Ionicons name="list-outline" size={18} color="#fff" />
           </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.controlBtn} onPress={closePlayer}>
+            <Ionicons name="close" size={20} color={Colors.textMuted} />
+          </TouchableOpacity>
         </View>
 
-        {/* Progress Bar */}
+        {/* Progress Bar - simplified */}
         <View style={styles.progressSection}>
           <Text style={styles.time}>{formatTime(displayPosition)}</Text>
           
@@ -280,20 +284,10 @@ export default function GlobalPlayer() {
                   { width: `${progressPercentage}%` }
                 ]} 
               />
-              <View 
-                style={[
-                  styles.progressThumb,
-                  { left: `${progressPercentage}%` }
-                ]}
-              />
             </View>
           </View>
           
           <Text style={styles.time}>{formatTime(playbackDuration)}</Text>
-          
-          <TouchableOpacity style={styles.closeBtn} onPress={closePlayer}>
-            <Ionicons name="close" size={20} color={Colors.textMuted} />
-          </TouchableOpacity>
         </View>
       </LinearGradient>
       
