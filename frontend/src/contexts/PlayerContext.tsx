@@ -141,10 +141,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
       // Determine initial position for VIP tracks
       let initialPositionMs = 0;
-      if (track.is_vip && track.vip_preview_start) {
+      if (track.is_vip && track.vip_preview_start !== undefined) {
         initialPositionMs = track.vip_preview_start * 1000;
         console.log('[Player] Starting VIP preview at', track.vip_preview_start, 'seconds');
       }
+
+      // Set seeking flag to prevent premature stop
+      isSeekingRef.current = true;
 
       // Create and play new sound
       const { sound } = await Audio.Sound.createAsync(
@@ -162,6 +165,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setCurrentTrack(track);
       setIsPlaying(true);
       setPlaybackPosition(initialPositionMs);
+      
+      // Clear seeking flag after a short delay (allow position to settle)
+      setTimeout(() => {
+        isSeekingRef.current = false;
+        console.log('[Player] Seeking complete, VIP check enabled');
+      }, 1000);
       
       // Set timeout for VIP preview end
       if (track.is_vip && track.vip_preview_start !== undefined && track.vip_preview_end !== undefined) {
