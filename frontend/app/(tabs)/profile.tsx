@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 40, fontWeight: 'bold', color: '#fff' },
   avatarImage: { width: 94, height: 94, borderRadius: 47 },
-  adminBadge: {
+  adminBadgeOnAvatar: {
     position: 'absolute',
     bottom: 0,
     right: 0,
@@ -439,6 +439,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: Colors.backgroundCard,
+  },
+  adminBadgeContainer: {
+    marginTop: 8,
+    alignItems: 'center',
   },
   name: { fontSize: 24, fontWeight: 'bold', color: Colors.text, marginBottom: 4, textAlign: 'center' },
   bio: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 4, paddingHorizontal: 20 },
