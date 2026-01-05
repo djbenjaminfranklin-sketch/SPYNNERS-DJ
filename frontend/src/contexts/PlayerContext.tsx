@@ -56,14 +56,21 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       console.log('[Player] Attempting to play track:', track.title);
+      console.log('[Player] Track list provided:', trackList?.length || 0, 'tracks');
       
       // Update queue if trackList provided
       if (trackList && trackList.length > 0) {
+        console.log('[Player] Setting queue with', trackList.length, 'tracks');
         setQueue(trackList);
         const index = trackList.findIndex(t => 
           (t.id || t._id) === (track.id || track._id)
         );
         setCurrentIndex(index >= 0 ? index : 0);
+        console.log('[Player] Current index:', index);
+      } else {
+        // Single track - clear queue but keep current track
+        setQueue([track]);
+        setCurrentIndex(0);
       }
       
       // Stop and unload current sound
