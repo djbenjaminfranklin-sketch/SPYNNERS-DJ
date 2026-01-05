@@ -563,8 +563,20 @@ class OfflineService {
           session.syncedAt = new Date().toISOString();
           allResults = [...allResults, ...sessionResults];
           
-          // Send notification about synced tracks
+          // Send emails for identified tracks
           const identifiedTracks = sessionResults.filter(r => r.success && r.is_spynners_track);
+          for (const track of identifiedTracks) {
+            if (track.producer_id || track.spynners_track_id) {
+              try {
+                console.log(`[Offline] 📧 Sending email for: ${track.title}`);
+                await this.sendTrackEmail(track, session, token);
+              } catch (emailError) {
+                console.error(`[Offline] Email failed for ${track.title}:`, emailError);
+              }
+            }
+          }
+          
+          // Send notification about synced tracks
           if (identifiedTracks.length > 0) {
             await this.sendLocalNotification(
               '🎵 Tracks Identifiés !',
