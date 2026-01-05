@@ -787,31 +787,35 @@ async def get_track_by_id(track_id: str, authorization: Optional[str] = Header(N
         if authorization:
             headers["Authorization"] = authorization
         
-        response = requests.get(
-            f"https://spynners.com/api/tracks/{track_id}",
-            headers=headers,
-            timeout=10
-        )
-        
-        if response.status_code == 200:
-            return response.json()
-        
-        # Fallback: search in all tracks
-        all_tracks_response = requests.post(
-            "https://spynners.com/api/functions/nativeGetTracks",
-            json={"limit": 500},
-            headers=headers,
-            timeout=15
-        )
-        
-        if all_tracks_response.status_code == 200:
-            data = all_tracks_response.json()
-            tracks = data.get("tracks", [])
-            for t in tracks:
-                if t.get("id") == track_id or t.get("_id") == track_id:
-                    return t
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            # First try direct track endpoint
+            try:
+                response = await client.get(
+                    f"https://spynners.com/api/tracks/{track_id}",
+                    headers=headers
+                )
+                if response.status_code == 200:
+                    return response.json()
+            except:
+                pass
+            
+            # Fallback: search in all tracks
+            all_tracks_response = await client.post(
+                "https://spynners.com/api/functions/nativeGetTracks",
+                json={"limit": 500},
+                headers=headers
+            )
+            
+            if all_tracks_response.status_code == 200:
+                data = all_tracks_response.json()
+                tracks = data.get("tracks", [])
+                for t in tracks:
+                    if t.get("id") == track_id or t.get("_id") == track_id:
+                        return t
         
         raise HTTPException(status_code=404, detail="Track not found")
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"[Tracks] Error getting track: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -827,16 +831,16 @@ async def update_track(track_id: str, request: Request, authorization: Optional[
         if authorization:
             headers["Authorization"] = authorization
         
-        # Try Spynners native API
-        response = requests.put(
-            f"https://spynners.com/api/tracks/{track_id}",
-            json=body,
-            headers=headers,
-            timeout=10
-        )
-        
-        if response.status_code in [200, 201]:
-            return response.json()
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            # Try Spynners native API
+            response = await client.put(
+                f"https://spynners.com/api/tracks/{track_id}",
+                json=body,
+                headers=headers
+            )
+            
+            if response.status_code in [200, 201]:
+                return response.json()
         
         # Fallback to local update
         if ObjectId.is_valid(track_id):
@@ -847,7 +851,9 @@ async def update_track(track_id: str, request: Request, authorization: Optional[
             if result.modified_count > 0:
                 return {"success": True, "message": "Track updated"}
         
-        raise HTTPException(status_code=response.status_code, detail="Failed to update track")
+        raise HTTPException(status_code=404, detail="Failed to update track")
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"[Tracks] Error updating track: {e}")
         raise HTTPException(status_code=500, detail=str(e))
