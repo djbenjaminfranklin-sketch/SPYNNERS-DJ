@@ -28,6 +28,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('[AuthContext] Fetching complete user data for:', basicUser.email);
       
+      // Preserve black_diamonds from the login response (important!)
+      const loginBlackDiamonds = basicUser.black_diamonds || basicUser.data?.black_diamonds || 0;
+      console.log('[AuthContext] Login black_diamonds:', loginBlackDiamonds);
+      
       // Try to find the user in the Users collection by email
       const users = await base44Users.list({ limit: 100 });
       const fullUser = users.find((u: User) => u.email === basicUser.email);
@@ -39,13 +43,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ...fullUser,
           id: basicUser.id || fullUser.id || fullUser._id,
           _id: basicUser._id || fullUser._id || fullUser.id,
+          // Always preserve black_diamonds from login response
+          black_diamonds: loginBlackDiamonds || fullUser.black_diamonds || fullUser.data?.black_diamonds || 0,
         };
       }
       
-      return basicUser;
+      // Return basicUser but make sure black_diamonds is preserved
+      return {
+        ...basicUser,
+        black_diamonds: loginBlackDiamonds,
+      };
     } catch (error) {
       console.error('[AuthContext] Error fetching complete user data:', error);
-      return basicUser;
+      // Preserve black_diamonds even on error
+      return {
+        ...basicUser,
+        black_diamonds: basicUser.black_diamonds || basicUser.data?.black_diamonds || 0,
+      };
     }
   };
 
