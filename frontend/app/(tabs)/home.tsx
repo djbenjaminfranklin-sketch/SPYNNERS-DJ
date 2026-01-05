@@ -461,7 +461,7 @@ export default function HomeScreen() {
       const trackId = selectedTrackForSend.id || selectedTrackForSend._id || '';
       
       // Create a message or notification to send the track
-      await base44Messages.create({
+      await base44Messages.send({
         sender_id: userId,
         receiver_id: memberId,
         content: `🎵 Shared track: ${selectedTrackForSend.title}`,
@@ -469,13 +469,13 @@ export default function HomeScreen() {
         type: 'track_share',
       });
       
-      Alert.alert(t('common.success'), `Track "${selectedTrackForSend.title}" sent to ${memberName}`);
+      Alert.alert(t('common.success'), `Track "${selectedTrackForSend.title}" ${t('common.sentTo')} ${memberName}`);
       setShowSendTrackModal(false);
       setSelectedTrackForSend(null);
       setMemberSearchQuery('');
     } catch (error) {
       console.error('Error sending track:', error);
-      Alert.alert(t('common.error'), 'Could not send track');
+      Alert.alert(t('common.error'), t('common.couldNotSendTrack'));
     }
   };
   
