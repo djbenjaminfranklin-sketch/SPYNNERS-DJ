@@ -3102,6 +3102,241 @@ async def admin_add_diamonds(request: AdminAddDiamondsRequest, authorization: st
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ==================== ADMIN STATISTICS ENDPOINT ====================
+
+@app.get("/api/admin/stats")
+async def get_admin_stats(authorization: str = Header(None)):
+    """
+    Get comprehensive admin statistics from Spynners.
+    Returns: total users, tracks, pending, approved, downloads, sessions, etc.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print("[Admin Stats] Fetching comprehensive admin statistics...")
+        
+        stats = {
+            "total_users": 0,
+            "total_tracks": 0,
+            "pending_tracks": 0,
+            "approved_tracks": 0,
+            "rejected_tracks": 0,
+            "vip_tracks": 0,
+            "total_downloads": 0,
+            "total_plays": 0,
+            "total_sessions": 0,
+            "active_sessions": 0,
+            "unique_djs": 0,
+            "tracks_detected": 0,
+        }
+        
+        # Get all users
+        try:
+            users_result = await call_spynners_function("nativeGetAllUsers", {"limit": 1000}, authorization)
+            if users_result:
+                users = users_result if isinstance(users_result, list) else users_result.get('items', [])
+                stats["total_users"] = len(users)
+                print(f"[Admin Stats] Total users: {stats['total_users']}")
+        except Exception as e:
+            print(f"[Admin Stats] Error fetching users: {e}")
+        
+        # Get all tracks
+        try:
+            tracks_result = await call_spynners_function("nativeGetTracks", {"limit": 1000}, authorization)
+            if tracks_result:
+                tracks = tracks_result if isinstance(tracks_result, list) else tracks_result.get('items', [])
+                stats["total_tracks"] = len(tracks)
+                
+                # Count by status
+                for track in tracks:
+                    status = track.get('status', '').lower()
+                    is_vip = track.get('is_vip', False)
+                    
+                    if is_vip:
+                        stats["vip_tracks"] += 1
+                    
+                    if status == 'pending':
+                        stats["pending_tracks"] += 1
+                    elif status == 'rejected':
+                        stats["rejected_tracks"] += 1
+                    else:
+                        stats["approved_tracks"] += 1
+                    
+                    # Sum downloads and plays
+                    stats["total_downloads"] += track.get('download_count', 0) or 0
+                    stats["total_plays"] += track.get('play_count', 0) or 0
+                
+                print(f"[Admin Stats] Total tracks: {stats['total_tracks']}, VIP: {stats['vip_tracks']}")
+        except Exception as e:
+            print(f"[Admin Stats] Error fetching tracks: {e}")
+        
+        # Get live track plays for sessions data
+        try:
+            plays_result = await call_spynners_function("nativeGetLiveTrackPlays", {"limit": 1000}, authorization)
+            if plays_result:
+                plays = plays_result if isinstance(plays_result, list) else plays_result.get('items', [])
+                stats["total_sessions"] = len(plays)
+                stats["tracks_detected"] = len(plays)
+                
+                # Count unique DJs
+                unique_djs = set()
+                for play in plays:
+                    dj_id = play.get('dj_id') or play.get('user_id')
+                    if dj_id:
+                        unique_djs.add(dj_id)
+                stats["unique_djs"] = len(unique_djs)
+                
+                print(f"[Admin Stats] Sessions: {stats['total_sessions']}, Unique DJs: {stats['unique_djs']}")
+        except Exception as e:
+            print(f"[Admin Stats] Error fetching sessions: {e}")
+        
+        return {"success": True, "stats": stats}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Stats] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/users")
+async def get_admin_users(authorization: str = Header(None), limit: int = 500):
+    """
+    Get all users for admin panel with full details.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin Users] Fetching users (limit: {limit})...")
+        
+        result = await call_spynners_function("nativeGetAllUsers", {"limit": limit}, authorization)
+        
+        if result:
+            users = result if isinstance(result, list) else result.get('items', [])
+            print(f"[Admin Users] Got {len(users)} users")
+            return {"success": True, "users": users, "total": len(users)}
+        
+        return {"success": True, "users": [], "total": 0}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Users] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/tracks")
+async def get_admin_tracks(authorization: str = Header(None), status: str = None, limit: int = 500):
+    """
+    Get all tracks for admin panel, optionally filtered by status.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin Tracks] Fetching tracks (status: {status}, limit: {limit})...")
+        
+        result = await call_spynners_function("nativeGetTracks", {"limit": limit}, authorization)
+        
+        if result:
+            tracks = result if isinstance(result, list) else result.get('items', [])
+            
+            # Filter by status if specified
+            if status:
+                tracks = [t for t in tracks if t.get('status', '').lower() == status.lower()]
+            
+            print(f"[Admin Tracks] Got {len(tracks)} tracks")
+            return {"success": True, "tracks": tracks, "total": len(tracks)}
+        
+        return {"success": True, "tracks": [], "total": 0}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Tracks] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/sessions")
+async def get_admin_sessions(authorization: str = Header(None), limit: int = 500):
+    """
+    Get all SPYN sessions for admin panel.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin Sessions] Fetching sessions (limit: {limit})...")
+        
+        result = await call_spynners_function("nativeGetLiveTrackPlays", {"limit": limit}, authorization)
+        
+        if result:
+            sessions = result if isinstance(result, list) else result.get('items', [])
+            print(f"[Admin Sessions] Got {len(sessions)} sessions")
+            return {"success": True, "sessions": sessions, "total": len(sessions)}
+        
+        return {"success": True, "sessions": [], "total": 0}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Sessions] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/downloads")
+async def get_admin_downloads(authorization: str = Header(None), limit: int = 500):
+    """
+    Get download history for admin panel.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin Downloads] Fetching downloads (limit: {limit})...")
+        
+        # Get tracks with download info
+        result = await call_spynners_function("nativeGetTracks", {"limit": limit}, authorization)
+        
+        downloads = []
+        total_downloads = 0
+        unique_djs = set()
+        
+        if result:
+            tracks = result if isinstance(result, list) else result.get('items', [])
+            
+            for track in tracks:
+                download_count = track.get('download_count', 0) or 0
+                total_downloads += download_count
+                
+                if download_count > 0:
+                    downloads.append({
+                        "track_id": track.get('id') or track.get('_id'),
+                        "track_title": track.get('title'),
+                        "producer": track.get('artist_name') or track.get('producer_name'),
+                        "genre": track.get('genre'),
+                        "download_count": download_count,
+                    })
+        
+        print(f"[Admin Downloads] Total downloads: {total_downloads}")
+        return {
+            "success": True, 
+            "downloads": downloads, 
+            "total_downloads": total_downloads,
+            "tracks_with_downloads": len(downloads)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Downloads] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ==================== ANALYTICS CSV EXPORT ====================
 
 class AnalyticsCSVRequest(BaseModel):
