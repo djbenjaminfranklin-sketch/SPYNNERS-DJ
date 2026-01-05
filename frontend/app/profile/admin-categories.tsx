@@ -342,16 +342,18 @@ const styles = StyleSheet.create({
   filterTextActive: { color: Colors.primary, fontWeight: '600' },
 
   content: { flex: 1, paddingHorizontal: Spacing.md, marginTop: Spacing.md },
+  resultCount: { fontSize: 12, color: Colors.textMuted, marginBottom: Spacing.sm },
 
   userCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.md, padding: Spacing.md, marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
   userAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.primary + '20', justifyContent: 'center', alignItems: 'center' },
+  userAvatarImg: { width: 44, height: 44, borderRadius: 22 },
   avatarText: { fontSize: 18, fontWeight: 'bold', color: Colors.primary },
   userInfo: { flex: 1, marginLeft: Spacing.md },
   userNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   userName: { fontSize: 14, fontWeight: '600', color: Colors.text },
   userEmail: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
-  categoryButtons: { flexDirection: 'row', gap: 4, marginTop: 8 },
-  catBtn: { width: 28, height: 28, borderRadius: 4, borderWidth: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' },
+  userNationality: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
   userTypeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
-  userTypeText: { fontSize: 10, fontWeight: '600', color: '#fff' },
+  userTypeText: { fontSize: 9, fontWeight: '600', color: '#fff' },
+  moreText: { fontSize: 12, color: Colors.textMuted, textAlign: 'center', marginVertical: Spacing.md },
 });
