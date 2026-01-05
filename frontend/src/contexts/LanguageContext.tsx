@@ -2638,26 +2638,6 @@ const translations: Record<Language, Record<string, string>> = {
     'terms.userContent': '用户内容',
     'terms.blackDiamonds': '黑钻石',
     
-    // Live Radar
-    'radar.title': '实时雷达',
-    'radar.activeDjs': '活跃DJ',
-    'radar.nearYou': '你附近',
-    'radar.worldwide': '全球',
-    'radar.noDjsNearby': '附近没有DJ',
-    'radar.expandSearch': '扩大搜索范围以找到更多DJ',
-    'radar.playing': '正在播放',
-    'radar.distance': '距离',
-    'radar.liveNow': '正在直播',
-    'radar.recentPlays': '最近播放',
-    'radar.myTracks': '我的曲目',
-    'radar.globalActivity': '全球活动',
-    'radar.loadingActivity': '加载活动中...',
-    'radar.noRecentActivity': '暂无最近活动',
-    'radar.noMyTracksPlays': '你的曲目暂无最近播放',
-    'radar.checkBackLater': '稍后再来查看更新',
-    'radar.uploadMoreTracks': '上传更多曲目让DJ注意到你！',
-    'common.retry': '重试',
-    
     // Upload moods and energy
     'upload.energyLow': '低',
     'upload.energyMedium': '中',
