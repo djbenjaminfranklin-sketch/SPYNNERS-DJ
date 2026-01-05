@@ -229,19 +229,19 @@ export default function ProfileScreen() {
       <ScrollView style={styles.content}>
         {/* ========== EMAIL SECTION ========== */}
         <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Email</Text>
+          <Text style={styles.infoLabel}>{t('profile.email')}</Text>
           <View style={styles.emailRow}>
             <Ionicons name="mail" size={18} color={Colors.primary} />
             <Text style={styles.emailText}>{profile?.email || user?.email || ''}</Text>
             <View style={styles.verifiedBadge}>
-              <Text style={styles.verifiedText}>Vérifié</Text>
+              <Text style={styles.verifiedText}>{t('profile.verified')}</Text>
             </View>
           </View>
         </View>
 
         {/* ========== ROLE SECTION ========== */}
         <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Rôle</Text>
+          <Text style={styles.infoLabel}>{t('profile.role')}</Text>
           <View style={styles.roleRow}>
             <Ionicons name="person" size={18} color="#888" />
             {isAdmin ? (
@@ -258,7 +258,7 @@ export default function ProfileScreen() {
 
         {/* ========== BLACK DIAMONDS SECTION ========== */}
         <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Black Diamonds</Text>
+          <Text style={styles.infoLabel}>{t('profile.blackDiamonds')}</Text>
           <View style={styles.diamondRow}>
             <View style={styles.diamondIcon}>
               <Ionicons name="diamond" size={28} color="#1a1a2e" />
@@ -270,7 +270,7 @@ export default function ProfileScreen() {
         {/* ========== SACEM NUMBER ========== */}
         {profile?.sacem_number && (
           <View style={styles.infoCard}>
-            <Text style={styles.infoLabel}>N° SACEM</Text>
+            <Text style={styles.infoLabel}>{t('profile.sacemNumber')}</Text>
             <View style={styles.roleRow}>
               <Ionicons name="document-text" size={18} color={Colors.primary} />
               <Text style={styles.sacemText}>{profile.sacem_number}</Text>
