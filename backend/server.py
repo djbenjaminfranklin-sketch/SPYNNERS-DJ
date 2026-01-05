@@ -3259,7 +3259,11 @@ async def get_admin_tracks(authorization: str = Header(None), status: str = None
         result = await call_spynners_function("nativeGetTracks", {"limit": limit}, authorization)
         
         if result:
-            tracks = result if isinstance(result, list) else result.get('items', [])
+            # Handle different response formats
+            if isinstance(result, dict):
+                tracks = result.get('tracks', result.get('items', []))
+            else:
+                tracks = result if isinstance(result, list) else []
             
             # Filter by status if specified
             if status:
