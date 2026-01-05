@@ -809,57 +809,94 @@ export default function SpynRecordScreen() {
       }
       
       if (audioBase64 && audioBase64.length > 0) {
-        console.log('[SPYN Record] Sending audio to backend for recognition...');
-        
-        // Send to backend for recognition
-        const response = await axios.post(`${BACKEND_URL}/api/recognize-audio`, {
-          audio_base64: audioBase64,
-        }, {
-          timeout: 30000,
-        });
-        
-        console.log('[SPYN Record] Recognition response:', response.data);
-        
-        if (response.data.success && response.data.title) {
-          const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        // Check if we're offline
+        if (isOffline) {
+          console.log('[SPYN Record] Offline mode - saving audio locally for later sync');
+          setCurrentAnalysis('📴 Mode hors-ligne - Enregistrement local');
           
-          // Check if this EXACT track (by title) was already identified in this session
-          // We use the ref to get the latest state
-          const isDuplicate = identifiedTracksRef.current.some(
-            t => t.title.toLowerCase() === response.data.title.toLowerCase()
-          );
-          
-          console.log('[SPYN Record] Checking duplicate:', response.data.title, 'Already identified:', identifiedTracksRef.current.map(t => t.title), 'isDuplicate:', isDuplicate);
-          
-          if (!isDuplicate) {
-            const newTrack: IdentifiedTrack = {
-              id: `${Date.now()}`,
-              title: response.data.title,
-              artist: response.data.artist,
-              timestamp: formatDuration(elapsedTime),
-              elapsedTime,
-              coverImage: response.data.cover_image,
-              spynnersTrackId: response.data.spynners_track_id,
-              producerId: response.data.producer_id,
-            };
+          // Save to offline storage for later sync
+          try {
+            if (!offlineSessionId) {
+              // Create new offline session
+              const newSessionId = await offlineService.startOfflineSession(
+                user?.id || 'unknown',
+                user?.full_name || 'DJ'
+              );
+              setOfflineSessionId(newSessionId);
+              console.log('[SPYN Record] Created offline session:', newSessionId);
+            }
             
-            // Update ref FIRST to prevent race conditions
-            identifiedTracksRef.current = [...identifiedTracksRef.current, newTrack];
+            // Add recording to offline session
+            await offlineService.addRecordingToSession(offlineSessionId!, {
+              id: `rec_${Date.now()}`,
+              audioBase64: audioBase64,
+              timestamp: new Date().toISOString(),
+              userId: user?.id || 'unknown',
+              djName: user?.full_name || 'DJ',
+              status: 'pending',
+              createdAt: new Date().toISOString(),
+            });
             
-            setIdentifiedTracks(prev => [...prev, newTrack]);
-            setCurrentAnalysis(`✅ ${response.data.title}`);
-            
-            console.log('[SPYN Record] ✅ NEW Track identified:', newTrack);
-            
-            // Send email immediately to the producer
-            sendEmailForTrack(newTrack);
-          } else {
-            setCurrentAnalysis(`⏭️ ${response.data.title} (déjà identifié)`);
-            console.log('[SPYN Record] Track already identified, skipping:', response.data.title);
+            setCurrentAnalysis('📴 Audio enregistré localement');
+            console.log('[SPYN Record] Audio saved to offline session');
+          } catch (offlineError) {
+            console.error('[SPYN Record] Offline save error:', offlineError);
+            setCurrentAnalysis('⚠️ Erreur sauvegarde locale');
           }
         } else {
-          setCurrentAnalysis('Aucun track détecté');
-          console.log('[SPYN Record] No track detected in audio sample');
+          // Online mode - send to backend
+          console.log('[SPYN Record] Sending audio to backend for recognition...');
+          
+          // Send to backend for recognition
+          const response = await axios.post(`${BACKEND_URL}/api/recognize-audio`, {
+            audio_base64: audioBase64,
+          }, {
+            timeout: 30000,
+          });
+          
+          console.log('[SPYN Record] Recognition response:', response.data);
+          
+          if (response.data.success && response.data.title) {
+            const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
+            
+            // Check if this EXACT track (by title) was already identified in this session
+            // We use the ref to get the latest state
+            const isDuplicate = identifiedTracksRef.current.some(
+              t => t.title.toLowerCase() === response.data.title.toLowerCase()
+            );
+            
+            console.log('[SPYN Record] Checking duplicate:', response.data.title, 'Already identified:', identifiedTracksRef.current.map(t => t.title), 'isDuplicate:', isDuplicate);
+            
+            if (!isDuplicate) {
+              const newTrack: IdentifiedTrack = {
+                id: `${Date.now()}`,
+                title: response.data.title,
+                artist: response.data.artist,
+                timestamp: formatDuration(elapsedTime),
+                elapsedTime,
+                coverImage: response.data.cover_image,
+                spynnersTrackId: response.data.spynners_track_id,
+                producerId: response.data.producer_id,
+              };
+              
+              // Update ref FIRST to prevent race conditions
+              identifiedTracksRef.current = [...identifiedTracksRef.current, newTrack];
+              
+              setIdentifiedTracks(prev => [...prev, newTrack]);
+              setCurrentAnalysis(`✅ ${response.data.title}`);
+              
+              console.log('[SPYN Record] ✅ NEW Track identified:', newTrack);
+              
+              // Send email immediately to the producer
+              sendEmailForTrack(newTrack);
+            } else {
+              setCurrentAnalysis(`⏭️ ${response.data.title} (déjà identifié)`);
+              console.log('[SPYN Record] Track already identified, skipping:', response.data.title);
+            }
+          } else {
+            setCurrentAnalysis('Aucun track détecté');
+            console.log('[SPYN Record] No track detected in audio sample');
+          }
         }
       } else {
         setCurrentAnalysis('Pas d\'audio à analyser');
