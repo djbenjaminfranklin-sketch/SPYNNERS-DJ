@@ -682,11 +682,13 @@ export default function SpynRecordScreen() {
         if (response.data.success && response.data.title) {
           const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
           
-          // Check if track already identified recently
-          const isDuplicate = identifiedTracks.some(
-            t => t.title === response.data.title && 
-                 Math.abs(t.elapsedTime - elapsedTime) < 60
+          // Check if this EXACT track (by title) was already identified in this session
+          // We use the ref to get the latest state
+          const isDuplicate = identifiedTracksRef.current.some(
+            t => t.title.toLowerCase() === response.data.title.toLowerCase()
           );
+          
+          console.log('[SPYN Record] Checking duplicate:', response.data.title, 'Already identified:', identifiedTracksRef.current.map(t => t.title), 'isDuplicate:', isDuplicate);
           
           if (!isDuplicate) {
             const newTrack: IdentifiedTrack = {
@@ -702,9 +704,10 @@ export default function SpynRecordScreen() {
             setIdentifiedTracks(prev => [...prev, newTrack]);
             setCurrentAnalysis(`✅ ${response.data.title}`);
             
-            console.log('[SPYN Record] Track identified:', newTrack);
+            console.log('[SPYN Record] ✅ NEW Track identified:', newTrack);
           } else {
-            setCurrentAnalysis('Track déjà identifié');
+            setCurrentAnalysis(`⏭️ ${response.data.title} (déjà identifié)`);
+            console.log('[SPYN Record] Track already identified, skipping:', response.data.title);
           }
         } else {
           setCurrentAnalysis('Aucun track détecté');
