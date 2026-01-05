@@ -510,7 +510,6 @@ export default function HomeScreen() {
 
   // Notification state
   const [notificationCount, setNotificationCount] = useState(0);
-  const [showLanguageModal, setShowLanguageModal] = useState(false);
   
   // Load notifications count
   useEffect(() => {
