@@ -941,10 +941,11 @@ export default function SpynRecordScreen() {
     }
   };
 
-  // Stop recording and save
+  // Stop recording, analyze, and save to offline session
   const stopRecording = async () => {
     try {
       console.log('[SPYN Record] Stopping recording...');
+      setCurrentAnalysis('Arrêt en cours...');
       
       // Stop timers
       if (durationIntervalRef.current) clearInterval(durationIntervalRef.current);
@@ -955,56 +956,149 @@ export default function SpynRecordScreen() {
       isRecordingRef.current = false;
       
       let fileUri = '';
+      let audioBase64ForAnalysis = '';
       
       if (Platform.OS === 'web') {
         fileUri = await stopWebRecording();
         console.log('[SPYN Record] Web recording stopped, URL:', fileUri);
+        
+        // Get audio for analysis from web chunks
+        if (audioChunksRef.current.length > 0) {
+          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          audioBase64ForAnalysis = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const result = reader.result as string;
+              resolve(result.split(',')[1] || '');
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
       } else {
         fileUri = await stopNativeRecording();
         console.log('[SPYN Record] Native recording stopped, URI:', fileUri);
+        
+        // Read the final file for analysis
+        if (fileUri) {
+          try {
+            const response = await fetch(fileUri);
+            const blob = await response.blob();
+            audioBase64ForAnalysis = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const result = reader.result as string;
+                resolve(result.split(',')[1] || '');
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+            console.log('[SPYN Record] Audio read for analysis, length:', audioBase64ForAnalysis.length);
+          } catch (readErr) {
+            console.error('[SPYN Record] Error reading audio for analysis:', readErr);
+          }
+        }
       }
       
       setIsRecording(false);
       setIsPaused(false);
       
-      // On web, use confirm dialog since Alert.alert may not work
-      if (Platform.OS === 'web') {
-        const shouldSave = window.confirm(
-          `🎉 Enregistrement terminé !\n\nDurée: ${formatDuration(recordingDuration)}\nTracks identifiés: ${identifiedTracks.length}\n\nVoulez-vous sauvegarder le mix ?`
-        );
-        
-        if (shouldSave && fileUri) {
-          // On web, trigger download
-          const link = document.createElement('a');
-          link.href = fileUri;
-          link.download = `mix_${new Date().toISOString().slice(0, 10)}.webm`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          console.log('[SPYN Record] Mix downloaded');
+      // Analyze the recording
+      setCurrentAnalysis('Analyse de la session...');
+      const detectedTracks: IdentifiedTrack[] = [];
+      
+      if (audioBase64ForAnalysis && audioBase64ForAnalysis.length > 0) {
+        try {
+          console.log('[SPYN Record] Sending audio for analysis...');
+          const response = await axios.post(`${BACKEND_URL}/api/recognize-audio`, {
+            audio_base64: audioBase64ForAnalysis,
+          }, {
+            timeout: 60000, // 60 seconds for longer recordings
+          });
+          
+          console.log('[SPYN Record] Analysis response:', response.data);
+          
+          if (response.data.success && response.data.title) {
+            const newTrack: IdentifiedTrack = {
+              id: `${Date.now()}`,
+              title: response.data.title,
+              artist: response.data.artist,
+              timestamp: formatDuration(recordingDuration),
+              elapsedTime: recordingDuration,
+              coverImage: response.data.cover_image,
+              spynnersTrackId: response.data.spynners_track_id,
+              producerId: response.data.producer_id,
+            };
+            detectedTracks.push(newTrack);
+            setIdentifiedTracks(prev => [...prev, newTrack]);
+            setCurrentAnalysis(`✅ Track identifié: ${newTrack.title}`);
+            
+            // Send email for the track
+            sendEmailForTrack(newTrack);
+          } else {
+            setCurrentAnalysis('Aucun track détecté');
+          }
+        } catch (analysisError: any) {
+          console.error('[SPYN Record] Analysis error:', analysisError);
+          setCurrentAnalysis('Erreur d\'analyse');
         }
-      } else {
-        // On native, use Alert
+      }
+      
+      // Create offline session with the recording
+      setCurrentAnalysis('Création de la session...');
+      const allTracks = [...identifiedTracks, ...detectedTracks];
+      
+      try {
+        const sessionData = {
+          id: `session_${Date.now()}`,
+          userId: user?.id || 'unknown',
+          djName: user?.full_name || 'DJ',
+          duration: recordingDuration,
+          recordedAt: new Date().toISOString(),
+          tracks: allTracks.map(t => ({
+            title: t.title,
+            artist: t.artist,
+            timestamp: t.timestamp,
+            coverImage: t.coverImage,
+            spynnersTrackId: t.spynnersTrackId,
+            producerId: t.producerId,
+          })),
+          audioUri: fileUri,
+          status: 'pending_sync' as const,
+        };
+        
+        // Save to offline service
+        await offlineService.saveOfflineSession(sessionData);
+        console.log('[SPYN Record] Session saved to offline storage');
+        
+        // Show success message
+        const tracksCount = allTracks.length;
         Alert.alert(
-          '🎉 Enregistrement terminé !',
-          `Durée: ${formatDuration(recordingDuration)}\nTracks identifiés: ${identifiedTracks.length}`,
+          '🎉 Session enregistrée !',
+          `Durée: ${formatDuration(recordingDuration)}\nTracks identifiés: ${tracksCount}\n\nLa session a été sauvegardée et sera synchronisée.`,
           [
             {
-              text: 'Sauvegarder',
-              onPress: () => saveRecording(fileUri),
+              text: 'Voir les sessions',
+              onPress: () => router.push('/'),
             },
             {
-              text: 'Annuler',
-              style: 'destructive',
-              onPress: () => {
-                // Delete temp file
-                if (fileUri && Platform.OS !== 'web') {
-                  LegacyFileSystem.deleteAsync(fileUri, { idempotent: true });
-                }
-              },
+              text: 'OK',
+              style: 'default',
             },
           ]
         );
+        
+        setCurrentAnalysis('');
+        
+        // Reset state for next recording
+        setIdentifiedTracks([]);
+        identifiedTracksRef.current = [];
+        recordingSegmentsRef.current = [];
+        setRecordingDuration(0);
+        
+      } catch (saveError) {
+        console.error('[SPYN Record] Error saving session:', saveError);
+        Alert.alert('Erreur', 'Impossible de sauvegarder la session');
       }
       
     } catch (error) {
