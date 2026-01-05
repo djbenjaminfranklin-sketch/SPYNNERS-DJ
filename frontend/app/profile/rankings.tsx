@@ -124,53 +124,68 @@ export default function RankingsScreen() {
       setLoading(true);
       console.log('[Rankings] Loading tracks for:', activeTab, selectedGenre);
       
-      const filters: any = { limit: 50 };
-      
-      // Apply genre filter
-      if (selectedGenre !== 'all') {
-        filters.genre = selectedGenre;
+      // Get auth token
+      const token = await base44Auth.getStoredToken();
+      if (!token) {
+        console.log('[Rankings] No auth token, using base44Tracks.list()');
+        // Fallback to standard method
+        const result = await base44Tracks.list({ limit: 50 });
+        setTracks(result || []);
+        return;
       }
       
-      // Apply sorting based on tab
+      // Determine sort field based on tab
+      let sortBy = 'download_count';
       switch (activeTab) {
         case 'downloads':
-          filters.sort = '-download_count';
+          sortBy = 'download_count';
           break;
         case 'rated':
-          filters.sort = '-average_rating';
+          sortBy = 'average_rating';
           break;
         case 'recent':
-          filters.sort = '-created_date';
+          sortBy = 'created_date';
           break;
       }
       
-      const result = await base44Tracks.list(filters);
+      // Call new rankings API endpoint
+      const response = await axios.post(
+        `${BACKEND_URL}/api/tracks/rankings`,
+        {
+          sort_by: sortBy,
+          genre: selectedGenre !== 'all' ? selectedGenre : null,
+          limit: 50,
+          offset: 0,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
       
-      // Handle tracks - don't filter too strictly if status field is missing
-      if (result && result.length > 0) {
-        // Filter approved tracks only if status field exists
-        const processedTracks = result.filter((track: Track) => {
-          // If status field exists, filter by approved
-          if (track.status) {
-            return track.status === 'approved';
-          }
-          // If is_approved field exists, use it
-          if (track.is_approved !== undefined) {
-            return track.is_approved === true;
-          }
-          // Otherwise, include the track (API might not have status field)
-          return true;
-        });
-        
-        console.log('[Rankings] Processed tracks:', processedTracks.length);
-        setTracks(processedTracks);
+      if (response.data?.tracks) {
+        console.log('[Rankings] Got', response.data.tracks.length, 'tracks from native API');
+        setTracks(response.data.tracks);
+      } else if (Array.isArray(response.data)) {
+        console.log('[Rankings] Got', response.data.length, 'tracks from native API');
+        setTracks(response.data);
       } else {
-        console.log('[Rankings] No tracks returned from API');
-        setTracks([]);
+        console.log('[Rankings] Unexpected response format:', response.data);
+        // Fallback to base44Tracks
+        const result = await base44Tracks.list({ limit: 50 });
+        setTracks(result || []);
       }
     } catch (error) {
       console.error('[Rankings] Error loading tracks:', error);
-      setTracks([]);
+      // Fallback to standard method on error
+      try {
+        const result = await base44Tracks.list({ limit: 50 });
+        setTracks(result || []);
+      } catch (e) {
+        setTracks([]);
+      }
     } finally {
       setLoading(false);
     }
