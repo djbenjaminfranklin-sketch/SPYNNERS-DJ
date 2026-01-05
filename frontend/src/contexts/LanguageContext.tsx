@@ -206,6 +206,8 @@ const translations: Record<Language, Record<string, string>> = {
     'common.search': 'Search',
     'common.noResults': 'No results',
     'common.results': 'results',
+    'common.sentTo': 'sent to',
+    'common.couldNotSendTrack': 'Could not send track',
     'common.language': 'Language',
     'common.selectLanguage': 'Select your language',
     'common.tracks': 'tracks',
