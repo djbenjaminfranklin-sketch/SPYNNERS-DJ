@@ -122,17 +122,67 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   };
   
+  // Internal function to play a track without modifying the queue
+  const playTrackInternal = async (track: Track) => {
+    try {
+      setIsLoading(true);
+      
+      // Stop and unload current sound
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+
+      const audioUrl = track.audio_url || track.audio_file;
+      
+      if (!audioUrl) {
+        console.warn('[Player] No audio URL for track:', track.title);
+        setCurrentTrack(track);
+        setIsPlaying(false);
+        setIsLoading(false);
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+      });
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioUrl },
+        { shouldPlay: true, progressUpdateIntervalMillis: 500 },
+        onPlaybackStatusUpdate
+      );
+
+      soundRef.current = sound;
+      setCurrentTrack(track);
+      setIsPlaying(true);
+      setPlaybackPosition(0);
+      
+      console.log('[Player] Playing (internal):', track.title);
+    } catch (error) {
+      console.error('[Player] Error playing track:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const playNext = async () => {
-    if (queue.length === 0) return;
+    if (queue.length <= 1) return;
     const nextIndex = (currentIndex + 1) % queue.length;
+    console.log('[Player] Playing next track, index:', nextIndex);
     setCurrentIndex(nextIndex);
-    await playTrack(queue[nextIndex]);
+    await playTrackInternal(queue[nextIndex]);
   };
   
   const playPrevious = async () => {
-    if (queue.length === 0) return;
+    if (queue.length <= 1) return;
     const prevIndex = currentIndex > 0 ? currentIndex - 1 : queue.length - 1;
+    console.log('[Player] Playing previous track, index:', prevIndex);
     setCurrentIndex(prevIndex);
+    await playTrackInternal(queue[prevIndex]);
     await playTrack(queue[prevIndex]);
   };
 
