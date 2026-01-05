@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,16 @@ import {
   PanResponder,
   Share,
   Alert,
+  Modal,
+  FlatList,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePlayer } from '../contexts/PlayerContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Colors } from '../theme/colors';
-import { Track } from '../services/base44Api';
+import { Track, Playlist, base44Playlists } from '../services/base44Api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PROGRESS_BAR_WIDTH = 80;
