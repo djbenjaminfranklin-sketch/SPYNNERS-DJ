@@ -758,14 +758,14 @@ const translations: Record<Language, Record<string, string>> = {
     'menu.website': 'Site Web',
     
     // CSV Export (Analytics)
-    'csv.downloadReport': 'Télécharger le rapport CSV',
-    'csv.exportTitle': 'Exporter le rapport CSV',
+    'csv.downloadReport': 'Télécharger le rapport PDF',
+    'csv.exportTitle': 'Exporter le rapport PDF',
     'csv.exportSubtitle': 'Sélectionnez une plage de dates (optionnel)',
     'csv.startDate': 'Date de début (AAAA-MM-JJ)',
     'csv.endDate': 'Date de fin (AAAA-MM-JJ)',
-    'csv.export': 'Exporter',
-    'csv.success': 'Le rapport CSV a été téléchargé !',
-    'csv.error': 'Impossible de générer le rapport CSV',
+    'csv.export': 'Exporter PDF',
+    'csv.success': 'Le rapport PDF a été téléchargé !',
+    'csv.error': 'Impossible de générer le rapport PDF',
     
     // SPYN Record
     'spynRecord.title': 'SPYN Record',
