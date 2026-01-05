@@ -203,9 +203,28 @@ export const base44Auth = {
       
       // Base44 returns access_token, not token
       const token = response.data.access_token || response.data.token;
-      const user = response.data.user;
+      const rawUser = response.data.user;
+      
+      // Flatten user data - Base44 stores extra fields in user.data
+      const userData = rawUser?.data || {};
+      const user = {
+        ...rawUser,
+        // Flatten important fields from data
+        black_diamonds: userData.black_diamonds || rawUser.black_diamonds || 0,
+        avatar_url: userData.avatar_url || rawUser.avatar_url,
+        artist_name: userData.artist_name || rawUser.artist_name,
+        bio: userData.bio || rawUser.bio,
+        user_type: userData.user_type || rawUser.user_type,
+        nationality: userData.nationality || rawUser.nationality,
+        instagram_url: userData.instagram_url || rawUser.instagram_url,
+        soundcloud: userData.soundcloud || rawUser.soundcloud,
+        sacem_number: userData.sacem_number || rawUser.sacem_number,
+        auto_message_settings: userData.auto_message_settings || rawUser.auto_message_settings,
+        preferred_genres: userData.preferred_genres || rawUser.preferred_genres,
+      };
       
       console.log('[Auth] Token received:', token ? 'Yes' : 'No');
+      console.log('[Auth] User black_diamonds:', user.black_diamonds);
       
       // Save to storage
       if (token) {
