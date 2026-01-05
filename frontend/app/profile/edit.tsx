@@ -511,7 +511,7 @@ export default function EditProfileScreen() {
 
         {/* Genres */}
         <Text style={styles.sectionTitle}>Favorite Genres</Text>
-        <Text style={styles.sectionSubtitle}>Select up to 5 genres</Text>
+        <Text style={styles.sectionSubtitle}>{t('profile.selectYourGenres')}</Text>
         
         <TouchableOpacity 
           style={styles.genreSelector}
