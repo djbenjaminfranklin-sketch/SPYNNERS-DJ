@@ -183,7 +183,6 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     console.log('[Player] Playing previous track, index:', prevIndex);
     setCurrentIndex(prevIndex);
     await playTrackInternal(queue[prevIndex]);
-    await playTrack(queue[prevIndex]);
   };
 
   const togglePlayPause = async () => {
