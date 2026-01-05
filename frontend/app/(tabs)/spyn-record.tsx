@@ -377,6 +377,9 @@ export default function SpynRecordScreen() {
       startTimeRef.current = Date.now();
       setIdentifiedTracks([]);
       
+      // Reset recording segments for native platforms
+      recordingSegmentsRef.current = [];
+      
       // Start duration timer
       durationIntervalRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
