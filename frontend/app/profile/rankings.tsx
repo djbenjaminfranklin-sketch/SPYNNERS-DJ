@@ -238,18 +238,18 @@ export default function RankingsScreen() {
   // Render stat based on active tab
   const renderStat = (track: Track) => {
     switch (activeTab) {
+      case 'plays':
+        return (
+          <View style={styles.statContainer}>
+            <Ionicons name="play-circle" size={14} color={Colors.primary} />
+            <Text style={styles.statText}>{track.play_count || 0}</Text>
+          </View>
+        );
       case 'downloads':
         return (
           <View style={styles.statContainer}>
             <Ionicons name="download" size={14} color={Colors.primary} />
             <Text style={styles.statText}>{track.download_count || 0}</Text>
-          </View>
-        );
-      case 'rated':
-        return (
-          <View style={styles.statContainer}>
-            <Ionicons name="star" size={14} color="#FFD700" />
-            <Text style={styles.statText}>{(track.average_rating || 0).toFixed(1)}</Text>
           </View>
         );
       case 'recent':
