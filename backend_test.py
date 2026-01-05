@@ -331,6 +331,73 @@ def test_spyn_notify_producer():
         log_test("SPYN Notify Producer", False, f"Request failed: {str(e)}")
         return False
 
+def test_black_diamonds_login():
+    """
+    Test the Black Diamonds fix - Login API should return user with black_diamonds: 48
+    This is the specific test requested in the review.
+    """
+    try:
+        # Test credentials from the review request
+        test_email = "djbenjaminfranklin@gmail.com"
+        test_password = "Elsamila1979"
+        
+        login_data = {
+            "email": test_email,
+            "password": test_password
+        }
+        
+        response = requests.post(
+            f"{API_URL}/base44/auth/login",
+            json=login_data,
+            headers={"Content-Type": "application/json"},
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            print(f"Full login response: {json.dumps(data, indent=2)}")
+            
+            # Check if user data exists
+            if "user" in data:
+                user = data["user"]
+                print(f"User object: {json.dumps(user, indent=2)}")
+                
+                # Check for black_diamonds in user.data
+                if "data" in user:
+                    user_data = user["data"]
+                    print(f"User.data object: {json.dumps(user_data, indent=2)}")
+                    
+                    if "black_diamonds" in user_data:
+                        black_diamonds = user_data["black_diamonds"]
+                        
+                        if black_diamonds == 48:
+                            log_test("Black Diamonds Fix", True, f"user.data.black_diamonds = {black_diamonds} (Expected: 48)")
+                            return True
+                        else:
+                            log_test("Black Diamonds Fix", False, f"user.data.black_diamonds = {black_diamonds} (Expected: 48)")
+                            return False
+                    else:
+                        log_test("Black Diamonds Fix", False, "black_diamonds field not found in user.data")
+                        print(f"Available fields in user.data: {list(user_data.keys()) if user_data else 'None'}")
+                        return False
+                else:
+                    log_test("Black Diamonds Fix", False, "user.data field not found in response")
+                    print(f"Available fields in user: {list(user.keys()) if user else 'None'}")
+                    return False
+            else:
+                log_test("Black Diamonds Fix", False, "user field not found in response")
+                print(f"Available fields in response: {list(data.keys()) if data else 'None'}")
+                return False
+                
+        else:
+            error_text = response.text
+            log_test("Black Diamonds Fix", False, f"Login failed - HTTP {response.status_code}: {error_text}")
+            return False
+            
+    except Exception as e:
+        log_test("Black Diamonds Fix", False, f"Request failed: {str(e)}")
+        return False
+
 def run_all_tests():
     """Run all backend tests"""
     print("Starting SPYNNERS Backend API Tests...")
