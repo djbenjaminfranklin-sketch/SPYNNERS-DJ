@@ -1547,7 +1547,7 @@ export default function SpynRecordScreen() {
               end={{ x: 1, y: 1 }}
             >
               <Ionicons name="mic" size={40} color="#fff" />
-              <Text style={styles.recordButtonText}>DÉMARRER</Text>
+              <Text style={styles.recordButtonText}>{t('spynRecord.start')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         ) : (
