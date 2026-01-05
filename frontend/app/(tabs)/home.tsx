@@ -26,6 +26,7 @@ import { base44Tracks, base44Playlists, base44Notifications2, base44Users, base4
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import NotificationModal from '../../src/components/NotificationModal';
+import AdminBadge, { isUserAdmin } from '../../src/components/AdminBadge';
 import offlineService from '../../src/services/offlineService';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
