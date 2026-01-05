@@ -829,10 +829,91 @@ export default function SpynRecordScreen() {
 
   const stopNativeRecording = async (): Promise<string> => {
     if (recordingRef.current) {
+      // Stop the final recording segment
       await recordingRef.current.stopAndUnloadAsync();
-      const uri = recordingRef.current.getURI();
+      const finalUri = recordingRef.current.getURI();
       recordingRef.current = null;
-      return uri || '';
+      
+      // Add the final segment to our collection
+      if (finalUri) {
+        recordingSegmentsRef.current.push(finalUri);
+      }
+      
+      console.log('[SPYN Record] Total recording segments:', recordingSegmentsRef.current.length);
+      
+      // If we have multiple segments, we need to concatenate them
+      if (recordingSegmentsRef.current.length > 1) {
+        console.log('[SPYN Record] Concatenating', recordingSegmentsRef.current.length, 'segments...');
+        
+        try {
+          // Read all segments as base64
+          const segmentData: string[] = [];
+          for (const segmentUri of recordingSegmentsRef.current) {
+            try {
+              const base64Data = await LegacyFileSystem.readAsStringAsync(segmentUri, {
+                encoding: LegacyFileSystem.EncodingType.Base64,
+              });
+              segmentData.push(base64Data);
+              console.log('[SPYN Record] Read segment:', segmentUri, 'size:', base64Data.length);
+            } catch (readError) {
+              console.error('[SPYN Record] Error reading segment:', segmentUri, readError);
+            }
+          }
+          
+          if (segmentData.length > 0) {
+            // Send all segments to backend for concatenation
+            console.log('[SPYN Record] Sending', segmentData.length, 'segments to backend for concatenation...');
+            
+            const response = await axios.post(`${BACKEND_URL}/api/concatenate-audio`, {
+              audio_segments: segmentData,
+              output_format: 'm4a'
+            }, {
+              timeout: 180000, // 3 minutes timeout for large concatenations
+            });
+            
+            if (response.data.success) {
+              console.log('[SPYN Record] Concatenation successful, size:', response.data.size);
+              
+              // Save the concatenated audio file
+              const cacheDir = LegacyFileSystem.cacheDirectory || '';
+              const concatenatedPath = `${cacheDir}concatenated_mix_${Date.now()}.m4a`;
+              
+              await LegacyFileSystem.writeAsStringAsync(concatenatedPath, response.data.audio_base64, {
+                encoding: LegacyFileSystem.EncodingType.Base64,
+              });
+              
+              console.log('[SPYN Record] Concatenated file saved to:', concatenatedPath);
+              
+              // Clean up individual segments
+              for (const segmentUri of recordingSegmentsRef.current) {
+                try {
+                  await LegacyFileSystem.deleteAsync(segmentUri, { idempotent: true });
+                } catch (e) {
+                  // Ignore cleanup errors
+                }
+              }
+              
+              // Reset segments array
+              recordingSegmentsRef.current = [];
+              
+              return concatenatedPath;
+            } else {
+              console.error('[SPYN Record] Concatenation failed:', response.data.error);
+              // Fall back to returning the last segment
+              return finalUri || '';
+            }
+          }
+        } catch (concatenationError) {
+          console.error('[SPYN Record] Concatenation error:', concatenationError);
+          // Fall back to returning the last segment
+          return finalUri || '';
+        }
+      } else if (recordingSegmentsRef.current.length === 1) {
+        // Only one segment, return it directly
+        return recordingSegmentsRef.current[0];
+      }
+      
+      return finalUri || '';
     }
     return '';
   };
