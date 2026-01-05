@@ -33,7 +33,7 @@ type Session = {
 
 export default function AdminSessions() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,22 +55,34 @@ export default function AdminSessions() {
 
   const loadSessions = async () => {
     try {
-      // Mock data - replace with actual API call
-      const mockSessions: Session[] = [
-        { id: '1', dj_name: 'Jonathan Roux', location: 'Verel-Pragondran (France)', venue: '-', started_at: '2026-01-05T22:33:00', status: 'active', tracks_detected: 0, diamonds_earned: 0 },
-        { id: '2', dj_name: 'romain bieules', location: 'Unknown location', venue: '-', started_at: '2026-01-04T22:23:00', status: 'active', tracks_detected: 0, diamonds_earned: 0 },
-        { id: '3', dj_name: 'Jason Youtube', location: 'Unknown location', venue: '-', started_at: '2026-01-04T22:20:00', status: 'active', tracks_detected: 0, diamonds_earned: 0 },
-        { id: '4', dj_name: 'William Thuotte', location: 'Unknown location', venue: '-', started_at: '2026-01-04T17:51:00', status: 'active', tracks_detected: 0, diamonds_earned: 0 },
-        { id: '5', dj_name: 'Mad Mike', location: 'Esmonts (Suisse)', venue: '-', started_at: '2026-01-04T17:14:00', status: 'active', tracks_detected: 0, diamonds_earned: 0 },
-      ];
-      
-      setSessions(mockSessions);
-      setStats({
-        total: 856,
-        active: 397,
-        tracks_detected: 311,
-        unique_djs: 175,
+      // Fetch real sessions data from backend
+      const response = await axios.get(`${BACKEND_URL}/api/admin/sessions?limit=500`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
+      
+      if (response.data?.success && response.data?.sessions) {
+        const sessionsData = response.data.sessions.map((s: any) => ({
+          id: s.id || s._id || Math.random().toString(),
+          dj_name: s.dj_name || s.user_name || 'Unknown DJ',
+          location: s.location || s.city || 'Unknown location',
+          venue: s.venue || '-',
+          started_at: s.created_at || s.timestamp || new Date().toISOString(),
+          status: 'active' as const,
+          tracks_detected: s.tracks_detected || 1,
+          diamonds_earned: s.diamonds_earned || 0,
+        }));
+        
+        setSessions(sessionsData);
+        
+        // Calculate stats
+        const uniqueDjs = new Set(sessionsData.map((s: Session) => s.dj_name));
+        setStats({
+          total: sessionsData.length,
+          active: sessionsData.filter((s: Session) => s.status === 'active').length,
+          tracks_detected: sessionsData.reduce((sum: number, s: Session) => sum + s.tracks_detected, 0),
+          unique_djs: uniqueDjs.size,
+        });
+      }
     } catch (error) {
       console.error('[AdminSessions] Error:', error);
     } finally {
