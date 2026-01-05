@@ -22,8 +22,6 @@ import AdminBadge from '../../src/components/AdminBadge';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
-const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
-
 const CATEGORIES = [
   { id: 'dj_star', name: 'DJ Star', icon: 'star', color: '#FFD700', count: 0 },
   { id: 'dj_resident', name: 'DJ Resident', icon: 'home', color: '#1a237e', count: 0 },
