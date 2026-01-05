@@ -103,8 +103,8 @@ export default function ProfileScreen() {
     },
     {
       icon: 'cloud-offline-outline',
-      title: 'Sessions Offline',
-      subtitle: 'Gérer les sessions SPYN hors ligne',
+      title: t('profile.offlineSessions'),
+      subtitle: t('profile.offlineSessionsDesc'),
       onPress: () => router.push('/profile/offline-sessions'),
     },
     ...(isAdmin ? [{
