@@ -1,64 +1,82 @@
 <analysis>
 <original_problem_statement>
-The user's primary goal was to fix a set of complex, interconnected issues primarily centered around the SPYN Record and SPYN (detection) features. After resolving initial build and dependency problems in a previous session, the focus shifted to functional bugs reported by the user.
+The initial goal was to implement a CSV export feature in the analytics section. After completing this, the user requested the implementation of an offline mode for SPYN Record and improved USB audio source detection on mobile.
 
-The user provided a comprehensive list of issues, with the highest priority being the non-functional track analysis in SPYN Record.
+While working on the SPYN Record feature, a persistent analysis error bug emerged, preventing track identification. After multiple failed attempts to fix this, the user decided to park the issue.
 
-**Key Pending Issues from User's List:**
-- **SPYN Record:** Track analysis was not working at all during a recording session. The final saved mix was only a small portion of the session, and it was saved as  instead of .
-- **SPYN & SPYN Record:** Emails were not being sent to producers after a track was identified.
-- **SPYN & SPYN Record:** The same track was being identified and listed multiple times (duplicates).
-- **SPYN:** The app incorrectly believed it was in offline mode, preventing emails from being sent and saving sessions locally.
-- **New Feature Request:** After fixing the above, the user requested a new feature: the ability for a DJ to download a comprehensive CSV report of all their validated sessions from the Analytics page. This report should include detailed information like DJ name, SACEM number, date, time, venue, and track details (ID, ISRC, ISWC).
+The user then reported a new set of issues:
+1.  Missing translations for newly added UI elements and other existing pages.
+2.  A bug in My Uploads where the track status shows as Unknown.
+3.  A bug where pressing the play button twice in a track list plays the audio twice simultaneously.
+4.  Provided screenshots to illustrate the missing translations and the Unknown status bug.
 </original_problem_statement>
 
 **User's preferred language**: Français (French). The next agent MUST respond in French.
 
 **what currently exists?**
-The application is in a stable and functional state. The agent successfully resolved the critical, multi-layered bugs in the SPYN and SPYN Record features.
-
-- **SPYN Record now works correctly:**
-    - It automatically analyzes tracks during a recording session on both web and mobile (Expo Go).
-    - It records the *entire* mix by creating and merging multiple audio segments on the backend.
-    - It correctly saves the final mix as an MP3 file by using a custom backend conversion endpoint.
-    - The waveform animation now displays correctly on all platforms.
-- **Email notifications now work correctly:**
-    - Emails are sent immediately after a track is identified in both SPYN and SPYN Record.
-    - The root causes (incorrect API endpoint, missing  in backend logic, and API timeouts) have all been fixed.
-- **Duplicate track identifications have been eliminated.**
-- The incorrect offline mode detection has been patched, allowing online features to work as expected.
-
-The agent has just begun to work on the user's new feature request for a CSV export in the analytics section.
+- The Analytics CSV Export feature is fully implemented and working on the web. The user had an issue seeing it on Expo Go, but the issue was resolved by clearing the cache/reloading, and they moved on.
+- The agent has implemented i18n (translation) for many of the hardcoded strings in  and  by adding keys to .
+- The  feature has been modified to record continuously and only perform analysis at the end of the session, saving the result as an offline session. However, this analysis part is buggy and currently fails to identify tracks due to a Network Error when uploading the audio for analysis from the web client. The user has decided to pause work on this bug.
 
 **Last working item**:
-    - Last item agent was working: The agent started implementing the new feature request for a CSV download of session reports from the Analytics page. It began by locating the relevant frontend file.
+    - Last item agent was working: The agent was about to start addressing a new list of bugs reported by the user, including missing translations, an Unknown status on the My Uploads page, and a double-play audio bug.
     - Status: NOT STARTED
     - Agent Testing Done: N
-    - Which testing method agent to use? backend testing agent
+    - Which testing method agent to use? The agent should first investigate the code for the reported bugs. For UI/translation fixes, the  can be used for verification. For the double-play bug, manual testing via the preview URL is required.
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - None. All major bugs reported by the user in this session have been resolved. The focus has shifted to new feature development.
+  - Issue 1: Fix new bugs reported by the user (P0 - HIGHEST)
+  - Issue 2: SPYN Record analysis fails (P1 - Parked by user)
+  - Issue 3: Complete SPYN Record USB detection on mobile (P2)
+  
+  **Issues Detail:**
+  - **Issue 1: Fix new bugs reported by user (P0)**
+     - **Sub-issue 1.1: Double-play audio bug:** When the play button on a track is pressed twice quickly, the track plays two instances of the audio simultaneously instead of toggling play/pause or restarting the track.
+         - **Next debug checklist:**
+             - Examine the  handler for the play button in the relevant track list component.
+             - Check the state management for audio playback (). Ensure that before playing a new track (or the same one again), any existing playback instance is properly stopped and unloaded.
+     - **Sub-issue 1.2: Unknown status in My Uploads:** On the My Uploads page, the status of a track is displayed as the literal string Unknown instead of the correct, translated status (e.g., Pending, Approved).
+         - **Next debug checklist:**
+             - Locate the My Uploads screen component file.
+             - Find where the track  is rendered.
+             - The value is likely not being passed through the  translation function. Add a new translation key to  for this status and use it in the component.
+     - **Sub-issue 1.3: Missing translations:** The user provided screenshots showing untranslated text like Downloads, Likes, Track Radar, and others.
+         - **Next debug checklist:**
+             - Analyze the user-provided screenshots (, , ).
+             - Identify the components corresponding to these screens.
+             - Replace the hardcoded English text with calls to the  translation function, adding new keys to  as needed.
+     - **Status**: NOT STARTED
+     - **Should Test frontend/backend/both after fix?**: Frontend
+
+  - **Issue 2: SPYN Record analysis fails (P1 - Parked by user)**
+     - **Description**: In , after stopping a recording, the analysis fails. The user's web console log showed the audio file was read (e.g., 600KB), but a Network Error occurred when  tried to POST it to . The backend logs show no record of receiving this request, indicating a frontend-side issue (likely CORS or URL-related).
+     - **Attempted fixes**:
+        - Real-time analysis by stopping/restarting recording: Caused crashes on iOS due to  limitations.
+        - Reading the audio file with  + : Failed.
+        - Reading with : Failed (returned 0 bytes).
+        - Switching to dynamic backend URL (): This was the last attempt before the user parked the issue. It was not tested by the user.
+     - **Next debug checklist**:
+        - When the user decides to revisit this, first confirm if the  fix works on the web.
+        - Investigate the CORS configuration in . Ensure it allows requests from the preview domains.
+        - For mobile (Expo Go), the  is likely due to the hardcoded  not being reachable from the device. The logic should use the  from the  file via .
+     - **Why fix this issue and what will be achieved with the fix?**: This is the core functionality of SPYN Record. Fixing it will allow users to record mixes and get a list of identified tracks.
+     - **Status**: IN PROGRESS (but parked by user)
+     - **Is recurring issue?**: Y
+     - **Should Test frontend/backend/both after fix?**: Both
 
 **In progress Task List**:
-  - None.
+  - **Task 1: Complete SPYN Record Offline Mode (P1)**
+     - **Where to resume**: The basic framework is in place (analysis at the end, saving to ). However, it's blocked by the SPYN Record analysis fails issue. Once the analysis works, the full offline session data (including identified tracks) can be correctly saved. The logic for syncing and sending emails upon reconnection is also implemented in  but remains untested.
+     - **What will be achieved with this?**: DJs can use SPYN Record without a stable internet connection, and their sessions will sync automatically later.
+     - **Status**: BLOCKED
+     - **Should Test frontend/backend/both after fix?**: Both
+     - **Blocked on something**: Issue 2: SPYN Record analysis fails.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-    - **P0: Analytics - CSV Export:** Implement the CSV report generation feature.
-        - **Phase 1 (Backend):** Create a new endpoint in  (e.g., ) that:
-            - Fetches all validated session data for the currently authenticated DJ.
-            - Accepts date range filters (, ).
-            - Gathers comprehensive data: DJ info, venue details, and for each track: title, ISRC, ISWC, etc.
-            - Formats this data into a CSV string.
-        - **Phase 2 (Frontend):** In :
-            - Add a Download Report button and date filter inputs.
-            - Call the new backend endpoint.
-            - Trigger a file download of the received CSV data in the browser/app.
-    - **P1: SPYN Record - Offline Mode:** Implement a full offline mode for the SPYN Record feature, similar to the one in SPYN.
-        - This involves using  to save recording segments and identified track data locally when the network is unavailable.
-        - Implement a sync mechanism to upload the session data when the connection is restored.
-- **Future Tasks (from user's original list):**
+    - **P2: SPYN Record - USB Audio Source Detection on Mobile:** The initial request was to ensure the app can detect and use an external USB audio source (like a mixer) on mobile. The agent added some code to  to check audio inputs but it was never fully implemented or tested due to the persistent analysis bug.
+- **Future Tasks (from original backlog):**
     - **P2: Upload Track - Artist Autocomplete:** On the upload page, provide suggestions for artists/collaborators as the user types.
     - **P2: Upload Track - Metadata Extraction:** On the backend, automatically extract BPM and artwork from uploaded audio files.
     - **P3: Radar Page - Save Message:** Ensure the message DJ functionality on the radar page is fully implemented and saves the message.
@@ -68,101 +86,95 @@ The agent has just begun to work on the user's new feature request for a CSV exp
     - **P3: VIP - Remove Promo tab:** Remove the Promo tab from the VIP section.
 
 **Completed work in this session**
-- **SPYN Record () - Major Overhaul:**
-  - **Fixed Track Analysis:** The core analysis logic was completely rewritten. The final, successful approach involves stopping the current recording segment, analyzing the now-complete file (which resolved 's Invalid data error), and immediately starting a new segment.
-  - **Fixed Full Mix Recording:** Implemented logic to store all audio segments () and use a new backend endpoint () to merge them into a single file upon completion.
-  - **Implemented MP3 Conversion:** Added a backend endpoint () using  to convert the native  recordings to  before saving to the user's device.
-  - **Restored Waveform Animation:** Fixed the UI by using a  () to correctly track the recording state for the animation interval.
-  - **Removed unnecessary manual scan button.**
+- **Analytics - CSV Export Feature:**
+  - Implemented a new backend endpoint () in  to fetch session data and format it into a CSV.
+  - Updated the logic to group tracks by session, creating a more structured report as requested by the user.
+  - Added a Download Report button, date pickers, and a modal to the frontend in .
+  - Implemented file download logic using  and .
+- **Internationalization (i18n):**
+  - Added a significant number of translation keys to  for both English and French.
+  - Replaced hardcoded strings in  and  with the  function from the  hook.
+- **SPYN Record - Refactoring (Partial):**
+  - Refactored the recording logic multiple times to debug the analysis error. The current (still buggy) implementation records a single continuous file and attempts to analyze it upon completion.
 
-- **Email Notifications (, , ):**
-  - **Fixed Root Cause of Failure:** Corrected the backend logic in  to perform a database lookup for the  when a track was identified via ACRCloud's , as this data was missing from the initial response.
-  - **Fixed API Rejection:** Rerouted email API calls to go directly from the frontend to the  API, bypassing the agent's backend proxy which was causing domain not allowed errors.
-  - **Fixed Timeouts:** Increased the  timeout for the email API call to prevent it from failing.
-  - **Implemented Instant Emails:** Changed the logic to send an email immediately after each track is identified, as requested by the user.
+**Earlier issues found/mentioned but not fixed**
+- **Issue 1: SPYN Record analysis fails**
+  - **Debug checklist**: See All Pending/In progress Issue list -> Issue 2 for the full checklist. The core is to solve the Network Error when POSTing the audio file from the client to the backend.
+  - **Why to solve this issue and what will be achieved with this?**: This is a critical feature for the user. Its resolution will make SPYN Record functional.
+  - **Should Test frontend/backend/both after fix**: Both
+  - **Is recurring issue?**: Y
 
-- **Bug Fixes:**
-  - **Fixed Duplicate Track ID:** Corrected the logic in both  and  to properly use a  to track identified tracks, preventing duplicates from being added to the list.
-  - **Fixed Offline Mode Bug:** Patched  to forcefully report an online status, working around a  issue on Expo Go that was preventing online features like emails from working.
-
-- **Backend ():**
-  - **Installed :** Installed the necessary system dependency for audio processing.
-  - **Corrected  Logic:** Fixed the Python script that converts audio for ACRCloud by ensuring the temporary file was not deleted before being read.
-  - **Added New Endpoints:** Implemented  and .
+**Known issue recurrence from previous fork**
+- The SPYN Record track analysis was not working issue from the previous fork was initially fixed but has regressed in a different form. The original problem was a  error on the backend during real-time analysis. The current problem is a frontend Network Error when sending the audio file for analysis at the end of the session.
 
 **Code Architecture**
-token
+
 
 **Key Technical Concepts**
-- **FFmpeg Audio Processing:** The agent installed and used  on the backend () for critical audio tasks:
-    - **Conversion:** Converting  files from iOS into a format readable by ACRCloud ().
-    - **Conversion:** Converting the final mix to  for user download.
-    - **Concatenation:** Merging multiple audio file segments into a single track.
-- **Segment-Based Audio Recording:** The final solution for SPYN Record involves creating a series of short, complete audio files (segments) instead of trying to read from a single, continuously-running recording. This was the key to overcoming file format limitations on mobile.
-- **State Management with :**  was crucial for solving two major problems:
-    - Tracking the list of identified tracks to prevent duplicates in asynchronous closures.
-    - Tracking the current recording state () to ensure the UI animation (waveform) was always in sync.
-- **Full-Stack Debugging:** The resolution of the main bug required debugging across the entire stack: frontend UI (waveform) -> frontend logic ( APIs) -> backend processing ( installation/logic) -> third-party API ( requirements) -> backend data retrieval ( lookup).
-- **Direct Frontend-to-Third-Party API:** The agent bypassed its own backend proxy for email sending, making a direct  call from the frontend to the  API to resolve a domain-based rejection error.
+- **i18n with React Context**: Used a  to provide a  function for translating text keys into the selected language throughout the app.
+- **Backend CSV Generation**: Created a FastAPI endpoint that generates a CSV string from database records and returns it as a streaming response.
+- **Frontend File Download**: Used  to write the CSV data to a local file and  to open the native share sheet, allowing the user to save or send the file.
+- **expo-av Audio Recording**: Used  for audio recording. Encountered platform limitations (especially on iOS) regarding concurrent recording/reading operations.
+- **State Management**: Heavy use of  and  to manage UI state, recording status, and asynchronous operations.
 
 **All files of reference**
-- : The primary file worked on, contains the new segment-based recording and analysis logic.
-- : Modified to fix email sending and duplicate detection.
-- : Contains the crucial  logic and the fix for  retrieval.
-- : Contains the patch for the offline mode bug.
-- : The target file for the next major feature implementation.
+- : Contains the completed CSV export feature.
+- : Contains the buggy SPYN Record feature. The main file for the parked P1 issue.
+- : Contains the backend logic for the CSV export.
+- : The central file for all translations.
+- : Contains the logic for saving offline sessions and syncing them.
 
 **Areas that need refactoring**:
-- The patch in  is a temporary workaround. A more robust solution for detecting network status on Expo Go should be investigated in the future to avoid potential edge cases.
+- The  file is very complex and has undergone many partial refactors. Once the analysis bug is fixed, it should be cleaned up to remove dead code and simplify the state management.
+- The  function in  was changed multiple times. A consistent approach using  from  should be used across the app for accessing environment variables.
 
 **key api endpoints**
-- **POST :** (Existing) Used for audio identification via ACRCloud. Now handles  conversion.
-- **POST :** (New) Converts an audio file (sent as base64) to MP3 using .
-- **POST :** (New) Merges multiple audio files (sent as base64) into a single file using .
-- **POST :** (External) The third-party endpoint now called directly from the frontend to send email notifications.
+- **GET **: (New) Generates and streams a CSV report of validated sessions. Accepts  and  query parameters.
+- **POST **: (Existing) Used for audio identification. This is the endpoint that the frontend is failing to reach from .
 
 **Critical Info for New Agent**
-- **The SPYN Record feature is complex but now stable.** The core logic relies on creating multiple small audio file segments and processing them. Be careful when modifying this logic in  and the related backend endpoints in .
-- **The offline service is patched.**  currently forces an online status. This was necessary to get emails working but is not a robust long-term solution. Be aware of this if you encounter any other network-related issues.
-- **The next task is a new feature:** Implement a CSV export in . This will require creating a new backend endpoint to fetch and format the data.
-- **The user is actively testing and provides excellent, specific feedback.** Continue to engage with the user, provide testable updates, and prioritize their requests.
+- **PRIORITY SHIFT**: The user has explicitly asked to pause work on the difficult  analysis bug. Your immediate priority is to fix the three new bugs: **double-play audio**, **Unknown status**, and **missing translations**. Refer to the user's screenshots.
+- **SPYN Record Bug Context**: The analysis fails due to a Network Error on the frontend when sending the audio file. This prevents the backend from ever receiving the request. The issue is NOT on the backend, which works when called directly (e.g., via ). The fix likely involves CORS or using the correct backend URL from the Expo environment.
+- **Translations**: The app uses . All new user-facing text must be added there and referenced using . The user is diligent about spotting untranslated text.
 
 **documents created in this job**
 - None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-- **10. (Latest)** User confirms the plan for the next features: 1) Analytics CSV, 2) Filtering for validated sessions by date, 3) Handling missing ISRC/ISWC numbers. (PLAN CONFIRMED)
-- **9.** Agent asks for confirmation on the new plan for CSV export. (PENDING USER CONFIRMATION - received in #10)
-- **8.** User confirms everything works and provides detailed requirements for the next feature: a comprehensive CSV export from Analytics. (NEW REQUIREMENT)
-- **7.** User confirms SPYN Record emails now work but notes the offline mode shows an analysis error (which is expected as it's not implemented). (ADDRESSED)
-- **6.** Agent asks for testing after implementing the  fix and increasing the API timeout. (ADDRESSED)
-- **5.** User confirms email works on SPYN but not SPYN Record, and that offline mode is broken on SPYN Record. (ADDRESSED)
-- **4.** Agent asks user to test after fixing the  lookup on the backend. (ADDRESSED)
-- **3.** User states that the producer for the track is themselves, confirming a  should exist, which led the agent to the correct backend bug. (CRITICAL INFO)
-- **2.** Agent explains that emails are failing because the  is null for the identified track. (ADDRESSED)
-- **1.** User confirms duplicates are fixed but emails are still not received. (ADDRESSED)
+- **10. (Latest)** User reports new bugs: missing translations on several pages, Unknown status in My Uploads, and a double-play audio bug. Provides screenshots. (NEW BUGS REPORTED)
+- **9.** User requests to pause work on the SPYN Record bug and asks what's next. (ADDRESSED)
+- **8.** User provides web console logs showing Network Error when SPYN Record tries to analyze audio. (CRITICAL INFO)
+- **7.** User asks for the web link to provide console logs. (ADDRESSED)
+- **6.** User reports the simplified SPYN Record still shows 0 tracks identifiés. (BUG PERSISTS)
+- **5.** User reports the app crashes/freezes at 10 seconds with the stop/restart analysis approach. (BUG PERSISTS)
+- **4.** User requests to analyze at the end of the session and save to offline. (DECISION MADE)
+- **3.** User reports that the fix with delays still causes the app to crash. Asks about limitations. (BUG PERSISTS)
+- **2.** User reports the recording still stops at 10 seconds and the app bugs out. Re-iterates it needs to be like the  button (real-time without stopping). (BUG PERSISTS)
+- **1.** User reports toujours rien (still nothing), analysis not working. (BUG PERSISTS)
 
 **Project Health Check:**
-- **Broken**: None.
-- **Mocked**: The  is patched to always report . This is a temporary fix that should be revisited.
+- **Broken**:
+    - : The core track analysis functionality is non-operational due to a frontend network error when submitting audio.
+- **Mocked**:
+    - : Still contains the patch to forcefully report . This is a temporary workaround that should eventually be replaced with a proper network detection mechanism.
 
 **3rd Party Integrations**
-- **Spynners Native API:** The primary backend service, accessed via proxy endpoints in  and now also directly from the frontend for email sending.
-- **ACRCloud:** Used for music identification.
-- **Expo (EAS & Tunnel):** Used for development (Go) and deployment.
-- **ffmpeg:** (New) System-level dependency on the backend server for all audio processing.
+- **Spynners Native API:** Primary backend service.
+- **ACRCloud:** Music identification service.
+- **Expo (EAS & Tunnel):** Development and deployment platform.
+- **ffmpeg:** System-level dependency on the backend for audio processing.
 
 **Testing status**
-  - Testing agent used after significant changes: NO
-  - Troubleshoot agent used after agent stuck in loop: YES, it correctly identified deprecated  APIs as a likely cause of issues, which was a helpful step.
-  - Test files created: None.
-  - Known regressions: None.
+- Testing agent used after significant changes: NO
+- Troubleshoot agent used after agent stuck in loop: NO
+- Test files created: None
+- Known regressions: SPYN Record analysis, which was previously working, is now broken in a new way.
 
 **Credentials to test flow:**
 - **Email:** 
 - **Password:** 
 
 **What agent forgot to execute**
-- The agent has successfully addressed all the high-priority issues raised by the user in this session. The remaining tasks from the user's initial long list have been correctly triaged into the Upcoming and Future Tasks section and are pending implementation. Nothing was forgotten.
-
+- While implementing translations, the agent missed several hardcoded strings across different pages, which the user later pointed out with screenshots.
+- The root cause of the Network Error in  was not fully diagnosed before the user decided to park the issue.
 </analysis>

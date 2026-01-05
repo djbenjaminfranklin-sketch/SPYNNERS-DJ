@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://track-reports.preview.emergentagent.com';
+  return 'https://audiobug-patrol.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

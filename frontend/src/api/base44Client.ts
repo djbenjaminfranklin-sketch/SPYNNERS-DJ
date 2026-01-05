@@ -18,7 +18,7 @@ const getBackendUrl = () => {
   }
   return Constants.expoConfig?.extra?.backendUrl || 
          process.env.EXPO_PUBLIC_BACKEND_URL || 
-         'https://track-reports.preview.emergentagent.com';
+         'https://audiobug-patrol.preview.emergentagent.com';
 };
 
 // Storage key for auth token
