@@ -544,16 +544,6 @@ export default function HomeScreen() {
         </View>
         
         <View style={styles.headerRight}>
-          {/* Language Selector */}
-          <TouchableOpacity 
-            style={styles.langButton}
-            onPress={() => setShowLanguageModal(true)}
-          >
-            <Text style={styles.langFlag}>{currentLang.flag}</Text>
-            <Text style={styles.langText}>{currentLang.code.toUpperCase()}</Text>
-            <Ionicons name="chevron-down" size={14} color={Colors.textMuted} />
-          </TouchableOpacity>
-          
           {/* Notification Bell - Opens Modal */}
           <TouchableOpacity 
             style={styles.notificationButton}
