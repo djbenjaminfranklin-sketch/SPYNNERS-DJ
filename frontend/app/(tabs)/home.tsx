@@ -568,13 +568,16 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
         contentContainerStyle={{ paddingBottom: currentTrack ? 120 : 20 }}
       >
-        {/* User Menu - Two Rows Grid (FIRST) */}
+        {/* User Menu - Three Rows Grid (3x3) */}
         <View style={styles.menuContainer}>
           <View style={styles.menuRow}>
             {USER_MENU_ITEMS_ROW1.map(renderMenuItem)}
           </View>
           <View style={styles.menuRow}>
             {USER_MENU_ITEMS_ROW2.map(renderMenuItem)}
+          </View>
+          <View style={styles.menuRow}>
+            {USER_MENU_ITEMS_ROW3.map(renderMenuItem)}
           </View>
         </View>
 
