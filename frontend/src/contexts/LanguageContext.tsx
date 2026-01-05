@@ -228,14 +228,14 @@ const translations: Record<Language, Record<string, string>> = {
     'menu.uploadTrack': 'Upload Track',
     
     // CSV Export (Analytics)
-    'csv.downloadReport': 'Download CSV Report',
-    'csv.exportTitle': 'Export CSV Report',
+    'csv.downloadReport': 'Download PDF Report',
+    'csv.exportTitle': 'Export PDF Report',
     'csv.exportSubtitle': 'Select a date range (optional)',
     'csv.startDate': 'Start date (YYYY-MM-DD)',
     'csv.endDate': 'End date (YYYY-MM-DD)',
-    'csv.export': 'Export',
-    'csv.success': 'CSV report downloaded!',
-    'csv.error': 'Unable to generate CSV report',
+    'csv.export': 'Export PDF',
+    'csv.success': 'PDF report downloaded!',
+    'csv.error': 'Unable to generate PDF report',
     
     // SPYN Record
     'spynRecord.title': 'SPYN Record',
