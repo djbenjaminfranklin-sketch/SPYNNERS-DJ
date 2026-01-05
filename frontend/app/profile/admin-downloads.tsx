@@ -31,7 +31,7 @@ type Download = {
 
 export default function AdminDownloads() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [downloads, setDownloads] = useState<Download[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,20 +52,32 @@ export default function AdminDownloads() {
 
   const loadDownloads = async () => {
     try {
-      // Mock data - replace with actual API call
-      const mockDownloads: Download[] = [
-        { id: '1', date: '2026-01-05', dj_name: 'Jonathan Roux', track_title: 'Help Me', producer: 'mordaneyez', genre: 'Minimal / Deep Tech' },
-        { id: '2', date: '2026-01-05', dj_name: 'CARBO', track_title: 'Tio Chelito - Discotheque', producer: 'LFTD MUSIC GROUP INC', genre: 'Tech House' },
-        { id: '3', date: '2026-01-05', dj_name: 'kcosandey', track_title: 'GROOVE IS AFRO HOUSE', producer: 'LIBŌZ', genre: 'Afro House' },
-        { id: '4', date: '2026-01-04', dj_name: 'Benjamin Franklin', track_title: 'LEAÉH', producer: 'Baptiste Grillot', genre: 'Melodic House' },
-      ];
-      
-      setDownloads(mockDownloads);
-      setStats({
-        total: 719,
-        unique_djs: 100,
-        tracks_downloaded: 111,
+      // Fetch real downloads data from backend
+      const response = await axios.get(`${BACKEND_URL}/api/admin/downloads?limit=500`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
+      
+      if (response.data?.success) {
+        const downloadsData = response.data.downloads || [];
+        
+        // Format download entries
+        const formattedDownloads = downloadsData.map((d: any) => ({
+          id: d.track_id || Math.random().toString(),
+          date: new Date().toISOString().split('T')[0],
+          dj_name: '-',
+          track_title: d.track_title || 'Unknown Track',
+          producer: d.producer || 'Unknown Producer',
+          genre: d.genre || 'Unknown',
+          download_count: d.download_count || 0,
+        }));
+        
+        setDownloads(formattedDownloads);
+        setStats({
+          total: response.data.total_downloads || 0,
+          unique_djs: 0, // Would need separate API call
+          tracks_downloaded: response.data.tracks_with_downloads || 0,
+        });
+      }
     } catch (error) {
       console.error('[AdminDownloads] Error:', error);
     } finally {
