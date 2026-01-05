@@ -45,35 +45,8 @@ const GREEN_COLOR = '#00FF88';
 const PURPLE_COLOR = '#9D4EDD';
 const DARK_BG = '#0a0a1a';
 
-// Get backend URL - use Constants for Expo
-const getBackendUrl = () => {
-  // First try Constants.expoConfig (most reliable for Expo)
-  const envUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL;
-  if (envUrl) {
-    console.log('[SPYN Record] Using backend URL from Constants:', envUrl);
-    return envUrl;
-  }
-  
-  // Then try process.env
-  if (process.env.EXPO_PUBLIC_BACKEND_URL) {
-    console.log('[SPYN Record] Using backend URL from process.env:', process.env.EXPO_PUBLIC_BACKEND_URL);
-    return process.env.EXPO_PUBLIC_BACKEND_URL;
-  }
-  
-  // On web, use current origin
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    console.log('[SPYN Record] Using backend URL from window.origin:', window.location.origin);
-    return window.location.origin;
-  }
-  
-  // Fallback
-  const fallback = 'https://track-reports.preview.emergentagent.com';
-  console.log('[SPYN Record] Using fallback backend URL:', fallback);
-  return fallback;
-};
-
-const BACKEND_URL = getBackendUrl();
-console.log('[SPYN Record] Final BACKEND_URL:', BACKEND_URL);
+// Backend URL - hardcoded for reliability on mobile
+const BACKEND_URL = 'https://track-reports.preview.emergentagent.com';
 
 // Recording settings for high quality
 const RECORDING_OPTIONS = {
