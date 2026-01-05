@@ -141,6 +141,7 @@ export interface User {
   avatar?: string;
   avatar_url?: string;
   is_admin?: boolean;
+  role?: 'admin' | 'admin_readonly' | 'user' | string; // Admin role field from Base44
   diamonds?: number;
   black_diamonds?: number;
   is_vip?: boolean;
