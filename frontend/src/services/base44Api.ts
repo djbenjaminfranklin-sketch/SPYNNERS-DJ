@@ -301,6 +301,20 @@ export const base44Auth = {
       return null;
     }
   },
+
+  async updateUserDiamonds(userId: string, amount: number): Promise<void> {
+    try {
+      console.log('[Auth] Updating user diamonds:', userId, amount);
+      const response = await api.post('/api/base44/update-diamonds', {
+        user_id: userId,
+        amount: amount, // positive to add, negative to deduct
+      });
+      console.log('[Auth] Diamonds updated:', response.data);
+    } catch (error: any) {
+      console.error('[Auth] Error updating diamonds:', error?.response?.data || error?.message);
+      throw new Error(error?.response?.data?.detail || 'Failed to update diamonds');
+    }
+  },
 };
 
 // ==================== TRACKS SERVICE ====================
