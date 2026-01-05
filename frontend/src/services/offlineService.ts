@@ -91,23 +91,18 @@ class OfflineService {
     this.networkUnsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
       const wasOffline = !this.isOnline;
       
-      // On mobile (iOS/Android), NetInfo can be unreliable in Expo Go
-      // If we successfully make API calls (which we clearly can), we're online
-      // So we'll be more optimistic about connectivity
-      let connected = state.isConnected ?? true; // Default to true instead of false
-      
       // On web, use navigator.onLine as it's more reliable
       if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
-        connected = navigator.onLine;
+        this.isOnline = navigator.onLine;
+      } else {
+        // On iOS/Android with Expo Go, NetInfo can be unreliable
+        // Be optimistic - only mark as offline if BOTH isConnected AND isInternetReachable are explicitly false
+        const isConnected = state.isConnected;
+        const isReachable = state.isInternetReachable;
+        
+        // If either is true or null/undefined, assume online
+        this.isOnline = isConnected !== false || isReachable !== false;
       }
-      
-      // On iOS/Android with Expo Go, isConnected can be null or false incorrectly
-      // Be optimistic - if isInternetReachable is true OR isConnected is true, we're online
-      if (Platform.OS !== 'web') {
-        connected = (state.isConnected === true) || (state.isInternetReachable === true) || (state.isConnected === null);
-      }
-      
-      this.isOnline = connected;
       
       console.log('[Offline] Network state changed:', this.isOnline ? 'ONLINE' : 'OFFLINE', 
         `(isConnected=${state.isConnected}, isInternetReachable=${state.isInternetReachable})`);
