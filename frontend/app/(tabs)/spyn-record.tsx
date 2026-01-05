@@ -723,7 +723,7 @@ export default function SpynRecordScreen() {
         }
       } else {
         // NATIVE (iOS/Android): Stop recording, analyze, then restart
-        // M4A files need to be finalized to be readable
+        // Using the same approach as SPYN which works reliably
         console.log('[SPYN Record] Starting native audio analysis...');
         
         try {
@@ -740,23 +740,41 @@ export default function SpynRecordScreen() {
               recordingSegmentsRef.current.push(currentUri);
               console.log('[SPYN Record] Segment saved. Total segments:', recordingSegmentsRef.current.length);
               
-              // Read the finalized audio file as base64 for analysis
+              // Read the finalized audio file - use same method as SPYN
               try {
+                // Modern approach: use fetch + blob (same as SPYN)
+                const response = await fetch(currentUri);
+                const blob = await response.blob();
+                audioBase64 = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    const result = reader.result as string;
+                    resolve(result.split(',')[1] || '');
+                  };
+                  reader.onerror = reject;
+                  reader.readAsDataURL(blob);
+                });
+                console.log('[SPYN Record] Audio read via fetch+blob, length:', audioBase64.length);
+              } catch (blobError) {
+                console.log('[SPYN Record] Blob approach failed, trying FileSystem:', blobError);
+                // Fallback to FileSystem
                 audioBase64 = await LegacyFileSystem.readAsStringAsync(currentUri, {
                   encoding: LegacyFileSystem.EncodingType.Base64,
                 });
-                console.log('[SPYN Record] Audio read from finalized file, length:', audioBase64.length);
-              } catch (readError) {
-                console.error('[SPYN Record] Error reading recording file:', readError);
+                console.log('[SPYN Record] Audio read via FileSystem, length:', audioBase64.length);
               }
-              
-              // DON'T delete the file - we need it for the final mix!
             }
             
             // Start a new recording to continue
             if (isRecordingRef.current) {
               console.log('[SPYN Record] Starting new recording to continue...');
               try {
+                // Use same recording options as SPYN
+                await Audio.setAudioModeAsync({
+                  allowsRecordingIOS: true,
+                  playsInSilentModeIOS: true,
+                });
+                
                 const { recording: newRecording } = await Audio.Recording.createAsync(
                   Audio.RecordingOptionsPresets.HIGH_QUALITY
                 );
