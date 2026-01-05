@@ -525,21 +525,75 @@ export default function SpynRecordScreen() {
           });
         }
       } else {
-        // For native, we'd need to get a chunk - this is more complex
-        // For now, we'll analyze periodically
-        if (recordingRef.current) {
-          const status = await recordingRef.current.getStatusAsync();
-          console.log('[SPYN Record] Recording status:', status);
+        // NATIVE (iOS/Android): Record a short audio sample for analysis
+        // We need to temporarily stop the main recording, take a sample, then resume
+        console.log('[SPYN Record] Starting native audio analysis...');
+        
+        try {
+          // Create a separate short recording for analysis (8 seconds)
+          const analysisRecording = new Audio.Recording();
+          await analysisRecording.prepareToRecordAsync(
+            Audio.RecordingOptionsPresets.HIGH_QUALITY
+          );
+          await analysisRecording.startAsync();
+          console.log('[SPYN Record] Analysis recording started...');
+          
+          // Record for 8 seconds
+          await new Promise(resolve => setTimeout(resolve, 8000));
+          
+          // Stop and get the audio
+          await analysisRecording.stopAndUnloadAsync();
+          const analysisUri = analysisRecording.getURI();
+          console.log('[SPYN Record] Analysis recording stopped, URI:', analysisUri);
+          
+          if (analysisUri) {
+            // Read the audio file as base64
+            try {
+              // Try modern approach: fetch + blob
+              const response = await fetch(analysisUri);
+              const blob = await response.blob();
+              audioBase64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  const result = reader.result as string;
+                  resolve(result.split(',')[1] || '');
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+              console.log('[SPYN Record] Audio converted to base64, length:', audioBase64.length);
+            } catch (blobError) {
+              console.log('[SPYN Record] Blob approach failed, trying FileSystem:', blobError);
+              // Fallback to FileSystem API
+              audioBase64 = await FileSystem.readAsStringAsync(analysisUri, {
+                encoding: FileSystem.EncodingType.Base64,
+              });
+              console.log('[SPYN Record] Audio read via FileSystem, length:', audioBase64.length);
+            }
+            
+            // Clean up the analysis recording file
+            try {
+              await FileSystem.deleteAsync(analysisUri, { idempotent: true });
+            } catch (e) {
+              // Ignore cleanup errors
+            }
+          }
+        } catch (recordError) {
+          console.error('[SPYN Record] Native analysis recording error:', recordError);
         }
       }
       
-      if (audioBase64) {
+      if (audioBase64 && audioBase64.length > 0) {
+        console.log('[SPYN Record] Sending audio to backend for recognition...');
+        
         // Send to backend for recognition
         const response = await axios.post(`${BACKEND_URL}/api/recognize-audio`, {
           audio_base64: audioBase64,
         }, {
           timeout: 30000,
         });
+        
+        console.log('[SPYN Record] Recognition response:', response.data);
         
         if (response.data.success && response.data.title) {
           const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
@@ -570,10 +624,14 @@ export default function SpynRecordScreen() {
           }
         } else {
           setCurrentAnalysis('Aucun track détecté');
+          console.log('[SPYN Record] No track detected in audio sample');
         }
+      } else {
+        setCurrentAnalysis('Pas d\'audio à analyser');
+        console.log('[SPYN Record] No audio data to analyze');
       }
-    } catch (error) {
-      console.error('[SPYN Record] Analysis error:', error);
+    } catch (error: any) {
+      console.error('[SPYN Record] Analysis error:', error?.response?.data || error.message || error);
       setCurrentAnalysis('Erreur d\'analyse');
     } finally {
       setIsAnalyzing(false);
