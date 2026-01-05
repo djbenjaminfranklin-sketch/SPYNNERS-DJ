@@ -484,18 +484,32 @@ export default function SpynRecordScreen() {
 
   const startNativeRecording = async () => {
     try {
-      const recording = new Audio.Recording();
-      await recording.prepareToRecordAsync({
-        android: RECORDING_OPTIONS.android,
-        ios: RECORDING_OPTIONS.ios,
-        web: RECORDING_OPTIONS.web,
+      console.log('[SPYN Record] Starting native recording...');
+      
+      // Request permissions first
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        console.log('[SPYN Record] Audio permission not granted');
+        Alert.alert('Permission requise', 'L\'accès au microphone est nécessaire');
+        return;
+      }
+      
+      // Set audio mode for recording
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
       });
-      await recording.startAsync();
+      
+      // Use the modern API - createAsync
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
       recordingRef.current = recording;
       
-      console.log('[SPYN Record] Native recording started');
+      console.log('[SPYN Record] ✅ Native recording started successfully');
     } catch (error) {
-      console.error('[SPYN Record] Native recording error:', error);
+      console.error('[SPYN Record] ❌ Native recording error:', error);
       throw error;
     }
   };
