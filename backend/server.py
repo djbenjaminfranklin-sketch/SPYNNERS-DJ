@@ -2515,6 +2515,25 @@ async def send_dj_message(request: SendDJMessageRequest, authorization: str = He
         print(f"[DJ Message] Message: {request.message}")
         print(f"[DJ Message] Venue: {request.venue}, Location: {request.location}")
         
+        # Save message to database
+        message_doc = {
+            "type": "dj_message",
+            "dj_id": request.dj_id,
+            "dj_name": request.dj_name,
+            "producer_id": request.producer_id,
+            "producer_name": request.producer_name,
+            "track_title": request.track_title,
+            "message": request.message,
+            "venue": request.venue or "",
+            "location": request.location or "",
+            "created_at": datetime.utcnow(),
+            "read": False,
+        }
+        
+        # Save to MongoDB
+        result = db.dj_messages.insert_one(message_doc)
+        print(f"[DJ Message] Saved to database with id: {result.inserted_id}")
+        
         # Try to send via Base44 notification system
         if authorization:
             try:
@@ -2537,8 +2556,7 @@ async def send_dj_message(request: SendDJMessageRequest, authorization: str = He
             except Exception as notif_error:
                 print(f"[DJ Message] Notification error (non-fatal): {notif_error}")
         
-        # Log the message for now (in production this would go to a database/email)
-        print(f"[DJ Message] ✅ Message logged successfully")
+        print(f"[DJ Message] ✅ Message saved and sent successfully")
         
         return {
             "success": True,
