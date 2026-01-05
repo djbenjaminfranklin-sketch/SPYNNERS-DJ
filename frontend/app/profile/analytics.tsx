@@ -361,12 +361,92 @@ export default function AnalyticsScreen() {
         </TouchableOpacity>
       </LinearGradient>
 
+      {/* CSV Export Modal */}
+      <Modal
+        visible={showDatePicker}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Exporter le rapport CSV</Text>
+            <Text style={styles.modalSubtitle}>Sélectionnez une plage de dates (optionnel)</Text>
+            
+            <View style={styles.dateInputContainer}>
+              <Text style={styles.dateLabel}>Date de début (AAAA-MM-JJ)</Text>
+              <TextInput
+                style={styles.dateInput}
+                value={csvStartDate}
+                onChangeText={setCsvStartDate}
+                placeholder="2025-01-01"
+                placeholderTextColor={Colors.textMuted}
+                keyboardType="default"
+              />
+            </View>
+            
+            <View style={styles.dateInputContainer}>
+              <Text style={styles.dateLabel}>Date de fin (AAAA-MM-JJ)</Text>
+              <TextInput
+                style={styles.dateInput}
+                value={csvEndDate}
+                onChangeText={setCsvEndDate}
+                placeholder="2025-12-31"
+                placeholderTextColor={Colors.textMuted}
+                keyboardType="default"
+              />
+            </View>
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.modalCancelButton} 
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Text style={styles.modalCancelText}>Annuler</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.modalExportButton} 
+                onPress={handleExportCSV}
+                disabled={exportingCSV}
+              >
+                {exportingCSV ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="download-outline" size={18} color="#fff" />
+                    <Text style={styles.modalExportText}>Exporter</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <ScrollView 
         style={styles.content}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
         }
       >
+        {/* CSV Export Button */}
+        <TouchableOpacity 
+          style={styles.exportButton}
+          onPress={openDatePickerModal}
+        >
+          <LinearGradient 
+            colors={['#00C853', '#00E676']} 
+            style={styles.exportButtonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+          >
+            <Ionicons name="document-text-outline" size={20} color="#fff" />
+            <Text style={styles.exportButtonText}>Télécharger le rapport CSV</Text>
+            <Ionicons name="download-outline" size={20} color="#fff" />
+          </LinearGradient>
+        </TouchableOpacity>
+
         {stats.totalTracks === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="bar-chart-outline" size={60} color={Colors.textMuted} />
