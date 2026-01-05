@@ -1586,7 +1586,7 @@ export default function SpynRecordScreen() {
         <View style={styles.instructionsContainer}>
           <Ionicons name="information-circle-outline" size={20} color="#666" />
           <Text style={styles.instructionsText}>
-            Connectez votre iPhone à la table de mixage pour un enregistrement haute qualité
+            {t('spynRecord.connectMixer')}
           </Text>
         </View>
       )}
