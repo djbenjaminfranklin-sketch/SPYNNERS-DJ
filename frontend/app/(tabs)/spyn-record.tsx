@@ -146,6 +146,9 @@ export default function SpynRecordScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const waveAnim = useRef(new Animated.Value(0)).current;
 
+  // Reference for USB check interval
+  const usbCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   // Request permissions and detect audio sources on mount
   useEffect(() => {
     requestPermissions();
@@ -157,16 +160,18 @@ export default function SpynRecordScreen() {
       navigator.mediaDevices.addEventListener('devicechange', detectAudioSources);
     }
     
-    // Periodically check for USB on mobile
-    const usbCheckInterval = setInterval(() => {
-      if (Platform.OS !== 'web') {
+    // Periodically check for USB on mobile (only when not recording)
+    usbCheckIntervalRef.current = setInterval(() => {
+      if (Platform.OS !== 'web' && !isRecordingRef.current) {
         detectAudioSources();
       }
     }, 5000); // Check every 5 seconds
     
     return () => {
       cleanup();
-      clearInterval(usbCheckInterval);
+      if (usbCheckIntervalRef.current) {
+        clearInterval(usbCheckIntervalRef.current);
+      }
       if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices) {
         navigator.mediaDevices.removeEventListener('devicechange', detectAudioSources);
       }
