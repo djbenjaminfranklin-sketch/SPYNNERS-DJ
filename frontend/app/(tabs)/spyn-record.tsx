@@ -1528,7 +1528,7 @@ export default function SpynRecordScreen() {
 
       {/* Waveform */}
       <View style={styles.waveformSection}>
-        <Text style={styles.sectionLabel}>FORME D'ONDE</Text>
+        <Text style={styles.sectionLabel}>{t('spynRecord.waveform')}</Text>
         {renderWaveform()}
       </View>
 
