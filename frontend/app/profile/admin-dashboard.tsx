@@ -328,24 +328,123 @@ export default function AdminDashboard() {
               </TouchableOpacity>
             </View>
             {selectedTrack && (
-              <ScrollView>
+              <ScrollView showsVerticalScrollIndicator={false}>
                 {selectedTrack.artwork_url && (
                   <Image source={{ uri: selectedTrack.artwork_url }} style={styles.modalImage} />
                 )}
                 <Text style={styles.modalTrackTitle}>{selectedTrack.title}</Text>
-                <Text style={styles.modalTrackArtist}>{selectedTrack.artist}</Text>
-                <View style={styles.modalActions}>
-                  <TouchableOpacity style={styles.approveBtn}>
-                    <Ionicons name="checkmark" size={24} color="#fff" />
-                    <Text style={styles.btnText}>Approve</Text>
+                <Text style={styles.modalTrackArtist}>{selectedTrack.producer_name || selectedTrack.artist}</Text>
+                
+                {/* Track Details */}
+                <View style={styles.trackDetails}>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Genre:</Text>
+                    <Text style={styles.detailValue}>{selectedTrack.genre}</Text>
+                  </View>
+                  {selectedTrack.bpm && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>BPM:</Text>
+                      <Text style={styles.detailValue}>{selectedTrack.bpm}</Text>
+                    </View>
+                  )}
+                  {selectedTrack.key && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Key:</Text>
+                      <Text style={styles.detailValue}>{selectedTrack.key}</Text>
+                    </View>
+                  )}
+                  {selectedTrack.label && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Label:</Text>
+                      <Text style={styles.detailValue}>{selectedTrack.label}</Text>
+                    </View>
+                  )}
+                  {selectedTrack.description && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Description:</Text>
+                      <Text style={styles.detailValue}>{selectedTrack.description}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Play Button */}
+                {selectedTrack.audio_url && (
+                  <TouchableOpacity 
+                    style={styles.playBtn} 
+                    onPress={() => handlePlayTrack(selectedTrack)}
+                  >
+                    <Ionicons name="play" size={20} color="#fff" />
+                    <Text style={styles.btnText}>Écouter</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.rejectBtn}>
+                )}
+                
+                {/* Action Buttons */}
+                <View style={styles.modalActions}>
+                  <TouchableOpacity 
+                    style={[styles.approveBtn, processing && styles.btnDisabled]} 
+                    onPress={() => handleApproveTrack(selectedTrack)}
+                    disabled={processing}
+                  >
+                    {processing ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <>
+                        <Ionicons name="checkmark" size={24} color="#fff" />
+                        <Text style={styles.btnText}>Approuver</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.rejectBtn, processing && styles.btnDisabled]} 
+                    onPress={() => setShowRejectModal(true)}
+                    disabled={processing}
+                  >
                     <Ionicons name="close" size={24} color="#fff" />
-                    <Text style={styles.btnText}>Reject</Text>
+                    <Text style={styles.btnText}>Rejeter</Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Reject Modal */}
+      <Modal visible={showRejectModal} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.rejectModalContent}>
+            <Text style={styles.rejectModalTitle}>Raison du rejet</Text>
+            <TextInput
+              style={styles.rejectInput}
+              placeholder="Expliquez pourquoi cette track est rejetée..."
+              placeholderTextColor={Colors.textMuted}
+              value={rejectionReason}
+              onChangeText={setRejectionReason}
+              multiline
+              numberOfLines={4}
+            />
+            <View style={styles.rejectModalActions}>
+              <TouchableOpacity 
+                style={styles.cancelBtn} 
+                onPress={() => {
+                  setShowRejectModal(false);
+                  setRejectionReason('');
+                }}
+              >
+                <Text style={styles.cancelBtnText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.confirmRejectBtn, processing && styles.btnDisabled]} 
+                onPress={() => selectedTrack && handleRejectTrack(selectedTrack)}
+                disabled={processing}
+              >
+                {processing ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.confirmRejectBtnText}>Confirmer le rejet</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
