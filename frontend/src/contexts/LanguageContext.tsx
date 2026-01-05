@@ -2622,7 +2622,7 @@ const translations: Record<Language, Record<string, string>> = {
     'login.signIn': '登录',
     'login.noAccount': '还没有账户？',
     'login.signUp': '注册',
-    'login.subtitle': '免费House音乐推广池',
+    'login.subtitle': 'House音乐推广池',
     'signup.welcome': '欢迎来到SPYNNERS！',
     'signup.joinCommunity': '加入最大的House音乐DJ和制作人社区',
     'signup.youAre': '你是...',
