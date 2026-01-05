@@ -186,6 +186,14 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.dangerZone': 'Danger Zone',
     'profile.deleteAccount': 'Delete my account',
     'profile.deleteAccountWarning': 'Deleting your account is irreversible. All your data, tracks, favorites and messages will be permanently deleted.',
+    'profile.email': 'Email',
+    'profile.verified': 'Verified',
+    'profile.role': 'Role',
+    'profile.sacemNumber': 'SACEM Number',
+    'profile.favoriteGenres': 'Favorite Genres',
+    'profile.socialLinks': 'Social Networks',
+    'profile.offlineSessions': 'Offline Sessions',
+    'profile.offlineSessionsDesc': 'Manage SPYN offline sessions',
     
     // Common
     'common.cancel': 'Cancel',
