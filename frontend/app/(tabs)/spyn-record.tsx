@@ -132,6 +132,32 @@ export default function SpynRecordScreen() {
   const [identifiedTracks, setIdentifiedTracks] = useState<IdentifiedTrack[]>([]);
   const [currentAnalysis, setCurrentAnalysis] = useState<string>('');
   
+  // End Session Modal state
+  const [showEndSessionModal, setShowEndSessionModal] = useState(false);
+  const [correctedVenue, setCorrectedVenue] = useState('');
+  const [whoPlayed, setWhoPlayed] = useState<'me' | 'another' | null>(null);
+  const [otherDjName, setOtherDjName] = useState('');
+  const [saveMix, setSaveMix] = useState(true);
+  const [sessionFileUri, setSessionFileUri] = useState<string>('');
+  const [sessionStartTime, setSessionStartTime] = useState<string>('');
+  
+  // Location state
+  const [location, setLocation] = useState<{
+    latitude?: number;
+    longitude?: number;
+    venue?: string;
+    city?: string;
+    country?: string;
+    venue_type?: string;
+    is_valid_venue?: boolean;
+  } | null>(null);
+  const [locationPermission, setLocationPermission] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(true);
+  
+  // Diamond modal
+  const [showDiamondModal, setShowDiamondModal] = useState(false);
+  const diamondRotate = useRef(new Animated.Value(0)).current;
+  
   // Waveform
   const [waveformData, setWaveformData] = useState<WaveformBar[]>([]);
   
