@@ -140,8 +140,14 @@ export default function PlaylistScreen() {
   // Play all tracks in playlist
   const playAllTracks = async () => {
     if (playlistTracks.length > 0) {
-      await playTrack(playlistTracks[0]);
+      // Pass the entire playlist to enable next/previous
+      await playTrack(playlistTracks[0], playlistTracks);
     }
+  };
+  
+  // Play a single track from playlist (with queue)
+  const playSingleTrack = async (track: Track) => {
+    await playTrack(track, playlistTracks);
   };
 
   // Share playlist
