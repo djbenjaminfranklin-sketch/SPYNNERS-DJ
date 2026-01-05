@@ -2561,6 +2561,69 @@ async def get_all_tracks(request: GetTracksRequest, authorization: str = Header(
         print(f"[Tracks] Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ==================== RANKINGS API ====================
+
+class GetRankingsRequest(BaseModel):
+    sort_by: str = "download_count"  # download_count, average_rating, created_date
+    genre: Optional[str] = None
+    limit: int = 50
+    offset: int = 0
+
+@app.post("/api/tracks/rankings")
+async def get_track_rankings(request: GetRankingsRequest, authorization: str = Header(None)):
+    """
+    Get track rankings sorted by downloads, rating, or date.
+    Fetches real data from Spynners API.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
+        
+        print(f"[Rankings] Getting rankings sorted by: {request.sort_by}, genre: {request.genre}")
+        
+        # Build request body for Spynners native API
+        body = {
+            "limit": request.limit,
+            "offset": request.offset,
+            "sort_by": request.sort_by,  # Pass sort parameter
+        }
+        if request.genre and request.genre != 'all':
+            body["genre"] = request.genre
+        
+        # Call Spynners native API
+        result = await call_spynners_function("nativeGetTracks", body, authorization)
+        
+        # If result is successful, sort locally if API doesn't support sorting
+        if result and isinstance(result, dict):
+            tracks = result.get("tracks", [])
+            
+            # Apply sorting based on sort_by parameter
+            if request.sort_by == "download_count":
+                tracks.sort(key=lambda x: x.get("download_count", 0) or 0, reverse=True)
+            elif request.sort_by == "average_rating":
+                tracks.sort(key=lambda x: x.get("average_rating", 0) or 0, reverse=True)
+            elif request.sort_by == "created_date":
+                tracks.sort(key=lambda x: x.get("created_date", "") or "", reverse=True)
+            elif request.sort_by == "play_count":
+                tracks.sort(key=lambda x: x.get("play_count", 0) or 0, reverse=True)
+            
+            # Filter only approved tracks
+            approved_tracks = [t for t in tracks if t.get("status") == "approved" or t.get("is_approved") == True or not t.get("status")]
+            
+            result["tracks"] = approved_tracks[:request.limit]
+            print(f"[Rankings] Returning {len(result['tracks'])} ranked tracks")
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Rankings] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 class GetMyTracksRequest(BaseModel):
     status: Optional[str] = None  # approved|pending
     limit: int = 50
