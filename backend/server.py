@@ -2835,23 +2835,24 @@ class AnalyticsCSVRequest(BaseModel):
 async def export_sessions_csv(request: AnalyticsCSVRequest, authorization: str = Header(None)):
     """
     Export DJ sessions as CSV report.
-    Includes: DJ Name, SACEM Number, Date, Time, Venue, Track Title, Artist, ISRC, ISWC
+    Groups tracks by session with clear separation.
+    Includes: Session ID, Date, Start Time, End Time, Venue, DJ Name, SACEM, Track #, Title, Artist, ISRC, ISWC
     """
     import csv
     import io
     from fastapi.responses import Response
+    from collections import defaultdict
     
     try:
         if not authorization:
             raise HTTPException(status_code=401, detail="Authorization required")
         
-        print(f"[Analytics CSV] Generating CSV report...")
+        print(f"[Analytics CSV] Generating CSV report with session grouping...")
         print(f"[Analytics CSV] Date range: {request.start_date} to {request.end_date}")
         
         # Get user info from token
         user_info = {}
         try:
-            # Try to get user info from Spynners
             user_result = await call_spynners_function("nativeGetCurrentUser", {}, authorization)
             if user_result:
                 user_info = user_result
@@ -2862,10 +2863,10 @@ async def export_sessions_csv(request: AnalyticsCSVRequest, authorization: str =
         dj_name = user_info.get('full_name') or user_info.get('name') or 'DJ'
         sacem_number = user_info.get('sacem_number') or user_info.get('sacem') or 'N/A'
         
-        # Get live track plays (these are the DJ's sessions)
+        # Get live track plays
         plays_data = []
         try:
-            body = {"limit": 1000}  # Get all plays
+            body = {"limit": 1000}
             result = await call_spynners_function("nativeGetLiveTrackPlays", body, authorization)
             
             if isinstance(result, dict):
@@ -2877,40 +2878,67 @@ async def export_sessions_csv(request: AnalyticsCSVRequest, authorization: str =
         except Exception as e:
             print(f"[Analytics CSV] Error getting live plays: {e}")
         
-        # Filter by date range if specified
+        # Filter by date range and parse dates
         filtered_plays = []
         for play in plays_data:
             play_date_str = play.get('played_at') or play.get('created_at') or play.get('timestamp')
             if play_date_str:
                 try:
-                    # Parse the date string
                     if 'T' in play_date_str:
                         play_date = datetime.fromisoformat(play_date_str.replace('Z', '+00:00'))
                     else:
                         play_date = datetime.strptime(play_date_str, '%Y-%m-%d')
                     
-                    # Check date range
                     include = True
                     if request.start_date:
                         start = datetime.strptime(request.start_date, '%Y-%m-%d')
                         if play_date.replace(tzinfo=None) < start:
                             include = False
                     if request.end_date:
-                        end = datetime.strptime(request.end_date, '%Y-%m-%d')
-                        # Include the end date (add one day)
-                        end = end.replace(hour=23, minute=59, second=59)
+                        end = datetime.strptime(request.end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
                         if play_date.replace(tzinfo=None) > end:
                             include = False
                     
                     if include:
+                        play['_parsed_date'] = play_date
                         filtered_plays.append(play)
                 except Exception as date_error:
                     print(f"[Analytics CSV] Date parse error: {date_error}")
-                    filtered_plays.append(play)  # Include if can't parse date
+                    filtered_plays.append(play)
             else:
-                filtered_plays.append(play)  # Include if no date
+                filtered_plays.append(play)
         
         print(f"[Analytics CSV] Filtered to {len(filtered_plays)} plays")
+        
+        # Group plays by session
+        # A session is defined by: same date + same venue (or session_id if available)
+        sessions = defaultdict(list)
+        
+        for play in filtered_plays:
+            # Get session identifier
+            session_id = play.get('session_id') or play.get('sessionId')
+            
+            if not session_id:
+                # Create session key from date + venue
+                play_date = play.get('_parsed_date')
+                if play_date:
+                    date_key = play_date.strftime('%Y-%m-%d')
+                else:
+                    date_key = play.get('played_at', '')[:10] if play.get('played_at') else 'unknown'
+                
+                venue = play.get('venue') or play.get('club_name') or play.get('location', {})
+                if isinstance(venue, dict):
+                    venue = venue.get('venue') or venue.get('name') or 'Unknown'
+                venue = venue or 'Unknown'
+                
+                session_id = f"{date_key}_{venue}"
+            
+            sessions[session_id].append(play)
+        
+        print(f"[Analytics CSV] Grouped into {len(sessions)} sessions")
+        
+        # Sort sessions by date (most recent first)
+        sorted_sessions = sorted(sessions.items(), key=lambda x: x[0], reverse=True)
         
         # Create CSV in memory
         output = io.StringIO()
@@ -2918,60 +2946,90 @@ async def export_sessions_csv(request: AnalyticsCSVRequest, authorization: str =
         
         # Write header row
         headers = [
+            'Session ID',
+            'Date Session',
+            'Heure Début',
+            'Heure Fin',
+            'Venue',
             'DJ Name',
             'SACEM Number',
-            'Date',
-            'Time',
-            'Venue',
+            'Track #',
             'Track Title',
             'Artist',
             'ISRC',
-            'ISWC'
+            'ISWC',
+            'Heure Play'
         ]
         writer.writerow(headers)
         
-        # Write data rows
-        for play in filtered_plays:
-            # Parse date and time
-            play_datetime = play.get('played_at') or play.get('created_at') or play.get('timestamp') or ''
-            date_str = 'N/A'
-            time_str = 'N/A'
+        session_counter = 1
+        
+        for session_key, tracks in sorted_sessions:
+            # Sort tracks within session by time
+            tracks_sorted = sorted(tracks, key=lambda x: x.get('played_at', '') or x.get('created_at', ''))
             
-            if play_datetime:
-                try:
-                    if 'T' in play_datetime:
-                        dt = datetime.fromisoformat(play_datetime.replace('Z', '+00:00'))
-                        date_str = dt.strftime('%d/%m/%Y')
-                        time_str = dt.strftime('%H:%M')
-                    else:
-                        date_str = play_datetime
-                except:
-                    date_str = play_datetime[:10] if len(play_datetime) >= 10 else play_datetime
+            # Get session info from first and last track
+            first_track = tracks_sorted[0] if tracks_sorted else {}
+            last_track = tracks_sorted[-1] if tracks_sorted else {}
             
-            # Get venue info
-            venue = play.get('venue') or play.get('club_name') or play.get('location', {})
+            # Session date
+            session_date = 'N/A'
+            first_dt = first_track.get('_parsed_date')
+            if first_dt:
+                session_date = first_dt.strftime('%d/%m/%Y')
+            
+            # Start and end time
+            start_time = 'N/A'
+            end_time = 'N/A'
+            if first_dt:
+                start_time = first_dt.strftime('%H:%M')
+            last_dt = last_track.get('_parsed_date')
+            if last_dt:
+                end_time = last_dt.strftime('%H:%M')
+            
+            # Venue
+            venue = first_track.get('venue') or first_track.get('club_name') or first_track.get('location', {})
             if isinstance(venue, dict):
                 venue = venue.get('venue') or venue.get('name') or 'N/A'
             venue = venue or 'N/A'
             
-            # Get track info
-            track_title = play.get('track_title') or play.get('title') or 'N/A'
-            artist = play.get('track_artist') or play.get('artist') or play.get('producer_name') or 'N/A'
-            isrc = play.get('isrc') or play.get('isrc_code') or 'N/A'
-            iswc = play.get('iswc') or play.get('iswc_code') or 'N/A'
+            # Generate readable session ID
+            readable_session_id = f"SESSION-{session_counter:03d}"
             
-            row = [
-                dj_name,
-                sacem_number,
-                date_str,
-                time_str,
-                venue,
-                track_title,
-                artist,
-                isrc,
-                iswc
-            ]
-            writer.writerow(row)
+            # Write each track in the session
+            for track_num, play in enumerate(tracks_sorted, 1):
+                track_title = play.get('track_title') or play.get('title') or 'N/A'
+                artist = play.get('track_artist') or play.get('artist') or play.get('producer_name') or 'N/A'
+                isrc = play.get('isrc') or play.get('isrc_code') or 'N/A'
+                iswc = play.get('iswc') or play.get('iswc_code') or 'N/A'
+                
+                # Track play time
+                track_time = 'N/A'
+                track_dt = play.get('_parsed_date')
+                if track_dt:
+                    track_time = track_dt.strftime('%H:%M:%S')
+                
+                row = [
+                    readable_session_id,
+                    session_date,
+                    start_time,
+                    end_time,
+                    venue,
+                    dj_name,
+                    sacem_number,
+                    track_num,
+                    track_title,
+                    artist,
+                    isrc,
+                    iswc,
+                    track_time
+                ]
+                writer.writerow(row)
+            
+            # Add empty row between sessions for visual separation
+            writer.writerow([])
+            
+            session_counter += 1
         
         # Get CSV content
         csv_content = output.getvalue()
@@ -2980,7 +3038,7 @@ async def export_sessions_csv(request: AnalyticsCSVRequest, authorization: str =
         # Generate filename with date
         filename = f"spynners_sessions_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
         
-        print(f"[Analytics CSV] CSV generated: {len(csv_content)} bytes, {len(filtered_plays)} rows")
+        print(f"[Analytics CSV] CSV generated: {len(csv_content)} bytes, {len(sessions)} sessions, {len(filtered_plays)} total tracks")
         
         # Return CSV as downloadable file
         return Response(
