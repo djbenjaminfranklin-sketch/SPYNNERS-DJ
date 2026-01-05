@@ -2450,6 +2450,7 @@ const translations: Record<Language, Record<string, string>> = {
     'rankings.topDownloads': 'Meiste Downloads',
     'rankings.topRated': 'Beste Bewertung',
     'rankings.newReleases': 'Neuheiten',
+    'rankings.mostPlayed': 'Meistgespielt',
     'rankings.loading': 'Lade Ranglisten...',
     'rankings.noTracks': 'Keine Tracks gefunden',
     'rankings.tryDifferentGenre': 'Versuche ein anderes Genre',
