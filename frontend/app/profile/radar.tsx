@@ -381,7 +381,7 @@ export default function LiveRadarScreen() {
       >
         {/* World Map */}
         <View style={styles.mapContainer}>
-          <Text style={styles.mapTitle}>🗺️ Carte des plays en direct</Text>
+          <Text style={styles.mapTitle}>🗺️ {t('radar.liveMap')}</Text>
           <View style={styles.mapWrapper}>
             {/* World map background - using a simple SVG-like representation */}
             <LinearGradient 
@@ -401,17 +401,17 @@ export default function LiveRadarScreen() {
             <View style={styles.mapLegend}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: '#F44336' }]} />
-                <Text style={styles.legendText}>En direct</Text>
+                <Text style={styles.legendText}>{t('radar.live')}</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: '#666' }]} />
-                <Text style={styles.legendText}>Récent</Text>
+                <Text style={styles.legendText}>{t('radar.recent')}</Text>
               </View>
             </View>
           </View>
           
           {recentPlays.filter(p => p.is_live).length === 0 && (
-            <Text style={styles.noLiveText}>Aucun play en direct pour le moment</Text>
+            <Text style={styles.noLiveText}>{t('radar.noLivePlays')}</Text>
           )}
         </View>
 
@@ -420,7 +420,7 @@ export default function LiveRadarScreen() {
           <View style={styles.autoMessageHeader}>
             <View style={styles.autoMessageTitleRow}>
               <Ionicons name="chatbubble-ellipses" size={20} color={Colors.primary} />
-              <Text style={styles.autoMessageTitle}>Message automatique</Text>
+              <Text style={styles.autoMessageTitle}>{t('radar.automaticMessage')}</Text>
             </View>
             <TouchableOpacity 
               style={[styles.toggleButton, autoMessageEnabled && styles.toggleButtonActive]}
@@ -431,7 +431,7 @@ export default function LiveRadarScreen() {
           </View>
           
           <Text style={styles.autoMessageDesc}>
-            Envoyez automatiquement un message aux DJs qui jouent vos tracks
+            {t('radar.automaticMessageDesc')}
           </Text>
           
           {autoMessageEnabled && (
@@ -439,7 +439,7 @@ export default function LiveRadarScreen() {
               style={styles.autoMessageInput}
               value={autoMessage}
               onChangeText={setAutoMessage}
-              placeholder="Votre message automatique..."
+              placeholder={t('radar.autoMessagePlaceholder')}
               placeholderTextColor={Colors.textMuted}
               multiline
               numberOfLines={2}
@@ -452,19 +452,19 @@ export default function LiveRadarScreen() {
           <View style={styles.statItem}>
             <Ionicons name="radio" size={20} color="#F44336" />
             <Text style={styles.statValue}>{recentPlays.filter(p => p.is_live).length}</Text>
-            <Text style={styles.statLabel}>En direct</Text>
+            <Text style={styles.statLabel}>{t('radar.live')}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Ionicons name="play-circle" size={20} color="#4CAF50" />
             <Text style={styles.statValue}>{recentPlays.length}</Text>
-            <Text style={styles.statLabel}>Récents</Text>
+            <Text style={styles.statLabel}>{t('radar.recent')}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Ionicons name="musical-notes" size={20} color="#FF9800" />
             <Text style={styles.statValue}>{myTracksCount}</Text>
-            <Text style={styles.statLabel}>Mes tracks</Text>
+            <Text style={styles.statLabel}>{t('radar.myTracks')}</Text>
           </View>
         </View>
 
@@ -476,7 +476,7 @@ export default function LiveRadarScreen() {
           >
             <Ionicons name="person" size={18} color={activeTab === 'my_tracks' ? Colors.primary : Colors.textMuted} />
             <Text style={[styles.tabText, activeTab === 'my_tracks' && styles.tabTextActive]}>
-              Mes Tracks
+              {t('radar.myTracks')}
             </Text>
           </TouchableOpacity>
           
@@ -486,7 +486,7 @@ export default function LiveRadarScreen() {
           >
             <Ionicons name="globe" size={18} color={activeTab === 'global' ? Colors.primary : Colors.textMuted} />
             <Text style={[styles.tabText, activeTab === 'global' && styles.tabTextActive]}>
-              Global
+              {t('radar.global')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -495,7 +495,7 @@ export default function LiveRadarScreen() {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Chargement...</Text>
+            <Text style={styles.loadingText}>{t('common.loading')}</Text>
           </View>
         ) : error ? (
           <View style={styles.emptyContainer}>
