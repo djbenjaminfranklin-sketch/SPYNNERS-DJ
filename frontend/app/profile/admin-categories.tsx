@@ -31,6 +31,8 @@ const CATEGORIES = [
   { id: 'producer_star', name: 'Producer Star', icon: 'star', color: '#FF9800', count: 0 },
   { id: 'producer', name: 'Producer', icon: 'musical-note', color: '#4CAF50', count: 0 },
   { id: 'music_lover', name: 'Music Lover', icon: 'people', color: '#E91E63', count: 0 },
+  { id: 'dj', name: 'DJ', icon: 'headset', color: '#2196F3', count: 0 },
+  { id: 'dj_producer', name: 'DJ/Producer', icon: 'disc', color: '#00BCD4', count: 0 },
 ];
 
 type UserItem = {
@@ -41,11 +43,12 @@ type UserItem = {
   avatar_url?: string;
   user_type?: string;
   nationality?: string;
+  role?: string;
 };
 
 export default function AdminCategories() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,19 +71,39 @@ export default function AdminCategories() {
 
   const loadUsers = async () => {
     try {
-      const response = await base44Users.list({ limit: 1000 });
-      const userList = Array.isArray(response) ? response : (response?.items || []);
+      // Fetch from Spynners via admin endpoint
+      const response = await axios.get(`${BACKEND_URL}/api/admin/users?limit=1000`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      let userList: UserItem[] = [];
+      if (response.data?.success && response.data?.users) {
+        userList = response.data.users.map((u: any) => ({
+          id: u.id || u._id,
+          full_name: u.full_name || u.name,
+          artist_name: u.artist_name,
+          email: u.email,
+          avatar_url: u.avatar_url,
+          user_type: u.user_type,
+          nationality: u.nationality,
+          role: u.role,
+        }));
+      }
+      
       setUsers(userList);
       
-      // Update category counts
+      // Update category counts based on user_type
       const updatedCategories = CATEGORIES.map(cat => ({
         ...cat,
-        count: userList.filter((u: any) => 
-          u.user_type?.toLowerCase() === cat.id.replace('_', ' ') ||
-          u.user_type?.toLowerCase() === cat.name.toLowerCase()
-        ).length,
+        count: userList.filter((u: any) => {
+          const ut = (u.user_type || '').toLowerCase().replace(/[_\s]/g, '');
+          const catId = cat.id.replace(/_/g, '');
+          return ut === catId || ut.includes(catId) || catId.includes(ut);
+        }).length,
       }));
       setCategories(updatedCategories);
+      
+      console.log('[AdminCategories] Loaded', userList.length, 'users');
     } catch (error) {
       console.error('[AdminCategories] Error:', error);
     } finally {
