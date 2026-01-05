@@ -770,6 +770,88 @@ async def get_tracks(limit: int = 100, genre: Optional[str] = None):
         "tracks": [serialize_doc(t) for t in tracks]
     }
 
+@app.get("/api/tracks/{track_id}")
+async def get_track_by_id(track_id: str, authorization: Optional[str] = Header(None)):
+    """Get a single track by ID"""
+    try:
+        print(f"[Tracks] Getting track by ID: {track_id}")
+        
+        # Try local database first
+        track = tracks_collection.find_one({"_id": ObjectId(track_id)}) if ObjectId.is_valid(track_id) else None
+        
+        if track:
+            return serialize_doc(track)
+        
+        # Try Spynners native API
+        headers = {}
+        if authorization:
+            headers["Authorization"] = authorization
+        
+        response = requests.get(
+            f"https://spynners.com/api/tracks/{track_id}",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        
+        # Fallback: search in all tracks
+        all_tracks_response = requests.post(
+            "https://spynners.com/api/functions/nativeGetTracks",
+            json={"limit": 500},
+            headers=headers,
+            timeout=15
+        )
+        
+        if all_tracks_response.status_code == 200:
+            data = all_tracks_response.json()
+            tracks = data.get("tracks", [])
+            for t in tracks:
+                if t.get("id") == track_id or t.get("_id") == track_id:
+                    return t
+        
+        raise HTTPException(status_code=404, detail="Track not found")
+    except Exception as e:
+        print(f"[Tracks] Error getting track: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/api/tracks/{track_id}")
+async def update_track(track_id: str, request: Request, authorization: Optional[str] = Header(None)):
+    """Update a track"""
+    try:
+        body = await request.json()
+        print(f"[Tracks] Updating track {track_id}: {body}")
+        
+        headers = {}
+        if authorization:
+            headers["Authorization"] = authorization
+        
+        # Try Spynners native API
+        response = requests.put(
+            f"https://spynners.com/api/tracks/{track_id}",
+            json=body,
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code in [200, 201]:
+            return response.json()
+        
+        # Fallback to local update
+        if ObjectId.is_valid(track_id):
+            result = tracks_collection.update_one(
+                {"_id": ObjectId(track_id)},
+                {"$set": body}
+            )
+            if result.modified_count > 0:
+                return {"success": True, "message": "Track updated"}
+        
+        raise HTTPException(status_code=response.status_code, detail="Failed to update track")
+    except Exception as e:
+        print(f"[Tracks] Error updating track: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/tracks/upload")
 async def upload_track(
     title: str = Form(...),
