@@ -218,16 +218,11 @@ export default function AdminScreen() {
           {ADMIN_MENUS.map((menu) => (
             <TouchableOpacity
               key={menu.id}
-              style={styles.menuCard}
+              style={[styles.menuCard, { backgroundColor: menu.colors[0] }]}
               onPress={() => router.push(menu.route as any)}
               activeOpacity={0.8}
             >
-              <LinearGradient
-                colors={menu.colors}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.menuGradient}
-              >
+              <View style={styles.menuGradient}>
                 <View style={styles.menuIconContainer}>
                   <Ionicons name={menu.icon as any} size={32} color="#fff" />
                 </View>
@@ -240,7 +235,7 @@ export default function AdminScreen() {
                     <Text style={styles.menuBadgeText}>{stats?.pending_tracks}</Text>
                   </View>
                 )}
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
           ))}
         </View>
