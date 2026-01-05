@@ -24,7 +24,7 @@ const translations: Record<Language, Record<string, string>> = {
     'login.signIn': 'Sign In',
     'login.noAccount': "Don't have an account?",
     'login.signUp': 'Sign Up',
-    'login.subtitle': 'Free House Music Promo Pool',
+    'login.subtitle': 'House Music Promo Pool',
     
     // Signup
     'signup.welcome': 'Welcome to SPYNNERS!',
@@ -586,7 +586,7 @@ const translations: Record<Language, Record<string, string>> = {
     'login.signIn': 'Se connecter',
     'login.noAccount': "Pas encore de compte ?",
     'login.signUp': "S'inscrire",
-    'login.subtitle': 'Free House Music Promo Pool',
+    'login.subtitle': 'House Music Promo Pool',
     
     // Signup
     'signup.welcome': 'Bienvenue sur SPYNNERS!',
@@ -1157,7 +1157,7 @@ const translations: Record<Language, Record<string, string>> = {
     'login.signIn': 'Iniciar Sesión',
     'login.noAccount': '¿No tienes cuenta?',
     'login.signUp': 'Registrarse',
-    'login.subtitle': 'Free House Music Promo Pool',
+    'login.subtitle': 'House Music Promo Pool',
     'signup.welcome': '¡Bienvenido a SPYNNERS!',
     'signup.joinCommunity': 'Únete a la mayor comunidad de DJs y productores de House Music',
     'signup.youAre': 'Eres...',
@@ -1650,7 +1650,7 @@ const translations: Record<Language, Record<string, string>> = {
     'login.signIn': 'Accedi',
     'login.noAccount': 'Non hai un account?',
     'login.signUp': 'Registrati',
-    'login.subtitle': 'Free House Music Promo Pool',
+    'login.subtitle': 'House Music Promo Pool',
     'signup.welcome': 'Benvenuto su SPYNNERS!',
     'signup.joinCommunity': 'Unisciti alla più grande community di DJ e produttori House Music',
     'signup.youAre': 'Sei...',
@@ -2136,7 +2136,7 @@ const translations: Record<Language, Record<string, string>> = {
     'login.signIn': 'Anmelden',
     'login.noAccount': 'Noch kein Konto?',
     'login.signUp': 'Registrieren',
-    'login.subtitle': 'Free House Music Promo Pool',
+    'login.subtitle': 'House Music Promo Pool',
     'signup.welcome': 'Willkommen bei SPYNNERS!',
     'signup.joinCommunity': 'Tritt der größten Community von House Music DJs und Produzenten bei',
     'signup.youAre': 'Du bist...',
