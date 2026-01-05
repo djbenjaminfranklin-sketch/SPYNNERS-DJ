@@ -401,11 +401,14 @@ export default function HomeScreen() {
     setSelectedTrackForSend(track);
     setShowSendTrackModal(true);
     setLoadingMembers(true);
+    setMemberSearchQuery(''); // Reset search
     
     try {
-      // Load members using nativeGetAllUsers
-      const users = await base44Users.nativeGetAllUsers({ search: '', limit: 100, offset: 0 });
+      // Load ALL members using nativeGetAllUsers with higher limit
+      const users = await base44Users.nativeGetAllUsers({ search: '', limit: 500, offset: 0 });
       const userId = user?.id || user?._id || '';
+      
+      console.log('[SendTrack] Loaded', users.length, 'users');
       
       // Filter out current user
       const filteredUsers = users.filter((u: any) => {
@@ -414,9 +417,37 @@ export default function HomeScreen() {
       });
       
       setMembersList(filteredUsers);
+      console.log('[SendTrack] Available members:', filteredUsers.length);
     } catch (error) {
       console.error('Error loading members:', error);
       Alert.alert('Error', 'Could not load members');
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
+  
+  // Search members when user types (server-side search for better results)
+  const searchMembers = async (query: string) => {
+    if (query.length < 2) return; // Only search if at least 2 characters
+    
+    try {
+      setLoadingMembers(true);
+      const users = await base44Users.nativeGetAllUsers({ search: query, limit: 100, offset: 0 });
+      const userId = user?.id || user?._id || '';
+      
+      const filteredUsers = users.filter((u: any) => {
+        const memberId = u.id || u._id || '';
+        return memberId !== userId;
+      });
+      
+      // Merge with existing list (no duplicates)
+      setMembersList(prev => {
+        const existingIds = new Set(prev.map((m: any) => m.id || m._id));
+        const newUsers = filteredUsers.filter((u: any) => !existingIds.has(u.id || u._id));
+        return [...prev, ...newUsers];
+      });
+    } catch (error) {
+      console.error('Error searching members:', error);
     } finally {
       setLoadingMembers(false);
     }
