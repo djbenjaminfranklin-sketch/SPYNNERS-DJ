@@ -619,7 +619,11 @@ export default function SpynRecordScreen() {
             recordingRef.current = null;
             
             if (currentUri) {
-              // Read the finalized audio file as base64
+              // Save this segment URI for later concatenation
+              recordingSegmentsRef.current.push(currentUri);
+              console.log('[SPYN Record] Segment saved. Total segments:', recordingSegmentsRef.current.length);
+              
+              // Read the finalized audio file as base64 for analysis
               try {
                 audioBase64 = await LegacyFileSystem.readAsStringAsync(currentUri, {
                   encoding: LegacyFileSystem.EncodingType.Base64,
@@ -629,12 +633,7 @@ export default function SpynRecordScreen() {
                 console.error('[SPYN Record] Error reading recording file:', readError);
               }
               
-              // Delete the temporary file after reading
-              try {
-                await LegacyFileSystem.deleteAsync(currentUri, { idempotent: true });
-              } catch (e) {
-                // Ignore cleanup errors
-              }
+              // DON'T delete the file - we need it for the final mix!
             }
             
             // Start a new recording to continue
