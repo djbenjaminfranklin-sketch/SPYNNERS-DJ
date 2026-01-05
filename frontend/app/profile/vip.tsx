@@ -155,6 +155,15 @@ export default function VIPScreen() {
     const trackId = selectedTrack.id || selectedTrack._id || '';
     const userId = user?.id || user?._id || '';
     
+    // IMPORTANT: Check if already unlocked FIRST
+    if (isTrackUnlocked(trackId)) {
+      console.log('[VIP] Track already unlocked:', trackId);
+      setShowUnlockModal(false);
+      // Go directly to download
+      handleDownload(selectedTrack);
+      return;
+    }
+    
     if (userDiamonds < UNLOCK_COST) {
       Alert.alert(
         t('vip.notEnoughDiamonds'),
@@ -201,8 +210,17 @@ export default function VIPScreen() {
       }
       
       // Update local state
-      setUnlockedTracks([...unlockedTracks, trackId]);
+      const newUnlockedTracks = [...unlockedTracks, trackId];
+      setUnlockedTracks(newUnlockedTracks);
       setUserDiamonds(prev => prev - UNLOCK_COST);
+      
+      // SAVE TO ASYNC STORAGE (critical for persistence)
+      try {
+        await AsyncStorage.setItem(`${UNLOCKED_TRACKS_KEY}_${userId}`, JSON.stringify(newUnlockedTracks));
+        console.log('[VIP] Unlocks saved to storage');
+      } catch (storageError) {
+        console.log('[VIP] Could not save to storage:', storageError);
+      }
       
       // Refresh user data
       if (refreshUser) await refreshUser();
