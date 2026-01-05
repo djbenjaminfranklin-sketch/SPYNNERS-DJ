@@ -772,6 +772,53 @@ export default function SpynScreen() {
     }
   };
 
+  // Send email immediately for a single track
+  const sendEmailForTrack = async (track: TrackResult) => {
+    if (!track.producer_id) {
+      console.log(`[SPYN] Skipping email for ${track.title} - no producer_id`);
+      return;
+    }
+    
+    if (!token) {
+      console.log('[SPYN] No auth token, skipping email');
+      return;
+    }
+    
+    try {
+      const djName = user?.full_name || 'DJ';
+      
+      console.log(`[SPYN] 📧 Sending email for: ${track.title}`);
+      
+      const emailPayload = {
+        producerId: track.producer_id,
+        trackTitle: track.title || 'Unknown Track',
+        djName: djName,
+        djAvatar: user?.avatar || '',
+        playedAt: new Date().toISOString(),
+        venue: location?.venue || '',
+        city: location?.city || '',
+        country: location?.country || '',
+        trackArtworkUrl: track.cover_image || '',
+      };
+      
+      const response = await axios.post(
+        `${BACKEND_URL}/api/base44/functions/invoke/sendTrackPlayedEmail`,
+        emailPayload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 10000,
+        }
+      );
+      
+      console.log(`[SPYN] ✅ Email sent for: ${track.title}`, response.data);
+    } catch (e: any) {
+      console.log(`[SPYN] ❌ Email error for: ${track.title}`, e?.response?.data || e.message);
+    }
+  };
+
   const stopSession = () => {
     console.log('[SPYN] Stopping session...');
     sessionActiveRef.current = false;
