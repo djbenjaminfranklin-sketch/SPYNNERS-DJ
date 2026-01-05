@@ -177,29 +177,20 @@ export default function SpynRecordScreen() {
   const initOfflineService = async () => {
     try {
       // Check network status
-      const networkStatus = await offlineService.getNetworkStatus();
-      setIsOffline(!networkStatus.isOnline);
+      const isOnline = await offlineService.checkNetworkStatus();
+      setIsOffline(!isOnline);
       
       // Register for network changes
       const unsubscribe = offlineService.onNetworkChange((online) => {
         setIsOffline(!online);
-        if (online && offlineSessionId) {
-          // Network restored - suggest syncing
-          Alert.alert(
-            'Connexion rétablie',
-            'Voulez-vous synchroniser votre session enregistrée ?',
-            [
-              { text: 'Plus tard', style: 'cancel' },
-              { text: 'Synchroniser', onPress: syncOfflineSession }
-            ]
-          );
+        if (online) {
+          // Network restored - check for pending sessions
+          checkPendingSessions();
         }
       });
       
       // Check for pending sessions
-      const sessions = await offlineService.getOfflineSessions();
-      const pending = sessions.filter(s => s.status === 'pending_sync');
-      setPendingSyncCount(pending.length);
+      await checkPendingSessions();
       
       return unsubscribe;
     } catch (error) {
@@ -207,31 +198,54 @@ export default function SpynRecordScreen() {
     }
   };
 
-  // Sync offline session
-  const syncOfflineSession = async () => {
-    if (!offlineSessionId) return;
-    
+  // Check for pending sessions to sync
+  const checkPendingSessions = async () => {
     try {
-      setCurrentAnalysis('Synchronisation en cours...');
-      const result = await offlineService.syncSession(offlineSessionId, token || '');
+      const pendingCount = await offlineService.getPendingCount();
+      setPendingSyncCount(pendingCount);
       
-      if (result.success) {
-        Alert.alert('Succès', 'Session synchronisée avec succès !');
-        setOfflineSessionId(null);
-        
-        // Update pending count
-        const sessions = await offlineService.getOfflineSessions();
-        const pending = sessions.filter(s => s.status === 'pending_sync');
-        setPendingSyncCount(pending.length);
-      } else {
-        Alert.alert('Erreur', 'La synchronisation a échoué. Réessayez plus tard.');
+      if (pendingCount > 0 && !isOffline) {
+        Alert.alert(
+          'Sessions en attente',
+          `Vous avez ${pendingCount} session(s) à synchroniser. Voulez-vous les synchroniser maintenant ?`,
+          [
+            { text: 'Plus tard', style: 'cancel' },
+            { text: 'Synchroniser', onPress: syncAllOfflineSessions }
+          ]
+        );
       }
     } catch (error) {
+      console.error('[SPYN Record] Error checking pending sessions:', error);
+    }
+  };
+
+  // Sync all offline sessions
+  const syncAllOfflineSessions = async () => {
+    try {
+      setCurrentAnalysis('Synchronisation en cours...');
+      const result = await offlineService.syncPendingSessions(token || '');
+      
+      if (result.synced > 0) {
+        Alert.alert('Succès', `${result.synced} session(s) synchronisée(s) !`);
+      }
+      if (result.failed > 0) {
+        Alert.alert('Attention', `${result.failed} session(s) ont échoué. Réessayez plus tard.`);
+      }
+      
+      // Update pending count
+      const pendingCount = await offlineService.getPendingCount();
+      setPendingSyncCount(pendingCount);
+    } catch (error) {
       console.error('[SPYN Record] Sync error:', error);
-      Alert.alert('Erreur', 'Impossible de synchroniser la session.');
+      Alert.alert('Erreur', 'Impossible de synchroniser les sessions.');
     } finally {
       setCurrentAnalysis('');
     }
+  };
+
+  // Sync single offline session (legacy support)
+  const syncOfflineSession = async () => {
+    await syncAllOfflineSessions();
   };
 
   // Detect available audio input devices
