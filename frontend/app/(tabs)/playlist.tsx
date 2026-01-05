@@ -403,7 +403,7 @@ export default function PlaylistScreen() {
                       <TouchableOpacity 
                         key={trackId} 
                         style={[styles.trackItem, isCurrentTrack && styles.trackItemActive]}
-                        onPress={() => playTrack(track)}
+                        onPress={() => playSingleTrack(track)}
                         activeOpacity={0.7}
                       >
                         <Text style={styles.trackNumber}>{index + 1}</Text>
