@@ -48,18 +48,29 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Flag to prevent immediate stop after loading
+  const isSeekingRef = useRef(false);
+
   const onPlaybackStatusUpdate = (status: any) => {
     if (status.isLoaded) {
       setPlaybackPosition(status.positionMillis || 0);
       setPlaybackDuration(status.durationMillis || 0);
       setIsPlaying(status.isPlaying);
       
+      // Skip VIP check while seeking/loading
+      if (isSeekingRef.current) {
+        return;
+      }
+      
       // Check if we've reached the VIP preview end (use ref for current value)
       const track = currentTrackRef.current;
-      if (track?.is_vip && track?.vip_preview_end) {
+      if (track?.is_vip && track?.vip_preview_start !== undefined && track?.vip_preview_end !== undefined) {
+        const previewStartMs = track.vip_preview_start * 1000;
         const previewEndMs = track.vip_preview_end * 1000;
-        if (status.positionMillis >= previewEndMs && status.isPlaying) {
-          console.log('[Player] VIP preview ended at', status.positionMillis / 1000, 'seconds');
+        
+        // Only check if position is within the valid preview range
+        if (status.positionMillis >= previewStartMs && status.positionMillis >= previewEndMs && status.isPlaying) {
+          console.log('[Player] VIP preview ended at', status.positionMillis / 1000, 'seconds (end:', track.vip_preview_end, ')');
           // Stop playback at preview end
           soundRef.current?.pauseAsync();
           setIsPlaying(false);
