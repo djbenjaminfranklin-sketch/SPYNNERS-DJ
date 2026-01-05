@@ -813,6 +813,8 @@ export default function SpynRecordScreen() {
       }
       
       if (audioBase64 && audioBase64.length > 0) {
+        console.log('[SPYN Record] Audio ready for analysis, length:', audioBase64.length, 'isOffline:', isOffline);
+        
         // Check if we're offline
         if (isOffline) {
           console.log('[SPYN Record] Offline mode - saving audio locally for later sync');
