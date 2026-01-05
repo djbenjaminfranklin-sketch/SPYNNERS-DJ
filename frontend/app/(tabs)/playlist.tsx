@@ -552,7 +552,16 @@ const styles = StyleSheet.create({
   modalCreateButton: { flex: 1, borderRadius: 10, overflow: 'hidden' },
   modalCreateGradient: { padding: 14, alignItems: 'center' },
   modalCreateText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  // Detail Modal
+  // Detail View (not Modal)
+  detailOverlayView: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: Colors.background,
+    zIndex: 500, // Below GlobalPlayer (1000)
+  },
   detailModalOverlay: {
     flex: 1,
     backgroundColor: Colors.background,
