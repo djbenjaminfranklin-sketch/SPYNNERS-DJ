@@ -163,10 +163,18 @@ export default function AnalyticsScreen() {
           ratingCount++;
         }
 
-        // Track status
-        if (track.status === 'approved') approvedCount++;
-        else if (track.status === 'pending') pendingCount++;
-        else if (track.status === 'rejected') rejectedCount++;
+        // Track status - if no status, assume approved (visible tracks are usually approved)
+        const status = track.status?.toLowerCase()?.trim();
+        if (status === 'approved' || status === 'published' || status === 'active' || !status) {
+          approvedCount++;
+        } else if (status === 'pending' || status === 'review' || status === 'waiting') {
+          pendingCount++;
+        } else if (status === 'rejected' || status === 'declined') {
+          rejectedCount++;
+        } else {
+          // Unknown status - count as approved
+          approvedCount++;
+        }
 
         // Genre stats
         const genre = track.genre || 'Other';
