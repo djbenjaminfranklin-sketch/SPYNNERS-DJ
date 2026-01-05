@@ -504,47 +504,9 @@ export default function SpynRecordScreen() {
       // Start waveform updates
       waveformIntervalRef.current = setInterval(updateWaveform, 100);
       
-      // For native: Create segments every 30 seconds for analysis at the end
-      // This doesn't interrupt recording - it just saves checkpoints
-      if (Platform.OS !== 'web') {
-        analysisIntervalRef.current = setInterval(async () => {
-          if (!isRecordingRef.current || !recordingRef.current) return;
-          
-          try {
-            console.log('[SPYN Record] Creating segment checkpoint...');
-            
-            // Stop current recording
-            await recordingRef.current.stopAndUnloadAsync();
-            const segmentUri = recordingRef.current.getURI();
-            recordingRef.current = null;
-            
-            if (segmentUri) {
-              recordingSegmentsRef.current.push(segmentUri);
-              console.log('[SPYN Record] Segment saved:', recordingSegmentsRef.current.length);
-            }
-            
-            // Wait for iOS to release audio session
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            // Start new recording
-            if (isRecordingRef.current) {
-              await Audio.setAudioModeAsync({
-                allowsRecordingIOS: true,
-                playsInSilentModeIOS: true,
-              });
-              const { recording } = await Audio.Recording.createAsync(
-                Audio.RecordingOptionsPresets.HIGH_QUALITY
-              );
-              recordingRef.current = recording;
-              console.log('[SPYN Record] New segment started');
-            }
-          } catch (segmentError) {
-            console.error('[SPYN Record] Segment error:', segmentError);
-          }
-        }, 30000); // Every 30 seconds
-      }
-      
-      console.log('[SPYN Record] Recording mode: Continuous with segments (analysis at end)');
+      // Simple continuous recording - no segmentation
+      // Analysis will be done at the end when recording stops
+      console.log('[SPYN Record] Recording mode: Simple continuous (analysis at end)');
       console.log('[SPYN Record] ✅ Recording started successfully');
       
     } catch (error) {
