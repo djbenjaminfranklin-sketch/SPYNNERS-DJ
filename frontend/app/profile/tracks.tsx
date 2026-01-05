@@ -20,7 +20,7 @@ import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import axios from 'axios';
 import Constants from 'expo-constants';
 
-const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://black-diamond-api.preview.emergentagent.com';
+const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://spynners-unlocks.preview.emergentagent.com';
 
 // Colors
 const CYAN_COLOR = '#5CB3CC';

@@ -51,7 +51,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return 'https://black-diamond-api.preview.emergentagent.com';
+  return 'https://spynners-unlocks.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 

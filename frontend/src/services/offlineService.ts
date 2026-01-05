@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://black-diamond-api.preview.emergentagent.com';
+  return 'https://spynners-unlocks.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

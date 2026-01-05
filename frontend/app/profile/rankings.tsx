@@ -18,7 +18,7 @@ import { base44Tracks, Track, base44Auth } from '../../src/services/base44Api';
 import axios from 'axios';
 
 // Backend URL
-const BACKEND_URL = 'https://black-diamond-api.preview.emergentagent.com';
+const BACKEND_URL = 'https://spynners-unlocks.preview.emergentagent.com';
 
 export default function RankingsScreen() {
   const router = useRouter();

@@ -1,87 +1,104 @@
 <analysis>
-
 **original_problem_statement:**
-The user initially reported three bugs:
-1.  A double-play audio bug where pressing play twice plays audio simultaneously.
-2.  An Unknown status on the My Uploads page for tracks.
-3.  Missing translations on various pages, with screenshots provided for reference.
+The user's primary goal is to build out a V.I.P. currency system, fix numerous bugs, and ensure all data presented in the application is synchronized with the main Spynners.com website.
 
-Throughout the session, the user added numerous new requests:
-- Translate the application into all supported languages (Spanish, Italian, German, Chinese) in addition to French.
-- Add a Save button for the auto-message feature on the Live Radar page.
-- Make the language selector a persistent, floating button visible on all pages.
-- Fix a console error related to authentication that appeared on app startup.
-- Fix track statuses showing as Pending when they should be Approved.
-- Redesign the home page menu to be a 3x3 grid with larger icons and text.
-- Add the word Detection under Record on the SPYN Record button.
-- Change the analytics report export from CSV to PDF.
-- Fix the analytics Track Status pie chart which was showing zero for all categories.
-- Implement a currency system in the V.I.P. section where users spend Black Diamonds to unlock and download tracks.
-- Fix a bug where the user's Black Diamond balance shows as 0, despite having a balance on their account.
+Initial requests included fixing a double-play audio bug, Unknown track statuses, and adding translations. The scope rapidly expanded to include:
+- A full Black Diamond currency system for unlocking V.I.P. tracks.
+- Syncing all application data (Rankings, Track plays, etc.) with the live data from the Spynners website.
+- Redesigning the home page and changing the analytics export to PDF.
+- Fixing a bug where the user's Black Diamond balance showed as 0.
+- Linking V.I.P. tracks on the home page to the V.I.P. page, ensuring they are locked and have audio previews.
+- Fixing bugs related to the V.I.P. flow: purchases not being permanent, double-charging diamonds, and download failures.
+- Fixing a double-audio playback bug.
+- Improving the Share Internally feature to show all users and allow server-side searching.
+- Removing the genre selection limit on the Edit Profile page and populating it with the complete list of genres from the website.
 
 **User's preferred language**: Français (French). The next agent MUST respond in French.
 
 **what currently exists?**
-The application has undergone significant changes. Most of the UI has been internationalized (i18n) for 6 languages (EN, FR, ES, IT, DE, ZH). A persistent floating language selector has been added. The home screen has a new 3x3 grid layout. The analytics report now exports as a PDF. A completely new V.I.P. page has been implemented with a UI for unlocking tracks using Black Diamonds. The core SPYN Record analysis feature remains parked and buggy.
+The application now has a partially functional V.I.P. system. The user's Black Diamond balance is correctly fetched from the Spynners API and displayed. Users can spend diamonds to unlock tracks, and the deduction is correctly processed by the backend using the  Spynners API. VIP tracks have a preview functionality where playback is limited to a specific time window.
+
+Several pages, like Rankings, have been refactored to pull live data directly from the Spynners API via new backend-for-frontend endpoints. Many UI/UX bugs have been fixed, including the Share Internally search, login page text, and genre selection on the profile edit page. Internationalization has been expanded to include new text across the app.
+
+However, the V.I.P. system is critically flawed because track unlocks are not persisting correctly across app sessions.
 
 **Last working item**:
-    - Last item agent was working: Fixing a bug where the V.I.P. page shows a user's balance as 0 Black Diamonds even though their account has a balance (e.g., 48). The agent attempted to fix this by creating a new dedicated backend endpoint () to fetch the user's full profile, including diamonds, directly from the Spynners API. However, this attempt failed, and the balance still shows as 0.
-    - Status: IN PROGRESS
+    - Last item agent was working: The user requested that the list of genres on the Edit Profile page should match the website exactly. The agent scraped a list of genres from the existing tracks on the Spynners API, got user confirmation (oui), and then updated the  array in .
+    - Status: COMPLETED
     - Agent Testing Done: N
-    - Which testing method agent to use? both. The backend endpoint  needs to be tested to ensure it correctly fetches and returns the  count from the Spynners API. The frontend  page then needs to be tested to confirm it correctly receives and displays this value.
+    - Which testing method agent to use? Frontend testing agent. The agent should navigate to the Edit Profile page and verify that the new, complete list of genres is displayed and that a user can select more than five genres.
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: V.I.P. page shows 0 Black Diamonds (P0)
-  - Issue 2: Analytics Track Status pie chart shows 0 for all categories (P1)
-  - Issue 3: SPYN Record analysis fails (P2 - Parked by user)
+  - Issue 1: Purchased VIP tracks are re-locked after an app refresh (P0)
+  - Issue 2: Double audio playback when changing tracks (P1)
+  - Issue 3: Analytics Track Status pie chart shows 0 for all categories (P2)
+  - Issue 4: Live Radar does not show plays in real-time (P3)
+  - Issue 5: SPYN Record analysis fails (P4 - Parked by user)
   
   **Issues Detail:**
-  - **Issue 1: V.I.P. page shows 0 Black Diamonds (P0)**
-     - **Attempted fixes:** The agent created a new backend endpoint  in  and modified  to call it, hoping to get the full user object including the  field. This did not work, and the balance remained at 0.
-     - **Next debug checklist:**
-         1.  **Backend ():** Add logging inside the  endpoint to inspect the raw data returned from the Spynners native API call. Verify that the  field (or its equivalent, e.g., ) is present and has the correct value. The field name might be misspelled or nested differently.
-         2.  **Backend ():** Ensure the response from the endpoint correctly includes the diamonds count.
-         3.  **Frontend ():** Add  to inspect the data received from the  call to see what the frontend is actually getting.
-     - **Why fix this issue and what will be achieved with the fix?**: This is critical for the V.I.P. currency system. Without the correct balance, users cannot unlock tracks.
-     - **Status**: IN PROGRESS
-     - **Is recurring issue?**: N
-     - **Should Test frontend/backend/both after fix?**: Both
-     - **Blocked on other issue**: None
-
-  - **Issue 2: Analytics Track Status pie chart shows 0 for all categories (P1)**
-     - **Description**: On the  page, the Track Status pie chart shows 0 for Approved, Pending, and Rejected. The user provided a screenshot confirming this bug.
-     - **Attempted fixes:** The agent modified the counting logic in  to assume tracks with a null/undefined status are approved. However, the screenshot from the user after this fix still showed 0s, which the agent missed.
-     - **Next debug checklist:**
-         1.  In , log the  array that is being processed for the stats to see if it's empty or if the  field is missing.
-         2.  Verify the API call that fetches these tracks returns the correct data for the selected date range. The test user might not have tracks within the default date range.
-         3.  Ensure the logic for counting , , and  correctly handles all possible status strings ('approved', 'pending', 'rejected', ).
-     - **Why fix this issue and what will be achieved with the fix?**: Provides accurate analytics to the user about their track uploads.
+  - **Issue 1: Purchased VIP tracks are re-locked after an app refresh (P0)**
+     - **Attempted fixes**: The agent implemented a system using  in  to store a list of unlocked track IDs (). This was done because creating a  entity on the backend failed. However, the user reports that an unlocked track becomes locked again after a refresh, indicating the  data is either not being saved or not being read correctly. The agent added more logging to  to debug this.
+     - **Next debug checklist**:
+         1. In , inside the  function, add a  to inspect the value of  retrieved from . Verify if it's null, empty, or contains the expected track IDs.
+         2. In , log the  array just before it's saved to  to ensure the new track ID is being correctly added to the list.
+         3. Verify that the  used for  () is consistent and the  is always available.
+         4. Check the logic in  that determines if a track is unlocked (). Log the values to ensure the check is performing as expected.
+     - **Why fix this issue and what will be achieved with the fix?**: This is the most critical bug. The entire VIP currency system is pointless if users cannot permanently access content they have paid for.
      - **Status**: IN PROGRESS
      - **Is recurring issue?**: Y
      - **Should Test frontend/backend/both after fix?**: Frontend
+     - **Blocked on other issue**: None
 
-  - **Issue 3: SPYN Record analysis fails (P2 - Parked by user)**
-     - **Description**: From previous forks. In , a Network Error occurs on the frontend when trying to POST the recorded audio to . The backend never receives the request.
-     - **Next debug checklist**: When un-parked, investigate CORS configuration in  and ensure the frontend is using the correct  for API calls, especially on mobile.
-     - **Why fix this issue and what will be achieved with the fix?**: This is the core functionality of SPYN Record.
-     - **Status**: IN PROGRESS (but parked by user)
+  - **Issue 2: Double audio playback when changing tracks (P1)**
+     - **Description**: The user reported that if they play a track, and then play another track, both sounds play simultaneously.
+     - **Attempted fixes**: The agent added a mutex  to the  to prevent the  function from being called if a sound is already in the process of loading.
+     - **Next debug checklist**:
+         1. Test the fix by quickly playing two different tracks in succession on any page with a track list (e.g., Home, Library).
+         2. Observe the application's audio output to confirm only one track plays at a time.
+         3. Check the device/browser console logs for [Player] Sound is already loading, skipping play request. to confirm the mutex logic is triggering.
+     - **Why fix this issue and what will be achieved with the fix?**: It's a critical and jarring user experience bug that makes the app feel broken.
+     - **Status**: USER VERIFICATION PENDING
      - **Is recurring issue?**: Y
-     - **Should Test frontend/backend/both after fix?**: Both
+     - **Should Test frontend/backend/both after fix?**: Frontend
+
+  - **Issue 3: Analytics Track Status pie chart shows 0 for all categories (P2)**
+     - **Description**: On the  page, the Track Status pie chart shows 0 for Approved, Pending, and Rejected. This is a carry-over issue from a previous session.
+     - **Attempted fixes**: None in this session. A previous agent's fix was ineffective.
+     - **Next debug checklist**:
+         1. In , log the  array that is being processed for the stats to see if it's empty or if the  field is missing or has unexpected values.
+         2. Verify the API call that fetches these tracks returns the correct data for the selected date range.
+     - **Why fix this issue and what will be achieved with the fix?**: To provide accurate analytics to users about their track uploads.
+     - **Status**: NOT STARTED
+     - **Is recurring issue?**: Y
+     - **Should Test frontend/backend/both after fix?**: Frontend
+
+  - **Issue 4: Live Radar does not show plays in real-time (P3)**
+     - **Description**: The user wants the  page to update in real-time as their tracks are played around the world, but it only loads data once on page open.
+     - **Attempted fixes**: None. The agent only verified that it calls an API endpoint.
+     - **Next debug checklist**:
+         1. In , wrap the  function call inside a  within a  hook.
+         2. Ensure the interval is cleared when the component unmounts to prevent memory leaks. A 15-30 second interval would be a good starting point.
+     - **Why fix this issue and what will be achieved with the fix?**: This will fulfill the user's request for a live radar experience, making the feature much more dynamic and engaging.
+     - **Status**: NOT STARTED
+     - **Is recurring issue?**: N
+     - **Should Test frontend/backend/both after fix?**: Frontend
+
+  - **Issue 5: SPYN Record analysis fails (P4 - Parked by user)**
+     - **Description**: From previous forks. A Network Error occurs on the frontend when trying to POST the recorded audio to .
+     - **Status**: NOT STARTED (Parked by user)
+     - **Is recurring issue?**: Y
 
 **In progress Task List**:
-  - **Task 1: Complete and Test V.I.P. Track Unlocking (P1)**
-     - **Where to resume**: The UI is built in , and a backend endpoint  exists to decrement the user's diamond count. However, the actual unlock flow is untested.
-     - **What will be achieved with this?**: Users will be able to spend Black Diamonds to unlock access to VIP tracks.
-     - **Status**: BLOCKED
-     - **Should Test frontend/backend/both after fix?**: Both
-     - **Blocked on something**: Issue 1: V.I.P. page shows 0 Black Diamonds.
+There are no tasks currently in progress. The last task was completed.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-    - **P2:** Test the Save button functionality for the auto-message in . The button was added to the UI, but the save logic and corresponding API call might be missing or untested.
-    - **P2:** SPYN Record - USB Audio Source Detection on Mobile.
+    - **P1:** Link VIP tracks on the  page to the shared  state from AsyncStorage, similar to how it was done on . This includes showing a 🔒 icon and blocking downloads for locked tracks.
+    - **P2:** Implement and test the Save button functionality for the auto-message in . The button was added to the UI, but the save logic and corresponding API call are missing or untested.
+
 - **Future Tasks (from original backlog):**
+    - **P2:** SPYN Record - USB Audio Source Detection on Mobile.
     - **P2:** Upload Track - Artist Autocomplete.
     - **P2:** Upload Track - Metadata Extraction (BPM, artwork).
     - **P3:** Edit Profile - Multiple Statuses (e.g., DJ and Label).
@@ -89,105 +106,98 @@ The application has undergone significant changes. Most of the UI has been inter
     - **P3:** Playlist - Share Button.
 
 **Completed work in this session**
-- **Bug Fixes:**
-  - Fixed double-play audio bug in .
-  - Fixed Unknown status on My Uploads to correctly show Pending or Approved in .
-  - Fixed Pending status on My Uploads to correctly show Approved for tracks with a null status.
-  - Fixed a console error on app startup by silently handling 404s during the initial auth check in .
-- **Internationalization (i18n):**
-  - Added hundreds of translation keys to  for English, French, Spanish, Italian, German, and Chinese.
-  - Replaced hardcoded text across numerous files: , , , , , , .
-- **Feature: Floating Language Selector:**
-  - Created a new  component.
-  - Integrated it into the root  to be persistent across all screens.
-  - Removed old, page-specific language selectors to avoid duplication.
-- **Feature: Home Screen Redesign:**
-  - Re-architected the home screen menu in  into a 3x3 grid.
-  - Increased the size of menu items, icons, and text for better usability.
-  - Updated the SPYN Record button to include Detection text.
-- **Feature: PDF Report Export:**
-  - Replaced the CSV export with a PDF export.
-  - Added  library to the backend.
-  - Created a new  endpoint in .
-  - Updated  on the frontend to request and download the PDF.
-- **Feature: V.I.P. Currency System (UI & Backend):**
-  - Completely redesigned  with a new UI for a currency-based unlock system.
-  - Created a backend endpoint  in  to handle spending diamonds.
-  - Added  function to .
+- **V.I.P. System Implementation & Fixes:**
+  - Fixed the 0 Black Diamonds bug by correctly fetching the user's balance from the Spynners API ().
+  - Fixed server-side diamond deduction by making the backend endpoint () use the  Spynners function.
+  - Implemented VIP track audio previews in  to respect  and .
+  - Fixed VIP track downloads in  by using .
+  - Added a system in  to display a lock icon 🔒 and block downloads for locked VIP tracks, sharing state with the  page via .
+
+- **Data Sync with Spynners Website:**
+  - Refactored the  page to fetch and display live data from a new backend endpoint (), including adding a Most Played tab.
+  - Updated the Edit Profile page () with a complete, live list of genres from the Spynners platform and removed the selection limit.
+
+- **Bug Fixes & UI/UX Improvements:**
+  - Fixed the Share Internally modal () search input field, which was not typable.
+  - Improved the Share Internally feature to load up to 1000 members and perform server-side searching for better performance.
+  - Fixed a crash when sending a track to a user () by calling the correct API method ().
+  - Corrected the subtitle on the login page () by editing the translation in .
+  - Internationalized the default auto-message text on the radar page ().
+  - Fixed a critical crash caused by a missing export of  in .
 
 **Code Architecture**
-
+black_diamonds
 
 **Key Technical Concepts**
-- **i18n at Scale**: Managed translations for 6 languages using a centralized React Context ().
-- **Global UI Components**: Implemented a persistent floating button by adding it to the root layout ().
-- **Backend PDF Generation**: Used the  Python library to dynamically create a multi-page PDF document from database data in a FastAPI endpoint.
-- **API-Driven Currency System**: Designed a system where the frontend UI for unlocking content is driven by a user's balance, and actions trigger backend API calls to update that balance.
+- **Backend-for-Frontend (BFF):** The agent extended the BFF pattern by creating new endpoints in  (e.g., ) to abstract away the native Spynners API and provide clean, ready-to-use data for the Expo frontend.
+- **Client-Side Persistence:** Using  as a workaround to persist the user's purchased/unlocked tracks when the backend  entity creation was failing. This state is shared between  and .
+- **Complex Audio Playback:** The  was significantly enhanced to handle conditional playback logic for VIP previews, including seeking to a start position and stopping playback after a duration using timeouts and  to avoid state closure issues.
+- **Mutex for Race Conditions:** A  () was implemented as a simple mutex in  to prevent a race condition where multiple tracks could be played simultaneously if the user tapped quickly.
+- **Server-Side Search (Debouncing):** The Share Internally feature was improved from a simple client-side filter to a server-side search that triggers as the user types, improving performance with a large user list.
 
 **key DB schema**
-- : Contains user information, including a  field (or a similarly named field) that stores their currency balance.
+- The application interacts with the Spynners platform's data model, not a local DB. Key fields are:
+  - : contains  (currency).
+  - : contains  (boolean),  (number),  (number),  (number),  (number).
 
 **changes in tech stack**
-- **Backend**: Added  for PDF generation.
+- No changes to the core tech stack.
 
 **All files of reference**
-- : The file for the new VIP system, containing the 0 Black Diamonds bug.
-- : Contains all new backend endpoints, including the one intended to fix the diamonds bug.
-- : The central hub for all UI text and translations.
-- : Contains the new 3x3 home screen layout.
-- : Contains the PDF export logic and the bug with the Track Status chart.
-
-**key api endpoints**
-- **POST **: (New) Generates and streams a PDF report of sessions.
-- **PUT **: (New) Updates a user's Black Diamond balance.
-- **GET **: (New) Fetches a user's full profile data, intended to include Black Diamonds.
+- : The core of the VIP system. Contains the bug for unlocks not persisting.
+- : Manages all audio playback. Contains the fix for the double-play bug and the VIP preview logic.
+- : The BFF. Contains the updated endpoints for fetching diamond balance and deducting diamonds.
+- : The main screen. Contains logic for displaying locked VIP tracks and the Share Internally feature.
+- : The central API service file where many function calls and exports were fixed.
 
 **Critical Info for New Agent**
-- **Top Priority**: Your first task is to fix the 0 Black Diamonds bug on the  page. The previous agent's attempt to create a new API endpoint () did not work. Start by debugging this endpoint on the backend () to ensure it's fetching the correct data from the underlying Spynners API. The field name might be different (e.g.,  singular).
-- **User's Expo Go Issues**: The user frequently reports being unable to see changes or connect via Expo Go. This is almost always a caching issue. Always remind the user to **completely close and reopen Expo Go** and/or use the Reload option from the developer menu after you've pushed changes.
-- **Secondary Bug**: After fixing the diamonds, investigate the Track Status pie chart on the  page. The user provided a screenshot showing it's still broken (all 0s) even after the agent attempted a fix.
+- **Top Priority - Unlocks Not Persisting**: Your first task is to fix the bug where purchased VIP tracks become locked again after an app refresh. The current  logic in  is failing. Debug why the list of unlocked track IDs isn't being saved or loaded correctly across sessions. This is the main blocker for the entire VIP feature.
+- **Verify Double-Play Fix**: The second priority is to test and confirm if the double-audio-play bug is truly fixed. The previous agent added a mutex to , but this has not been verified by the user.
+- **Data Sync Philosophy**: The user's core requirement is that the app feels like a native extension of the Spynners.com website. Always prioritize fetching live data from the Spynners API (by creating new BFF endpoints in  if needed) over using stale, mock, or incomplete data.
+- **Expo Go Cache**: The user has repeatedly faced issues where they don't see the latest changes. This is almost always due to Expo Go's cache. Be prepared to instruct the user to **force close the app, clear the cache, or use the Reload option** from the developer menu.
 
 **documents created in this job**
 - None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-- **10. (LATEST)** User reports they have 0 black diamonds on the VIP page, when they should have 48. (BUG REPORTED)
-- **9.** User requests to implement a currency system in VIP using Black Diamonds to unlock tracks and fix the analytics track status showing zero. (NEW TASK)
-- **8.** User requests to change the CSV download to PDF. (NEW TASK)
-- **7.** User requests to redesign the home screen to a 3x3 grid with larger items and add Detection text to the SPYN Record button. (NEW TASK)
-- **6.** User reports tracks are showing as Pending when they are Approved. (BUG REPORTED)
-- **5.** User reports a network connection error on Expo Go. (USER ISSUE)
-- **4.** User reports an authentication error popup on app startup. (BUG REPORTED)
-- **3.** User requests that the language selection flag should remain visible on all pages. (NEW TASK)
-- **2.** User wants to connect via Expo Go. (USER REQUEST)
-- **1.** User requests translations for all languages and a validation button in Live Radar. (NEW TASK)
+- 10. (LATEST) User confirms the agent should use the scraped list of genres for the Edit Profile page. (COMPLETED)
+- 9. User reports that the Edit Profile genre list is incomplete and has a selection limit. (COMPLETED)
+- 8. User reports they cannot send a track after selecting a user in the Share Internally modal. (COMPLETED)
+- 7. User requests to increase the member list limit to 1000 for the Share Internally feature. (COMPLETED)
+- 6. User reports the Share Internally search works, but not all users appear in the list. (COMPLETED)
+- 5. User requests to change the subtitle on the login page from FREE HOUSE MUSIC PROMO POOL to HOUSE MUSIC PROMO POOL. (COMPLETED)
+- 4. User reports a bug with downloading/unlocking (error message) and that the Share Internally search input is not typable. (COMPLETED)
+- 3. User reports that they still cannot download an unlocked track and that unlocking the same track again deducts more diamonds. (PARTIALLY COMPLETED - Double unlock fixed, download not fully verified)
+- 2. User reports that the auto-message on the radar page is in the wrong language, live radar isn't real-time, and they can't download an unlocked track. (PARTIALLY COMPLETED - i18n fixed, others pending)
+- 1. User reports that the VIP purchase button doesn't work and the VIP track preview plays from the beginning instead of the specified start time. (COMPLETED)
 
 **Project Health Check:**
 - **Broken**:
-    - V.I.P. Black Diamond balance display.
-    - Analytics Track Status pie chart.
-    - SPYN Record track analysis functionality (Parked).
-- **Mocked**: None.
+    - V.I.P. track unlock persistence (tracks re-lock on refresh).
+    - Analytics Track Status pie chart (shows all zeros).
+    - Live Radar is not live (does not auto-refresh).
+- **Mocked**:
+    - None.
 
 **3rd Party Integrations**
-- **Spynners Native API:** Primary backend service.
-- **ACRCloud:** Music identification service.
+- **Spynners Native API:** Primary backend service providing all track, user, and ranking data.
+- **ACRCloud:** Music identification service (used by SPYN Record).
 - **Expo (EAS & Tunnel):** Development and deployment platform.
 - **ffmpeg:** Backend dependency for audio processing.
 
 **Testing status**
-- Testing agent used after significant changes: NO
-- Troubleshoot agent used after agent stuck in loop: NO
-- Test files created: None
-- Known regressions:
-    - Analytics Track Status chart remains broken despite an attempted fix.
+  - Testing agent used after significant changes: YES (Backend testing was used to verify API endpoint fixes).
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: None
+  - Known regressions:
+    - The fact that unlocked tracks are not staying unlocked is a functional regression.
 
 **Credentials to test flow:**
 - **Email:** 
 - **Password:** 
 
 **What agent forgot to execute**
-- The agent did not verify the fix for the analytics Track Status chart. A user screenshot showed it was still displaying all zeros, but the agent moved on to the next task.
-- The functionality of the Save button added to the  page was not implemented or tested. The button exists in the UI, but it likely does nothing when pressed.
-
+- The agent has not addressed the Live Radar not real-time issue mentioned by the user.
+- The agent has not addressed the broken Track Status pie chart in the analytics section, which is a known issue from the previous fork.
+- The agent did not implement or test the Save button for the auto-message on the  page.
 </analysis>
