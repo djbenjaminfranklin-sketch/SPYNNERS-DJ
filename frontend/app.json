@@ -22,7 +22,9 @@
         "NSPhotoLibraryAddUsageDescription": "SPYNNERS sauvegarde vos enregistrements DJ et les tracklists exportées dans votre galerie.",
         "NSLocationWhenInUseUsageDescription": "SPYNNERS utilise votre position pour trouver les clubs et événements DJ à proximité.",
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["audio"],
+        "UIBackgroundModes": [
+          "audio"
+        ],
         "NSAppleMusicUsageDescription": "SPYNNERS peut accéder à Apple Music pour enrichir les informations des morceaux identifiés."
       },
       "config": {
@@ -69,7 +71,10 @@
         {
           "photosPermission": "SPYNNERS accède à vos photos pour les pochettes d'album et votre profil."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
