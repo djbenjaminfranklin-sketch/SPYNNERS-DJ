@@ -66,11 +66,17 @@ interface TimeStats {
 
 export default function AnalyticsScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'all'>('month');
+  
+  // CSV Export state
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [csvStartDate, setCsvStartDate] = useState('');
+  const [csvEndDate, setCsvEndDate] = useState('');
+  const [exportingCSV, setExportingCSV] = useState(false);
   
   // Main stats
   const [stats, setStats] = useState({
