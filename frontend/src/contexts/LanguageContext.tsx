@@ -768,6 +768,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.success': 'Succès',
     'common.search': 'Rechercher',
     'common.noResults': 'Aucun résultat',
+    'common.results': 'résultats',
     'common.language': 'Langue',
     'common.selectLanguage': 'Sélectionnez votre langue',
     'common.tracks': 'tracks',
