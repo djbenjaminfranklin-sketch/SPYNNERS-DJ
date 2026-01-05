@@ -1,6 +1,7 @@
 /**
  * Analytics Screen - Detailed Track Statistics
  * Shows comprehensive analytics for producer's tracks
+ * Includes CSV export functionality for DJ sessions
  */
 
 import React, { useState, useEffect } from 'react';
@@ -13,6 +14,10 @@ import {
   ActivityIndicator,
   Dimensions,
   RefreshControl,
+  Alert,
+  Platform,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -21,6 +26,9 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { base44Tracks, base44Notifications, Track } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import Constants from 'expo-constants';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
