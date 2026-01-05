@@ -126,8 +126,9 @@ export default function AdminCategories() {
     
     if (activeFilter !== 'all') {
       filtered = filtered.filter(u => {
-        const userType = u.user_type?.toLowerCase() || '';
-        return userType.includes(activeFilter.replace('_', ' '));
+        const userType = (u.user_type || '').toLowerCase().replace(/[_\s]/g, '');
+        const filterId = activeFilter.replace(/_/g, '');
+        return userType === filterId || userType.includes(filterId) || filterId.includes(userType);
       });
     }
     
