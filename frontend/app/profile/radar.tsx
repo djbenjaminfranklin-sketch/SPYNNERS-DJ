@@ -435,15 +435,27 @@ export default function LiveRadarScreen() {
           </Text>
           
           {autoMessageEnabled && (
-            <TextInput
-              style={styles.autoMessageInput}
-              value={autoMessage}
-              onChangeText={setAutoMessage}
-              placeholder={t('radar.autoMessagePlaceholder')}
-              placeholderTextColor={Colors.textMuted}
-              multiline
-              numberOfLines={2}
-            />
+            <>
+              <TextInput
+                style={styles.autoMessageInput}
+                value={autoMessage}
+                onChangeText={setAutoMessage}
+                placeholder={t('radar.autoMessagePlaceholder')}
+                placeholderTextColor={Colors.textMuted}
+                multiline
+                numberOfLines={2}
+              />
+              <TouchableOpacity 
+                style={styles.saveMessageButton}
+                onPress={() => {
+                  // Save the message (could be to AsyncStorage or backend)
+                  Alert.alert(t('radar.messageSaved'), t('radar.messageSavedDesc'));
+                }}
+              >
+                <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                <Text style={styles.saveMessageButtonText}>{t('radar.saveMessage')}</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
 
