@@ -206,11 +206,8 @@ export default function EditProfileScreen() {
     if (selectedGenres.includes(genre)) {
       setSelectedGenres(selectedGenres.filter(g => g !== genre));
     } else {
-      if (selectedGenres.length < 5) {
-        setSelectedGenres([...selectedGenres, genre]);
-      } else {
-        Alert.alert('Limit', 'You can select up to 5 genres');
-      }
+      // No limit - user can select as many genres as they want
+      setSelectedGenres([...selectedGenres, genre]);
     }
   };
 
