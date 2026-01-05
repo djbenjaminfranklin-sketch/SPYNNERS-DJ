@@ -363,10 +363,12 @@ const translations: Record<Language, Record<string, string>> = {
     'radar.liveMap': 'Live Plays Map',
     'radar.automaticMessage': 'Automatic Message',
     'radar.automaticMessageDesc': 'Automatically send a message to DJs who play your tracks',
+    'radar.autoMessagePlaceholder': 'Your automatic message...',
     'radar.live': 'Live',
     'radar.recent': 'Recent',
     'radar.myTracks': 'My Tracks',
     'radar.global': 'Global',
+    'radar.noLivePlays': 'No live plays at the moment',
     
     // Offline Sessions
     'offline.title': 'Offline Sessions',
