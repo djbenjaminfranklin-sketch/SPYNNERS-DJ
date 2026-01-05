@@ -32,6 +32,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   // Reference for VIP preview timeout
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Reference for current track (for use in callbacks)
+  const currentTrackRef = useRef<Track | null>(null);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -51,9 +54,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setPlaybackDuration(status.durationMillis || 0);
       setIsPlaying(status.isPlaying);
       
-      // Check if we've reached the VIP preview end
-      if (currentTrack?.is_vip && currentTrack?.vip_preview_end) {
-        const previewEndMs = currentTrack.vip_preview_end * 1000;
+      // Check if we've reached the VIP preview end (use ref for current value)
+      const track = currentTrackRef.current;
+      if (track?.is_vip && track?.vip_preview_end) {
+        const previewEndMs = track.vip_preview_end * 1000;
         if (status.positionMillis >= previewEndMs && status.isPlaying) {
           console.log('[Player] VIP preview ended at', status.positionMillis / 1000, 'seconds');
           // Stop playback at preview end
