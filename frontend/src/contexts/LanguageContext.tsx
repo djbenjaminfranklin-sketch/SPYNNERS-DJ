@@ -2935,6 +2935,7 @@ const translations: Record<Language, Record<string, string>> = {
     'rankings.topDownloads': '下载最多',
     'rankings.topRated': '评分最高',
     'rankings.newReleases': '新发布',
+    'rankings.mostPlayed': '播放最多',
     'rankings.loading': '加载排行榜中...',
     'rankings.noTracks': '未找到曲目',
     'rankings.tryDifferentGenre': '尝试选择其他风格',
