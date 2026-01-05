@@ -331,14 +331,14 @@ export default function ManageTracksScreen() {
           <View style={styles.emptyContainer}>
             <Ionicons name="musical-notes-outline" size={64} color={Colors.textMuted} />
             <Text style={styles.emptyText}>
-              {searchQuery ? 'No tracks match your search' : 'You have no tracks yet'}
+              {searchQuery ? t('tracks.noTracksMatch') : t('tracks.noTracksYet')}
             </Text>
             <TouchableOpacity
               style={styles.uploadButton}
               onPress={() => router.push('/upload')}
             >
               <Ionicons name="cloud-upload" size={20} color="#fff" />
-              <Text style={styles.uploadButtonText}>Upload Track</Text>
+              <Text style={styles.uploadButtonText}>{t('tracks.uploadTrack')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -361,7 +361,7 @@ export default function ManageTracksScreen() {
                   )}
                   <View style={[styles.statusBadge, { backgroundColor: getStatusColor(track.status) + '30' }]}>
                     <Text style={[styles.statusText, { color: getStatusColor(track.status) }]}>
-                      {track.status || 'Unknown'}
+                      {getTranslatedStatus(track.status)}
                     </Text>
                   </View>
                 </View>
@@ -371,7 +371,7 @@ export default function ManageTracksScreen() {
               </View>
             </TouchableOpacity>
           ))
-        )}
+        )}}
         <View style={{ height: 100 }} />
       </ScrollView>
 
