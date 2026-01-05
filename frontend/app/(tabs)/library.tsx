@@ -100,11 +100,49 @@ export default function LibraryScreen() {
 
   // Helper function to get translated status
   const getTranslatedStatus = (status?: string): string => {
-    switch (status?.toLowerCase()) {
-      case 'approved': return t('library.approved');
-      case 'pending': return t('library.pending');
-      case 'rejected': return t('library.rejected');
-      default: return t('library.pending'); // Default to pending instead of "unknown"
+    // Debug: log status value
+    console.log('[Library] Track status:', status);
+    
+    const normalizedStatus = status?.toLowerCase()?.trim();
+    
+    switch (normalizedStatus) {
+      case 'approved':
+      case 'published':
+      case 'active':
+        return t('library.approved');
+      case 'pending':
+      case 'review':
+      case 'waiting':
+        return t('library.pending');
+      case 'rejected':
+      case 'declined':
+        return t('library.rejected');
+      default:
+        // If status is undefined/null but track exists, it's likely approved
+        // since rejected tracks are filtered out
+        return status ? t('library.pending') : t('library.approved');
+    }
+  };
+
+  // Get status color - handle various status names
+  const getStatusColor = (status?: string): string => {
+    const normalizedStatus = status?.toLowerCase()?.trim();
+    
+    switch (normalizedStatus) {
+      case 'approved':
+      case 'published':
+      case 'active':
+        return '#4CAF50';
+      case 'pending':
+      case 'review':
+      case 'waiting':
+        return '#FF9800';
+      case 'rejected':
+      case 'declined':
+        return '#F44336';
+      default:
+        // If no status, assume approved (visible tracks are usually approved)
+        return status ? Colors.textMuted : '#4CAF50';
     }
   };
 
