@@ -244,7 +244,7 @@ export default function OfflineSessionsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Sessions Offline</Text>
+        <Text style={styles.headerTitle}>{t('offline.title')}</Text>
         <View style={styles.headerRight}>
           {!isOnline && (
             <View style={styles.offlineBadge}>
