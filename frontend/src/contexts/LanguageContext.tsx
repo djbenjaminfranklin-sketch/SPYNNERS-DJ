@@ -514,8 +514,13 @@ const translations: Record<Language, Record<string, string>> = {
     'vip.noAudioFile': 'No audio file available for this track.',
     'vip.saveTrack': 'Save Track',
     'vip.downloadSuccess': 'Download Complete',
+    'vip.downloadSuccessDesc': 'Track has been downloaded successfully',
     'vip.savedTo': 'Saved to',
     'vip.downloadError': 'Could not download track. Please try again.',
+    'vip.downloadErrorTryBrowser': 'Download failed. Would you like to open it in your browser instead?',
+    'vip.downloadReady': 'Download Ready',
+    'vip.downloadReadyDesc': 'The track is ready to download.',
+    'vip.openInBrowser': 'Open in Browser',
     'vip.insufficientDiamonds': 'You don\'t have enough Black Diamonds.',
     'vip.checkBackLater': 'Check back later for VIP content',
     
