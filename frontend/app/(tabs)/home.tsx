@@ -37,12 +37,15 @@ const USER_MENU_ITEMS_ROW1 = [
   { id: 'my-uploads', labelKey: 'menu.myUploads', icon: 'cloud-upload', colors: ['#9C27B0', '#7B1FA2'], route: '/(tabs)/library' },
   { id: 'profile', labelKey: 'menu.profile', icon: 'person', colors: ['#9C27B0', '#7B1FA2'], route: '/(tabs)/profile' },
   { id: 'chat', labelKey: 'menu.chat', icon: 'chatbubbles', colors: ['#673AB7', '#512DA8'], route: '/(tabs)/chat' },
-  { id: 'received', labelKey: 'menu.received', icon: 'mail', colors: ['#2196F3', '#1976D2'], route: '/(tabs)/received' },
-  { id: 'playlists', labelKey: 'menu.playlists', icon: 'list', colors: ['#4CAF50', '#388E3C'], route: '/(tabs)/playlist' },
 ];
 
 const USER_MENU_ITEMS_ROW2 = [
+  { id: 'received', labelKey: 'menu.received', icon: 'mail', colors: ['#2196F3', '#1976D2'], route: '/(tabs)/received' },
+  { id: 'playlists', labelKey: 'menu.playlists', icon: 'list', colors: ['#4CAF50', '#388E3C'], route: '/(tabs)/playlist' },
   { id: 'analytics', labelKey: 'menu.analytics', icon: 'bar-chart', colors: ['#FF9800', '#F57C00'], route: '/profile/analytics' },
+];
+
+const USER_MENU_ITEMS_ROW3 = [
   { id: 'rankings', labelKey: 'menu.rankings', icon: 'trending-up', colors: ['#E91E63', '#C2185B'], route: '/profile/rankings' },
   { id: 'live-radar', labelKey: 'menu.liveRadar', icon: 'radio', colors: ['#3F51B5', '#303F9F'], route: '/profile/radar' },
   { id: 'vip', labelKey: 'menu.vip', icon: 'diamond', colors: ['#7C4DFF', '#651FFF'], route: '/profile/vip', highlight: true },
