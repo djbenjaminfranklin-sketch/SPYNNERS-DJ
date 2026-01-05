@@ -582,15 +582,15 @@ export default function SpynRecordScreen() {
             } catch (blobError) {
               console.log('[SPYN Record] Blob approach failed, trying FileSystem:', blobError);
               // Fallback to FileSystem API
-              audioBase64 = await FileSystem.readAsStringAsync(analysisUri, {
-                encoding: FileSystem.EncodingType.Base64,
+              audioBase64 = await LegacyFileSystem.readAsStringAsync(analysisUri, {
+                encoding: LegacyFileSystem.EncodingType.Base64,
               });
               console.log('[SPYN Record] Audio read via FileSystem, length:', audioBase64.length);
             }
             
             // Clean up the analysis recording file
             try {
-              await FileSystem.deleteAsync(analysisUri, { idempotent: true });
+              await LegacyFileSystem.deleteAsync(analysisUri, { idempotent: true });
             } catch (e) {
               // Ignore cleanup errors
             }
