@@ -277,7 +277,11 @@ export default function GlobalPlayer() {
         <View style={styles.bottomRow}>
           <Text style={styles.time}>{formatTime(displayPosition)}</Text>
           
-          <View style={styles.progressContainer} {...panResponder.panHandlers}>
+          <View 
+            style={styles.progressContainer} 
+            onLayout={handleProgressBarLayout}
+            {...panResponder.panHandlers}
+          >
             <View style={styles.progressTrack}>
               <View 
                 style={[
