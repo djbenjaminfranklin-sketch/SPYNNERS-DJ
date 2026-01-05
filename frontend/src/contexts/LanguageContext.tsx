@@ -925,6 +925,7 @@ const translations: Record<Language, Record<string, string>> = {
     'radar.saveMessage': 'Enregistrer',
     'radar.messageSaved': 'Message enregistré',
     'radar.messageSavedDesc': 'Votre message automatique a été enregistré',
+    'radar.defaultAutoMessage': 'Merci de jouer mon track ! 🎵',
     
     // Offline Sessions
     'offline.title': 'Sessions Offline',
