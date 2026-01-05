@@ -1478,7 +1478,7 @@ export default function SpynRecordScreen() {
         {pendingSyncCount > 0 && !isOffline && (
           <TouchableOpacity style={styles.syncBadge} onPress={syncOfflineSession}>
             <Ionicons name="cloud-upload" size={14} color="#FFB800" />
-            <Text style={styles.syncText}>{pendingSyncCount} à synchroniser</Text>
+            <Text style={styles.syncText}>{pendingSyncCount} {t('spynRecord.pendingSync')}</Text>
           </TouchableOpacity>
         )}
         
