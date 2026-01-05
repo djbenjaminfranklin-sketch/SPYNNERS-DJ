@@ -431,8 +431,15 @@ def run_all_tests():
     test_nearby_places()
     print()
     
-    # Test 8: SPYN Notify Producer (NEW)
+    # Test 8: SPYN Notify Producer
     test_spyn_notify_producer()
+    print()
+    
+    # Test 9: Black Diamonds Fix (PRIORITY TEST)
+    print("=" * 40)
+    print("PRIORITY TEST: BLACK DIAMONDS FIX")
+    print("=" * 40)
+    test_black_diamonds_login()
     print()
     
     # Summary
