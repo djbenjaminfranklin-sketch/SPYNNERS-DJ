@@ -226,6 +226,114 @@ export default function AnalyticsScreen() {
     }
   };
 
+  // ==================== CSV EXPORT FUNCTIONS ====================
+
+  const formatDateForInput = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const validateDateFormat = (dateStr: string): boolean => {
+    if (!dateStr) return true; // Empty is valid (no filter)
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    return regex.test(dateStr);
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      // Validate dates
+      if (csvStartDate && !validateDateFormat(csvStartDate)) {
+        Alert.alert('Erreur', 'Format de date invalide. Utilisez AAAA-MM-JJ');
+        return;
+      }
+      if (csvEndDate && !validateDateFormat(csvEndDate)) {
+        Alert.alert('Erreur', 'Format de date invalide. Utilisez AAAA-MM-JJ');
+        return;
+      }
+
+      setExportingCSV(true);
+      console.log('[Analytics] Exporting CSV...', { startDate: csvStartDate, endDate: csvEndDate });
+
+      const apiUrl = `${BACKEND_URL}/api/analytics/sessions/csv`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          start_date: csvStartDate || null,
+          end_date: csvEndDate || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erreur serveur: ${response.status} - ${errorText}`);
+      }
+
+      const csvContent = await response.text();
+      console.log('[Analytics] CSV received, size:', csvContent.length);
+
+      // Handle download based on platform
+      if (Platform.OS === 'web') {
+        // Web: Create blob and download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `spynners_sessions_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        Alert.alert('Succès', 'Le rapport CSV a été téléchargé !');
+      } else {
+        // Mobile: Save to file system and share
+        const filename = `spynners_sessions_${new Date().toISOString().slice(0, 10)}.csv`;
+        const fileUri = `${FileSystem.documentDirectory}${filename}`;
+        
+        await FileSystem.writeAsStringAsync(fileUri, csvContent, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+
+        // Check if sharing is available
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (isAvailable) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'text/csv',
+            dialogTitle: 'Exporter le rapport CSV',
+            UTI: 'public.comma-separated-values-text',
+          });
+        } else {
+          Alert.alert('Succès', `Le fichier a été enregistré dans: ${fileUri}`);
+        }
+      }
+
+      setShowDatePicker(false);
+    } catch (error: any) {
+      console.error('[Analytics] CSV export error:', error);
+      Alert.alert('Erreur', error.message || 'Impossible de générer le rapport CSV');
+    } finally {
+      setExportingCSV(false);
+    }
+  };
+
+  const openDatePickerModal = () => {
+    // Set default dates (last 30 days)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+    
+    setCsvStartDate(formatDateForInput(startDate));
+    setCsvEndDate(formatDateForInput(endDate));
+    setShowDatePicker(true);
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await loadAnalytics();
