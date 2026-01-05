@@ -240,6 +240,13 @@ export default function GlobalPlayer() {
             <Ionicons name="share-outline" size={18} color="#fff" />
           </TouchableOpacity>
           
+          {/* Previous button - only show if queue has multiple tracks */}
+          {hasQueue && (
+            <TouchableOpacity style={styles.controlBtn} onPress={playPrevious}>
+              <Ionicons name="play-skip-back" size={18} color="#fff" />
+            </TouchableOpacity>
+          )}
+          
           <TouchableOpacity style={styles.playBtn} onPress={togglePlayPause} disabled={isLoading}>
             {isLoading ? (
               <ActivityIndicator size="small" color="#fff" />
@@ -247,6 +254,13 @@ export default function GlobalPlayer() {
               <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
             )}
           </TouchableOpacity>
+          
+          {/* Next button - only show if queue has multiple tracks */}
+          {hasQueue && (
+            <TouchableOpacity style={styles.controlBtn} onPress={playNext}>
+              <Ionicons name="play-skip-forward" size={18} color="#fff" />
+            </TouchableOpacity>
+          )}
           
           <TouchableOpacity style={styles.controlBtn} onPress={openPlaylistModal}>
             <Ionicons name="list-outline" size={18} color="#fff" />
