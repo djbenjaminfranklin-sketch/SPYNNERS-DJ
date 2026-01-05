@@ -214,21 +214,32 @@ export default function VIPScreen() {
     try {
       setDownloading(trackId);
       
-      const audioUrl = track.audio_url || track.file_url;
+      // Try multiple audio URL fields
+      const audioUrl = track.audio_url || track.audio_file || track.file_url;
+      console.log('[VIP] Attempting download from URL:', audioUrl);
+      
       if (!audioUrl) {
+        console.log('[VIP] No audio URL found. Track fields:', Object.keys(track));
         Alert.alert(t('common.error'), t('vip.noAudioFile'));
         return;
       }
       
       // Download the file
-      const filename = `${track.title.replace(/[^a-zA-Z0-9]/g, '_')}.mp3`;
+      const safeTitle = (track.title || 'track').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
+      const filename = `${safeTitle}.mp3`;
       const fileUri = `${FileSystem.documentDirectory}${filename}`;
       
+      console.log('[VIP] Downloading to:', fileUri);
+      
       const downloadResult = await FileSystem.downloadAsync(audioUrl, fileUri);
+      
+      console.log('[VIP] Download result status:', downloadResult.status);
       
       if (downloadResult.status === 200) {
         // Share/save the file
         const isAvailable = await Sharing.isAvailableAsync();
+        console.log('[VIP] Sharing available:', isAvailable);
+        
         if (isAvailable) {
           await Sharing.shareAsync(fileUri, {
             mimeType: 'audio/mpeg',
@@ -238,10 +249,11 @@ export default function VIPScreen() {
           Alert.alert(t('vip.downloadSuccess'), `${t('vip.savedTo')}: ${fileUri}`);
         }
       } else {
-        throw new Error('Download failed');
+        console.log('[VIP] Download failed with status:', downloadResult.status);
+        throw new Error(`Download failed with status ${downloadResult.status}`);
       }
-    } catch (error) {
-      console.error('[VIP] Download error:', error);
+    } catch (error: any) {
+      console.error('[VIP] Download error:', error?.message || error);
       Alert.alert(t('common.error'), t('vip.downloadError'));
     } finally {
       setDownloading(null);
