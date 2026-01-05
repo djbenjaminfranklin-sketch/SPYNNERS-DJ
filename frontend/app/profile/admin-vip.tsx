@@ -34,7 +34,7 @@ type VIPTrack = {
 
 export default function AdminVIP() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [vipTracks, setVipTracks] = useState<VIPTrack[]>([]);
   const [promos, setPromos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,9 +51,25 @@ export default function AdminVIP() {
 
   const loadData = async () => {
     try {
-      const response = await base44Tracks.list({ limit: 500 });
-      const tracks = Array.isArray(response) ? response : (response?.items || []);
-      setVipTracks(tracks.filter((t: any) => t.is_vip));
+      // Fetch real tracks and filter VIP ones
+      const response = await axios.get(`${BACKEND_URL}/api/admin/tracks?limit=500`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data?.success && response.data?.tracks) {
+        const allTracks = response.data.tracks;
+        const vip = allTracks.filter((t: any) => t.is_vip === true).map((t: any) => ({
+          id: t.id || t._id,
+          title: t.title,
+          artist: t.artist_name || t.producer_name,
+          genre: t.genre || 'Unknown',
+          bpm: t.bpm,
+          artwork_url: t.artwork_url,
+          download_count: t.download_count || 0,
+          is_vip: true,
+        }));
+        setVipTracks(vip);
+      }
     } catch (error) {
       console.error('[AdminVIP] Error:', error);
     } finally {
