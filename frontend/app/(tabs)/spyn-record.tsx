@@ -708,7 +708,7 @@ export default function SpynRecordScreen() {
             onPress: () => {
               // Delete temp file
               if (fileUri && Platform.OS !== 'web') {
-                FileSystem.deleteAsync(fileUri, { idempotent: true });
+                LegacyFileSystem.deleteAsync(fileUri, { idempotent: true });
               }
             },
           },
