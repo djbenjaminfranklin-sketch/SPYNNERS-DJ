@@ -892,8 +892,35 @@ const translations: Record<Language, Record<string, string>> = {
     'analytics.trackStatus': 'Statut des Tracks',
     'analytics.approved': 'Approuvés',
     'analytics.pending': 'En attente',
+    'analytics.rejected': 'Refusés',
     'analytics.plays': 'Lectures',
     'analytics.likes': 'Likes',
+    'analytics.tracks': 'Tracks',
+    'analytics.recentActivity': 'Activité Récente',
+    'analytics.livePlays': 'Plays en direct',
+    'analytics.today': 'Aujourd\'hui',
+    'analytics.thisWeek': 'Cette semaine',
+    'analytics.topTracks': 'Top Tracks',
+    
+    // Radar
+    'radar.title': 'Track Radar',
+    'radar.liveMap': 'Carte des plays en direct',
+    'radar.automaticMessage': 'Message automatique',
+    'radar.automaticMessageDesc': 'Envoyez automatiquement un message aux DJs qui jouent vos tracks',
+    'radar.live': 'En direct',
+    'radar.recent': 'Récents',
+    'radar.myTracks': 'Mes Tracks',
+    'radar.global': 'Global',
+    
+    // Offline Sessions
+    'offline.title': 'Sessions Offline',
+    'offline.noSessions': 'Aucune session offline',
+    'offline.noSessionsDesc': 'Vos sessions SPYN offline apparaîtront ici',
+    'offline.pendingSync': 'En attente de sync',
+    'offline.synced': 'Synchronisé',
+    'offline.syncNow': 'Synchroniser',
+    'offline.delete': 'Supprimer',
+    'offline.tracks': 'tracks',
     
     // Tracks Management
     'tracks.manageYourTracks': 'Gérer vos Tracks',
