@@ -3309,10 +3309,25 @@ async def get_admin_sessions(authorization: str = Header(None), limit: int = 500
         
         print(f"[Admin Sessions] Fetching sessions (limit: {limit})...")
         
-        result = await call_spynners_function("nativeGetLiveTrackPlays", {"limit": limit}, authorization)
+        # Try both function names
+        result = None
+        try:
+            result = await call_spynners_function("nativeGetLiveTrackPlays", {"limit": limit}, authorization)
+        except:
+            pass
+        
+        if not result:
+            try:
+                result = await call_spynners_function("getLiveTrackPlays", {"limit": limit}, authorization)
+            except:
+                pass
         
         if result:
-            sessions = result if isinstance(result, list) else result.get('items', [])
+            # Handle different response formats
+            if isinstance(result, dict):
+                sessions = result.get('recentPlays', result.get('plays', result.get('items', [])))
+            else:
+                sessions = result if isinstance(result, list) else []
             print(f"[Admin Sessions] Got {len(sessions)} sessions")
             return {"success": True, "sessions": sessions, "total": len(sessions)}
         
