@@ -2943,6 +2943,75 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.noTracksNow': '目前没有{status}的曲目',
     'admin.uploadedBy': '上传者',
     'admin.vip': 'VIP',
+    
+    // Analytics
+    'analytics.title': '我的统计',
+    'analytics.noTracks': '暂无曲目',
+    'analytics.uploadToSee': '上传曲目以查看你的统计数据',
+    'analytics.tracks': '曲目',
+    'analytics.plays': '播放',
+    'analytics.downloads': '下载',
+    'analytics.likes': '喜欢',
+    'analytics.trackStatus': '曲目状态',
+    'analytics.approved': '已通过',
+    'analytics.pending': '待审核',
+    'analytics.rejected': '已拒绝',
+    'analytics.recentActivity': '最近活动',
+    'analytics.livePlays': '实时播放',
+    'analytics.today': '今天',
+    'analytics.thisWeek': '本周',
+    'analytics.topTracks': '热门曲目',
+    
+    // Radar
+    'radar.title': '曲目雷达',
+    'radar.liveMap': '实时播放地图',
+    'radar.automaticMessage': '自动消息',
+    'radar.automaticMessageDesc': '自动向播放你曲目的DJ发送消息',
+    'radar.autoMessagePlaceholder': '你的自动消息...',
+    'radar.live': '实时',
+    'radar.recent': '最近',
+    'radar.myTracks': '我的曲目',
+    'radar.global': '全球',
+    'radar.noLivePlays': '目前没有实时播放',
+    'radar.saveMessage': '保存',
+    'radar.messageSaved': '消息已保存',
+    'radar.messageSavedDesc': '你的自动消息已保存',
+    
+    // Offline Sessions
+    'offline.title': '离线会话',
+    'offline.noSessions': '没有离线会话',
+    'offline.noSessionsDesc': '你的SPYN离线会话将显示在这里',
+    'offline.pendingSync': '待同步',
+    'offline.synced': '已同步',
+    'offline.syncNow': '立即同步',
+    'offline.delete': '删除',
+    'offline.tracks': '曲目',
+    
+    // Tracks Management
+    'tracks.manageYourTracks': '管理你的曲目',
+    'tracks.plays': '播放',
+    'tracks.downloads': '下载',
+    'tracks.likes': '喜欢',
+    'tracks.status': '状态',
+    'tracks.synced': '已同步',
+    'tracks.notSynced': '未同步',
+    'tracks.editTrack': '编辑曲目',
+    'tracks.deleteTrack': '删除曲目',
+    'tracks.syncAcrcloud': '同步ACRCloud',
+    'tracks.syncing': '同步中...',
+    'tracks.searchTracks': '搜索曲目...',
+    'tracks.noTracksMatch': '没有匹配的曲目',
+    'tracks.noTracksYet': '你还没有曲目',
+    'tracks.uploadTrack': '上传曲目',
+    'tracks.loadingTracks': '加载曲目中...',
+    
+    // Library
+    'library.approved': '已通过',
+    'library.pending': '待审核',
+    'library.rejected': '已拒绝',
+    
+    // Common
+    'common.loading': '加载中...',
   },
 };
 
