@@ -385,18 +385,24 @@ export default function SpynRecordScreen() {
       // Start waveform updates
       waveformIntervalRef.current = setInterval(updateWaveform, 100);
       
-      // Enable automatic analysis on ALL platforms
-      // Start analysis interval
-      analysisIntervalRef.current = setInterval(() => {
-        console.log('[SPYN Record] Auto-analysis triggered');
-        analyzeCurrentAudio();
-      }, ANALYSIS_INTERVAL);
-      
-      // First analysis after 5 seconds
-      setTimeout(() => {
-        console.log('[SPYN Record] First analysis triggered');
-        analyzeCurrentAudio();
-      }, 5000);
+      // Enable automatic analysis only on WEB
+      // On iOS/Android, the user must use the manual scan button
+      // because we can't have simultaneous recordings
+      if (Platform.OS === 'web') {
+        // Start analysis interval for web only
+        analysisIntervalRef.current = setInterval(() => {
+          console.log('[SPYN Record] Auto-analysis triggered');
+          analyzeCurrentAudio();
+        }, ANALYSIS_INTERVAL);
+        
+        // First analysis after 5 seconds
+        setTimeout(() => {
+          console.log('[SPYN Record] First analysis triggered');
+          analyzeCurrentAudio();
+        }, 5000);
+      } else {
+        console.log('[SPYN Record] ⚠️ Auto-analysis disabled on native. Use the scan button to analyze tracks.');
+      }
       
       console.log('[SPYN Record] ✅ Recording started successfully');
       
