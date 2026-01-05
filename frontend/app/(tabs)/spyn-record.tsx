@@ -1008,88 +1008,35 @@ export default function SpynRecordScreen() {
       setIsRecording(false);
       setIsPaused(false);
       
-      // Analyze the recording - we'll analyze multiple segments for better detection
+      // Analyze the recording
       setCurrentAnalysis('Analyse de la session...');
       const detectedTracks: IdentifiedTrack[] = [];
-      const detectedTitles = new Set<string>(); // To avoid duplicates
+      const detectedTitles = new Set<string>();
       
-      // For native, we have multiple segments saved during recording
-      // For web, we only have one blob
-      const segmentsToAnalyze = Platform.OS === 'web' 
-        ? (audioBase64ForAnalysis ? [audioBase64ForAnalysis] : [])
-        : recordingSegmentsRef.current;
-      
-      console.log('[SPYN Record] Segments to analyze:', segmentsToAnalyze.length);
-      console.log('[SPYN Record] audioBase64ForAnalysis length:', audioBase64ForAnalysis?.length || 0);
-      
-      // If we have no segments but have the main audio, analyze that
-      if (segmentsToAnalyze.length === 0 && audioBase64ForAnalysis && audioBase64ForAnalysis.length > 0) {
-        console.log('[SPYN Record] No segments, using main audio file');
-        segmentsToAnalyze.push(audioBase64ForAnalysis);
-      }
-      
-      console.log('[SPYN Record] Final segments to analyze:', segmentsToAnalyze.length);
-      
-      // Analyze each segment
-      for (let i = 0; i < segmentsToAnalyze.length; i++) {
-        setCurrentAnalysis(`Analyse segment ${i + 1}/${segmentsToAnalyze.length}...`);
+      // Use the main audio file that was read after stopping
+      if (audioBase64ForAnalysis && audioBase64ForAnalysis.length > 0) {
+        console.log('[SPYN Record] Analyzing audio, length:', audioBase64ForAnalysis.length);
         
         try {
-          let segmentBase64 = '';
-          
-          if (Platform.OS === 'web') {
-            segmentBase64 = segmentsToAnalyze[i] as string;
-          } else {
-            // Read segment file using FileSystem (more reliable on iOS)
-            const segmentUri = segmentsToAnalyze[i] as string;
-            console.log('[SPYN Record] Reading segment:', segmentUri);
-            try {
-              // Use FileSystem directly - more reliable than fetch on iOS
-              segmentBase64 = await FileSystem.readAsStringAsync(segmentUri, {
-                encoding: FileSystem.EncodingType.Base64,
-              });
-              console.log('[SPYN Record] Segment read with FileSystem, length:', segmentBase64.length);
-            } catch (fsError) {
-              console.log('[SPYN Record] FileSystem failed, trying LegacyFileSystem:', fsError);
-              try {
-                segmentBase64 = await LegacyFileSystem.readAsStringAsync(segmentUri, {
-                  encoding: LegacyFileSystem.EncodingType.Base64,
-                });
-                console.log('[SPYN Record] Segment read with LegacyFileSystem, length:', segmentBase64.length);
-              } catch (legacyError) {
-                console.error('[SPYN Record] All read methods failed:', legacyError);
-                continue;
-              }
-            }
-          }
-          
-          if (!segmentBase64 || segmentBase64.length === 0) {
-            console.log('[SPYN Record] Segment', i + 1, 'is empty, skipping');
-            continue;
-          }
-          
-          console.log('[SPYN Record] Analyzing segment', i + 1, 'length:', segmentBase64.length);
-          
           const response = await axios.post(`${BACKEND_URL}/api/recognize-audio`, {
-            audio_base64: segmentBase64,
+            audio_base64: audioBase64ForAnalysis,
           }, {
-            timeout: 30000,
+            timeout: 60000,
           });
           
-          console.log('[SPYN Record] Segment', i + 1, 'response:', response.data);
+          console.log('[SPYN Record] Analysis response:', response.data);
           
           if (response.data.success && response.data.title) {
-            // Check if we already detected this track
             const trackKey = response.data.title.toLowerCase();
             if (!detectedTitles.has(trackKey)) {
               detectedTitles.add(trackKey);
               
               const newTrack: IdentifiedTrack = {
-                id: `${Date.now()}_${i}`,
+                id: `${Date.now()}`,
                 title: response.data.title,
-                artist: response.data.artist,
-                timestamp: formatDuration(Math.floor((i / segmentsToAnalyze.length) * recordingDuration)),
-                elapsedTime: Math.floor((i / segmentsToAnalyze.length) * recordingDuration),
+                artist: response.data.artist || 'Unknown Artist',
+                timestamp: formatDuration(recordingDuration),
+                elapsedTime: recordingDuration,
                 coverImage: response.data.cover_image,
                 spynnersTrackId: response.data.spynners_track_id,
                 producerId: response.data.producer_id,
@@ -1099,49 +1046,21 @@ export default function SpynRecordScreen() {
               setIdentifiedTracks(prev => [...prev, newTrack]);
               setCurrentAnalysis(`✅ ${response.data.title}`);
               
-              // Send email for the track
+              // Send email
               sendEmailForTrack(newTrack);
               
               console.log('[SPYN Record] ✅ Track identified:', newTrack.title);
-            } else {
-              console.log('[SPYN Record] Track already detected, skipping:', response.data.title);
             }
+          } else {
+            console.log('[SPYN Record] No track detected in response');
           }
         } catch (analysisError: any) {
-          console.error('[SPYN Record] Segment', i + 1, 'analysis error:', analysisError?.message);
+          console.error('[SPYN Record] Analysis error:', analysisError?.message || analysisError);
+          setCurrentAnalysis('Erreur d\'analyse');
         }
-      }
-      
-      // If no segments were analyzed, try the main file
-      if (segmentsToAnalyze.length === 0 && audioBase64ForAnalysis && audioBase64ForAnalysis.length > 0) {
-        setCurrentAnalysis('Analyse du fichier principal...');
-        try {
-          console.log('[SPYN Record] Analyzing main file, length:', audioBase64ForAnalysis.length);
-          const response = await axios.post(`${BACKEND_URL}/api/recognize-audio`, {
-            audio_base64: audioBase64ForAnalysis,
-          }, {
-            timeout: 60000,
-          });
-          
-          if (response.data.success && response.data.title) {
-            const newTrack: IdentifiedTrack = {
-              id: `${Date.now()}`,
-              title: response.data.title,
-              artist: response.data.artist,
-              timestamp: formatDuration(recordingDuration),
-              elapsedTime: recordingDuration,
-              coverImage: response.data.cover_image,
-              spynnersTrackId: response.data.spynners_track_id,
-              producerId: response.data.producer_id,
-            };
-            detectedTracks.push(newTrack);
-            setIdentifiedTracks(prev => [...prev, newTrack]);
-            setCurrentAnalysis(`✅ ${newTrack.title}`);
-            sendEmailForTrack(newTrack);
-          }
-        } catch (err) {
-          console.error('[SPYN Record] Main file analysis error:', err);
-        }
+      } else {
+        console.log('[SPYN Record] No audio data to analyze');
+        setCurrentAnalysis('Pas d\'audio à analyser');
       }
       
       setCurrentAnalysis(detectedTracks.length > 0 
