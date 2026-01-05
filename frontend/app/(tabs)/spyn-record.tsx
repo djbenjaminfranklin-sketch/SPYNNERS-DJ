@@ -498,10 +498,18 @@ export default function SpynRecordScreen() {
     }
   };
 
+  // Reference to track if analysis is in progress
+  const isAnalyzingRef = useRef(false);
+
   // Analyze current audio chunk
   const analyzeCurrentAudio = async () => {
     if (!isRecording || isPaused) return;
+    if (isAnalyzingRef.current) {
+      console.log('[SPYN Record] Analysis already in progress, skipping...');
+      return;
+    }
     
+    isAnalyzingRef.current = true;
     setIsAnalyzing(true);
     setCurrentAnalysis('Analyse en cours...');
     
@@ -525,17 +533,28 @@ export default function SpynRecordScreen() {
           });
         }
       } else {
-        // NATIVE (iOS/Android): Record a short audio sample for analysis
-        // We need to temporarily stop the main recording, take a sample, then resume
+        // NATIVE (iOS/Android): Stop main recording, take a sample, restart
+        // iOS doesn't allow multiple simultaneous recordings
         console.log('[SPYN Record] Starting native audio analysis...');
         
         try {
-          // Create a separate short recording for analysis (8 seconds)
-          const analysisRecording = new Audio.Recording();
-          await analysisRecording.prepareToRecordAsync(
+          // Stop the main recording temporarily
+          if (recordingRef.current) {
+            console.log('[SPYN Record] Pausing main recording for analysis...');
+            await recordingRef.current.stopAndUnloadAsync();
+            const mainUri = recordingRef.current.getURI();
+            console.log('[SPYN Record] Main recording paused, URI:', mainUri);
+            recordingRef.current = null;
+          }
+          
+          // Small delay to release audio resources
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          // Create analysis recording (8 seconds)
+          console.log('[SPYN Record] Creating analysis recording...');
+          const { recording: analysisRecording } = await Audio.Recording.createAsync(
             Audio.RecordingOptionsPresets.HIGH_QUALITY
           );
-          await analysisRecording.startAsync();
           console.log('[SPYN Record] Analysis recording started...');
           
           // Record for 8 seconds
@@ -578,8 +597,23 @@ export default function SpynRecordScreen() {
               // Ignore cleanup errors
             }
           }
+          
+          // Restart main recording if still in recording mode
+          if (isRecording && !isPaused) {
+            console.log('[SPYN Record] Restarting main recording...');
+            await startNativeRecording();
+          }
+          
         } catch (recordError) {
           console.error('[SPYN Record] Native analysis recording error:', recordError);
+          // Try to restart main recording even if analysis failed
+          if (isRecording && !isPaused && !recordingRef.current) {
+            try {
+              await startNativeRecording();
+            } catch (e) {
+              console.error('[SPYN Record] Failed to restart main recording:', e);
+            }
+          }
         }
       }
       
