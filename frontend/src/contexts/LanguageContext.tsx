@@ -1975,6 +1975,75 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.noTracksNow': 'Nessuna traccia {status} al momento',
     'admin.uploadedBy': 'Da',
     'admin.vip': 'VIP',
+    
+    // Analytics
+    'analytics.title': 'Le Mie Statistiche',
+    'analytics.noTracks': 'Nessuna traccia ancora',
+    'analytics.uploadToSee': 'Carica tracce per vedere le tue statistiche',
+    'analytics.tracks': 'Tracce',
+    'analytics.plays': 'Ascolti',
+    'analytics.downloads': 'Download',
+    'analytics.likes': 'Mi piace',
+    'analytics.trackStatus': 'Stato Tracce',
+    'analytics.approved': 'Approvate',
+    'analytics.pending': 'In attesa',
+    'analytics.rejected': 'Rifiutate',
+    'analytics.recentActivity': 'Attività Recente',
+    'analytics.livePlays': 'Play dal vivo',
+    'analytics.today': 'Oggi',
+    'analytics.thisWeek': 'Questa settimana',
+    'analytics.topTracks': 'Top Tracce',
+    
+    // Radar
+    'radar.title': 'Track Radar',
+    'radar.liveMap': 'Mappa dei play dal vivo',
+    'radar.automaticMessage': 'Messaggio automatico',
+    'radar.automaticMessageDesc': 'Invia automaticamente un messaggio ai DJ che riproducono le tue tracce',
+    'radar.autoMessagePlaceholder': 'Il tuo messaggio automatico...',
+    'radar.live': 'Dal vivo',
+    'radar.recent': 'Recenti',
+    'radar.myTracks': 'Le Mie Tracce',
+    'radar.global': 'Globale',
+    'radar.noLivePlays': 'Nessun play dal vivo al momento',
+    'radar.saveMessage': 'Salva',
+    'radar.messageSaved': 'Messaggio salvato',
+    'radar.messageSavedDesc': 'Il tuo messaggio automatico è stato salvato',
+    
+    // Offline Sessions
+    'offline.title': 'Sessioni Offline',
+    'offline.noSessions': 'Nessuna sessione offline',
+    'offline.noSessionsDesc': 'Le tue sessioni SPYN offline appariranno qui',
+    'offline.pendingSync': 'In attesa di sincronizzazione',
+    'offline.synced': 'Sincronizzato',
+    'offline.syncNow': 'Sincronizza',
+    'offline.delete': 'Elimina',
+    'offline.tracks': 'tracce',
+    
+    // Tracks Management
+    'tracks.manageYourTracks': 'Gestisci le tue Tracce',
+    'tracks.plays': 'Ascolti',
+    'tracks.downloads': 'Download',
+    'tracks.likes': 'Mi piace',
+    'tracks.status': 'Stato',
+    'tracks.synced': 'Sincronizzato',
+    'tracks.notSynced': 'Non sincronizzato',
+    'tracks.editTrack': 'Modifica Traccia',
+    'tracks.deleteTrack': 'Elimina Traccia',
+    'tracks.syncAcrcloud': 'Sync ACRCloud',
+    'tracks.syncing': 'Sincronizzazione...',
+    'tracks.searchTracks': 'Cerca tracce...',
+    'tracks.noTracksMatch': 'Nessuna traccia corrisponde alla ricerca',
+    'tracks.noTracksYet': 'Non hai ancora tracce',
+    'tracks.uploadTrack': 'Carica Traccia',
+    'tracks.loadingTracks': 'Caricamento tracce...',
+    
+    // Library
+    'library.approved': 'Approvato',
+    'library.pending': 'In attesa',
+    'library.rejected': 'Rifiutato',
+    
+    // Common
+    'common.loading': 'Caricamento...',
   },
   
   de: {
