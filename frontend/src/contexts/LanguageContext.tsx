@@ -986,26 +986,6 @@ const translations: Record<Language, Record<string, string>> = {
     'terms.userContent': 'Contenu utilisateur',
     'terms.blackDiamonds': 'Black Diamonds',
     
-    // Live Radar
-    'radar.title': 'Radar Live',
-    'radar.activeDjs': 'DJs Actifs',
-    'radar.nearYou': 'Près de vous',
-    'radar.worldwide': 'Monde entier',
-    'radar.noDjsNearby': 'Aucun DJ à proximité',
-    'radar.expandSearch': 'Élargissez votre recherche pour trouver plus de DJs',
-    'radar.playing': 'Joue',
-    'radar.distance': 'Distance',
-    'radar.liveNow': 'En direct',
-    'radar.recentPlays': 'Lectures récentes',
-    'radar.myTracks': 'Mes Tracks',
-    'radar.globalActivity': 'Activité Globale',
-    'radar.loadingActivity': 'Chargement de l\'activité...',
-    'radar.noRecentActivity': 'Aucune activité récente',
-    'radar.noMyTracksPlays': 'Aucune lecture récente de vos tracks',
-    'radar.checkBackLater': 'Revenez plus tard pour les mises à jour',
-    'radar.uploadMoreTracks': 'Uploadez plus de tracks pour être remarqué par les DJs!',
-    'common.retry': 'Réessayer',
-    
     // Upload moods and energy
     'upload.energyLow': 'Bas',
     'upload.energyMedium': 'Moyen',
