@@ -867,10 +867,6 @@ export default function SpynRecordScreen() {
         // On iOS/Android, use sharing directly since MediaLibrary doesn't support m4a well
         console.log('[SPYN Record] Using share method for audio file');
         await shareRecording(fileUri);
-              { text: 'Annuler', style: 'cancel' },
-            ]
-          );
-        }
       }
     } catch (error: any) {
       console.error('[SPYN Record] Save error:', error);
