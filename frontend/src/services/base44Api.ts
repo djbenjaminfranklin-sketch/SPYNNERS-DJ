@@ -707,23 +707,39 @@ export const base44Users = {
 export const base44Playlists = {
   async list(userId?: string): Promise<Playlist[]> {
     try {
-      console.log('[Playlists] Fetching playlists via native API...');
+      console.log('[Playlists] Fetching playlists via native API for user:', userId);
       // Try native API first
       const response = await api.post('/api/playlists', {
         limit: 100,
-        offset: 0
+        offset: 0,
+        user_id: userId // Filter by user
       });
       
       // Handle different response formats
+      let playlists: Playlist[] = [];
       if (response.data?.success && response.data?.playlists) {
-        return response.data.playlists;
+        playlists = response.data.playlists;
+      } else if (Array.isArray(response.data)) {
+        playlists = response.data;
+      } else if (response.data?.items) {
+        playlists = response.data.items;
       }
-      if (Array.isArray(response.data)) return response.data;
-      if (response.data?.items) return response.data.items;
       
-      // Fallback to Base44 entities
+      // Filter by user if userId provided and API didn't filter
+      if (userId && playlists.length > 0) {
+        playlists = playlists.filter(p => 
+          p.created_by === userId || 
+          p.user_id === userId ||
+          p.owner_id === userId
+        );
+      }
+      
+      if (playlists.length > 0) return playlists;
+      
+      // Fallback to Base44 entities with user filter
       console.log('[Playlists] Native API failed, trying Base44 entities...');
-      const fallbackResponse = await api.get('/api/base44/entities/Playlist?limit=100');
+      const query = userId ? `created_by=${userId}` : '';
+      const fallbackResponse = await api.get(`/api/base44/entities/Playlist?limit=100&${query}`);
       const data = fallbackResponse.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -732,10 +748,22 @@ export const base44Playlists = {
       console.error('[Playlists] Error listing playlists:', error);
       // Fallback to Base44 entities
       try {
-        const fallbackResponse = await api.get('/api/base44/entities/Playlist?limit=100');
+        const query = userId ? `created_by=${userId}` : '';
+        const fallbackResponse = await api.get(`/api/base44/entities/Playlist?limit=100&${query}`);
         const data = fallbackResponse.data;
-        if (Array.isArray(data)) return data;
-        if (data?.items) return data.items;
+        let playlists: Playlist[] = [];
+        if (Array.isArray(data)) playlists = data;
+        else if (data?.items) playlists = data.items;
+        
+        // Filter by user if needed
+        if (userId && playlists.length > 0) {
+          playlists = playlists.filter(p => 
+            p.created_by === userId || 
+            p.user_id === userId ||
+            p.owner_id === userId
+          );
+        }
+        return playlists;
       } catch (e) {
         console.error('[Playlists] Fallback also failed:', e);
       }
