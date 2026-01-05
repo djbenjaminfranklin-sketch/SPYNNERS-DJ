@@ -3392,6 +3392,162 @@ async def get_admin_downloads(authorization: str = Header(None), limit: int = 50
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ==================== ADMIN BROADCAST EMAIL ====================
+
+class BroadcastEmailRequest(BaseModel):
+    subject: str
+    message: str
+    recipient_type: str = "all"  # all, category, individual
+    category: Optional[str] = None
+    individual_email: Optional[str] = None
+    genre_filter: Optional[str] = None
+    include_tracks: Optional[bool] = False
+
+@app.post("/api/admin/broadcast")
+async def send_broadcast_email(request: BroadcastEmailRequest, authorization: str = Header(None)):
+    """
+    Send broadcast email to users.
+    Uses Base44 sendBroadcastEmail cloud function.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin Broadcast] Sending email to: {request.recipient_type}")
+        print(f"[Admin Broadcast] Subject: {request.subject}")
+        
+        # Call Base44 sendBroadcastEmail function
+        result = await call_spynners_function("sendBroadcastEmail", {
+            "subject": request.subject,
+            "message": request.message,
+            "recipientType": request.recipient_type,
+            "category": request.category,
+            "individualEmail": request.individual_email,
+            "genreFilter": request.genre_filter,
+            "includeTracks": request.include_tracks,
+        }, authorization)
+        
+        if result:
+            sent_count = result.get('sentCount', 0) if isinstance(result, dict) else 0
+            print(f"[Admin Broadcast] Email sent successfully to {sent_count} recipients")
+            return {
+                "success": True,
+                "message": f"Email sent to {sent_count} recipients",
+                "sent_count": sent_count,
+                "details": result
+            }
+        
+        return {"success": False, "message": "Failed to send email"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Broadcast] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/broadcast/history")
+async def get_broadcast_history(authorization: str = Header(None), limit: int = 50):
+    """
+    Get broadcast email history.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin Broadcast] Fetching email history (limit: {limit})...")
+        
+        # Try to get from Spynners BroadcastEmail entity
+        result = await call_spynners_function("getAdminData", {"section": "broadcasts"}, authorization)
+        
+        broadcasts = []
+        if result:
+            if isinstance(result, dict):
+                broadcasts = result.get('broadcasts', result.get('items', []))
+            else:
+                broadcasts = result if isinstance(result, list) else []
+        
+        print(f"[Admin Broadcast] Got {len(broadcasts)} broadcast records")
+        return {"success": True, "broadcasts": broadcasts, "total": len(broadcasts)}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Broadcast] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== ADMIN VIP PROMOS ====================
+
+@app.get("/api/admin/vip-promos")
+async def get_vip_promos(authorization: str = Header(None)):
+    """
+    Get all VIP promos for admin panel.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print("[Admin VIP] Fetching VIP promos...")
+        
+        result = await call_spynners_function("getAdminData", {"section": "vip_promos"}, authorization)
+        
+        promos = []
+        if result:
+            if isinstance(result, dict):
+                promos = result.get('vip_promos', result.get('promos', result.get('items', [])))
+            else:
+                promos = result if isinstance(result, list) else []
+        
+        print(f"[Admin VIP] Got {len(promos)} VIP promos")
+        return {"success": True, "promos": promos, "total": len(promos)}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin VIP] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class CreateVIPPromoRequest(BaseModel):
+    name: str
+    description: Optional[str] = None
+    track_ids: Optional[List[str]] = None
+    price: Optional[int] = None
+    duration_days: Optional[int] = None
+
+@app.post("/api/admin/vip-promos")
+async def create_vip_promo(request: CreateVIPPromoRequest, authorization: str = Header(None)):
+    """
+    Create a new VIP promo.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin VIP] Creating new promo: {request.name}")
+        
+        result = await call_spynners_function("createVIPPromo", {
+            "name": request.name,
+            "description": request.description,
+            "trackIds": request.track_ids or [],
+            "price": request.price,
+            "durationDays": request.duration_days,
+        }, authorization)
+        
+        if result:
+            print(f"[Admin VIP] Promo created successfully")
+            return {"success": True, "promo": result}
+        
+        return {"success": False, "message": "Failed to create promo"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin VIP] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ==================== ANALYTICS CSV EXPORT ====================
 
 class AnalyticsCSVRequest(BaseModel):
