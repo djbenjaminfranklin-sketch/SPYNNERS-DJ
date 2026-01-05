@@ -463,37 +463,6 @@ const styles = StyleSheet.create({
     padding: 6,
     marginLeft: 4,
   },
-  },
-  progressContainer: {
-    width: PROGRESS_BAR_WIDTH,
-    height: 30,
-    justifyContent: 'center',
-  },
-  progressTrack: {
-    width: '100%',
-    height: 6,
-    backgroundColor: Colors.border,
-    borderRadius: 3,
-    position: 'relative',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: Colors.primary,
-    borderRadius: 3,
-  },
-  progressThumb: {
-    position: 'absolute',
-    top: -4,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: Colors.primary,
-    marginLeft: -7,
-  },
-  closeBtn: {
-    padding: 4,
-    marginLeft: 4,
-  },
   // Modal styles
   modalOverlay: {
     flex: 1,
