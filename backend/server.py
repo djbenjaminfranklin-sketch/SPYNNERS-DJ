@@ -3324,10 +3324,13 @@ async def get_admin_downloads(authorization: str = Header(None), limit: int = 50
         
         downloads = []
         total_downloads = 0
-        unique_djs = set()
         
         if result:
-            tracks = result if isinstance(result, list) else result.get('items', [])
+            # Handle different response formats
+            if isinstance(result, dict):
+                tracks = result.get('tracks', result.get('items', []))
+            else:
+                tracks = result if isinstance(result, list) else []
             
             for track in tracks:
                 download_count = track.get('download_count', 0) or 0
