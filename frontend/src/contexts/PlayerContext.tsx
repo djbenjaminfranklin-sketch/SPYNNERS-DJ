@@ -207,6 +207,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       console.error('[Player] Error playing track:', error);
     } finally {
       setIsLoading(false);
+      isLoadingTrackRef.current = false; // Always release the lock
     }
   };
   
