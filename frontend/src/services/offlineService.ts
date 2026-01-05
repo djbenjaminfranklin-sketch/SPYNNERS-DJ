@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://spynners-builder.preview.emergentagent.com';
+  return 'https://musicapp-fix-1.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

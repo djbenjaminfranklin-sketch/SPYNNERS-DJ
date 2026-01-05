@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
 // Backend URL - hardcoded for reliability in production builds
-const BACKEND_URL = 'https://spynners-builder.preview.emergentagent.com';
+const BACKEND_URL = 'https://musicapp-fix-1.preview.emergentagent.com';
 
 console.log('[API] Using backend URL:', BACKEND_URL);
 
