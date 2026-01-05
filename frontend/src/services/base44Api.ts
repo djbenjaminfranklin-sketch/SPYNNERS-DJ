@@ -1554,3 +1554,6 @@ export default {
   notifications2: base44Notifications2,
   profiles: base44Profiles,
 };
+
+// Alias for convenience
+export const base44Api = base44Auth;
