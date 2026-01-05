@@ -729,22 +729,29 @@ export default function SpynRecordScreen() {
           });
         }
       } else {
-        // NATIVE (iOS/Android): Stop, read, restart - EXACT SAME AS SPYN
-        console.log('[SPYN Record] Native analysis - stopping current recording...');
+        // NATIVE (iOS/Android): Stop, read, restart with proper delays
+        console.log('[SPYN Record] Native analysis starting...');
         
-        if (recordingRef.current) {
+        const currentRecording = recordingRef.current;
+        if (currentRecording) {
           try {
             // 1. Stop current recording
-            await recordingRef.current.stopAndUnloadAsync();
-            const uri = recordingRef.current.getURI();
+            console.log('[SPYN Record] Stopping recording...');
+            await currentRecording.stopAndUnloadAsync();
+            const uri = currentRecording.getURI();
             console.log('[SPYN Record] Recording stopped, URI:', uri);
+            
+            // Clear the ref immediately
             recordingRef.current = null;
+            
+            // 2. Wait for iOS to release audio session
+            await new Promise(resolve => setTimeout(resolve, 200));
             
             if (uri) {
               // Save for final concatenation
               recordingSegmentsRef.current.push(uri);
               
-              // 2. Read audio - EXACT SAME AS SPYN
+              // 3. Read audio file
               try {
                 const response = await fetch(uri);
                 const blob = await response.blob();
@@ -757,26 +764,36 @@ export default function SpynRecordScreen() {
                   reader.onerror = reject;
                   reader.readAsDataURL(blob);
                 });
-              } catch (blobError) {
-                console.log('[SPYN Record] Blob failed, trying FileSystem');
-                audioBase64 = await FileSystem.readAsStringAsync(uri, {
-                  encoding: FileSystem.EncodingType.Base64,
-                });
+                console.log('[SPYN Record] Audio read, length:', audioBase64.length);
+              } catch (readErr) {
+                console.error('[SPYN Record] Read error:', readErr);
               }
-              console.log('[SPYN Record] Audio read, length:', audioBase64.length);
             }
             
-            // 3. Restart recording if still in recording mode
+            // 4. Restart recording if still in recording mode
             if (isRecordingRef.current) {
-              await Audio.setAudioModeAsync({
-                allowsRecordingIOS: true,
-                playsInSilentModeIOS: true,
-              });
-              const { recording } = await Audio.Recording.createAsync(
-                Audio.RecordingOptionsPresets.HIGH_QUALITY
-              );
-              recordingRef.current = recording;
-              console.log('[SPYN Record] Recording restarted');
+              console.log('[SPYN Record] Restarting recording...');
+              try {
+                await Audio.setAudioModeAsync({
+                  allowsRecordingIOS: true,
+                  playsInSilentModeIOS: true,
+                });
+                
+                // Small delay before creating new recording
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                const { recording: newRecording } = await Audio.Recording.createAsync(
+                  Audio.RecordingOptionsPresets.HIGH_QUALITY
+                );
+                recordingRef.current = newRecording;
+                console.log('[SPYN Record] Recording restarted successfully');
+              } catch (restartErr) {
+                console.error('[SPYN Record] Restart error:', restartErr);
+                // If restart fails, stop the session
+                setIsRecording(false);
+                isRecordingRef.current = false;
+                Alert.alert('Erreur', 'Impossible de continuer l\'enregistrement. Session sauvegardée.');
+              }
             }
           } catch (err) {
             console.error('[SPYN Record] Recording cycle error:', err);
