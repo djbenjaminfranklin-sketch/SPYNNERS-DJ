@@ -81,10 +81,8 @@ export default function AdminScreen() {
 
   const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
-  // Admin emails - add your email here
-  const ADMIN_EMAILS = ['admin@spynners.com', 'contact@spynners.com', 'djbenjaminfranklin@gmail.com', user?.email];
-
-  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
+  // Use the centralized isUserAdmin function
+  const isAdmin = isUserAdmin(user);
 
   useEffect(() => {
     if (isAdmin) {
