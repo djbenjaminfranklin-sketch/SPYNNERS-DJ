@@ -26,6 +26,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 // Import legacy FileSystem API for SDK 54 compatibility
 import * as LegacyFileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { useAuth } from '../../src/contexts/AuthContext';
