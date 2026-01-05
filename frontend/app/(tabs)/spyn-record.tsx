@@ -668,6 +668,7 @@ export default function SpynRecordScreen() {
       console.error('[SPYN Record] Analysis error:', error?.response?.data || error.message || error);
       setCurrentAnalysis('Erreur d\'analyse');
     } finally {
+      isAnalyzingRef.current = false;
       setIsAnalyzing(false);
       setTimeout(() => setCurrentAnalysis(''), 3000);
     }
