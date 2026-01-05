@@ -49,6 +49,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const playTrack = async (track: Track) => {
     try {
       setIsLoading(true);
+      console.log('[Player] Attempting to play track:', track.title);
       
       // Stop and unload current sound
       if (soundRef.current) {
@@ -58,8 +59,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       }
 
       const audioUrl = track.audio_url || track.audio_file;
+      console.log('[Player] Audio URL:', audioUrl);
+      
       if (!audioUrl) {
         console.warn('[Player] No audio URL for track:', track.title);
+        // Still set the current track so the player appears
+        setCurrentTrack(track);
+        setIsPlaying(false);
         setIsLoading(false);
         return;
       }
