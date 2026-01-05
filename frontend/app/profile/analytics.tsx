@@ -442,7 +442,7 @@ export default function AnalyticsScreen() {
             end={{ x: 1, y: 0 }}
           >
             <Ionicons name="document-text-outline" size={20} color="#fff" />
-            <Text style={styles.exportButtonText}>Télécharger le rapport CSV</Text>
+            <Text style={styles.exportButtonText}>{t('csv.downloadReport')}</Text>
             <Ionicons name="download-outline" size={20} color="#fff" />
           </LinearGradient>
         </TouchableOpacity>
