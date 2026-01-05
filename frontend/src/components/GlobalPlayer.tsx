@@ -208,7 +208,7 @@ export default function GlobalPlayer() {
             {
               translateY: playerAnim.interpolate({
                 inputRange: [0, 1],
-                outputRange: [100, 0],
+                outputRange: [120, 0],
               }),
             },
           ],
@@ -216,8 +216,9 @@ export default function GlobalPlayer() {
       ]}
     >
       <LinearGradient colors={['#1a1a2e', '#16213e']} style={styles.gradient}>
-        {/* Track Info */}
-        <View style={styles.trackInfo}>
+        {/* Row 1: Track Info + Main Controls */}
+        <View style={styles.mainRow}>
+          {/* Album Art */}
           {coverUrl ? (
             <Image source={{ uri: coverUrl }} style={styles.cover} />
           ) : (
@@ -225,6 +226,8 @@ export default function GlobalPlayer() {
               <Ionicons name="musical-notes" size={20} color={Colors.textMuted} />
             </View>
           )}
+          
+          {/* Track Info */}
           <View style={styles.textInfo}>
             <Text style={styles.title} numberOfLines={1}>
               {currentTrack.title}
@@ -233,47 +236,38 @@ export default function GlobalPlayer() {
               {getArtistName(currentTrack)}
             </Text>
           </View>
-        </View>
-
-        {/* Controls */}
-        <View style={styles.controls}>
-          <TouchableOpacity style={styles.controlBtn} onPress={handleShare}>
-            <Ionicons name="share-outline" size={18} color="#fff" />
-          </TouchableOpacity>
           
-          {/* Previous button - only show if queue has multiple tracks */}
-          {hasQueue && (
-            <TouchableOpacity style={styles.controlBtn} onPress={playPrevious}>
-              <Ionicons name="play-skip-back" size={18} color="#fff" />
-            </TouchableOpacity>
-          )}
-          
-          <TouchableOpacity style={styles.playBtn} onPress={togglePlayPause} disabled={isLoading}>
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
+          {/* Playback Controls */}
+          <View style={styles.playbackControls}>
+            {hasQueue && (
+              <TouchableOpacity style={styles.skipBtn} onPress={playPrevious}>
+                <Ionicons name="play-skip-back" size={22} color="#fff" />
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
-          
-          {/* Next button - only show if queue has multiple tracks */}
-          {hasQueue && (
-            <TouchableOpacity style={styles.controlBtn} onPress={playNext}>
-              <Ionicons name="play-skip-forward" size={18} color="#fff" />
+            
+            <TouchableOpacity style={styles.playBtn} onPress={togglePlayPause} disabled={isLoading}>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name={isPlaying ? 'pause' : 'play'} size={26} color="#fff" />
+              )}
             </TouchableOpacity>
-          )}
+            
+            {hasQueue && (
+              <TouchableOpacity style={styles.skipBtn} onPress={playNext}>
+                <Ionicons name="play-skip-forward" size={22} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </View>
           
-          <TouchableOpacity style={styles.controlBtn} onPress={openPlaylistModal}>
-            <Ionicons name="list-outline" size={18} color="#fff" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.controlBtn} onPress={closePlayer}>
-            <Ionicons name="close" size={20} color={Colors.textMuted} />
+          {/* Close Button */}
+          <TouchableOpacity style={styles.closeBtn} onPress={closePlayer}>
+            <Ionicons name="close-circle" size={28} color={Colors.textMuted} />
           </TouchableOpacity>
         </View>
-
-        {/* Progress Bar - simplified */}
-        <View style={styles.progressSection}>
+        
+        {/* Row 2: Progress Bar + Action Buttons */}
+        <View style={styles.bottomRow}>
           <Text style={styles.time}>{formatTime(displayPosition)}</Text>
           
           <View style={styles.progressContainer} {...panResponder.panHandlers}>
@@ -288,6 +282,14 @@ export default function GlobalPlayer() {
           </View>
           
           <Text style={styles.time}>{formatTime(playbackDuration)}</Text>
+          
+          <TouchableOpacity style={styles.actionBtn} onPress={handleShare}>
+            <Ionicons name="share-outline" size={18} color="#fff" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.actionBtn} onPress={openPlaylistModal}>
+            <Ionicons name="add-circle-outline" size={20} color="#fff" />
+          </TouchableOpacity>
         </View>
       </LinearGradient>
       
