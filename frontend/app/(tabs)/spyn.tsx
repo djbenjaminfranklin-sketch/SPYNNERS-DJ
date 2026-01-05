@@ -774,8 +774,9 @@ export default function SpynScreen() {
 
   // Send email immediately for a single track
   const sendEmailForTrack = async (track: TrackResult) => {
-    if (!track.producer_id) {
-      console.log(`[SPYN] Skipping email for ${track.title} - no producer_id`);
+    // Need either producer_id or track id to send email
+    if (!track.producer_id && !track.id) {
+      console.log(`[SPYN] Skipping email for ${track.title} - no producer_id and no track id`);
       return;
     }
     
@@ -787,12 +788,17 @@ export default function SpynScreen() {
     try {
       const djName = user?.full_name || 'DJ';
       
-      console.log(`[SPYN] 📧 Sending email for: ${track.title}, producer: ${track.producer_id}`);
+      console.log(`[SPYN] 📧 Sending email for: ${track.title}, producer: ${track.producer_id}, trackId: ${track.id}`);
       
+      // Format expected by Spynners API
       const emailPayload = {
-        producerId: track.producer_id,
+        // Required fields - use trackId if no producerId
+        producerId: track.producer_id || null,
+        trackId: track.id, // Spynners track ID
         trackTitle: track.title || 'Unknown Track',
+        artistName: track.artist || 'Unknown Artist',
         djName: djName,
+        // Optional fields
         djAvatar: user?.avatar || '',
         playedAt: new Date().toISOString(),
         venue: location?.venue || '',
@@ -800,6 +806,8 @@ export default function SpynScreen() {
         country: location?.country || '',
         trackArtworkUrl: track.cover_image || '',
       };
+      
+      console.log('[SPYN] Email payload:', JSON.stringify(emailPayload));
       
       // Call Spynners API directly instead of going through backend proxy
       const response = await axios.post(
