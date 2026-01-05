@@ -198,11 +198,6 @@ export default function ProfileScreen() {
                 {profile?.full_name?.charAt(0).toUpperCase() || 'U'}
               </Text>
             )}
-            {isAdmin && (
-              <View style={styles.adminBadge}>
-                <Ionicons name="shield-checkmark" size={14} color="#fff" />
-              </View>
-            )}
           </View>
           <Text style={styles.name}>
             {profile?.artist_name || profile?.full_name || t('profile.user')}
