@@ -751,7 +751,7 @@ export default function SpynRecordScreen() {
     try {
       const djName = user?.full_name || 'DJ';
       
-      console.log(`[SPYN Record] 📧 Sending email for: ${track.title}`);
+      console.log(`[SPYN Record] 📧 Sending email for: ${track.title}, trackId: ${track.spynnersTrackId}`);
       
       const emailPayload = {
         trackId: track.spynnersTrackId,
@@ -761,8 +761,9 @@ export default function SpynRecordScreen() {
         playedAt: new Date().toISOString(),
       };
       
+      // Call Spynners API directly instead of going through backend proxy
       const response = await axios.post(
-        `${BACKEND_URL}/api/base44/functions/invoke/sendTrackPlayedEmail`,
+        'https://spynners.com/api/functions/sendTrackPlayedEmail',
         emailPayload,
         {
           headers: {
