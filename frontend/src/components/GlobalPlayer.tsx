@@ -242,7 +242,7 @@ export default function GlobalPlayer() {
             )}
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.controlBtn} onPress={handleAddToPlaylist}>
+          <TouchableOpacity style={styles.controlBtn} onPress={openPlaylistModal}>
             <Ionicons name="list-outline" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -275,6 +275,75 @@ export default function GlobalPlayer() {
           </TouchableOpacity>
         </View>
       </LinearGradient>
+      
+      {/* Playlist Modal */}
+      <Modal
+        visible={showPlaylistModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPlaylistModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Ajouter à une playlist</Text>
+              <TouchableOpacity onPress={() => setShowPlaylistModal(false)}>
+                <Ionicons name="close" size={24} color={Colors.text} />
+              </TouchableOpacity>
+            </View>
+            
+            {/* Create new playlist */}
+            <View style={styles.createSection}>
+              <TextInput
+                style={styles.createInput}
+                placeholder="Nouvelle playlist..."
+                placeholderTextColor={Colors.textMuted}
+                value={newPlaylistName}
+                onChangeText={setNewPlaylistName}
+              />
+              <TouchableOpacity 
+                style={[styles.createBtn, !newPlaylistName.trim() && styles.createBtnDisabled]}
+                onPress={handleCreatePlaylist}
+                disabled={!newPlaylistName.trim() || creatingPlaylist}
+              >
+                {creatingPlaylist ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons name="add" size={20} color="#fff" />
+                )}
+              </TouchableOpacity>
+            </View>
+            
+            {/* Playlists list */}
+            {loadingPlaylists ? (
+              <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 20 }} />
+            ) : playlists.length === 0 ? (
+              <Text style={styles.emptyText}>Aucune playlist. Créez-en une ci-dessus !</Text>
+            ) : (
+              <FlatList
+                data={playlists}
+                keyExtractor={(item) => item.id || item._id || Math.random().toString()}
+                renderItem={({ item }) => (
+                  <TouchableOpacity 
+                    style={styles.playlistItem}
+                    onPress={() => handleAddToPlaylist(item.id || item._id || '')}
+                  >
+                    <Ionicons name="musical-notes" size={24} color={Colors.primary} />
+                    <View style={styles.playlistInfo}>
+                      <Text style={styles.playlistName}>{item.name}</Text>
+                      <Text style={styles.playlistCount}>
+                        {item.tracks?.length || 0} track(s)
+                      </Text>
+                    </View>
+                    <Ionicons name="add-circle-outline" size={24} color={Colors.primary} />
+                  </TouchableOpacity>
+                )}
+                style={styles.playlistList}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </Animated.View>
   );
 }
