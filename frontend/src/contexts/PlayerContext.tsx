@@ -39,11 +39,25 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Reference for VIP preview timeout
+  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const onPlaybackStatusUpdate = (status: any) => {
     if (status.isLoaded) {
       setPlaybackPosition(status.positionMillis || 0);
       setPlaybackDuration(status.durationMillis || 0);
       setIsPlaying(status.isPlaying);
+      
+      // Check if we've reached the VIP preview end
+      if (currentTrack?.is_vip && currentTrack?.vip_preview_end) {
+        const previewEndMs = currentTrack.vip_preview_end * 1000;
+        if (status.positionMillis >= previewEndMs && status.isPlaying) {
+          console.log('[Player] VIP preview ended at', status.positionMillis / 1000, 'seconds');
+          // Stop playback at preview end
+          soundRef.current?.pauseAsync();
+          setIsPlaying(false);
+        }
+      }
       
       if (status.didJustFinish) {
         setIsPlaying(false);
@@ -56,7 +70,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       console.log('[Player] Attempting to play track:', track.title);
-      console.log('[Player] Track list provided:', trackList?.length || 0, 'tracks');
+      console.log('[Player] Is VIP:', track.is_vip);
+      console.log('[Player] VIP Preview Start:', track.vip_preview_start);
+      console.log('[Player] VIP Preview End:', track.vip_preview_end);
+      
+      // Clear any existing preview timeout
+      if (previewTimeoutRef.current) {
+        clearTimeout(previewTimeoutRef.current);
+        previewTimeoutRef.current = null;
+      }
       
       // Update queue if trackList provided
       if (trackList && trackList.length > 0) {
@@ -99,11 +121,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         shouldDuckAndroid: true,
       });
 
+      // Determine initial position for VIP tracks
+      let initialPositionMs = 0;
+      if (track.is_vip && track.vip_preview_start) {
+        initialPositionMs = track.vip_preview_start * 1000;
+        console.log('[Player] Starting VIP preview at', track.vip_preview_start, 'seconds');
+      }
+
       // Create and play new sound
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
         { 
           shouldPlay: true,
+          positionMillis: initialPositionMs,
           progressUpdateIntervalMillis: 500,
         },
         onPlaybackStatusUpdate
@@ -112,7 +142,21 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       soundRef.current = sound;
       setCurrentTrack(track);
       setIsPlaying(true);
-      setPlaybackPosition(0);
+      setPlaybackPosition(initialPositionMs);
+      
+      // Set timeout for VIP preview end
+      if (track.is_vip && track.vip_preview_start && track.vip_preview_end) {
+        const previewDurationMs = (track.vip_preview_end - track.vip_preview_start) * 1000;
+        console.log('[Player] VIP preview duration:', previewDurationMs / 1000, 'seconds');
+        
+        previewTimeoutRef.current = setTimeout(async () => {
+          console.log('[Player] VIP preview timeout reached');
+          if (soundRef.current) {
+            await soundRef.current.pauseAsync();
+            setIsPlaying(false);
+          }
+        }, previewDurationMs);
+      }
       
       console.log('[Player] Playing:', track.title);
     } catch (error) {
