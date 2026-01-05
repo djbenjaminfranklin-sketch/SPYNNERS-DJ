@@ -1325,30 +1325,52 @@ export default function SpynRecordScreen() {
 
       {/* Audio Source Indicator */}
       <View style={styles.audioSourceContainer}>
+        {/* Offline Indicator */}
+        {isOffline && (
+          <View style={styles.offlineBadge}>
+            <Ionicons name="cloud-offline" size={14} color="#FF6B6B" />
+            <Text style={styles.offlineText}>Mode Hors-ligne</Text>
+          </View>
+        )}
+        
+        {/* Pending Sync Indicator */}
+        {pendingSyncCount > 0 && !isOffline && (
+          <TouchableOpacity style={styles.syncBadge} onPress={syncOfflineSession}>
+            <Ionicons name="cloud-upload" size={14} color="#FFB800" />
+            <Text style={styles.syncText}>{pendingSyncCount} à synchroniser</Text>
+          </TouchableOpacity>
+        )}
+        
         <View style={[
           styles.audioSourceBadge,
-          audioSource === 'external' ? styles.audioSourceExternal : styles.audioSourceInternal
+          audioSource === 'usb' ? styles.audioSourceUSB : 
+          audioSource === 'external' ? styles.audioSourceExternal : 
+          styles.audioSourceInternal
         ]}>
           <Ionicons 
-            name={audioSource === 'external' ? 'hardware-chip' : 'mic'} 
+            name={audioSource === 'usb' ? 'hardware-chip' : audioSource === 'external' ? 'headset' : 'mic'} 
             size={16} 
-            color={audioSource === 'external' ? GREEN_COLOR : '#888'} 
+            color={audioSource === 'usb' ? '#00D4FF' : audioSource === 'external' ? GREEN_COLOR : '#888'} 
           />
           <Text style={[
             styles.audioSourceText,
-            audioSource === 'external' && styles.audioSourceTextExternal
+            (audioSource === 'external' || audioSource === 'usb') && styles.audioSourceTextExternal
           ]}>
             {audioSourceName}
           </Text>
-          {audioSource === 'external' && (
-            <View style={styles.externalDot} />
+          {(audioSource === 'external' || audioSource === 'usb') && (
+            <View style={[styles.externalDot, audioSource === 'usb' && styles.usbDot]} />
+          )}
+          {isCheckingUSB && (
+            <Ionicons name="refresh" size={12} color="#666" style={{ marginLeft: 4 }} />
           )}
         </View>
         <TouchableOpacity 
           style={styles.refreshSourceButton}
           onPress={detectAudioSources}
+          disabled={isCheckingUSB}
         >
-          <Ionicons name="refresh" size={18} color="#666" />
+          <Ionicons name="refresh" size={18} color={isCheckingUSB ? '#333' : '#666'} />
         </TouchableOpacity>
       </View>
 
