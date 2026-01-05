@@ -983,6 +983,10 @@ export default function HomeScreen() {
                 onChangeText={(text) => {
                   console.log('[SendTrack] Search query:', text);
                   setMemberSearchQuery(text);
+                  // Trigger server-side search when 2+ characters
+                  if (text.length >= 2) {
+                    searchMembers(text);
+                  }
                 }}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -996,11 +1000,20 @@ export default function HomeScreen() {
               )}
             </View>
             
+            {/* Show count of matching members */}
+            <Text style={{ color: Colors.textMuted, fontSize: 12, marginBottom: 8 }}>
+              {filteredMembers.length} {t('common.results')} {memberSearchQuery && `"${memberSearchQuery}"`}
+            </Text>
+            
             {loadingMembers ? (
               <ActivityIndicator size="small" color={Colors.primary} style={{ marginVertical: 20 }} />
             ) : (
               <ScrollView style={{ maxHeight: 300 }} keyboardShouldPersistTaps="handled">
-                {filteredMembers.slice(0, 50).map((member: any) => {
+                {filteredMembers.length === 0 ? (
+                  <Text style={{ color: Colors.textMuted, textAlign: 'center', paddingVertical: 20 }}>
+                    {t('common.noResults')}
+                  </Text>
+                ) : filteredMembers.slice(0, 100).map((member: any) => {
                   const memberId = member.id || member._id || '';
                   const memberName = member.full_name || member.name || member.email?.split('@')[0] || 'Unknown';
                   return (
