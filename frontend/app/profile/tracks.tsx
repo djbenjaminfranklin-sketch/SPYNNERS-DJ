@@ -265,7 +265,7 @@ export default function ManageTracksScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={CYAN_COLOR} />
-        <Text style={styles.loadingText}>Loading your tracks...</Text>
+        <Text style={styles.loadingText}>{t('tracks.loadingTracks')}</Text>
       </View>
     );
   }
@@ -277,7 +277,7 @@ export default function ManageTracksScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Manage Your Tracks</Text>
+        <Text style={styles.headerTitle}>{t('tracks.manageYourTracks')}</Text>
         <TouchableOpacity onPress={() => router.push('/upload')} style={styles.addButton}>
           <Ionicons name="add" size={24} color={CYAN_COLOR} />
         </TouchableOpacity>
@@ -288,7 +288,7 @@ export default function ManageTracksScreen() {
         <Ionicons name="search" size={20} color={Colors.textMuted} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search tracks..."
+          placeholder={t('tracks.searchTracks')}
           placeholderTextColor={Colors.textMuted}
           value={searchQuery}
           onChangeText={setSearchQuery}
