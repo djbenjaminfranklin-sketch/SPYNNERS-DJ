@@ -2879,6 +2879,49 @@ async def update_user_diamonds(request: UpdateDiamondsRequest, authorization: st
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/user/diamonds")
+async def get_user_diamonds(authorization: str = Header(None)):
+    """
+    Get user's black diamonds balance from Spynners API.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Diamonds] Getting user diamonds...")
+        
+        # Get current user data from Spynners
+        user_data = await call_spynners_function("nativeGetCurrentUser", {}, authorization)
+        
+        if not user_data:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Try various field names for black diamonds
+        diamonds = (
+            user_data.get('black_diamonds') or 
+            user_data.get('blackDiamonds') or 
+            user_data.get('diamonds') or 
+            user_data.get('balance') or 
+            0
+        )
+        
+        print(f"[Diamonds] User has {diamonds} diamonds")
+        print(f"[Diamonds] Full user data: {user_data}")
+        
+        return {
+            "success": True,
+            "black_diamonds": diamonds,
+            "user_id": user_data.get('id') or user_data.get('_id'),
+            "email": user_data.get('email'),
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Diamonds] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ==================== ANALYTICS CSV EXPORT ====================
 
 class AnalyticsCSVRequest(BaseModel):
