@@ -1177,27 +1177,26 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   
-  // Menu Grid - Two Rows
+  // Menu Grid - Three Rows (3x3)
   menuContainer: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 8,
+    paddingVertical: 10,
+    gap: 10,
   },
   menuRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: 10,
   },
   menuItem: { 
     flex: 1,
     aspectRatio: 1,
-    maxWidth: MENU_ITEM_SIZE, 
-    borderRadius: 10, 
+    borderRadius: 12, 
     overflow: 'hidden' 
   },
   menuItemHighlight: { borderWidth: 2, borderColor: Colors.primary },
-  menuItemGradient: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 4 },
-  menuItemLabel: { color: '#fff', fontSize: 8, fontWeight: '600', marginTop: 3, textAlign: 'center' },
+  menuItemGradient: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 8 },
+  menuItemLabel: { color: '#fff', fontSize: 11, fontWeight: '700', marginTop: 6, textAlign: 'center' },
   
   // Search
   searchSection: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 10, gap: 10 },
