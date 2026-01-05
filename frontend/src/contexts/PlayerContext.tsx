@@ -52,10 +52,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const playTrack = async (track: Track) => {
+  const playTrack = async (track: Track, trackList?: Track[]) => {
     try {
       setIsLoading(true);
       console.log('[Player] Attempting to play track:', track.title);
+      
+      // Update queue if trackList provided
+      if (trackList && trackList.length > 0) {
+        setQueue(trackList);
+        const index = trackList.findIndex(t => 
+          (t.id || t._id) === (track.id || track._id)
+        );
+        setCurrentIndex(index >= 0 ? index : 0);
+      }
       
       // Stop and unload current sound
       if (soundRef.current) {
@@ -104,6 +113,20 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  const playNext = async () => {
+    if (queue.length === 0) return;
+    const nextIndex = (currentIndex + 1) % queue.length;
+    setCurrentIndex(nextIndex);
+    await playTrack(queue[nextIndex]);
+  };
+  
+  const playPrevious = async () => {
+    if (queue.length === 0) return;
+    const prevIndex = currentIndex > 0 ? currentIndex - 1 : queue.length - 1;
+    setCurrentIndex(prevIndex);
+    await playTrack(queue[prevIndex]);
   };
 
   const togglePlayPause = async () => {
