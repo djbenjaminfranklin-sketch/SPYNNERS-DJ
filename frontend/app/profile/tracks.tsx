@@ -237,6 +237,16 @@ export default function ManageTracksScreen() {
     }
   };
 
+  // Helper function to get translated status
+  const getTranslatedStatus = (status?: string): string => {
+    switch (status?.toLowerCase()) {
+      case 'approved': return t('library.approved');
+      case 'pending': return t('library.pending');
+      case 'rejected': return t('library.rejected');
+      default: return t('library.pending');
+    }
+  };
+
   const filteredTracks = tracks.filter(track => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
