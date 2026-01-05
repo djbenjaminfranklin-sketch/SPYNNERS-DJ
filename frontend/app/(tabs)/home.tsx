@@ -1462,8 +1462,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  memberName: {
+  memberNameContainer: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  memberName: {
     color: Colors.text,
     fontSize: 14,
     fontWeight: '500',
