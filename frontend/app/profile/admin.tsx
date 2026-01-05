@@ -370,17 +370,23 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   menuCard: {
-    width: (Dimensions.get('window').width - 48) / 2,
-    height: (Dimensions.get('window').width - 48) / 2,
-    marginRight: 8,
+    width: '47%',
+    aspectRatio: 1,
     marginBottom: 16,
     borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-  },
-  menuGradient: {
-    flex: 1,
     padding: Spacing.md,
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  menuIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuTextContainer: {
+    marginTop: 'auto',
   },
   menuIconContainer: {
     position: 'absolute',
