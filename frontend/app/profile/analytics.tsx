@@ -386,7 +386,7 @@ export default function AnalyticsScreen() {
             </View>
             
             <View style={styles.dateInputContainer}>
-              <Text style={styles.dateLabel}>Date de fin (AAAA-MM-JJ)</Text>
+              <Text style={styles.dateLabel}>{t('csv.endDate')}</Text>
               <TextInput
                 style={styles.dateInput}
                 value={csvEndDate}
