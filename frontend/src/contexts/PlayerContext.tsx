@@ -182,10 +182,14 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         playbackPosition,
         playbackDuration,
         isLoading,
+        queue,
+        currentIndex,
         playTrack,
         togglePlayPause,
         seekTo,
         closePlayer,
+        playNext,
+        playPrevious,
       }}
     >
       {children}
