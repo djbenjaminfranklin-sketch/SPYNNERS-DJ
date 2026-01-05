@@ -190,8 +190,6 @@ class OfflineService {
       // On error, assume we're online (optimistic)
       this.isOnline = true;
       return this.isOnline;
-      }
-      return this.isOnline;
     }
   }
 
