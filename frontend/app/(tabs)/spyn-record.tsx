@@ -1256,18 +1256,6 @@ export default function SpynRecordScreen() {
             >
               <Ionicons name="stop" size={30} color="#fff" />
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.controlButton} 
-              onPress={analyzeCurrentAudio}
-              disabled={isAnalyzing}
-            >
-              <Ionicons 
-                name="scan" 
-                size={30} 
-                color={isAnalyzing ? '#666' : CYAN_COLOR} 
-              />
-            </TouchableOpacity>
           </View>
         )}
       </View>
