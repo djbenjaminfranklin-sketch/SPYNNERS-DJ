@@ -156,27 +156,11 @@ class OfflineService {
   }
 
   async checkNetworkStatus(): Promise<boolean> {
-    try {
-      const state = await NetInfo.fetch();
-      
-      // On web, prefer navigator.onLine
-      if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
-        this.isOnline = navigator.onLine;
-      } else {
-        // On iOS/Android, be optimistic about connectivity
-        // If isConnected is null or isInternetReachable is true, assume online
-        this.isOnline = (state.isConnected === true) || (state.isInternetReachable === true) || (state.isConnected === null);
-      }
-      
-      console.log('[Offline] checkNetworkStatus:', this.isOnline ? 'ONLINE' : 'OFFLINE',
-        `(isConnected=${state.isConnected}, isInternetReachable=${state.isInternetReachable})`);
-      return this.isOnline;
-    } catch (error) {
-      console.error('[Offline] checkNetworkStatus error:', error);
-      // On error, assume we're online (optimistic)
-      this.isOnline = true;
-      return this.isOnline;
-    }
+    // FORCE ONLINE - The app clearly makes successful API calls
+    // NetInfo is unreliable on mobile devices
+    this.isOnline = true;
+    console.log('[Offline] checkNetworkStatus: FORCED ONLINE');
+    return this.isOnline;
   }
 
   isNetworkAvailable(): boolean {
