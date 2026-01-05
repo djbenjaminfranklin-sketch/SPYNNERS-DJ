@@ -882,71 +882,14 @@ export default function SpynScreen() {
     // Check if valid venue (restaurant, bar, club, etc.)
     const isValidVenue = location?.is_valid_venue === true;
     
-    // Send emails to producers - send even if venue not validated (user might be at home testing)
-    // Note: We try to send emails regardless of offline status since API calls are clearly working
-    if (identifiedTracks.length > 0 && token) {
-      console.log('[SPYN] ✅ Sending emails to producers...');
-      console.log('[SPYN] Venue:', location?.venue, '| Valid:', isValidVenue, '| isOffline:', isOffline);
-      
-      let emailsSent = 0;
-      let emailsFailed = 0;
-      
-      // Send emails to all track producers
-      for (const track of identifiedTracks) {
-        try {
-          // Determine DJ name based on who played
-          const djNameToUse = whoPlayed === 'another' && otherDjName.trim() 
-            ? otherDjName.trim() 
-            : user?.full_name || 'DJ';
-          
-          console.log(`[SPYN] Sending email for track: ${track.title}, producerId: ${track.producer_id}, DJ: ${djNameToUse}`);
-          
-          // Call with required fields: producerId, trackTitle, djName
-          const emailPayload = {
-            producerId: track.producer_id, // Required field
-            trackTitle: track.title || 'Unknown Track', // Required field
-            djName: djNameToUse, // Required field - uses other DJ name if specified
-            // Optional fields
-            city: location?.city || '',
-            country: location?.country || '',
-            venue: correctedVenue || location?.venue || 'Unknown venue',
-            trackArtworkUrl: track.cover_image || '',
-            djAvatar: whoPlayed === 'me' ? (user?.avatar || '') : '', // No avatar if another DJ
-            playedAt: new Date().toISOString(),
-            reportedBy: whoPlayed === 'another' ? user?.full_name : undefined, // Who reported the session
-          };
-          
-          console.log('[SPYN] Email payload:', JSON.stringify(emailPayload));
-          
-          const response = await axios.post(
-            `${BACKEND_URL}/api/base44/functions/invoke/sendTrackPlayedEmail`,
-            emailPayload,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-              timeout: 10000,
-            }
-          );
-          console.log(`[SPYN] ✅ Email sent for: ${track.title}`, response.data);
-          emailsSent++;
-        } catch (e: any) {
-          console.log(`[SPYN] ❌ Could not send email for: ${track.title}`, e?.response?.data || e.message);
-          emailsFailed++;
-        }
-      }
-      
-      // Show feedback to user about emails
-      if (emailsSent > 0) {
-        console.log(`[SPYN] 📧 ${emailsSent} email(s) envoyé(s) aux producteurs`);
-      }
-      if (emailsFailed > 0) {
-        console.log(`[SPYN] ⚠️ ${emailsFailed} email(s) n'ont pas pu être envoyés`);
-      }
-      
-    } else if (isOffline && identifiedTracks.length > 0) {
-      console.log('[SPYN] ⚠️ No emails sent - Offline mode (will be sent when synced)');
+    // Emails are now sent immediately when a track is identified
+    // No need to send them again at the end of session
+    console.log('[SPYN] Session ended. Emails were sent immediately after each track identification.');
+    console.log('[SPYN] Total tracks identified:', identifiedTracks.length);
+    
+    // If offline with pending tracks, show warning
+    if (isOffline && identifiedTracks.length > 0) {
+      console.log('[SPYN] ⚠️ Session was in offline mode - some emails may not have been sent');
       Alert.alert(
         'Session sauvegardée',
         'Les emails aux producteurs seront envoyés quand vous serez en ligne et que vous synchroniserez vos enregistrements.',
