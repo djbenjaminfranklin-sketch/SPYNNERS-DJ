@@ -1081,6 +1081,12 @@ export default function SpynRecordScreen() {
     try {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri);
+        
+        // After sharing, send emails to producers
+        console.log('[SPYN Record] Sharing complete, sending emails...');
+        setCurrentAnalysis('Envoi des emails aux producteurs...');
+        await sendEmailsToProducers();
+        setCurrentAnalysis('');
       }
     } catch (error) {
       console.error('[SPYN Record] Share error:', error);
