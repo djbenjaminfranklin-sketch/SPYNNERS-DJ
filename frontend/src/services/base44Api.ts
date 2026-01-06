@@ -1628,21 +1628,20 @@ export const base44Profiles = {
             });
           }
           
-          // CRITICAL: Filter tracks that belong to this user
-          // Check multiple ID fields as different tracks may use different fields
+          // CRITICAL: Filter tracks where user is the REAL PRODUCER
+          // NOT tracks they uploaded as admin for other producers
           const myTracks = allTracks.filter((t: any) => {
-            const createdById = String(t.created_by_id || '').trim();
             const producerId = String(t.producer_id || '').trim();
-            const uploadedBy = String(t.uploaded_by || '').trim();
             const targetId = String(userId).trim();
             
-            const isMatch = createdById === targetId || producerId === targetId || uploadedBy === targetId;
+            // Only count tracks where user is the actual producer
+            const isMyProduction = producerId === targetId;
             
-            if (isMatch) {
-              console.log('[Profiles] ✓ My track found:', t.title);
+            if (isMyProduction) {
+              console.log('[Profiles] ✓ My production:', t.title);
             }
             
-            return isMatch;
+            return isMyProduction;
           });
           
           tracksCount = myTracks.length;
