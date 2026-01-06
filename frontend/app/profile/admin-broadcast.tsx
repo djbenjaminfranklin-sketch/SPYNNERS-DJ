@@ -221,40 +221,35 @@ export default function AdminBroadcast() {
     try {
       console.log('[AdminBroadcast] Starting upload for:', file.name, 'uri:', file.uri);
       
-      // For mobile, we need to read the file and send it properly
-      const formData = new FormData();
+      const uploadUrl = `${BACKEND_URL}/api/admin/upload-attachment-local`;
+      console.log('[AdminBroadcast] Sending to:', uploadUrl);
+      console.log('[AdminBroadcast] Token available:', !!token);
       
-      // Mobile: Use the URI approach with proper structure
+      // Use native fetch instead of axios for better mobile compatibility
+      const formData = new FormData();
       formData.append('file', {
         uri: file.uri,
         name: file.name || 'attachment',
         type: file.mimeType || 'application/octet-stream',
       } as any);
       
-      const uploadUrl = `${BACKEND_URL}/api/admin/upload-attachment-local`;
-      console.log('[AdminBroadcast] Sending to:', uploadUrl);
-      console.log('[AdminBroadcast] Token available:', !!token);
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+        body: formData,
+      });
       
-      const response = await axios.post(
-        uploadUrl,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-            'Accept': 'application/json',
-          },
-          timeout: 120000, // 2 minutes timeout for slow connections
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
-        }
-      );
+      console.log('[AdminBroadcast] Response status:', response.status);
       
-      console.log('[AdminBroadcast] Upload response:', response.data);
+      const data = await response.json();
+      console.log('[AdminBroadcast] Upload response:', data);
       
-      if (response.data?.success && response.data?.url) {
+      if (response.ok && data?.success && data?.url) {
         // Make URL absolute for emails
-        let absoluteUrl = response.data.url;
+        let absoluteUrl = data.url;
         if (absoluteUrl.startsWith('/')) {
           absoluteUrl = `${BACKEND_URL}${absoluteUrl}`;
         }
@@ -262,23 +257,19 @@ export default function AdminBroadcast() {
         console.log('[AdminBroadcast] Attachment uploaded:', absoluteUrl);
         Alert.alert('Succès ✅', 'Pièce jointe uploadée !');
       } else {
-        throw new Error(response.data?.error || 'Upload failed');
+        throw new Error(data?.error || data?.detail || `HTTP ${response.status}`);
       }
     } catch (error: any) {
       console.error('[AdminBroadcast] Upload error:', error);
       
       let errorMessage = 'Erreur inconnue';
-      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        errorMessage = 'Délai dépassé. Vérifiez votre connexion internet.';
-      } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network')) {
-        errorMessage = 'Erreur réseau. Vérifiez votre connexion.';
-      } else if (error.response?.data?.detail) {
-        errorMessage = error.response.data.detail;
+      if (error.message?.includes('Network') || error.message?.includes('network')) {
+        errorMessage = 'Erreur réseau. Vérifiez votre connexion internet.';
       } else if (error.message) {
         errorMessage = error.message;
       }
       
-      console.error('[AdminBroadcast] Error details:', errorMessage);
+      console.error('[AdminBroadcast] Error message:', errorMessage);
       Alert.alert('Erreur', `Impossible de télécharger le fichier.\n${errorMessage}`);
       setAttachment(null);
     } finally {
