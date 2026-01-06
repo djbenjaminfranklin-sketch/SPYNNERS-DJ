@@ -496,7 +496,11 @@ export default function AdminBroadcast() {
               </View>
             ) : (
               broadcastHistory.map((item, index) => (
-                <View key={item.id || index} style={styles.historyCard}>
+                <TouchableOpacity 
+                  key={item.id || index} 
+                  style={styles.historyCard}
+                  onPress={() => viewEmailDetail(item)}
+                >
                   <View style={styles.historyIcon}>
                     <Ionicons name="mail" size={20} color="#4CAF50" />
                   </View>
@@ -511,7 +515,8 @@ export default function AdminBroadcast() {
                       }) : 'Date inconnue'}
                     </Text>
                   </View>
-                </View>
+                  <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                </TouchableOpacity>
               ))
             )}
           </View>
@@ -519,6 +524,57 @@ export default function AdminBroadcast() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Email Detail Modal */}
+      <Modal visible={showEmailDetail} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.emailDetailModal}>
+            <View style={styles.emailDetailHeader}>
+              <Ionicons name="mail" size={24} color="#4CAF50" />
+              <Text style={styles.emailDetailTitle}>Détail de l'email</Text>
+              <TouchableOpacity onPress={() => setShowEmailDetail(false)}>
+                <Ionicons name="close" size={24} color={Colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+            
+            {selectedEmail && (
+              <ScrollView style={styles.emailDetailContent}>
+                <Text style={styles.emailDetailLabel}>Sujet</Text>
+                <Text style={styles.emailDetailSubject}>{selectedEmail.subject}</Text>
+                
+                <Text style={styles.emailDetailLabel}>Destinataires</Text>
+                <Text style={styles.emailDetailInfo}>
+                  {selectedEmail.recipient_type === 'all' ? 'Tous les utilisateurs' : 
+                   selectedEmail.recipient_type === 'category' ? `Catégorie: ${selectedEmail.category || 'N/A'}` :
+                   selectedEmail.recipient_type}
+                  {selectedEmail.recipient_count ? ` (${selectedEmail.recipient_count})` : ''}
+                </Text>
+                
+                <Text style={styles.emailDetailLabel}>Date d'envoi</Text>
+                <Text style={styles.emailDetailInfo}>
+                  {selectedEmail.sent_at ? new Date(selectedEmail.sent_at).toLocaleDateString('fr-FR', { 
+                    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                  }) : 'Date inconnue'}
+                </Text>
+                
+                <Text style={styles.emailDetailLabel}>Message</Text>
+                <View style={styles.emailDetailMessageContainer}>
+                  <Text style={styles.emailDetailMessage}>
+                    {selectedEmail.message || 'Contenu non disponible'}
+                  </Text>
+                </View>
+              </ScrollView>
+            )}
+            
+            <TouchableOpacity 
+              style={styles.closeDetailBtn} 
+              onPress={() => setShowEmailDetail(false)}
+            >
+              <Text style={styles.closeDetailBtnText}>Fermer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
