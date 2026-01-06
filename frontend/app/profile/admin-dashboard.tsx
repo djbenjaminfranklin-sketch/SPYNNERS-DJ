@@ -142,6 +142,25 @@ export default function AdminDashboard() {
           rejection_reason: track.rejection_reason || '',
         })));
       }
+
+      // Fetch users from backend
+      const usersResponse = await axios.get(`${BACKEND_URL}/api/admin/users?limit=10000`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (usersResponse.data?.success && usersResponse.data?.users) {
+        setAllUsers(usersResponse.data.users.map((u: any) => ({
+          id: u.id || u._id,
+          email: u.email || '',
+          full_name: u.full_name || '',
+          artist_name: u.artist_name || '',
+          avatar_url: u.avatar_url || '',
+          user_type: u.user_type || 'user',
+          role: u.role || 'user',
+          bio: u.bio || '',
+          created_date: u.created_date || u.created_at || '',
+        })));
+      }
     } catch (error) {
       console.error('[AdminDashboard] Error:', error);
       // Fallback to old method if new endpoints fail
