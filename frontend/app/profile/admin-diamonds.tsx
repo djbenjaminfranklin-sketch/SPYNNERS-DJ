@@ -351,6 +351,54 @@ export default function AdminDiamonds() {
           </View>
         </View>
       </Modal>
+
+      {/* Send to All Modal */}
+      <Modal visible={showSendAllModal} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Ionicons name="diamond" size={32} color="#9C27B0" />
+              <Text style={styles.modalTitle}>Envoyer à tous</Text>
+            </View>
+            <Text style={styles.modalSubtitle}>
+              {sendingAll 
+                ? `Envoi en cours... ${sendAllProgress.current}/${sendAllProgress.total}`
+                : `${users.length} utilisateurs recevront des diamonds`
+              }
+            </Text>
+            {sendingAll ? (
+              <View style={styles.progressContainer}>
+                <ActivityIndicator size="large" color="#9C27B0" />
+                <View style={styles.progressBar}>
+                  <View style={[styles.progressFill, { width: `${(sendAllProgress.current / sendAllProgress.total) * 100}%` }]} />
+                </View>
+                <Text style={styles.progressText}>
+                  {Math.round((sendAllProgress.current / sendAllProgress.total) * 100)}%
+                </Text>
+              </View>
+            ) : (
+              <>
+                <TextInput
+                  style={styles.amountInput}
+                  placeholder="Montant à envoyer"
+                  placeholderTextColor={Colors.textMuted}
+                  keyboardType="numeric"
+                  value={sendAllAmount}
+                  onChangeText={setSendAllAmount}
+                />
+                <View style={styles.modalActions}>
+                  <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowSendAllModal(false)}>
+                    <Text style={styles.cancelBtnText}>Annuler</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.sendBtn, { backgroundColor: '#9C27B0' }]} onPress={executeSendToAll}>
+                    <Text style={styles.sendBtnText}>Envoyer à tous</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
