@@ -3587,6 +3587,105 @@ async def debug_acrcloud(authorization: str = Header(None)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/admin/sync-acrcloud")
+async def sync_acrcloud(authorization: str = Header(None)):
+    """
+    Sync tracks to ACRCloud.
+    Calls the syncTracksToACRCloud Spynners function.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print("[Admin] Syncing tracks to ACRCloud...")
+        
+        # Call the Spynners syncTracksToACRCloud function
+        result = await call_spynners_function("syncTracksToACRCloud", {}, authorization)
+        
+        if result:
+            print(f"[Admin] Sync result: {result}")
+            return {
+                "success": True,
+                "message": f"Synchronisation terminée. {result.get('synced', 0)} tracks synchronisés.",
+                "data": result
+            }
+        else:
+            return {
+                "success": True,
+                "message": "Synchronisation lancée"
+            }
+        
+    except Exception as e:
+        print(f"[Admin] Sync ACRCloud error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/admin/clean-duplicates")
+async def clean_duplicates(authorization: str = Header(None)):
+    """
+    Clean ACRCloud duplicates.
+    Calls the cleanACRCloudDuplicates Spynners function.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print("[Admin] Cleaning ACRCloud duplicates...")
+        
+        # Call the Spynners cleanACRCloudDuplicates function
+        result = await call_spynners_function("cleanACRCloudDuplicates", {}, authorization)
+        
+        if result:
+            print(f"[Admin] Clean duplicates result: {result}")
+            return {
+                "success": True,
+                "message": f"Nettoyage terminé. {result.get('removed', 0)} doublons supprimés.",
+                "data": result
+            }
+        else:
+            return {
+                "success": True,
+                "message": "Nettoyage terminé"
+            }
+        
+    except Exception as e:
+        print(f"[Admin] Clean duplicates error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/admin/fix-bpm")
+async def fix_missing_bpm(authorization: str = Header(None)):
+    """
+    Fix missing BPM for tracks.
+    Calls the detectBPM Spynners function.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print("[Admin] Fixing missing BPM...")
+        
+        # Call the Spynners detectBPM function
+        result = await call_spynners_function("detectBPM", {}, authorization)
+        
+        if result:
+            print(f"[Admin] Fix BPM result: {result}")
+            return {
+                "success": True,
+                "message": f"Correction terminée. {result.get('fixed', 0)} BPM corrigés.",
+                "data": result
+            }
+        else:
+            return {
+                "success": True,
+                "message": "Correction terminée"
+            }
+        
+    except Exception as e:
+        print(f"[Admin] Fix BPM error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/admin/downloads")
 async def get_admin_downloads(authorization: str = Header(None), limit: int = 500):
     """
