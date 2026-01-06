@@ -101,7 +101,13 @@ const getApiPath = (path: string): string => {
     return path.replace('/api/base44', '');
   }
   if (path.startsWith('/api/admin/')) {
-    // Admin routes need special handling - they call cloud functions
+    // Admin routes - transform to entities calls
+    if (path.includes('/downloads')) {
+      return '/entities/Track';
+    }
+    if (path.includes('/users')) {
+      return '/entities/User';
+    }
     return path;
   }
   if (path === '/api/tracks' || path.startsWith('/api/tracks?')) {
@@ -109,6 +115,25 @@ const getApiPath = (path: string): string => {
   }
   
   return path;
+};
+
+// Wrapper API that transforms paths based on platform
+const mobileApi = {
+  async get(path: string, config?: any) {
+    return api.get(getApiPath(path), config);
+  },
+  async post(path: string, data?: any, config?: any) {
+    return api.post(getApiPath(path), data, config);
+  },
+  async put(path: string, data?: any, config?: any) {
+    return api.put(getApiPath(path), data, config);
+  },
+  async delete(path: string, config?: any) {
+    return api.delete(getApiPath(path), config);
+  },
+  async patch(path: string, data?: any, config?: any) {
+    return api.patch(getApiPath(path), data, config);
+  },
 };
 
 // ==================== TRACK TYPE ====================
