@@ -4048,7 +4048,7 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         # Sessions by DJ - table format like the web version
         for dj_name, dj_sessions in sorted(sessions_by_dj.items()):
             # DJ Header
-            dj_track_count = sum(s.get('tracks_detected', 0) or s.get('track_count', 0) or 0 for s in dj_sessions)
+            dj_track_count = sum(s.get('tracks_count', 0) or s.get('tracks_detected', 0) or 0 for s in dj_sessions)
             elements.append(Paragraph(f"🎧 {dj_name} ({len(dj_sessions)} sessions, {dj_track_count} tracks)", dj_header_style))
             
             # Sessions table for this DJ
