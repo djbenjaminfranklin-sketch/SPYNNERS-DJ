@@ -612,10 +612,13 @@ export default function AdminSessions() {
                   onPress={() => {
                     const today = new Date();
                     const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-                    setTempDateFilter({
+                    const newFilter = {
                       startDate: monthAgo.toISOString().split('T')[0],
                       endDate: today.toISOString().split('T')[0],
-                    });
+                    };
+                    setTempDateFilter(newFilter);
+                    setDateFilter(newFilter); // Apply immediately
+                    setShowDateFilter(false); // Close modal
                   }}
                 >
                   <Text style={styles.presetBtnText}>30 derniers jours</Text>
@@ -627,10 +630,13 @@ export default function AdminSessions() {
                   onPress={() => {
                     const today = new Date();
                     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-                    setTempDateFilter({
+                    const newFilter = {
                       startDate: firstDay.toISOString().split('T')[0],
                       endDate: today.toISOString().split('T')[0],
-                    });
+                    };
+                    setTempDateFilter(newFilter);
+                    setDateFilter(newFilter); // Apply immediately
+                    setShowDateFilter(false); // Close modal
                   }}
                 >
                   <Text style={styles.presetBtnText}>Ce mois</Text>
@@ -640,10 +646,13 @@ export default function AdminSessions() {
                   onPress={() => {
                     const today = new Date();
                     const threeMonthsAgo = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
-                    setTempDateFilter({
+                    const newFilter = {
                       startDate: threeMonthsAgo.toISOString().split('T')[0],
                       endDate: today.toISOString().split('T')[0],
-                    });
+                    };
+                    setTempDateFilter(newFilter);
+                    setDateFilter(newFilter); // Apply immediately
+                    setShowDateFilter(false); // Close modal
                   }}
                 >
                   <Text style={styles.presetBtnText}>3 derniers mois</Text>
