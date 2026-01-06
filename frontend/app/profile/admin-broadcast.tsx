@@ -9,6 +9,8 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Modal,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -20,13 +22,23 @@ import { isUserAdmin } from '../../src/components/AdminBadge';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
+type UserItem = {
+  id: string;
+  email: string;
+  full_name?: string;
+  artist_name?: string;
+  avatar_url?: string;
+};
+
 type BroadcastHistory = {
   id: string;
   subject: string;
+  message?: string;
   recipient_type: string;
   recipient_count: number;
   sent_at: string;
   sent_by?: string;
+  category?: string;
 };
 
 export default function AdminBroadcast() {
