@@ -655,76 +655,45 @@ export const base44Users = {
     try {
       console.log('[Users] Listing users with filters:', filters);
       
-      // Try to fetch as many users as possible in one request
-      // Base44 might have a max limit, so we try different approaches
-      const allUsers: User[] = [];
-      
-      // First attempt: Try to get all users with high limit
+      // Use the admin users endpoint which can fetch all users (up to 10000)
       try {
-        const params = new URLSearchParams();
-        params.append('limit', '1000'); // Try max limit
-        if (filters?.user_type) params.append('user_type', filters.user_type);
-        if (filters?.search) params.append('search', filters.search);
-
-        const response = await mobileApi.get(`/api/base44/entities/User?${params.toString()}`);
+        const response = await mobileApi.get(`/api/admin/users?limit=${filters?.limit || 2000}`);
         const data = response.data;
         
         if (Array.isArray(data) && data.length > 0) {
-          console.log('[Users] Got', data.length, 'users with limit 1000');
-          allUsers.push(...data);
+          console.log('[Users] Got', data.length, 'users from admin endpoint');
+          return data;
         } else if (data?.items && data.items.length > 0) {
           console.log('[Users] Got', data.items.length, 'users from items');
-          allUsers.push(...data.items);
+          return data.items;
+        } else if (data?.users && data.users.length > 0) {
+          console.log('[Users] Got', data.users.length, 'users from users');
+          return data.users;
         }
-      } catch (e) {
-        console.log('[Users] High limit request failed:', e);
+      } catch (adminError) {
+        console.log('[Users] Admin endpoint failed, trying entity API:', adminError);
       }
       
-      // If we got some users but less than expected, try pagination with skip
-      if (allUsers.length > 0 && allUsers.length < 800) {
-        let skip = allUsers.length;
-        let attempts = 0;
-        const maxAttempts = 10;
-        
-        while (attempts < maxAttempts) {
-          try {
-            const params = new URLSearchParams();
-            params.append('limit', '200');
-            params.append('skip', String(skip));
-            if (filters?.user_type) params.append('user_type', filters.user_type);
-            if (filters?.search) params.append('search', filters.search);
-            
-            const response = await mobileApi.get(`/api/base44/entities/User?${params.toString()}`);
-            const data = response.data;
-            let users: User[] = [];
-            
-            if (Array.isArray(data)) users = data;
-            else if (data?.items) users = data.items;
-            
-            console.log('[Users] Pagination skip', skip, 'got', users.length, 'users');
-            
-            if (users.length === 0) break;
-            
-            // Check for duplicates before adding
-            const existingIds = new Set(allUsers.map(u => u.id || u._id));
-            const newUsers = users.filter(u => !existingIds.has(u.id || u._id));
-            
-            if (newUsers.length === 0) break;
-            
-            allUsers.push(...newUsers);
-            skip += users.length;
-            attempts++;
-          } catch (e) {
-            console.log('[Users] Pagination failed at skip', skip);
-            break;
-          }
-        }
-      }
+      // Fallback to entity API
+      const params = new URLSearchParams();
+      params.append('limit', String(filters?.limit || 1000));
+      if (filters?.user_type) params.append('user_type', filters.user_type);
+      if (filters?.search) params.append('search', filters.search);
+
+      const response = await mobileApi.get(`/api/base44/entities/User?${params.toString()}`);
+      const data = response.data;
       
-      console.log('[Users] Total users fetched:', allUsers.length);
-      return allUsers;
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('[Users] Got', data.length, 'users from entity API');
+        return data;
+      }
+      if (data?.items && data.items.length > 0) return data.items;
+      
+      // Last fallback: extract from tracks
+      console.log('[Users] No users from APIs, trying tracks fallback...');
+      return await this.fetchAllUsersFromTracks();
     } catch (error) {
-      console.error('[Users] Error listing users, falling back to tracks:', error);
+      console.error('[Users] Error listing users:', error);
       return await this.fetchAllUsersFromTracks();
     }
   },
