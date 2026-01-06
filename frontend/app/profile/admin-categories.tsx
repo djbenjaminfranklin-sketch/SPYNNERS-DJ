@@ -325,7 +325,7 @@ export default function AdminCategories() {
           {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''} trouvé{filteredUsers.length > 1 ? 's' : ''}
         </Text>
         {filteredUsers.slice(0, 100).map((u) => (
-          <View key={u.id} style={styles.userCard}>
+          <TouchableOpacity key={u.id} style={styles.userCard} onPress={() => openEditModal(u)}>
             {u.avatar_url ? (
               <Image source={{ uri: getDisplayAvatarUrl(u.avatar_url) }} style={styles.userAvatarImg} />
             ) : (
@@ -343,16 +343,104 @@ export default function AdminCategories() {
                 <Text style={styles.userNationality}>📍 {u.nationality}</Text>
               )}
             </View>
-            <View style={[styles.userTypeBadge, { backgroundColor: getUserTypeColor(u.user_type) }]}>
-              <Text style={styles.userTypeText}>{formatUserType(u.user_type)}</Text>
+            <View style={styles.userTypeBadgeContainer}>
+              <View style={[styles.userTypeBadge, { backgroundColor: getUserTypeColor(u.user_type) }]}>
+                <Text style={styles.userTypeText}>{formatUserType(u.user_type)}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} style={{ marginLeft: 4 }} />
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
         {filteredUsers.length > 100 && (
           <Text style={styles.moreText}>+{filteredUsers.length - 100} autres utilisateurs...</Text>
         )}
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Edit User Category Modal */}
+      <Modal visible={showEditModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.editModalContent}>
+            {/* Header */}
+            <View style={styles.editModalHeader}>
+              {selectedUser?.avatar_url ? (
+                <Image source={{ uri: getDisplayAvatarUrl(selectedUser.avatar_url) }} style={styles.editModalAvatar} />
+              ) : (
+                <View style={[styles.editModalAvatar, { backgroundColor: Colors.primary + '20', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={{ color: Colors.primary, fontSize: 18, fontWeight: 'bold' }}>
+                    {selectedUser?.full_name?.charAt(0).toUpperCase() || 'U'}
+                  </Text>
+                </View>
+              )}
+              <View style={styles.editModalUserInfo}>
+                <Text style={styles.editModalUserName}>{selectedUser?.artist_name || selectedUser?.full_name}</Text>
+                <Text style={styles.editModalUserEmail}>{selectedUser?.email}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowEditModal(false)} style={styles.closeModalBtn}>
+                <Ionicons name="close" size={24} color={Colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Categories Selection */}
+            <Text style={styles.editSectionTitle}>Catégories (sélection multiple)</Text>
+            <View style={styles.categoriesGrid}>
+              {CATEGORIES.map((cat) => {
+                const isSelected = userCategories.includes(cat.id);
+                return (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[
+                      styles.categoryChip,
+                      isSelected && { backgroundColor: cat.color + '30', borderColor: cat.color }
+                    ]}
+                    onPress={() => toggleCategory(cat.id)}
+                  >
+                    <Ionicons 
+                      name={isSelected ? 'checkmark-circle' : (cat.icon as any)} 
+                      size={18} 
+                      color={isSelected ? cat.color : Colors.textMuted} 
+                    />
+                    <Text style={[styles.categoryChipText, isSelected && { color: cat.color }]}>
+                      {cat.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Current Selection Summary */}
+            {userCategories.length > 0 && (
+              <View style={styles.selectionSummary}>
+                <Text style={styles.selectionLabel}>Sélection actuelle:</Text>
+                <Text style={styles.selectionText}>
+                  {userCategories.map(c => CATEGORIES.find(cat => cat.id === c)?.name || c).join(', ')}
+                </Text>
+              </View>
+            )}
+
+            {/* Actions */}
+            <View style={styles.editModalActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowEditModal(false)}>
+                <Text style={styles.cancelBtnText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.saveBtn, saving && { opacity: 0.5 }]} 
+                onPress={saveUserCategories}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark" size={18} color="#fff" />
+                    <Text style={styles.saveBtnText}>Sauvegarder</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
