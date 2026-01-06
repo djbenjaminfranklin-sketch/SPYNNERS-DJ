@@ -3448,30 +3448,30 @@ async def reject_track(track_id: str, reason: str = None, authorization: str = H
         }
         
         async with httpx.AsyncClient(timeout=30.0) as client:
-            # Try PATCH first (most REST APIs use PATCH for partial updates)
-            response = await client.patch(
-                base44_url,
-                json=update_data,
-                headers=headers
-            )
-            
-            print(f"[Admin] Base44 PATCH response: {response.status_code} - {response.text[:200] if response.text else 'empty'}")
-            
-            if response.status_code == 200:
-                print(f"[Admin] Track {track_id} rejected successfully via PATCH")
-                return {"success": True, "message": "Track rejected", "track": response.json() if response.text else {}}
-            
-            # If PATCH fails, try PUT
+            # Try PUT first (Base44 uses PUT for updates)
             response = await client.put(
                 base44_url,
                 json=update_data,
                 headers=headers
             )
             
-            print(f"[Admin] Base44 PUT response: {response.status_code} - {response.text[:200] if response.text else 'empty'}")
+            print(f"[Admin] Base44 PUT response: {response.status_code}")
             
             if response.status_code == 200:
-                print(f"[Admin] Track {track_id} rejected via PUT")
+                print(f"[Admin] Track {track_id} rejected successfully via PUT")
+                return {"success": True, "message": "Track rejected", "track": response.json() if response.text else {}}
+            
+            # If PUT fails, try PATCH
+            response = await client.patch(
+                base44_url,
+                json=update_data,
+                headers=headers
+            )
+            
+            print(f"[Admin] Base44 PATCH response: {response.status_code}")
+            
+            if response.status_code == 200:
+                print(f"[Admin] Track {track_id} rejected via PATCH")
                 return {"success": True, "message": "Track rejected", "track": response.json() if response.text else {}}
             
             # If both fail, try POST to a function
