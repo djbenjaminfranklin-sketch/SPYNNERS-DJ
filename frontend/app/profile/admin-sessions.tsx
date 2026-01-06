@@ -462,7 +462,12 @@ export default function AdminSessions() {
                   {new Date(session.started_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                 </Text>
               </View>
-              <View style={{ flex: 0.5, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ flex: 0.8 }}>
+                <Text style={[styles.sessionText, { color: '#FF9800' }]} numberOfLines={1}>
+                  {session.sacem_number || '-'}
+                </Text>
+              </View>
+              <View style={{ flex: 0.4, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Ionicons name="musical-note" size={12} color="#FF9800" />
                 <Text style={styles.sessionText}>{session.tracks_detected}</Text>
               </View>
