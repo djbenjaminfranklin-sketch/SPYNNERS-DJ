@@ -224,13 +224,42 @@ export default function LiveRadarScreen() {
       
       setRecentPlays(formattedPlays);
       
-      // Count user's tracks for stats
+      // Count user's tracks for stats - fetch from backend for accurate count
       if (userId) {
-        const userTracks = await base44Tracks.list({ limit: 100 });
-        const myTracks = userTracks.filter((t: Track) => 
-          t.producer_id === userId || t.created_by_id === userId || t.uploaded_by === userId
-        );
-        setMyTracksCount(myTracks.length);
+        try {
+          // Use backend endpoint for accurate track count
+          const tracksResponse = await axios.get(`${BACKEND_URL}/api/tracks?limit=1000`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (tracksResponse.data?.tracks) {
+            // Filter tracks owned by current user
+            const allTracks = tracksResponse.data.tracks;
+            const myTracks = allTracks.filter((t: any) => 
+              t.producer_id === userId || 
+              t.created_by_id === userId || 
+              t.uploaded_by === userId ||
+              t.owner_id === userId
+            );
+            setMyTracksCount(myTracks.length);
+            console.log('[LiveRadar] Total user tracks:', myTracks.length);
+          } else {
+            // Fallback to base44 if backend fails
+            const userTracks = await base44Tracks.list({ limit: 1000 });
+            const myTracks = userTracks.filter((t: Track) => 
+              t.producer_id === userId || t.created_by_id === userId || t.uploaded_by === userId
+            );
+            setMyTracksCount(myTracks.length);
+          }
+        } catch (tracksError) {
+          console.error('[LiveRadar] Error counting tracks:', tracksError);
+          // Fallback
+          const userTracks = await base44Tracks.list({ limit: 1000 });
+          const myTracks = userTracks.filter((t: Track) => 
+            t.producer_id === userId || t.created_by_id === userId || t.uploaded_by === userId
+          );
+          setMyTracksCount(myTracks.length);
+        }
       }
       
     } catch (err: any) {
