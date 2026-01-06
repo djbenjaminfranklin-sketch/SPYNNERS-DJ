@@ -4038,7 +4038,7 @@ class BroadcastEmailRequest(BaseModel):
 async def send_broadcast_email(request: BroadcastEmailRequest, authorization: str = Header(None)):
     """
     Send broadcast email to users.
-    Uses Base44 integrations Core.SendEmail via direct API call.
+    Uses Base44 cloud function sendEmail.
     """
     try:
         if not authorization:
@@ -4097,12 +4097,12 @@ async def send_broadcast_email(request: BroadcastEmailRequest, authorization: st
                                 })
                     
                     print(f"[Admin Broadcast] Found {len(recipients)} recipients")
-            
-            # Send emails using Base44 Core.SendEmail integration
-            for recipient in recipients[:100]:  # Limit to 100 for safety
-                try:
-                    # Build HTML body
-                    html_body = f"""
+        
+        # Send emails using the new sendEmail cloud function
+        for recipient in recipients[:100]:  # Limit to 100 for safety
+            try:
+                # Build HTML body
+                html_body = f"""
 <!DOCTYPE html>
 <html>
 <head>
@@ -4121,33 +4121,26 @@ async def send_broadcast_email(request: BroadcastEmailRequest, authorization: st
   </div>
 </body>
 </html>"""
-                    
-                    # Call Base44 Core.SendEmail integration
-                    email_response = await http_client.post(
-                        f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/integrations/invoke",
-                        headers=headers,
-                        json={
-                            "integration": "Core",
-                            "method": "SendEmail",
-                            "params": {
-                                "from_name": "SPYNNERS Team",
-                                "to": recipient['email'],
-                                "subject": request.subject,
-                                "body": html_body
-                            }
-                        }
-                    )
-                    
-                    if email_response.status_code in [200, 201]:
-                        sent_count += 1
-                        print(f"[Admin Broadcast] Sent to {recipient['email']}")
-                    else:
-                        print(f"[Admin Broadcast] Failed {recipient['email']}: {email_response.status_code} - {email_response.text[:100]}")
-                        errors.append(f"{recipient['email']}: {email_response.status_code}")
+                
+                # Call the sendEmail cloud function
+                result = await call_spynners_function("sendEmail", {
+                    "to": recipient['email'],
+                    "subject": request.subject,
+                    "body": html_body,
+                    "from_name": "SPYNNERS Team"
+                }, authorization)
+                
+                if result and result.get('success'):
+                    sent_count += 1
+                    print(f"[Admin Broadcast] Sent to {recipient['email']}")
+                else:
+                    error_msg = result.get('error', 'Unknown error') if result else 'No response'
+                    print(f"[Admin Broadcast] Failed {recipient['email']}: {error_msg}")
+                    errors.append(f"{recipient['email']}: {error_msg}")
                         
-                except Exception as e:
-                    print(f"[Admin Broadcast] Error sending to {recipient['email']}: {e}")
-                    errors.append(f"{recipient['email']}: {str(e)[:50]}")
+            except Exception as e:
+                print(f"[Admin Broadcast] Error sending to {recipient['email']}: {e}")
+                errors.append(f"{recipient['email']}: {str(e)[:50]}")
         
         # Save to BroadcastEmail entity for history
         try:
@@ -4178,7 +4171,7 @@ async def send_broadcast_email(request: BroadcastEmailRequest, authorization: st
         else:
             return {
                 "success": False,
-                "message": "Aucun email envoyé - vérifiez la configuration email Base44",
+                "message": "Aucun email envoyé",
                 "errors": errors[:5] if errors else None
             }
         
