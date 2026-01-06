@@ -268,11 +268,11 @@ export default function AnalyticsScreen() {
     try {
       // Validate dates
       if (csvStartDate && !validateDateFormat(csvStartDate)) {
-        Alert.alert('Erreur', 'Format de date invalide. Utilisez AAAA-MM-JJ');
+        Alert.alert(t('common.error'), t('analytics.invalidDateFormat'));
         return;
       }
       if (csvEndDate && !validateDateFormat(csvEndDate)) {
-        Alert.alert('Erreur', 'Format de date invalide. Utilisez AAAA-MM-JJ');
+        Alert.alert(t('common.error'), t('analytics.invalidDateFormat'));
         return;
       }
 
@@ -314,7 +314,7 @@ export default function AnalyticsScreen() {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
         
-        Alert.alert('Succès', 'Le rapport PDF a été téléchargé !');
+        Alert.alert(t('common.success'), t('csv.success'));
       } else {
         // Mobile: Convert blob to base64 and save
         const reader = new FileReader();
@@ -343,7 +343,7 @@ export default function AnalyticsScreen() {
             }
           } catch (saveError: any) {
             console.error('[Analytics] Save error:', saveError);
-            Alert.alert('Erreur', 'Impossible de sauvegarder le fichier PDF');
+            Alert.alert(t('common.error'), t('analytics.savePdfError'));
           }
         };
         reader.readAsDataURL(pdfBlob);
@@ -352,7 +352,7 @@ export default function AnalyticsScreen() {
       setShowDatePicker(false);
     } catch (error: any) {
       console.error('[Analytics] PDF export error:', error);
-      Alert.alert('Erreur', error.message || 'Impossible de générer le rapport PDF');
+      Alert.alert(t('common.error'), error.message || t('csv.error'));
     } finally {
       setExportingCSV(false);
     }
@@ -635,7 +635,7 @@ export default function AnalyticsScreen() {
             {/* Genre Distribution */}
             {Object.keys(genreStats).length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>🎵 Distribution par Genre</Text>
+                <Text style={styles.sectionTitle}>🎵 {t('analytics.genreDistribution')}</Text>
                 <View style={styles.genreCard}>
                   {Object.entries(genreStats)
                     .sort((a, b) => b[1] - a[1])
@@ -658,7 +658,7 @@ export default function AnalyticsScreen() {
             {/* Rating */}
             {stats.averageRating > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>⭐ Note Moyenne</Text>
+                <Text style={styles.sectionTitle}>⭐ {t('analytics.avgRating')}</Text>
                 <View style={styles.ratingCard}>
                   <Text style={styles.ratingValue}>{stats.averageRating}</Text>
                   <View style={styles.ratingStars}>
@@ -672,7 +672,7 @@ export default function AnalyticsScreen() {
                     ))}
                   </View>
                   <Text style={styles.ratingSubtext}>
-                    Basé sur vos tracks notés
+                    {t('analytics.basedOnRated')}
                   </Text>
                 </View>
               </View>
