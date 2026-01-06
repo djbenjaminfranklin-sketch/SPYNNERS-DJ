@@ -3802,6 +3802,277 @@ async def get_admin_sessions(authorization: str = Header(None), limit: int = 500
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class AdminSessionsPDFRequest(BaseModel):
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    all_users: Optional[bool] = True
+
+
+@app.post("/api/admin/sessions/pdf")
+async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorization: str = Header(None)):
+    """
+    Export all validated sessions from all users as PDF report (Admin only).
+    Professional layout with session grouping and SPYNNERS branding.
+    """
+    import io
+    from fastapi.responses import Response
+    from collections import defaultdict
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import mm, cm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin Sessions PDF] Generating PDF report for ALL users...")
+        print(f"[Admin Sessions PDF] Date range: {request.start_date} to {request.end_date}")
+        
+        # Get all live track plays from all users
+        plays_data = []
+        try:
+            body = {"limit": 10000}  # Get all plays
+            result = await call_spynners_function("getLiveTrackPlays", body, authorization)
+            
+            if isinstance(result, dict):
+                plays_data = result.get('recentPlays', []) or result.get('plays', []) or result.get('data', []) or []
+            elif isinstance(result, list):
+                plays_data = result
+            
+            print(f"[Admin Sessions PDF] Got {len(plays_data)} track plays from all users")
+        except Exception as e:
+            print(f"[Admin Sessions PDF] Error getting live plays: {e}")
+            # Try alternative function
+            try:
+                result = await call_spynners_function("nativeGetAllLiveTrackPlays", body, authorization)
+                if isinstance(result, dict):
+                    plays_data = result.get('plays', []) or result.get('data', []) or []
+                elif isinstance(result, list):
+                    plays_data = result
+                print(f"[Admin Sessions PDF] Got {len(plays_data)} plays from alternative function")
+            except Exception as e2:
+                print(f"[Admin Sessions PDF] Alternative function also failed: {e2}")
+        
+        # Filter by date range
+        filtered_plays = []
+        for play in plays_data:
+            play_date_str = play.get('played_at') or play.get('created_at') or play.get('timestamp')
+            if play_date_str:
+                try:
+                    if 'T' in play_date_str:
+                        play_date = datetime.fromisoformat(play_date_str.replace('Z', '+00:00'))
+                    else:
+                        play_date = datetime.strptime(play_date_str, '%Y-%m-%d')
+                    
+                    include = True
+                    if request.start_date:
+                        start = datetime.strptime(request.start_date, '%Y-%m-%d')
+                        if play_date.replace(tzinfo=None) < start:
+                            include = False
+                    if request.end_date:
+                        end = datetime.strptime(request.end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+                        if play_date.replace(tzinfo=None) > end:
+                            include = False
+                    
+                    if include:
+                        play['_parsed_date'] = play_date
+                        filtered_plays.append(play)
+                except Exception as date_error:
+                    filtered_plays.append(play)
+            else:
+                filtered_plays.append(play)
+        
+        print(f"[Admin Sessions PDF] Filtered to {len(filtered_plays)} plays")
+        
+        # Group by DJ and session (date)
+        sessions_by_dj = defaultdict(lambda: defaultdict(list))
+        for play in filtered_plays:
+            dj_name = play.get('dj_name') or play.get('user_name') or play.get('artist_name') or 'Unknown DJ'
+            play_date = play.get('_parsed_date')
+            if play_date:
+                session_date = play_date.strftime('%Y-%m-%d')
+            else:
+                session_date = play.get('played_at', '')[:10] if play.get('played_at') else 'Unknown'
+            
+            sessions_by_dj[dj_name][session_date].append(play)
+        
+        print(f"[Admin Sessions PDF] Grouped into {len(sessions_by_dj)} DJs")
+        
+        # Create PDF
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=landscape(A4),
+            rightMargin=1.5*cm,
+            leftMargin=1.5*cm,
+            topMargin=1.5*cm,
+            bottomMargin=1.5*cm
+        )
+        
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Custom styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            spaceAfter=20,
+            alignment=TA_CENTER,
+            textColor=colors.HexColor('#2196F3')
+        )
+        
+        subtitle_style = ParagraphStyle(
+            'CustomSubtitle',
+            parent=styles['Normal'],
+            fontSize=12,
+            alignment=TA_CENTER,
+            textColor=colors.HexColor('#666666'),
+            spaceAfter=30
+        )
+        
+        dj_header_style = ParagraphStyle(
+            'DJHeader',
+            parent=styles['Heading2'],
+            fontSize=16,
+            spaceBefore=20,
+            spaceAfter=10,
+            textColor=colors.HexColor('#E91E63')
+        )
+        
+        session_header_style = ParagraphStyle(
+            'SessionHeader',
+            parent=styles['Heading3'],
+            fontSize=12,
+            spaceBefore=15,
+            spaceAfter=5,
+            textColor=colors.HexColor('#00BCD4')
+        )
+        
+        # Title
+        elements.append(Paragraph("SPYNNERS - RAPPORT SESSIONS", title_style))
+        
+        # Date range
+        if request.start_date and request.end_date:
+            date_range_text = f"Période: {request.start_date} au {request.end_date}"
+        elif request.start_date:
+            date_range_text = f"Depuis: {request.start_date}"
+        elif request.end_date:
+            date_range_text = f"Jusqu'au: {request.end_date}"
+        else:
+            date_range_text = "Toutes les sessions"
+        
+        elements.append(Paragraph(date_range_text, subtitle_style))
+        
+        # Summary stats
+        total_djs = len(sessions_by_dj)
+        total_sessions = sum(len(sessions) for sessions in sessions_by_dj.values())
+        total_tracks = len(filtered_plays)
+        
+        summary_data = [
+            ['DJs Uniques', 'Sessions Totales', 'Tracks Détectées'],
+            [str(total_djs), str(total_sessions), str(total_tracks)]
+        ]
+        
+        summary_table = Table(summary_data, colWidths=[6*cm, 6*cm, 6*cm])
+        summary_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2196F3')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('FONTSIZE', (0, 1), (-1, -1), 14),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('TOPPADDING', (0, 1), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 10),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F5F5F5')),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#DDDDDD')),
+        ]))
+        elements.append(summary_table)
+        elements.append(Spacer(1, 30))
+        
+        # Sessions by DJ
+        for dj_name, dj_sessions in sorted(sessions_by_dj.items()):
+            # DJ Header
+            dj_track_count = sum(len(tracks) for tracks in dj_sessions.values())
+            elements.append(Paragraph(f"🎧 {dj_name} ({len(dj_sessions)} sessions, {dj_track_count} tracks)", dj_header_style))
+            
+            # Sessions for this DJ
+            for session_date, tracks in sorted(dj_sessions.items(), reverse=True):
+                elements.append(Paragraph(f"📅 Session du {session_date} ({len(tracks)} tracks)", session_header_style))
+                
+                # Tracks table
+                track_data = [['#', 'Track', 'Artiste', 'Heure', 'Lieu']]
+                for idx, track in enumerate(tracks[:20], 1):  # Limit to 20 tracks per session
+                    track_title = track.get('track_title') or track.get('title') or 'Unknown'
+                    artist = track.get('artist_name') or track.get('artist') or '-'
+                    time_str = ''
+                    if track.get('_parsed_date'):
+                        time_str = track['_parsed_date'].strftime('%H:%M')
+                    location = track.get('city') or track.get('location') or '-'
+                    
+                    track_data.append([str(idx), track_title[:40], artist[:25], time_str, location[:20]])
+                
+                if len(track_data) > 1:
+                    track_table = Table(track_data, colWidths=[1*cm, 9*cm, 6*cm, 2*cm, 4*cm])
+                    track_table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#FF9800')),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                        ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                        ('FONTSIZE', (0, 0), (-1, 0), 9),
+                        ('FONTSIZE', (0, 1), (-1, -1), 8),
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                        ('TOPPADDING', (0, 1), (-1, -1), 4),
+                        ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+                        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#FAFAFA')]),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#EEEEEE')),
+                    ]))
+                    elements.append(track_table)
+                
+                elements.append(Spacer(1, 10))
+            
+            elements.append(Spacer(1, 20))
+        
+        # Build PDF
+        doc.build(elements)
+        
+        pdf_content = buffer.getvalue()
+        buffer.close()
+        
+        print(f"[Admin Sessions PDF] PDF generated: {len(pdf_content)} bytes, {total_djs} DJs, {total_sessions} sessions")
+        
+        # Generate filename
+        filename = f"spynners_all_sessions"
+        if request.start_date:
+            filename += f"_from_{request.start_date}"
+        if request.end_date:
+            filename += f"_to_{request.end_date}"
+        filename += ".pdf"
+        
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Content-Length": str(len(pdf_content))
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Sessions PDF] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/admin/debug-acrcloud")
 async def debug_acrcloud(authorization: str = Header(None)):
     """
