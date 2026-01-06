@@ -3437,6 +3437,66 @@ async def update_user_role(user_id: str, request: Request, authorization: str = 
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.put("/api/admin/users/{user_id}")
+async def update_user(user_id: str, request: Request, authorization: str = Header(None)):
+    """
+    Update a user's profile with multiple fields.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        body = await request.json()
+        print(f"[Admin] Updating user {user_id} with data: {body}")
+        
+        # Use Base44 API to update user
+        base44_url = f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{user_id}"
+        headers = {
+            "Authorization": authorization,
+            "X-Base44-App-Id": BASE44_APP_ID,
+            "Content-Type": "application/json"
+        }
+        
+        # Build update data from request body
+        update_data = {}
+        if 'full_name' in body:
+            update_data['full_name'] = body['full_name']
+        if 'artist_name' in body:
+            update_data['artist_name'] = body['artist_name']
+        if 'user_type' in body:
+            update_data['user_type'] = body['user_type']
+        if 'role' in body:
+            update_data['role'] = body['role']
+        if 'nationality' in body:
+            update_data['nationality'] = body['nationality']
+        if 'residence_club' in body:
+            update_data['residence_club'] = body['residence_club']
+        if 'instagram_url' in body:
+            update_data['instagram_url'] = body['instagram_url']
+        if 'bio' in body:
+            update_data['bio'] = body['bio']
+        if 'read_only' in body:
+            update_data['read_only'] = body['read_only']
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.put(base44_url, json=update_data, headers=headers)
+            
+            print(f"[Admin] Update user response: {response.status_code}")
+            
+            if response.status_code == 200:
+                print(f"[Admin] User {user_id} updated successfully")
+                return {"success": True, "message": "Utilisateur mis à jour", "user": response.json() if response.text else {}}
+            else:
+                print(f"[Admin] Failed to update user: {response.text[:200] if response.text else 'empty'}")
+                raise HTTPException(status_code=500, detail="Échec de la mise à jour")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin] Update user error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/admin/tracks")
 async def get_admin_tracks(authorization: str = Header(None), status: str = None, limit: int = 500):
     """
