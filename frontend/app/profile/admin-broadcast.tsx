@@ -345,25 +345,39 @@ export default function AdminBroadcast() {
               ))}
             </View>
 
-            {/* Category Selector */}
+            {/* Category Selector - Multiple selection */}
             {recipientType === 'category' && (
               <View style={styles.categorySection}>
-                <Text style={styles.inputLabel}>Sélectionner une catégorie</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={styles.categoryRow}>
-                    {CATEGORIES.map((cat) => (
+                <Text style={styles.inputLabel}>Sélectionner une ou plusieurs catégories</Text>
+                <View style={styles.categoryGrid}>
+                  {CATEGORIES.map((cat) => {
+                    const isSelected = selectedCategories.includes(cat.id);
+                    return (
                       <TouchableOpacity
                         key={cat.id}
-                        style={[styles.categoryChip, selectedCategory === cat.id && styles.categoryChipActive]}
-                        onPress={() => setSelectedCategory(cat.id)}
+                        style={[
+                          styles.categoryChip,
+                          isSelected && { backgroundColor: cat.color + '30', borderColor: cat.color }
+                        ]}
+                        onPress={() => toggleCategory(cat.id)}
                       >
-                        <Text style={[styles.categoryChipText, selectedCategory === cat.id && styles.categoryChipTextActive]}>
+                        <Ionicons 
+                          name={isSelected ? 'checkmark-circle' : 'ellipse-outline'} 
+                          size={16} 
+                          color={isSelected ? cat.color : Colors.textMuted} 
+                        />
+                        <Text style={[styles.categoryChipText, isSelected && { color: cat.color, fontWeight: '600' }]}>
                           {cat.name}
                         </Text>
                       </TouchableOpacity>
-                    ))}
-                  </View>
-                </ScrollView>
+                    );
+                  })}
+                </View>
+                {selectedCategories.length > 0 && (
+                  <Text style={styles.selectedCategoriesText}>
+                    {selectedCategories.length} catégorie{selectedCategories.length > 1 ? 's' : ''} sélectionnée{selectedCategories.length > 1 ? 's' : ''}
+                  </Text>
+                )}
               </View>
             )}
 
