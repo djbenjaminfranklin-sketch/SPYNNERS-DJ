@@ -428,12 +428,12 @@ export default function AdminSessions() {
         </Text>
         
         <View style={styles.tableHeader}>
-          <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>DJ</Text>
-          <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Lieu</Text>
-          <Text style={[styles.tableHeaderText, { flex: 1 }]}>Date</Text>
-          <Text style={[styles.tableHeaderText, { flex: 0.6 }]}>Statut</Text>
+          <Text style={[styles.tableHeaderText, { flex: 1.2 }]}>DJ</Text>
+          <Text style={[styles.tableHeaderText, { flex: 1.3 }]}>Lieu</Text>
+          <Text style={[styles.tableHeaderText, { flex: 1 }]}>Ville</Text>
+          <Text style={[styles.tableHeaderText, { flex: 0.8 }]}>Date</Text>
           <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>Tracks</Text>
-          <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>PDF</Text>
+          <Text style={[styles.tableHeaderText, { flex: 0.4 }]}>PDF</Text>
         </View>
 
         {filteredSessions.length === 0 ? (
