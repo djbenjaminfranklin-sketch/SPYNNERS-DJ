@@ -23,6 +23,8 @@ import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { isUserAdmin } from '../../src/components/AdminBadge';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const BASE44_APP_ID = '691a4d96d819355b52c063f3';
+const BASE44_API_URL = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}`;
 
 type Session = {
   id: string;
