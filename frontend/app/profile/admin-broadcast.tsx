@@ -275,7 +275,7 @@ export default function AdminBroadcast() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#4CAF50" />
-        <Text style={styles.loadingText}>Chargement...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -291,8 +291,8 @@ export default function AdminBroadcast() {
           <Ionicons name="mail" size={24} color="#4CAF50" />
         </View>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Email Groupé</Text>
-          <Text style={styles.headerSubtitle}>Envoyer un message aux utilisateurs</Text>
+          <Text style={styles.headerTitle}>{t('broadcast.groupEmail')}</Text>
+          <Text style={styles.headerSubtitle}>{t('broadcast.sendToUsers')}</Text>
         </View>
       </View>
 
@@ -303,7 +303,7 @@ export default function AdminBroadcast() {
           onPress={() => setActiveTab('compose')}
         >
           <Ionicons name="create-outline" size={18} color={activeTab === 'compose' ? '#4CAF50' : Colors.textMuted} />
-          <Text style={[styles.tabText, activeTab === 'compose' && styles.tabTextActive]}>Composer</Text>
+          <Text style={[styles.tabText, activeTab === 'compose' && styles.tabTextActive]}>{t('broadcast.compose')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'history' && styles.tabActive]}

@@ -657,7 +657,7 @@ export default function SpynRecordScreen() {
       
     } catch (error) {
       console.error('[SPYN Record] Start error:', error);
-      Alert.alert('Erreur', 'Impossible de démarrer l\'enregistrement');
+      Alert.alert(t('common.error'), t('spynRecord.cantStartRecording'));
     }
   };
 
