@@ -208,38 +208,100 @@ export default function AdminBroadcast() {
     }
   };
 
-  // Upload attachment to server
+  // Upload attachment to Base44 directly
   const uploadAttachment = async (file: DocumentPicker.DocumentPickerAsset) => {
     setUploadingAttachment(true);
     try {
-      const formData = new FormData();
-      formData.append('file', {
-        uri: file.uri,
-        name: file.name,
-        type: file.mimeType || 'application/octet-stream',
-      } as any);
+      console.log('[AdminBroadcast] Starting upload for:', file.name);
       
-      const response = await axios.post(
-        `${BACKEND_URL}/api/admin/upload-attachment`,
-        formData,
+      // Read file as base64
+      const response = await fetch(file.uri);
+      const blob = await response.blob();
+      
+      // Convert blob to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          const base64 = reader.result as string;
+          // Remove data URL prefix (e.g., "data:image/png;base64,")
+          const base64Data = base64.split(',')[1] || base64;
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      
+      const base64Data = await base64Promise;
+      console.log('[AdminBroadcast] File converted to base64, size:', base64Data.length);
+      
+      // Call Base44 API directly to upload file
+      const BASE44_APP_ID = '691a4d96d819355b52c063f3';
+      const uploadResponse = await axios.post(
+        `https://app.base44.com/api/apps/${BASE44_APP_ID}/integrations/core/upload`,
+        {
+          file_data: base64Data,
+          file_name: file.name,
+          content_type: file.mimeType || 'application/octet-stream',
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'application/json',
+            'X-Base44-App-Id': BASE44_APP_ID,
           },
-          timeout: 60000,
+          timeout: 120000,
         }
       );
       
-      if (response.data?.success && response.data?.url) {
-        setAttachment(prev => prev ? { ...prev, url: response.data.url } : null);
-        console.log('[AdminBroadcast] Attachment uploaded:', response.data.url);
+      console.log('[AdminBroadcast] Base44 upload response:', uploadResponse.data);
+      
+      if (uploadResponse.data?.file_url) {
+        setAttachment(prev => prev ? { ...prev, url: uploadResponse.data.file_url } : null);
+        console.log('[AdminBroadcast] Attachment uploaded:', uploadResponse.data.file_url);
+        Alert.alert('Succès', 'Pièce jointe uploadée !');
+      } else if (uploadResponse.data?.url) {
+        setAttachment(prev => prev ? { ...prev, url: uploadResponse.data.url } : null);
+        console.log('[AdminBroadcast] Attachment uploaded:', uploadResponse.data.url);
+        Alert.alert('Succès', 'Pièce jointe uploadée !');
       } else {
-        throw new Error(response.data?.error || 'Upload failed');
+        throw new Error('No URL returned from upload');
       }
     } catch (error: any) {
-      console.error('[AdminBroadcast] Upload error:', error);
-      Alert.alert('Erreur', 'Impossible de télécharger le fichier');
+      console.error('[AdminBroadcast] Upload error:', error?.response?.data || error);
+      
+      // Fallback: try uploading via our backend which will store locally
+      try {
+        console.log('[AdminBroadcast] Trying fallback upload via backend...');
+        const formData = new FormData();
+        formData.append('file', {
+          uri: file.uri,
+          name: file.name,
+          type: file.mimeType || 'application/octet-stream',
+        } as any);
+        
+        const fallbackResponse = await axios.post(
+          `${BACKEND_URL}/api/admin/upload-attachment-local`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data',
+            },
+            timeout: 60000,
+          }
+        );
+        
+        if (fallbackResponse.data?.success && fallbackResponse.data?.url) {
+          setAttachment(prev => prev ? { ...prev, url: fallbackResponse.data.url } : null);
+          console.log('[AdminBroadcast] Fallback upload successful:', fallbackResponse.data.url);
+          Alert.alert('Succès', 'Pièce jointe uploadée !');
+          return;
+        }
+      } catch (fallbackError) {
+        console.error('[AdminBroadcast] Fallback upload also failed:', fallbackError);
+      }
+      
+      Alert.alert('Erreur', 'Impossible de télécharger le fichier. Vérifiez votre connexion.');
       setAttachment(null);
     } finally {
       setUploadingAttachment(false);
