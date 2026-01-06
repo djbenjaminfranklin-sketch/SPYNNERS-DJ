@@ -634,9 +634,23 @@ export default function SpynRecordScreen() {
       // Start waveform updates
       waveformIntervalRef.current = setInterval(updateWaveform, 100);
       
-      // Simple continuous recording - no segmentation
-      // Analysis will be done at the end when recording stops
-      console.log('[SPYN Record] Recording mode: Simple continuous (analysis at end)');
+      // Start periodic analysis during recording (every 30 seconds)
+      // This allows tracks to be identified and displayed in real-time
+      analysisIntervalRef.current = setInterval(() => {
+        console.log('[SPYN Record] Periodic analysis trigger');
+        analyzeCurrentAudio();
+      }, 30000); // Analyze every 30 seconds
+      
+      // Do an initial analysis after 15 seconds
+      setTimeout(() => {
+        if (isRecordingRef.current) {
+          console.log('[SPYN Record] Initial analysis after 15 seconds');
+          analyzeCurrentAudio();
+        }
+      }, 15000);
+      
+      // Simple continuous recording - with periodic analysis
+      console.log('[SPYN Record] Recording mode: Continuous with periodic analysis (every 30s)');
       console.log('[SPYN Record] ✅ Recording started successfully');
       
     } catch (error) {
