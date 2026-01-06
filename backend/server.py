@@ -4118,7 +4118,7 @@ class IndividualEmailRequest(BaseModel):
 async def send_individual_email(request: IndividualEmailRequest, authorization: str = Header(None)):
     """
     Send individual email to a specific user.
-    Uses Base44 sendBroadcastEmail with individualEmail parameter.
+    Uses Base44 integrations Core.SendEmail.
     """
     try:
         if not authorization:
@@ -4127,28 +4127,64 @@ async def send_individual_email(request: IndividualEmailRequest, authorization: 
         print(f"[Admin Email] Sending email to: {request.to}")
         print(f"[Admin Email] Subject: {request.subject}")
         
-        # Call Base44 sendBroadcastEmail function with individualEmail
-        result = await call_spynners_function("sendBroadcastEmail", {
-            "subject": request.subject,
-            "message": request.body,
-            "recipientType": "individual",
-            "individualEmail": request.to,
-        }, authorization)
+        headers = {
+            "Content-Type": "application/json",
+            "X-Base44-App-Id": BASE44_APP_ID,
+            "Authorization": authorization
+        }
         
-        if result:
-            print(f"[Admin Email] Email sent successfully: {result}")
-            return {
-                "success": True,
-                "message": f"Email envoyé à {request.to}",
-                "details": result
-            }
-        
-        return {"success": False, "message": "Impossible d'envoyer l'email"}
+        # Use Base44 Core.SendEmail integration
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            response = await http_client.post(
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/integrations/Core/SendEmail",
+                headers=headers,
+                json={
+                    "to": request.to,
+                    "subject": request.subject,
+                    "body": request.body,
+                    "html": True  # Send as HTML email
+                }
+            )
+            
+            print(f"[Admin Email] Response status: {response.status_code}")
+            print(f"[Admin Email] Response: {response.text[:200] if response.text else 'empty'}")
+            
+            if response.status_code in [200, 201]:
+                result = response.json() if response.text else {}
+                
+                # Also save to BroadcastEmail entity for history
+                try:
+                    await http_client.post(
+                        f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/BroadcastEmail",
+                        headers=headers,
+                        json={
+                            "subject": request.subject,
+                            "message": request.body,
+                            "recipient_type": "individual",
+                            "recipient_email": request.to,
+                            "sent_count": 1,
+                            "sent_date": datetime.now().isoformat()
+                        }
+                    )
+                    print(f"[Admin Email] Saved to BroadcastEmail history")
+                except Exception as e:
+                    print(f"[Admin Email] Failed to save history: {e}")
+                
+                return {
+                    "success": True,
+                    "message": f"Email envoyé à {request.to}",
+                    "details": result
+                }
+            else:
+                print(f"[Admin Email] Failed: {response.status_code} - {response.text}")
+                raise HTTPException(status_code=response.status_code, detail=response.text)
         
     except HTTPException:
         raise
     except Exception as e:
         print(f"[Admin Email] Error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
