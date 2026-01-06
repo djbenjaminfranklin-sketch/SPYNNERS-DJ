@@ -56,37 +56,30 @@ export default function ChatScreen() {
   }, []);
 
   const loadMembers = async () => {
-    // Version 2.0 - Force bundle refresh
-    console.log('[Chat] === VERSION 2.0 === Loading all members via nativeGetAllUsers...');
+    console.log('[Chat] === VERSION 3.0 === Loading all members...');
     try {
       setLoading(true);
       
       const userId = user?.id || user?._id || '';
+      console.log('[Chat] Current user ID:', userId);
       
-      // Fetch all users using the nativeGetAllUsers function with pagination
+      // Fetch all users - use fetchAllUsersWithPagination which handles fallbacks
       let allUsers: User[] = [];
-      let offset = 0;
-      const pageSize = 100;
-      let hasMore = true;
       
-      while (hasMore && offset < 2000) {
-        console.log(`[Chat] Fetching users batch at offset ${offset}...`);
-        const users = await base44Users.nativeGetAllUsers({
-          search: '',
-          limit: pageSize,
-          offset: offset,
-        });
+      try {
+        // This method tries nativeGetAllUsers first, then falls back to extracting from tracks
+        allUsers = await base44Users.fetchAllUsersWithPagination('');
+        console.log('[Chat] Got users from fetchAllUsersWithPagination:', allUsers.length);
+      } catch (usersError) {
+        console.error('[Chat] fetchAllUsersWithPagination failed:', usersError);
         
-        console.log(`[Chat] Got ${users.length} users at offset ${offset}`);
-        
-        if (users.length > 0) {
-          allUsers = [...allUsers, ...users];
-          offset += pageSize;
-          if (users.length < pageSize) {
-            hasMore = false;
-          }
-        } else {
-          hasMore = false;
+        // Direct fallback: try base44Users.list
+        try {
+          allUsers = await base44Users.list({ limit: 500 });
+          console.log('[Chat] Got users from list:', allUsers.length);
+        } catch (listError) {
+          console.error('[Chat] base44Users.list also failed:', listError);
+          allUsers = [];
         }
       }
       
