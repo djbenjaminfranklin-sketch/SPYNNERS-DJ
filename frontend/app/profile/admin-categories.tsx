@@ -70,15 +70,6 @@ export default function AdminCategories() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [categories, setCategories] = useState(CATEGORIES);
-  
-  // Email modal state
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailSearch, setEmailSearch] = useState('');
-  const [emailSuggestions, setEmailSuggestions] = useState<UserItem[]>([]);
-  const [selectedRecipient, setSelectedRecipient] = useState<UserItem | null>(null);
-  const [emailSubject, setEmailSubject] = useState('');
-  const [emailBody, setEmailBody] = useState('');
-  const [sendingEmail, setSendingEmail] = useState(false);
 
   const isAdmin = isUserAdmin(user);
 
