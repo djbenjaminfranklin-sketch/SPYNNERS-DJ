@@ -365,12 +365,12 @@ export default function AdminDashboard() {
     setProcessing(true);
     try {
       await base44Admin.approveTrack(track.id);
-      Alert.alert('✅ Succès', `"${track.title}" a été approuvé !`);
+      Alert.alert('✅ ' + t('common.success'), t('admin.trackApprovedMsg').replace('{title}', track.title));
       setShowDetailModal(false);
       fetchAllData(); // Refresh the list
     } catch (error) {
       console.error('[Admin] Approve error:', error);
-      Alert.alert('Erreur', 'Impossible d\'approuver cette track.');
+      Alert.alert(t('common.error'), t('admin.errorApprove'));
     } finally {
       setProcessing(false);
     }
@@ -381,15 +381,15 @@ export default function AdminDashboard() {
     setProcessing(true);
     try {
       console.log('[Admin] Rejecting track:', track.id, 'reason:', reason);
-      await base44Admin.rejectTrack(track.id, reason || 'Rejeté par l\'admin');
-      Alert.alert('❌ Track Rejetée', `"${track.title}" a été rejetée.`);
+      await base44Admin.rejectTrack(track.id, reason || t('admin.rejectedByAdmin'));
+      Alert.alert('❌ ' + t('admin.trackRejected'), t('admin.trackRejectedMsg').replace('{title}', track.title));
       setShowRejectModal(false);
       setShowDetailModal(false);
       setRejectionReason('');
       fetchAllData(); // Refresh the list
     } catch (error) {
       console.error('[Admin] Reject error:', error);
-      Alert.alert('Erreur', 'Impossible de rejeter cette track. Vérifiez votre connexion.');
+      Alert.alert(t('common.error'), t('admin.errorReject'));
     } finally {
       setProcessing(false);
     }
@@ -398,11 +398,11 @@ export default function AdminDashboard() {
   // Quick reject without reason
   const handleQuickReject = (track: PendingTrack) => {
     Alert.alert(
-      'Rejeter ce track ?',
-      `Voulez-vous vraiment rejeter "${track.title}" ?`,
+      t('admin.confirmReject'),
+      t('admin.confirmRejectMsg').replace('{title}', track.title),
       [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Rejeter', style: 'destructive', onPress: () => handleRejectTrack(track) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('admin.reject'), style: 'destructive', onPress: () => handleRejectTrack(track) },
       ]
     );
   };

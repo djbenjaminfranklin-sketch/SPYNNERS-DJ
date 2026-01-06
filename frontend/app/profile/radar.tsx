@@ -558,14 +558,14 @@ export default function LiveRadarScreen() {
             <Ionicons name="radio-outline" size={60} color={Colors.textMuted} />
             <Text style={styles.emptyText}>
               {activeTab === 'my_tracks' 
-                ? 'Aucun de vos tracks n\'est joué en ce moment'
-                : 'Aucune activité récente'
+                ? t('admin.noTracksPlaying')
+                : t('admin.noRecentActivity')
               }
             </Text>
             <Text style={styles.emptySubtext}>
               {activeTab === 'my_tracks'
-                ? 'Uploadez plus de tracks pour augmenter votre visibilité !'
-                : 'Revenez plus tard pour voir les plays en direct'
+                ? t('radar.uploadMoreTracks')
+                : t('radar.checkBackLater')
               }
             </Text>
           </View>
