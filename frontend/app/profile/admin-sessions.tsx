@@ -54,6 +54,8 @@ export default function AdminSessions() {
   const [exporting, setExporting] = useState(false);
   const [showDateFilter, setShowDateFilter] = useState(false);
   
+  const { t } = useLanguage();
+  
   // Date filter state
   const [dateFilter, setDateFilter] = useState<DateFilter>({
     startDate: '',
