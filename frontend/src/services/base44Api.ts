@@ -1,16 +1,27 @@
 /**
  * Base44 API Service for SPYNNERS
- * Uses backend proxy to avoid CORS issues in web preview
+ * Uses direct Base44 API on mobile, backend proxy on web to avoid CORS
  */
 
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
-// Backend URL - hardcoded for reliability in production builds
-const BACKEND_URL = 'https://agent-env-5bd6c1bc-7d9d-4962-8663-5852546af7fb-preview.preview.emergentagent.com';
+// Backend URL for web proxy
+const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || 
+  process.env.EXPO_PUBLIC_BACKEND_URL || 
+  'https://agent-env-5bd6c1bc-7d9d-4962-8663-5852546af7fb-preview.preview.emergentagent.com';
 
-console.log('[API] Using backend URL:', BACKEND_URL);
+// Direct Base44 API URL for mobile
+const BASE44_APP_ID = '691a4d96d819355b52c063f3';
+const BASE44_DIRECT_URL = `https://app.base44.com/api/apps/${BASE44_APP_ID}`;
+
+// Determine which URL to use based on platform
+const API_BASE_URL = Platform.OS === 'web' ? BACKEND_URL : BASE44_DIRECT_URL;
+
+console.log('[API] Platform:', Platform.OS);
+console.log('[API] Using API URL:', API_BASE_URL);
 
 // Storage keys
 const AUTH_TOKEN_KEY = 'auth_token';
