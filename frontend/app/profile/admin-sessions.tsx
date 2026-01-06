@@ -434,8 +434,9 @@ export default function AdminSessions() {
           <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>DJ</Text>
           <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Lieu</Text>
           <Text style={[styles.tableHeaderText, { flex: 1 }]}>Date</Text>
-          <Text style={[styles.tableHeaderText, { flex: 0.8 }]}>Statut</Text>
-          <Text style={[styles.tableHeaderText, { flex: 0.6 }]}>Tracks</Text>
+          <Text style={[styles.tableHeaderText, { flex: 0.6 }]}>Statut</Text>
+          <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>Tracks</Text>
+          <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>PDF</Text>
         </View>
 
         {filteredSessions.length === 0 ? (
@@ -459,26 +460,35 @@ export default function AdminSessions() {
                   {new Date(session.started_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                 </Text>
               </View>
-              <View style={{ flex: 0.8 }}>
+              <View style={{ flex: 0.6 }}>
                 <View style={[
                   styles.statusBadge, 
-                  session.status === 'validated' && styles.statusBadgeValidated
+                  (session.status === 'validated' || session.status === 'ended') && styles.statusBadgeValidated
                 ]}>
                   <View style={[
                     styles.statusDot,
-                    session.status === 'validated' && styles.statusDotValidated
+                    (session.status === 'validated' || session.status === 'ended') && styles.statusDotValidated
                   ]} />
                   <Text style={[
                     styles.statusText,
-                    session.status === 'validated' && styles.statusTextValidated
+                    (session.status === 'validated' || session.status === 'ended') && styles.statusTextValidated
                   ]}>
-                    {session.status === 'validated' ? 'Validé' : session.status === 'active' ? 'Active' : 'Terminé'}
+                    {session.status === 'ended' ? 'Terminé' : session.status === 'validated' ? 'Validé' : session.status === 'active' ? 'Active' : session.status}
                   </Text>
                 </View>
               </View>
-              <View style={{ flex: 0.6, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ flex: 0.5, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Ionicons name="musical-note" size={12} color="#FF9800" />
                 <Text style={styles.sessionText}>{session.tracks_detected}</Text>
+              </View>
+              <View style={{ flex: 0.5 }}>
+                <TouchableOpacity 
+                  style={styles.downloadSessionBtn}
+                  onPress={() => exportPDF(session)}
+                  disabled={exporting}
+                >
+                  <Ionicons name="download" size={16} color="#E91E63" />
+                </TouchableOpacity>
               </View>
             </View>
           ))
