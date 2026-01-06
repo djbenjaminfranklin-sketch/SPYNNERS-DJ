@@ -81,3 +81,7 @@ android-sdk/ spynners-app.zip
 spynners-app.zip
 frontend/public/spynners-project.zip
 backend/spynners-final-v2.zip
+-e 
+# Environment files
+*.env
+*.env.*
