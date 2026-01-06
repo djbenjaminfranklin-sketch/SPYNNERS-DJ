@@ -212,7 +212,7 @@ export default function AdminDashboard() {
       setProcessing(true);
       Alert.alert('Clean Duplicates', 'Recherche des doublons en cours...');
       
-      const response = await api.post('/api/admin/clean-duplicates', {}, {
+      const response = await axios.post(`${BACKEND_URL}/api/admin/clean-duplicates`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -234,7 +234,7 @@ export default function AdminDashboard() {
       setProcessing(true);
       Alert.alert('Fix Missing BPM', 'Analyse des BPM en cours...');
       
-      const response = await api.post('/api/admin/fix-bpm', {}, {
+      const response = await axios.post(`${BACKEND_URL}/api/admin/fix-bpm`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
