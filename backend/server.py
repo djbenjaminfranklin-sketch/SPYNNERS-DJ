@@ -3322,16 +3322,16 @@ async def get_admin_users(authorization: str = Header(None), limit: int = 10000)
 @app.post("/api/admin/generate-avatars")
 async def generate_missing_avatars(authorization: str = Header(None)):
     """
-    Generate missing avatars for users.
-    Uses the avatar generation function or creates placeholder avatars.
+    Generate cartoon avatars for users who have no avatar OR have DiceBear initials avatars.
+    Keeps custom uploaded avatars intact.
     """
     try:
         if not authorization:
             raise HTTPException(status_code=401, detail="Authorization required")
         
-        print("[Admin] Generating missing avatars...")
+        print("[Admin] Generating cartoon avatars...")
         
-        # First, get all users to find those without avatars
+        # First, get all users
         users_result = await call_spynners_function("nativeGetAllUsers", {"limit": 10000}, authorization)
         
         if not users_result:
@@ -3339,34 +3339,44 @@ async def generate_missing_avatars(authorization: str = Header(None)):
         
         users = users_result.get('users', []) if isinstance(users_result, dict) else users_result
         
-        # Find users without avatars
-        users_without_avatar = [u for u in users if not u.get('avatar_url')]
+        # Find users who need new avatars:
+        # - No avatar at all
+        # - OR have DiceBear initials avatar (contains 'dicebear.com' and 'initials')
+        users_to_update = []
+        for u in users:
+            avatar_url = u.get('avatar_url', '')
+            if not avatar_url:
+                # No avatar
+                users_to_update.append(u)
+            elif 'dicebear.com' in avatar_url and 'initials' in avatar_url:
+                # Has DiceBear initials avatar - replace with cartoon
+                users_to_update.append(u)
+            # Skip users with custom avatars (base44.app or other URLs)
         
-        if not users_without_avatar:
+        if not users_to_update:
             return {
                 "success": True,
-                "message": "Tous les utilisateurs ont déjà un avatar",
+                "message": "Tous les utilisateurs ont déjà un avatar personnalisé ou cartoon",
                 "generated": 0,
                 "total_users": len(users)
             }
         
-        print(f"[Admin] Found {len(users_without_avatar)} users without avatar")
+        print(f"[Admin] Found {len(users_to_update)} users needing cartoon avatars")
         
         generated_count = 0
+        import urllib.parse
         
-        # Try to generate avatars using DiceBear API or similar
-        for user in users_without_avatar[:50]:  # Limit to 50 at a time
+        # Generate cartoon avatars using DiceBear "adventurer" style
+        for user in users_to_update[:100]:  # Process up to 100 at a time
             try:
                 user_id = user.get('id') or user.get('_id')
                 user_name = user.get('full_name') or user.get('artist_name') or user.get('email', 'user')
                 
-                # Generate avatar URL using DiceBear (free avatar service)
-                # Using "adventurer" style for cartoon avatars (not just initials)
-                import urllib.parse
+                # Generate cartoon avatar URL
                 safe_seed = urllib.parse.quote(user_name)
                 avatar_url = f"https://api.dicebear.com/7.x/adventurer/png?seed={safe_seed}&size=200&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf"
                 
-                # Update user with avatar
+                # Update user with new avatar
                 base44_url = f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{user_id}"
                 headers = {
                     "Authorization": authorization,
@@ -3378,16 +3388,16 @@ async def generate_missing_avatars(authorization: str = Header(None)):
                     response = await client.put(base44_url, json={"avatar_url": avatar_url}, headers=headers)
                     if response.status_code == 200:
                         generated_count += 1
-                        print(f"[Admin] Generated avatar for: {user_name}")
+                        print(f"[Admin] Generated cartoon avatar for: {user_name}")
             except Exception as e:
                 print(f"[Admin] Error generating avatar for user: {e}")
                 continue
         
         return {
             "success": True,
-            "message": f"Avatars générés pour {generated_count} utilisateurs sur {len(users_without_avatar)} sans avatar",
+            "message": f"Avatars cartoon générés pour {generated_count} utilisateurs",
             "generated": generated_count,
-            "total_without_avatar": len(users_without_avatar)
+            "total_to_update": len(users_to_update)
         }
         
     except Exception as e:
