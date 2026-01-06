@@ -3549,6 +3549,44 @@ async def get_admin_sessions(authorization: str = Header(None), limit: int = 500
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/admin/debug-acrcloud")
+async def debug_acrcloud(authorization: str = Header(None)):
+    """
+    Debug ACRCloud integration - checks configuration and tests connection.
+    Calls the debugACRCloud Spynners function.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print("[Admin] Running ACRCloud debug...")
+        
+        # Call the Spynners debugACRCloud function
+        result = await call_spynners_function("debugACRCloud", {}, authorization)
+        
+        if result:
+            print(f"[Admin] ACRCloud debug result: {result}")
+            return {
+                "success": True,
+                "message": "Diagnostic ACRCloud terminé",
+                "data": result
+            }
+        else:
+            # If no result, return basic config check
+            return {
+                "success": True,
+                "message": "Configuration ACRCloud vérifiée",
+                "data": {
+                    "acrcloud_configured": bool(ACRCLOUD_ACCESS_KEY and ACRCLOUD_ACCESS_SECRET),
+                    "host": ACRCLOUD_HOST
+                }
+            }
+        
+    except Exception as e:
+        print(f"[Admin] ACRCloud debug error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/admin/downloads")
 async def get_admin_downloads(authorization: str = Header(None), limit: int = 500):
     """
