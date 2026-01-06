@@ -1011,6 +1011,10 @@ export default function SpynRecordScreen() {
             timeout: 30000,
           });
           
+          // Mark that we successfully made an API call (proves we're online!)
+          hasSuccessfulApiCallRef.current = true;
+          console.log('[SPYN Record] ✅ API call successful - we are ONLINE');
+          
           console.log('[SPYN Record] Recognition response:', response.data);
           
           if (response.data.success && response.data.title) {
