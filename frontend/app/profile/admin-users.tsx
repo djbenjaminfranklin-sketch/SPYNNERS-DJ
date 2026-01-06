@@ -10,6 +10,9 @@ import {
   Alert,
   TextInput,
   ActivityIndicator,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -19,6 +22,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { isUserAdmin } from '../../src/components/AdminBadge';
 import AdminBadge from '../../src/components/AdminBadge';
+import { Picker } from '@react-native-picker/picker';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
@@ -31,8 +35,24 @@ type UserItem = {
   role?: string;
   user_type?: string;
   nationality?: string;
+  residence_club?: string;
+  instagram_url?: string;
+  bio?: string;
   black_diamonds?: number;
   is_admin?: boolean;
+  read_only?: boolean;
+};
+
+type EditFormData = {
+  full_name: string;
+  artist_name: string;
+  user_type: string;
+  role: string;
+  nationality: string;
+  residence_club: string;
+  instagram_url: string;
+  bio: string;
+  read_only: boolean;
 };
 
 export default function AdminUsers() {
@@ -43,6 +63,20 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
+  const [editForm, setEditForm] = useState<EditFormData>({
+    full_name: '',
+    artist_name: '',
+    user_type: 'user',
+    role: 'user',
+    nationality: '',
+    residence_club: '',
+    instagram_url: '',
+    bio: '',
+    read_only: false,
+  });
+  const [saving, setSaving] = useState(false);
 
   const isAdmin = isUserAdmin(user);
 
