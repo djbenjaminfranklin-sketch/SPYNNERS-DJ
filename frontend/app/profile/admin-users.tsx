@@ -324,6 +324,171 @@ export default function AdminUsers() {
         ))}
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Edit User Modal */}
+      <Modal visible={showEditModal} animationType="slide" transparent>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.editModalContent}>
+            <View style={styles.editModalHeader}>
+              <Text style={styles.editModalTitle}>Éditer l'utilisateur</Text>
+              <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                <Ionicons name="close" size={28} color={Colors.text} />
+              </TouchableOpacity>
+            </View>
+            
+            {selectedUser && (
+              <ScrollView showsVerticalScrollIndicator={false} style={styles.editForm}>
+                {/* Email - Read Only */}
+                <Text style={styles.editLabel}>Email</Text>
+                <View style={[styles.editInput, styles.editInputReadOnly]}>
+                  <Text style={styles.editInputText}>{selectedUser.email}</Text>
+                </View>
+
+                {/* Full Name */}
+                <Text style={styles.editLabel}>Full Name</Text>
+                <TextInput
+                  style={styles.editInput}
+                  value={editForm.full_name}
+                  onChangeText={(text) => setEditForm({...editForm, full_name: text})}
+                  placeholder="Nom complet"
+                  placeholderTextColor={Colors.textMuted}
+                />
+
+                {/* Artist Name */}
+                <Text style={styles.editLabel}>Artist Name</Text>
+                <TextInput
+                  style={styles.editInput}
+                  value={editForm.artist_name}
+                  onChangeText={(text) => setEditForm({...editForm, artist_name: text})}
+                  placeholder="Nom d'artiste"
+                  placeholderTextColor={Colors.textMuted}
+                />
+
+                {/* User Type */}
+                <Text style={styles.editLabel}>User Type</Text>
+                <View style={styles.pickerContainer}>
+                  <TouchableOpacity 
+                    style={[styles.pickerOption, editForm.user_type === 'user' && styles.pickerOptionActive]}
+                    onPress={() => setEditForm({...editForm, user_type: 'user'})}
+                  >
+                    <Text style={[styles.pickerOptionText, editForm.user_type === 'user' && styles.pickerOptionTextActive]}>User</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.pickerOption, editForm.user_type === 'dj' && styles.pickerOptionActive]}
+                    onPress={() => setEditForm({...editForm, user_type: 'dj'})}
+                  >
+                    <Text style={[styles.pickerOptionText, editForm.user_type === 'dj' && styles.pickerOptionTextActive]}>DJ</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.pickerOption, editForm.user_type === 'producer' && styles.pickerOptionActive]}
+                    onPress={() => setEditForm({...editForm, user_type: 'producer'})}
+                  >
+                    <Text style={[styles.pickerOptionText, editForm.user_type === 'producer' && styles.pickerOptionTextActive]}>Producer</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.pickerOption, editForm.user_type === 'dj_producer' && styles.pickerOptionActive]}
+                    onPress={() => setEditForm({...editForm, user_type: 'dj_producer'})}
+                  >
+                    <Text style={[styles.pickerOptionText, editForm.user_type === 'dj_producer' && styles.pickerOptionTextActive]}>DJ & Producer</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Role */}
+                <Text style={styles.editLabel}>Role</Text>
+                <View style={styles.pickerContainer}>
+                  <TouchableOpacity 
+                    style={[styles.pickerOption, editForm.role === 'user' && styles.pickerOptionActive]}
+                    onPress={() => setEditForm({...editForm, role: 'user'})}
+                  >
+                    <Text style={[styles.pickerOptionText, editForm.role === 'user' && styles.pickerOptionTextActive]}>User</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.pickerOption, editForm.role === 'admin' && styles.pickerOptionActive]}
+                    onPress={() => setEditForm({...editForm, role: 'admin'})}
+                  >
+                    <Text style={[styles.pickerOptionText, editForm.role === 'admin' && styles.pickerOptionTextActive]}>Admin</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Nationality */}
+                <Text style={styles.editLabel}>Nationality</Text>
+                <TextInput
+                  style={styles.editInput}
+                  value={editForm.nationality}
+                  onChangeText={(text) => setEditForm({...editForm, nationality: text})}
+                  placeholder="Nationalité"
+                  placeholderTextColor={Colors.textMuted}
+                />
+
+                {/* Residence Club */}
+                <Text style={styles.editLabel}>Residence Club</Text>
+                <TextInput
+                  style={styles.editInput}
+                  value={editForm.residence_club}
+                  onChangeText={(text) => setEditForm({...editForm, residence_club: text})}
+                  placeholder="Club de résidence"
+                  placeholderTextColor={Colors.textMuted}
+                />
+
+                {/* Instagram URL */}
+                <Text style={styles.editLabel}>Instagram URL</Text>
+                <TextInput
+                  style={styles.editInput}
+                  value={editForm.instagram_url}
+                  onChangeText={(text) => setEditForm({...editForm, instagram_url: text})}
+                  placeholder="https://instagram.com/..."
+                  placeholderTextColor={Colors.textMuted}
+                  autoCapitalize="none"
+                />
+
+                {/* Bio */}
+                <Text style={styles.editLabel}>Bio</Text>
+                <TextInput
+                  style={[styles.editInput, styles.editInputMultiline]}
+                  value={editForm.bio}
+                  onChangeText={(text) => setEditForm({...editForm, bio: text})}
+                  placeholder="Biographie..."
+                  placeholderTextColor={Colors.textMuted}
+                  multiline
+                  numberOfLines={4}
+                />
+
+                {/* Read Only Checkbox */}
+                <TouchableOpacity 
+                  style={styles.checkboxRow}
+                  onPress={() => setEditForm({...editForm, read_only: !editForm.read_only})}
+                >
+                  <View style={[styles.checkbox, editForm.read_only && styles.checkboxChecked]}>
+                    {editForm.read_only && <Ionicons name="checkmark" size={16} color="#fff" />}
+                  </View>
+                  <Text style={styles.checkboxLabel}>Read-only access</Text>
+                </TouchableOpacity>
+
+                {/* Save Button */}
+                <TouchableOpacity 
+                  style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+                  onPress={saveUserChanges}
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <>
+                      <Ionicons name="save" size={20} color="#fff" />
+                      <Text style={styles.saveBtnText}>Enregistrer</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <View style={{ height: 40 }} />
+              </ScrollView>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
