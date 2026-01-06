@@ -3987,7 +3987,7 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         all_plays = []
         try:
             # Use Base44 entity API to get TrackPlay data
-            base44_plays_url = "https://app.base44.com/api/apps/691a4d96d819355b52c063f3/entities/TrackPlay"
+            base44_plays_url = "https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/entities/TrackPlay"
             headers = {
                 "Content-Type": "application/json"
             }
