@@ -325,21 +325,59 @@ export default function AdminDownloads() {
           </View>
         </View>
 
-        {/* Search & Date Filter */}
-        <View style={styles.filterRow}>
+        {/* Date Filter Section */}
+        <View style={styles.filterSection}>
+          <Text style={styles.filterTitle}>Filtre par date</Text>
+          <View style={styles.filterRow}>
+            <TouchableOpacity 
+              style={styles.dateFilterBtn}
+              onPress={() => setShowDateFilter(true)}
+            >
+              <Ionicons name="calendar" size={18} color="#00BFA5" />
+              <Text style={styles.dateFilterBtnText}>
+                {dateFilter.startDate || dateFilter.endDate 
+                  ? `${formatDateDisplay(dateFilter.startDate) || 'Début'} → ${formatDateDisplay(dateFilter.endDate) || 'Fin'}`
+                  : 'Sélectionner les dates'
+                }
+              </Text>
+            </TouchableOpacity>
+            
+            {(dateFilter.startDate || dateFilter.endDate) && (
+              <TouchableOpacity style={styles.clearFilterBtn} onPress={clearDateFilter}>
+                <Ionicons name="close-circle" size={20} color="#f44336" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Search & Export */}
+        <View style={styles.actionRow}>
           <View style={styles.searchContainer}>
             <Ionicons name="search" size={20} color={Colors.textMuted} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search by DJ, track or producer..."
+              placeholder="Rechercher par DJ, track ou producer..."
               placeholderTextColor={Colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
           </View>
-          <TouchableOpacity style={styles.dateBtn} onPress={selectDate}>
-            <Ionicons name="calendar" size={16} color="#fff" />
-            <Text style={styles.dateBtnText}>Select a date</Text>
+          
+          <TouchableOpacity 
+            style={[styles.exportBtn, exporting && styles.exportBtnDisabled]} 
+            onPress={exportPDF}
+            disabled={exporting}
+          >
+            {exporting ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Ionicons name="document-text" size={18} color="#fff" />
+                <Text style={styles.exportBtnText}>
+                  Télécharger PDF ({filteredDownloads.length})
+                </Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
