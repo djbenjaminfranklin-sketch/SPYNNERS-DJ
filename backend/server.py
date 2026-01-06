@@ -4033,6 +4033,65 @@ class BroadcastEmailRequest(BaseModel):
     individual_email: Optional[str] = None
     genre_filter: Optional[str] = None
     include_tracks: Optional[bool] = False
+    attachment_url: Optional[str] = None  # URL of uploaded attachment
+    attachment_name: Optional[str] = None  # Original filename of attachment
+
+
+# ==================== ADMIN ATTACHMENT UPLOAD ====================
+
+@app.post("/api/admin/upload-attachment")
+async def upload_email_attachment(
+    file: UploadFile = File(...),
+    authorization: str = Header(None)
+):
+    """
+    Upload an email attachment via Base44 uploadAttachment cloud function.
+    Returns a public URL for the uploaded file.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin Attachment] Uploading file: {file.filename}")
+        print(f"[Admin Attachment] Content type: {file.content_type}")
+        
+        # Read file content
+        content = await file.read()
+        file_size = len(content)
+        print(f"[Admin Attachment] File size: {file_size} bytes")
+        
+        # Convert to base64 for transmission
+        file_base64 = base64.b64encode(content).decode('utf-8')
+        
+        # Call the uploadAttachment cloud function
+        result = await call_spynners_function("uploadAttachment", {
+            "file_data": file_base64,
+            "file_name": file.filename,
+            "content_type": file.content_type or 'application/octet-stream',
+            "file_size": file_size
+        }, authorization)
+        
+        if result and result.get('success') and result.get('url'):
+            print(f"[Admin Attachment] Upload successful: {result.get('url')}")
+            return {
+                "success": True,
+                "url": result.get('url'),
+                "file_name": file.filename,
+                "file_size": file_size
+            }
+        else:
+            error_msg = result.get('error', 'Upload failed') if result else 'No response'
+            print(f"[Admin Attachment] Upload failed: {error_msg}")
+            return {
+                "success": False,
+                "error": error_msg
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Attachment] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/admin/broadcast")
 async def send_broadcast_email(request: BroadcastEmailRequest, authorization: str = Header(None)):
