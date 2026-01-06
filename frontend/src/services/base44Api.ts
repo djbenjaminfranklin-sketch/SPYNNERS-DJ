@@ -923,12 +923,10 @@ export const base44Admin = {
     }
   },
 
-  async approveTrack(trackId: string): Promise<Track | null> {
+  async approveTrack(trackId: string): Promise<any> {
     try {
-      const response = await api.put(`/api/base44/entities/Track/${trackId}`, {
-        status: 'approved',
-        is_approved: true,
-      });
+      console.log('[Admin] Calling approve endpoint for track:', trackId);
+      const response = await api.put(`/api/admin/tracks/${trackId}/approve`);
       return response.data;
     } catch (error) {
       console.error('[Admin] Error approving track:', error);
