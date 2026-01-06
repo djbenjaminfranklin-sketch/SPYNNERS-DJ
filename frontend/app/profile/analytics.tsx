@@ -129,12 +129,24 @@ export default function AnalyticsScreen() {
       
       // Filter to get ONLY user's tracks
       const myTracks = allTracks.filter((track: any) => {
-        return track.producer_id === userId || 
+        const isOwner = track.producer_id === userId || 
                track.created_by_id === userId ||
-               track.uploaded_by === userId;
+               track.uploaded_by === userId ||
+               (track as any).owner_id === userId;
+        return isOwner;
       });
       
-      console.log('[Analytics] My tracks:', myTracks.length);
+      console.log('[Analytics] My tracks count:', myTracks.length);
+      console.log('[Analytics] User ID being checked:', userId);
+      if (myTracks.length === 0 && allTracks.length > 0) {
+        // Debug: show first track's IDs
+        const sampleTrack = allTracks[0];
+        console.log('[Analytics] Sample track IDs:', {
+          producer_id: sampleTrack.producer_id,
+          created_by_id: sampleTrack.created_by_id,
+          uploaded_by: sampleTrack.uploaded_by
+        });
+      }
 
       // Calculate detailed stats
       let totalPlays = 0;
