@@ -1592,43 +1592,41 @@ export const base44Profiles = {
           const userData = user.data || {};
           console.log('[Profiles] Profile fetched from User entity');
           
-          // Fetch user's tracks for stats
+          // Fetch user's tracks for stats using native API (more reliable)
           let tracksCount = 0;
           let totalPlays = 0;
           let totalDownloads = 0;
           
           try {
-            const tracksResponse = await mobileApi.get(`/entities/Track?limit=1000`);
-            if (Array.isArray(tracksResponse.data)) {
-              console.log('[Profiles] Total tracks fetched:', tracksResponse.data.length);
-              console.log('[Profiles] Filtering for userId:', userId);
-              
-              const myTracks = tracksResponse.data.filter((t: any) => {
-                const isMatch = t.producer_id === userId || t.created_by_id === userId || t.uploaded_by === userId;
-                if (isMatch) {
-                  console.log('[Profiles] Found matching track:', t.title);
-                }
-                return isMatch;
-              });
-              
+            // Use the native /api/tracks/my endpoint which correctly filters by producer
+            const tracksResponse = await axios.post(
+              `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/nativeGetMyTracks`,
+              { limit: 500, offset: 0, status: 'approved' },
+              { headers: { 'Content-Type': 'application/json' } }
+            );
+            
+            if (tracksResponse.data?.tracks && Array.isArray(tracksResponse.data.tracks)) {
+              const myTracks = tracksResponse.data.tracks.filter((t: any) => 
+                t.producer_id === userId
+              );
               tracksCount = myTracks.length;
-              totalPlays = myTracks.reduce((sum: number, t: any) => sum + (t.play_count || t.plays_count || 0), 0);
-              totalDownloads = myTracks.reduce((sum: number, t: any) => sum + (t.download_count || t.downloads_count || 0), 0);
-              console.log('[Profiles] Stats calculated:', { tracksCount, totalPlays, totalDownloads });
-              
-              // If no match found, show sample track IDs for debugging
-              if (myTracks.length === 0 && tracksResponse.data.length > 0) {
-                const sample = tracksResponse.data[0];
-                console.log('[Profiles] DEBUG - No match. Sample track IDs:', {
-                  producer_id: sample.producer_id,
-                  created_by_id: sample.created_by_id,
-                  uploaded_by: sample.uploaded_by,
-                  looking_for: userId
-                });
-              }
+              totalPlays = myTracks.reduce((sum: number, t: any) => sum + (t.play_count || 0), 0);
+              totalDownloads = myTracks.reduce((sum: number, t: any) => sum + (t.download_count || 0), 0);
+              console.log('[Profiles] Stats from native API:', { tracksCount, totalPlays, totalDownloads });
             }
-          } catch (statsError) {
-            console.log('[Profiles] Could not fetch stats:', statsError);
+          } catch (nativeError) {
+            console.log('[Profiles] Native API failed, trying direct entity:', nativeError);
+            // Fallback to direct entity fetch
+            try {
+              const tracksResponse = await mobileApi.get(`/entities/Track?limit=1000&producer_id=${userId}`);
+              if (Array.isArray(tracksResponse.data)) {
+                tracksCount = tracksResponse.data.length;
+                totalPlays = tracksResponse.data.reduce((sum: number, t: any) => sum + (t.play_count || 0), 0);
+                totalDownloads = tracksResponse.data.reduce((sum: number, t: any) => sum + (t.download_count || 0), 0);
+              }
+            } catch (e) {
+              console.log('[Profiles] Fallback also failed');
+            }
           }
           
           return {
