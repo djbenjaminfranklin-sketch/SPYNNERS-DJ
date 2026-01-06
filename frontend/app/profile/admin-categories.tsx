@@ -11,6 +11,7 @@ import {
   Image,
   Modal,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -22,6 +23,8 @@ import { isUserAdmin } from '../../src/components/AdminBadge';
 import AdminBadge from '../../src/components/AdminBadge';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const BASE44_APP_ID = '691a4d96d819355b52c063f3';
+const BASE44_API_URL = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}`;
 
 const CATEGORIES = [
   { id: 'dj', name: 'DJ', icon: 'headset', color: '#2196F3', count: 0 },
