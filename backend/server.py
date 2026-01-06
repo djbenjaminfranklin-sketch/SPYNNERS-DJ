@@ -3410,7 +3410,7 @@ async def approve_track(track_id: str, authorization: str = Header(None)):
 @app.put("/api/admin/tracks/{track_id}/reject")
 async def reject_track(track_id: str, reason: str = None, authorization: str = Header(None)):
     """
-    Reject a pending track by updating its status.
+    Reject a pending track by calling Base44 REST API directly.
     """
     try:
         if not authorization:
@@ -3418,31 +3418,45 @@ async def reject_track(track_id: str, reason: str = None, authorization: str = H
         
         print(f"[Admin] Rejecting track: {track_id}, reason: {reason}")
         
-        # Use updateTrack to change status to rejected
-        result = await call_spynners_function("updateTrack", {
-            "trackId": track_id,
-            "data": {
-                "status": "rejected",
-                "rejection_reason": reason or "Rejeté par l'admin"
-            }
-        }, authorization)
+        # Try calling Base44 REST API directly to update track status
+        base44_url = "https://spynners.com/api/entities/Track"
+        headers = {
+            "Authorization": authorization,
+            "Content-Type": "application/json"
+        }
         
-        if result:
-            print(f"[Admin] Track {track_id} rejected successfully via updateTrack")
-            return {"success": True, "message": "Track rejected", "track": result}
-        
-        # If updateTrack fails, try nativeUpdateTrack
-        result = await call_spynners_function("nativeUpdateTrack", {
-            "trackId": track_id,
+        update_data = {
             "status": "rejected",
             "rejection_reason": reason or "Rejeté par l'admin"
-        }, authorization)
+        }
         
-        if result:
-            print(f"[Admin] Track {track_id} rejected successfully via nativeUpdateTrack")
-            return {"success": True, "message": "Track rejected", "track": result}
-        
-        raise HTTPException(status_code=500, detail="Failed to reject track")
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # Try PUT to update the track
+            response = await client.put(
+                f"{base44_url}/{track_id}",
+                json=update_data,
+                headers=headers
+            )
+            
+            print(f"[Admin] Base44 reject response: {response.status_code}")
+            
+            if response.status_code == 200:
+                print(f"[Admin] Track {track_id} rejected successfully")
+                return {"success": True, "message": "Track rejected", "track": response.json()}
+            
+            # If PUT fails, try PATCH
+            response = await client.patch(
+                f"{base44_url}/{track_id}",
+                json=update_data,
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                print(f"[Admin] Track {track_id} rejected via PATCH")
+                return {"success": True, "message": "Track rejected", "track": response.json()}
+            
+            print(f"[Admin] Failed to reject track. Response: {response.text}")
+            raise HTTPException(status_code=response.status_code, detail=f"Base44 API error: {response.text}")
         
     except HTTPException:
         raise
