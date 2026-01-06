@@ -63,19 +63,42 @@ export const getBase44ClientSync = () => {
   return base44Client;
 };
 
-// Wrapper for functions.invoke - uses backend proxy to avoid CORS
+// Wrapper for functions.invoke - uses backend proxy to avoid CORS on web, direct API on mobile
 export const invokeBase44Function = async <T = any>(
   functionName: string,
   params: Record<string, any> = {}
 ): Promise<T> => {
   try {
     const token = await getStoredToken();
-    const backendUrl = getBackendUrl();
     
-    console.log(`[Base44Client] Invoking function via proxy: ${functionName}`, params);
+    console.log(`[Base44Client] Invoking function: ${functionName}`, params);
     console.log(`[Base44Client] Token available: ${!!token}`);
+    console.log(`[Base44Client] Platform: ${Platform.OS}`);
     
-    // Use backend proxy to avoid CORS issues
+    // On mobile (iOS/Android), use direct Base44 API to avoid proxy issues
+    if (Platform.OS !== 'web') {
+      const directUrl = `https://app.base44.com/api/apps/${BASE44_APP_ID}/functions/invoke/${functionName}`;
+      console.log(`[Base44Client] Using direct API: ${directUrl}`);
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
+      const response = await axios.post(directUrl, params, { 
+        headers,
+        timeout: 30000 
+      });
+      
+      console.log(`[Base44Client] Direct API response status:`, response.status);
+      return response.data;
+    }
+    
+    // On web, use backend proxy to avoid CORS issues
+    const backendUrl = getBackendUrl();
     const url = `${backendUrl}/api/base44/functions/invoke/${functionName}`;
     console.log(`[Base44Client] Proxy URL: ${url}`);
     
