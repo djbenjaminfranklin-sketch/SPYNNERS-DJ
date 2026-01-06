@@ -34,11 +34,69 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
   const { user } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
-  const [categories, setCategories] = useState<NotificationCategory[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({
+    track_received: 0,
+    message: 0,
+    track_played: 0,
+    download: 0,
+    vip: 0,
+    system: 0,
+  });
+
+  // Build categories with current translations
+  const categories: NotificationCategory[] = [
+    {
+      type: 'track_received',
+      label: t('notifications.tracksReceived'),
+      icon: 'mail',
+      color: '#2196F3',
+      count: categoryCounts.track_received,
+      route: '/(tabs)/received',
+    },
+    {
+      type: 'message',
+      label: t('notifications.chatMessages'),
+      icon: 'chatbubbles',
+      color: '#673AB7',
+      count: categoryCounts.message,
+      route: '/(tabs)/chat',
+    },
+    {
+      type: 'track_played',
+      label: t('notifications.trackPlays'),
+      icon: 'play-circle',
+      color: '#4CAF50',
+      count: categoryCounts.track_played,
+      route: '/profile/radar',
+    },
+    {
+      type: 'download',
+      label: t('notifications.downloads'),
+      icon: 'download',
+      color: '#FF9800',
+      count: categoryCounts.download,
+      route: '/profile/analytics',
+    },
+    {
+      type: 'vip',
+      label: t('notifications.vipAlerts'),
+      icon: 'diamond',
+      color: '#7C4DFF',
+      count: categoryCounts.vip,
+      route: '/profile/vip',
+    },
+    {
+      type: 'system',
+      label: t('notifications.system'),
+      icon: 'notifications',
+      color: Colors.textMuted,
+      count: categoryCounts.system,
+    },
+  ];
 
   useEffect(() => {
     if (visible) {
