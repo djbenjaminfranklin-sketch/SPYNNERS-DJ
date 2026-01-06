@@ -4168,56 +4168,10 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
             ('LEFTPADDING', (0, 0), (-1, -1), 3),
             ('RIGHTPADDING', (0, 0), (-1, -1), 3),
         ]))
-        elements.append(main_table):
-                        dt_end = datetime.fromisoformat(session['ended_at'].replace('Z', '+00:00'))
-                        end_time = dt_end.strftime('%H:%M')
-                    except:
-                        pass
-                
-                city = session.get('city') or session.get('location') or 'N/A'
-                tracks = session.get('tracks', [])
-                track_count = session.get('tracks_count', 0) or len(tracks)
-                
-                # Session header like Analytics
-                session_header = f"SESSION {session_counter:03d} - {session_date} | {city} | {start_time} - {end_time} | {track_count} tracks"
-                elements.append(Paragraph(session_header, session_title_style))
-                
-                # Tracks table if we have track details
-                if tracks and len(tracks) > 0:
-                    table_data = [['#', 'Titre', 'Artiste', 'ISRC', 'ISWC', 'Heure']]
-                    
-                    for track_num, play in enumerate(sorted(tracks, key=lambda x: x.get('played_at', '') or ''), 1):
-                        track_title = play.get('track_title') or play.get('title') or 'N/A'
-                        artist = play.get('track_artist') or play.get('artist') or play.get('producer_name') or 'N/A'
-                        isrc = play.get('isrc') or play.get('isrc_code') or 'N/A'
-                        iswc = play.get('iswc') or play.get('iswc_code') or 'N/A'
-                        
-                        track_time = 'N/A'
-                        if play.get('played_at'):
-                            try:
-                                track_dt = datetime.fromisoformat(play['played_at'].replace('Z', '+00:00'))
-                                track_time = track_dt.strftime('%H:%M')
-                            except:
-                                pass
-                        
-                        # Truncate long text
-                        if len(track_title) > 35:
-                            track_title = track_title[:32] + '...'
-                        if len(artist) > 25:
-                            artist = artist[:22] + '...'
-                        
-                        table_data.append([str(track_num), track_title, artist, isrc, iswc, track_time])
-                    
-                    # Create tracks table
-                    tracks_table = Table(table_data, colWidths=[1*cm, 8*cm, 5*cm, 3.5*cm, 3.5*cm, 2*cm])
-                    tracks_table.setStyle(TableStyle([
-                        # Header row
-                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#9C27B0')),
-                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                        ('FONTSIZE', (0, 0), (-1, 0), 9),
-                        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-                        # Data rows
+        elements.append(main_table)
+        
+        # Build PDF
+        doc.build(elements)
                         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
                         ('FONTSIZE', (0, 1), (-1, -1), 8),
                         ('ALIGN', (0, 1), (0, -1), 'CENTER'),
