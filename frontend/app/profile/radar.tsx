@@ -224,41 +224,33 @@ export default function LiveRadarScreen() {
       
       setRecentPlays(formattedPlays);
       
-      // Count user's tracks for stats - fetch from backend for accurate count
+      // Count user's tracks for stats - use Base44 API directly for mobile compatibility
       if (userId) {
         try {
-          // Use backend endpoint for accurate track count
-          const tracksResponse = await axios.get(`${BACKEND_URL}/api/tracks?limit=1000`, {
-            headers: { Authorization: `Bearer ${token}` }
+          console.log('[LiveRadar] Counting tracks for user:', userId);
+          
+          // Use Base44 API directly - works on both web and mobile
+          const userTracks = await base44Tracks.list({ limit: 1000 });
+          console.log('[LiveRadar] Total tracks from API:', userTracks.length);
+          
+          // Filter tracks owned by current user - check all possible ID fields
+          const myTracks = userTracks.filter((t: Track) => {
+            const trackProducerId = t.producer_id || '';
+            const trackCreatedById = t.created_by_id || '';
+            const trackUploadedBy = t.uploaded_by || '';
+            const trackOwnerId = (t as any).owner_id || '';
+            
+            return trackProducerId === userId || 
+                   trackCreatedById === userId || 
+                   trackUploadedBy === userId ||
+                   trackOwnerId === userId;
           });
           
-          if (tracksResponse.data?.tracks) {
-            // Filter tracks owned by current user
-            const allTracks = tracksResponse.data.tracks;
-            const myTracks = allTracks.filter((t: any) => 
-              t.producer_id === userId || 
-              t.created_by_id === userId || 
-              t.uploaded_by === userId ||
-              t.owner_id === userId
-            );
-            setMyTracksCount(myTracks.length);
-            console.log('[LiveRadar] Total user tracks:', myTracks.length);
-          } else {
-            // Fallback to base44 if backend fails
-            const userTracks = await base44Tracks.list({ limit: 1000 });
-            const myTracks = userTracks.filter((t: Track) => 
-              t.producer_id === userId || t.created_by_id === userId || t.uploaded_by === userId
-            );
-            setMyTracksCount(myTracks.length);
-          }
+          setMyTracksCount(myTracks.length);
+          console.log('[LiveRadar] My tracks count:', myTracks.length);
         } catch (tracksError) {
           console.error('[LiveRadar] Error counting tracks:', tracksError);
-          // Fallback
-          const userTracks = await base44Tracks.list({ limit: 1000 });
-          const myTracks = userTracks.filter((t: Track) => 
-            t.producer_id === userId || t.created_by_id === userId || t.uploaded_by === userId
-          );
-          setMyTracksCount(myTracks.length);
+          setMyTracksCount(0);
         }
       }
       
