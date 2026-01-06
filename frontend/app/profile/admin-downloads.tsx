@@ -411,6 +411,117 @@ export default function AdminDownloads() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Date Filter Modal */}
+      <Modal
+        visible={showDateFilter}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDateFilter(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filtrer par date</Text>
+              <TouchableOpacity onPress={() => setShowDateFilter(false)}>
+                <Ionicons name="close" size={24} color={Colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.dateInputContainer}>
+              <Text style={styles.dateInputLabel}>Date de début</Text>
+              <TextInput
+                style={styles.dateInput}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={Colors.textMuted}
+                value={tempDateFilter.startDate}
+                onChangeText={(text) => setTempDateFilter(prev => ({ ...prev, startDate: text }))}
+              />
+            </View>
+
+            <View style={styles.dateInputContainer}>
+              <Text style={styles.dateInputLabel}>Date de fin</Text>
+              <TextInput
+                style={styles.dateInput}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={Colors.textMuted}
+                value={tempDateFilter.endDate}
+                onChangeText={(text) => setTempDateFilter(prev => ({ ...prev, endDate: text }))}
+              />
+            </View>
+
+            {/* Quick presets */}
+            <View style={styles.presetsContainer}>
+              <Text style={styles.presetsTitle}>Raccourcis</Text>
+              <View style={styles.presetsRow}>
+                <TouchableOpacity 
+                  style={styles.presetBtn}
+                  onPress={() => {
+                    const today = new Date();
+                    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    setTempDateFilter({
+                      startDate: weekAgo.toISOString().split('T')[0],
+                      endDate: today.toISOString().split('T')[0],
+                    });
+                  }}
+                >
+                  <Text style={styles.presetBtnText}>7 derniers jours</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.presetBtn}
+                  onPress={() => {
+                    const today = new Date();
+                    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    setTempDateFilter({
+                      startDate: monthAgo.toISOString().split('T')[0],
+                      endDate: today.toISOString().split('T')[0],
+                    });
+                  }}
+                >
+                  <Text style={styles.presetBtnText}>30 derniers jours</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.presetsRow}>
+                <TouchableOpacity 
+                  style={styles.presetBtn}
+                  onPress={() => {
+                    const today = new Date();
+                    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                    setTempDateFilter({
+                      startDate: firstDay.toISOString().split('T')[0],
+                      endDate: today.toISOString().split('T')[0],
+                    });
+                  }}
+                >
+                  <Text style={styles.presetBtnText}>Ce mois</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.presetBtn}
+                  onPress={() => {
+                    const today = new Date();
+                    const threeMonthsAgo = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+                    setTempDateFilter({
+                      startDate: threeMonthsAgo.toISOString().split('T')[0],
+                      endDate: today.toISOString().split('T')[0],
+                    });
+                  }}
+                >
+                  <Text style={styles.presetBtnText}>3 derniers mois</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.clearBtn} onPress={clearDateFilter}>
+                <Text style={styles.clearBtnText}>Effacer</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.applyBtn} onPress={applyDateFilter}>
+                <Text style={styles.applyBtnText}>Appliquer</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
