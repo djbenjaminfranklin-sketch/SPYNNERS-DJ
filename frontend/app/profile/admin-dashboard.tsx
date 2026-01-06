@@ -100,7 +100,79 @@ export default function AdminDashboard() {
 
   const fetchAllData = async () => {
     try {
-      // Fetch real admin stats from backend
+      console.log('[AdminDashboard] Fetching data, Platform:', Platform.OS);
+      
+      // On mobile, use Base44 API directly
+      if (Platform.OS !== 'web') {
+        console.log('[AdminDashboard] Using Base44 direct API');
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
+        
+        // Fetch tracks from Base44
+        const tracksResponse = await axios.get(`${BASE44_API_URL}/entities/Track?limit=1000`, { headers });
+        const tracks = tracksResponse.data || [];
+        console.log('[AdminDashboard] Got', tracks.length, 'tracks');
+        
+        // Fetch users from Base44
+        const usersResponse = await axios.get(`${BASE44_API_URL}/entities/User?limit=10000`, { headers });
+        const users = usersResponse.data || [];
+        console.log('[AdminDashboard] Got', users.length, 'users');
+        
+        // Calculate stats
+        const pendingTracks = tracks.filter((t: any) => t.status === 'pending');
+        const approvedTracks = tracks.filter((t: any) => t.status === 'approved' || !t.status);
+        const rejectedTracks = tracks.filter((t: any) => t.status === 'rejected');
+        const vipTracks = tracks.filter((t: any) => t.is_vip || t.vip_requested);
+        
+        setAdminStats({
+          total_tracks: tracks.length,
+          total_users: users.length,
+          pending_tracks: pendingTracks.length,
+          vip_requests: vipTracks.length,
+          approved_tracks: approvedTracks.length,
+          rejected_tracks: rejectedTracks.length,
+          unreleased_tracks: 0,
+        });
+        
+        setAllTracks(tracks.map((track: any) => ({
+          id: track.id || track._id,
+          title: track.title || 'Sans titre',
+          artist: track.producer_name || track.artist_name || 'Artiste inconnu',
+          producer_name: track.producer_name || 'Producteur inconnu',
+          genre: track.genre || 'Unknown',
+          label: track.label || '',
+          bpm: track.bpm,
+          key: track.key || '',
+          description: track.description || '',
+          is_vip: track.is_vip || false,
+          audio_url: track.audio_url,
+          artwork_url: track.artwork_url,
+          uploaded_by: track.created_by_id || track.producer_id || '',
+          uploaded_at: track.created_date || '',
+          status: track.status || 'approved',
+          rejection_reason: track.rejection_reason || '',
+        })));
+        
+        setAllUsers(users.map((u: any) => ({
+          id: u.id || u._id,
+          email: u.email || '',
+          full_name: u.full_name || '',
+          artist_name: u.artist_name || u.data?.artist_name || '',
+          avatar_url: u.avatar_url || u.data?.avatar_url || u.generated_avatar_url || '',
+          user_type: u.user_type || u.data?.user_type || 'user',
+          role: u.role || u._app_role || 'user',
+          bio: u.bio || u.data?.bio || '',
+          created_date: u.created_date || '',
+        })));
+        
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      
+      // On web, use backend proxy
       const statsResponse = await axios.get(`${BACKEND_URL}/api/admin/stats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
