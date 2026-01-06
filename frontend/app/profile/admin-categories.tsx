@@ -127,8 +127,9 @@ export default function AdminCategories() {
           full_name: u.full_name || u.name,
           artist_name: u.artist_name,
           email: u.email,
-          avatar_url: u.avatar_url,
+          avatar_url: u.avatar_url || u.generated_avatar_url,  // Use generated_avatar_url as fallback
           user_type: u.user_type,
+          user_types: u.user_types || [],
           nationality: u.nationality,
           role: u.role,
         }));
