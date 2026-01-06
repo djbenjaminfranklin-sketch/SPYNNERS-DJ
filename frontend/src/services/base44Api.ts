@@ -1629,7 +1629,7 @@ export const base44Profiles = {
           }
           
           // CRITICAL: Filter tracks where user is the REAL PRODUCER
-          // Filter ONLY by title containing "Benjamin Franklin"
+          // Filter ONLY by title containing "Benjamin Franklin" AND status approved
           const myTracks = allTracks.filter((t: any) => {
             const producerId = String(t.producer_id || '').trim();
             const targetId = String(userId).trim();
@@ -1639,15 +1639,20 @@ export const base44Profiles = {
               return false;
             }
             
-            // Second check: TITLE must contain "Benjamin Franklin"
-            // (artist_name/producer_name can be wrong in database)
+            // Second check: status must be "approved" (not rejected/pending)
+            const status = String(t.status || '').toLowerCase();
+            if (status !== 'approved') {
+              return false;
+            }
+            
+            // Third check: TITLE must contain "Benjamin Franklin"
             const title = String(t.title || '').toLowerCase();
             const searchName = 'benjamin franklin';
             
             const isMyProduction = title.includes(searchName);
             
             if (isMyProduction) {
-              console.log('[Profiles] ✓ My production:', t.title);
+              console.log('[Profiles] ✓ My production:', t.title, '(status:', status, ')');
             }
             
             return isMyProduction;
