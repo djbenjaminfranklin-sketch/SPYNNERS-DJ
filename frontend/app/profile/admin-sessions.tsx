@@ -80,7 +80,53 @@ export default function AdminSessions() {
 
   const loadSessions = async () => {
     try {
-      // Fetch real sessions data from SessionMix entity
+      console.log('[AdminSessions] Loading sessions, Platform:', Platform.OS);
+      
+      // On mobile, use Base44 API directly
+      if (Platform.OS !== 'web') {
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
+        
+        // Fetch SessionMix data from Base44
+        const response = await axios.get(`${BASE44_API_URL}/entities/SessionMix?limit=10000`, { headers });
+        const sessionsData = response.data || [];
+        
+        console.log('[AdminSessions] Got', sessionsData.length, 'sessions from Base44');
+        
+        // Filter only validated sessions (diamond_awarded = true)
+        const validatedSessions = sessionsData.filter((s: any) => s.diamond_awarded === true);
+        
+        const formattedSessions = validatedSessions.map((s: any) => ({
+          id: s.id || s._id || Math.random().toString(),
+          dj_id: s.dj_id || s.user_id || '',
+          dj_name: s.dj_name || s.user_name || 'DJ Inconnu',
+          location: s.city || s.location || 'Lieu inconnu',
+          venue: s.venue || '-',
+          started_at: s.started_at || s.created_date || new Date().toISOString(),
+          ended_at: s.ended_at || '',
+          status: s.diamond_awarded ? 'validated' : 'ended',
+          tracks_detected: s.tracks_count || s.track_count || 0,
+          diamonds_earned: s.black_diamonds_awarded || (s.diamond_awarded ? 1 : 0),
+        }));
+        
+        setSessions(formattedSessions);
+        
+        const uniqueDjs = new Set(formattedSessions.map((s: Session) => s.dj_name));
+        setStats({
+          total: formattedSessions.length,
+          validated: formattedSessions.length,
+          tracks_detected: formattedSessions.reduce((sum: number, s: Session) => sum + s.tracks_detected, 0),
+          unique_djs: uniqueDjs.size,
+        });
+        
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      
+      // On web, use backend proxy
       const response = await axios.get(`${BACKEND_URL}/api/admin/sessions?limit=10000`, {
         headers: { Authorization: `Bearer ${token}` }
       });
