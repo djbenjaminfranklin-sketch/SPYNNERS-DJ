@@ -277,7 +277,7 @@ export const base44Auth = {
   async login(email: string, password: string): Promise<{ token: string; user: User }> {
     try {
       console.log('[Auth] Logging in via proxy:', email);
-      const response = await api.post('/api/base44/auth/login', {
+      const response = await mobileApi.post('/api/base44/auth/login', {
         email,
         password,
       });
@@ -334,7 +334,7 @@ export const base44Auth = {
   async signup(email: string, password: string, fullName: string, userType?: string): Promise<{ token: string; user: User }> {
     try {
       console.log('[Auth] Signing up via proxy:', email);
-      const response = await api.post('/api/base44/auth/signup', {
+      const response = await mobileApi.post('/api/base44/auth/signup', {
         email,
         password,
         full_name: fullName,
@@ -359,7 +359,7 @@ export const base44Auth = {
 
   async me(): Promise<User | null> {
     try {
-      const response = await api.get('/api/base44/auth/me');
+      const response = await mobileApi.get('/api/base44/auth/me');
       return response.data;
     } catch (error: any) {
       // 404 is expected when user is not logged in - don't show error
@@ -405,7 +405,7 @@ export const base44Auth = {
   async updateUserDiamonds(userId: string, amount: number, currentBalance?: number): Promise<void> {
     try {
       console.log('[Auth] Updating user diamonds:', userId, amount, 'current:', currentBalance);
-      const response = await api.post('/api/base44/update-diamonds', {
+      const response = await mobileApi.post('/api/base44/update-diamonds', {
         user_id: userId,
         amount: amount, // positive to add, negative to deduct
         current_balance: currentBalance, // pass current balance for reliable calculation
@@ -433,7 +433,7 @@ export const base44Tracks = {
       
       // Try native API first
       try {
-        const nativeResponse = await api.post('/api/tracks/all', {
+        const nativeResponse = await mobileApi.post('/api/tracks/all', {
           genre: filters?.genre,
           limit: filters?.limit || 100,
           offset: 0
@@ -462,7 +462,7 @@ export const base44Tracks = {
       const url = `/api/base44/entities/Track${params.toString() ? `?${params.toString()}` : ''}`;
       console.log('[Tracks] Fallback API URL:', url);
       
-      const response = await api.get(url);
+      const response = await mobileApi.get(url);
       
       const data = response.data;
       let tracks: Track[] = [];
@@ -489,7 +489,7 @@ export const base44Tracks = {
 
   async get(trackId: string): Promise<Track | null> {
     try {
-      const response = await api.get(`/api/base44/entities/Track/${trackId}`);
+      const response = await mobileApi.get(`/api/base44/entities/Track/${trackId}`);
       return response.data;
     } catch (error) {
       console.error('[Tracks] Error getting track:', error);
@@ -499,7 +499,7 @@ export const base44Tracks = {
 
   async create(track: Partial<Track>): Promise<Track | null> {
     try {
-      const response = await api.post('/api/base44/entities/Track', track);
+      const response = await mobileApi.post('/api/base44/entities/Track', track);
       return response.data;
     } catch (error) {
       console.error('[Tracks] Error creating track:', error);
@@ -509,7 +509,7 @@ export const base44Tracks = {
 
   async update(trackId: string, updates: Partial<Track>): Promise<Track | null> {
     try {
-      const response = await api.put(`/api/base44/entities/Track/${trackId}`, updates);
+      const response = await mobileApi.put(`/api/base44/entities/Track/${trackId}`, updates);
       return response.data;
     } catch (error) {
       console.error('[Tracks] Error updating track:', error);
@@ -519,7 +519,7 @@ export const base44Tracks = {
 
   async delete(trackId: string): Promise<boolean> {
     try {
-      await api.delete(`/api/base44/entities/Track/${trackId}`);
+      await mobileApi.delete(`/api/base44/entities/Track/${trackId}`);
       return true;
     } catch (error) {
       console.error('[Tracks] Error deleting track:', error);
@@ -531,7 +531,7 @@ export const base44Tracks = {
     try {
       console.log('[Tracks] Searching for:', query);
       // Base44 doesn't have a global search, so we fetch all tracks and filter client-side
-      const response = await api.get(`/api/base44/entities/Track?limit=500`);
+      const response = await mobileApi.get(`/api/base44/entities/Track?limit=500`);
       const data = response.data;
       let tracks: Track[] = [];
       
@@ -565,7 +565,7 @@ export const base44Tracks = {
 
   async myUploads(userId: string): Promise<Track[]> {
     try {
-      const response = await api.get(`/api/base44/entities/Track?uploaded_by=${userId}`);
+      const response = await mobileApi.get(`/api/base44/entities/Track?uploaded_by=${userId}`);
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -578,7 +578,7 @@ export const base44Tracks = {
 
   async rate(trackId: string, rating: number): Promise<any> {
     try {
-      const response = await api.post('/api/base44/functions/invoke/rate_track', {
+      const response = await mobileApi.post('/api/base44/functions/invoke/rate_track', {
         track_id: trackId,
         rating,
       });
@@ -590,7 +590,7 @@ export const base44Tracks = {
 
   async download(trackId: string): Promise<any> {
     try {
-      const response = await api.post('/api/base44/functions/invoke/download_track', {
+      const response = await mobileApi.post('/api/base44/functions/invoke/download_track', {
         track_id: trackId,
       });
       return response.data;
@@ -601,7 +601,7 @@ export const base44Tracks = {
 
   async play(trackId: string): Promise<any> {
     try {
-      const response = await api.post('/api/base44/functions/invoke/play_track', {
+      const response = await mobileApi.post('/api/base44/functions/invoke/play_track', {
         track_id: trackId,
       });
       return response.data;
@@ -621,7 +621,7 @@ export const base44Users = {
       if (filters?.user_type) params.append('user_type', filters.user_type);
       if (filters?.search) params.append('search', filters.search);
 
-      const response = await api.get(`/api/base44/entities/User?${params.toString()}`);
+      const response = await mobileApi.get(`/api/base44/entities/User?${params.toString()}`);
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -636,7 +636,7 @@ export const base44Users = {
   async nativeGetAllUsers(params?: { search?: string; limit?: number; offset?: number }): Promise<User[]> {
     try {
       console.log('[Users] Fetching all users via nativeGetAllUsers:', params);
-      const response = await api.post('/api/base44/functions/invoke/nativeGetAllUsers', {
+      const response = await mobileApi.post('/api/base44/functions/invoke/nativeGetAllUsers', {
         search: params?.search || '',
         limit: params?.limit || 100,
         offset: params?.offset || 0,
@@ -672,7 +672,7 @@ export const base44Users = {
         params.append('limit', pageSize.toString());
         params.append('offset', offset.toString());
         
-        const response = await api.get(`/api/base44/entities/Track?${params.toString()}`);
+        const response = await mobileApi.get(`/api/base44/entities/Track?${params.toString()}`);
         const data = response.data;
         
         let tracks: any[] = [];
@@ -800,7 +800,7 @@ export const base44Users = {
 
   async get(userId: string): Promise<User | null> {
     try {
-      const response = await api.get(`/api/base44/entities/User/${userId}`);
+      const response = await mobileApi.get(`/api/base44/entities/User/${userId}`);
       return response.data;
     } catch (error) {
       console.error('[Users] Error getting user:', error);
@@ -810,7 +810,7 @@ export const base44Users = {
 
   async searchProducersAndLabels(query: string): Promise<User[]> {
     try {
-      const response = await api.get(
+      const response = await mobileApi.get(
         `/api/base44/entities/User?search=${encodeURIComponent(query)}&user_type_in=producer,label,dj_producer`
       );
       const data = response.data;
@@ -831,7 +831,7 @@ export const base44Playlists = {
     try {
       console.log('[Playlists] Fetching playlists via native API for user:', userId);
       // Try native API first
-      const response = await api.post('/api/playlists', {
+      const response = await mobileApi.post('/api/playlists', {
         limit: 100,
         offset: 0,
         user_id: userId // Filter by user
@@ -861,7 +861,7 @@ export const base44Playlists = {
       // Fallback to Base44 entities with user filter
       console.log('[Playlists] Native API failed, trying Base44 entities...');
       const query = userId ? `created_by=${userId}` : '';
-      const fallbackResponse = await api.get(`/api/base44/entities/Playlist?limit=100&${query}`);
+      const fallbackResponse = await mobileApi.get(`/api/base44/entities/Playlist?limit=100&${query}`);
       const data = fallbackResponse.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -871,7 +871,7 @@ export const base44Playlists = {
       // Fallback to Base44 entities
       try {
         const query = userId ? `created_by=${userId}` : '';
-        const fallbackResponse = await api.get(`/api/base44/entities/Playlist?limit=100&${query}`);
+        const fallbackResponse = await mobileApi.get(`/api/base44/entities/Playlist?limit=100&${query}`);
         const data = fallbackResponse.data;
         let playlists: Playlist[] = [];
         if (Array.isArray(data)) playlists = data;
@@ -896,7 +896,7 @@ export const base44Playlists = {
   async create(playlist: Partial<Playlist>): Promise<Playlist | null> {
     try {
       // Try native create first, fallback to Base44
-      const response = await api.post('/api/base44/entities/Playlist', playlist);
+      const response = await mobileApi.post('/api/base44/entities/Playlist', playlist);
       return response.data;
     } catch (error) {
       console.error('[Playlists] Error creating playlist:', error);
@@ -906,7 +906,7 @@ export const base44Playlists = {
 
   async update(playlistId: string, updates: Partial<Playlist>): Promise<Playlist | null> {
     try {
-      const response = await api.put(`/api/base44/entities/Playlist/${playlistId}`, updates);
+      const response = await mobileApi.put(`/api/base44/entities/Playlist/${playlistId}`, updates);
       return response.data;
     } catch (error) {
       console.error('[Playlists] Error updating playlist:', error);
@@ -916,7 +916,7 @@ export const base44Playlists = {
 
   async addTrack(playlistId: string, trackId: string): Promise<any> {
     try {
-      const response = await api.post('/api/base44/functions/invoke/add_to_playlist', {
+      const response = await mobileApi.post('/api/base44/functions/invoke/add_to_playlist', {
         playlist_id: playlistId,
         track_id: trackId,
       });
@@ -929,7 +929,7 @@ export const base44Playlists = {
 
   async removeTrack(playlistId: string, trackId: string): Promise<any> {
     try {
-      const response = await api.post('/api/base44/functions/invoke/remove_from_playlist', {
+      const response = await mobileApi.post('/api/base44/functions/invoke/remove_from_playlist', {
         playlist_id: playlistId,
         track_id: trackId,
       });
@@ -953,7 +953,7 @@ export const base44Files = {
         type: mimeType,
       } as any);
 
-      const response = await api.post('/api/tracks/upload', formData, {
+      const response = await mobileApi.post('/api/tracks/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -975,7 +975,7 @@ export const base44Files = {
 export const base44Admin = {
   async getPendingTracks(): Promise<Track[]> {
     try {
-      const response = await api.get('/api/base44/entities/Track?status=pending');
+      const response = await mobileApi.get('/api/base44/entities/Track?status=pending');
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -989,7 +989,7 @@ export const base44Admin = {
   async approveTrack(trackId: string): Promise<any> {
     try {
       console.log('[Admin] Calling approve endpoint for track:', trackId);
-      const response = await api.put(`/api/admin/tracks/${trackId}/approve`);
+      const response = await mobileApi.put(`/api/admin/tracks/${trackId}/approve`);
       return response.data;
     } catch (error) {
       console.error('[Admin] Error approving track:', error);
@@ -1000,7 +1000,7 @@ export const base44Admin = {
   async rejectTrack(trackId: string, reason?: string): Promise<any> {
     try {
       console.log('[Admin] Calling reject endpoint for track:', trackId);
-      const response = await api.put(`/api/admin/tracks/${trackId}/reject`, null, {
+      const response = await mobileApi.put(`/api/admin/tracks/${trackId}/reject`, null, {
         params: { reason: reason || 'Rejeté par l\'admin' }
       });
       return response.data;
@@ -1012,7 +1012,7 @@ export const base44Admin = {
 
   async getAllUsers(): Promise<User[]> {
     try {
-      const response = await api.get('/api/base44/entities/User');
+      const response = await mobileApi.get('/api/base44/entities/User');
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -1025,7 +1025,7 @@ export const base44Admin = {
 
   async getAnalytics(): Promise<any> {
     try {
-      const response = await api.post('/api/base44/functions/invoke/get_analytics', {});
+      const response = await mobileApi.post('/api/base44/functions/invoke/get_analytics', {});
       return response.data;
     } catch (error) {
       console.error('[Admin] Error getting analytics:', error);
@@ -1035,7 +1035,7 @@ export const base44Admin = {
 
   async getDownloadStats(): Promise<any> {
     try {
-      const response = await api.post('/api/base44/functions/invoke/get_download_stats', {});
+      const response = await mobileApi.post('/api/base44/functions/invoke/get_download_stats', {});
       return response.data;
     } catch (error) {
       console.error('[Admin] Error getting download stats:', error);
@@ -1052,7 +1052,7 @@ export const base44Admin = {
   async getDashboard(): Promise<any> {
     try {
       console.log('[Admin] Fetching dashboard data...');
-      const response = await api.post('/api/base44/functions/invoke/getAdminData', {});
+      const response = await mobileApi.post('/api/base44/functions/invoke/getAdminData', {});
       console.log('[Admin] Dashboard data fetched:', response.data);
       return response.data;
     } catch (error) {
@@ -1068,7 +1068,7 @@ export const base44Admin = {
   async getSection(section: string): Promise<any> {
     try {
       console.log('[Admin] Fetching section:', section);
-      const response = await api.post('/api/base44/functions/invoke/getAdminData', {
+      const response = await mobileApi.post('/api/base44/functions/invoke/getAdminData', {
         section,
       });
       console.log('[Admin] Section data fetched:', response.data);
@@ -1164,7 +1164,7 @@ export const base44Notifications = {
       
       // First, try to call the sendTrackPlayedEmail cloud function
       // This function should handle finding the producer's email and sending
-      const response = await api.post('/api/base44/functions/invoke/sendTrackPlayedEmail', {
+      const response = await mobileApi.post('/api/base44/functions/invoke/sendTrackPlayedEmail', {
         trackTitle: params.track_title,
         artistName: params.artist_name,
         djName: params.dj_name,
@@ -1180,7 +1180,7 @@ export const base44Notifications = {
       
       // Fallback: Create a notification record in the database
       try {
-        await api.post('/api/base44/entities/Notification', {
+        await mobileApi.post('/api/base44/entities/Notification', {
           type: 'track_played',
           message: `Your track "${params.track_title}" was played by ${params.dj_name} at ${params.club_name || 'a venue'}`,
           track_title: params.track_title,
@@ -1203,7 +1203,7 @@ export const base44Notifications = {
       
       // Try native API first
       try {
-        const response = await api.post('/api/live-plays', {
+        const response = await mobileApi.post('/api/live-plays', {
           producer_id: producerId || null,
           limit: 100
         });
@@ -1220,7 +1220,7 @@ export const base44Notifications = {
       }
       
       // Fallback to Base44 function
-      const response = await api.post('/api/base44/functions/invoke/getLiveTrackPlays', {
+      const response = await mobileApi.post('/api/base44/functions/invoke/getLiveTrackPlays', {
         producerId: producerId || null,
       });
       console.log('[LiveRadar] Live plays fetched:', response.data);
@@ -1279,7 +1279,7 @@ export const base44VIP = {
   // VIP Promos
   async listPromos(): Promise<VIPPromo[]> {
     try {
-      const response = await api.get('/api/base44/entities/VIPPromo?limit=100');
+      const response = await mobileApi.get('/api/base44/entities/VIPPromo?limit=100');
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -1292,7 +1292,7 @@ export const base44VIP = {
 
   async getPromo(promoId: string): Promise<VIPPromo | null> {
     try {
-      const response = await api.get(`/api/base44/entities/VIPPromo/${promoId}`);
+      const response = await mobileApi.get(`/api/base44/entities/VIPPromo/${promoId}`);
       return response.data;
     } catch (error) {
       console.error('[VIP] Error getting promo:', error);
@@ -1303,7 +1303,7 @@ export const base44VIP = {
   // VIP Purchases
   async listMyPurchases(userId: string): Promise<VIPPurchase[]> {
     try {
-      const response = await api.get(`/api/base44/entities/VIPPurchase?user_id=${userId}`);
+      const response = await mobileApi.get(`/api/base44/entities/VIPPurchase?user_id=${userId}`);
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -1316,7 +1316,7 @@ export const base44VIP = {
 
   async createPurchase(purchase: Partial<VIPPurchase>): Promise<VIPPurchase | null> {
     try {
-      const response = await api.post('/api/base44/entities/VIPPurchase', purchase);
+      const response = await mobileApi.post('/api/base44/entities/VIPPurchase', purchase);
       return response.data;
     } catch (error) {
       console.error('[VIP] Error creating purchase:', error);
@@ -1327,7 +1327,7 @@ export const base44VIP = {
   // VIP Downloads
   async recordDownload(download: Partial<VIPDownload>): Promise<VIPDownload | null> {
     try {
-      const response = await api.post('/api/base44/entities/VIPDownload', download);
+      const response = await mobileApi.post('/api/base44/entities/VIPDownload', download);
       return response.data;
     } catch (error) {
       console.error('[VIP] Error recording download:', error);
@@ -1337,7 +1337,7 @@ export const base44VIP = {
 
   async listMyDownloads(userId: string): Promise<VIPDownload[]> {
     try {
-      const response = await api.get(`/api/base44/entities/VIPDownload?user_id=${userId}`);
+      const response = await mobileApi.get(`/api/base44/entities/VIPDownload?user_id=${userId}`);
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -1373,7 +1373,7 @@ export const base44Messages = {
       if (filters?.sender_id) params.append('sender_id', filters.sender_id);
       if (filters?.read !== undefined) params.append('read', filters.read.toString());
 
-      const response = await api.get(`/api/base44/entities/Message?${params.toString()}`);
+      const response = await mobileApi.get(`/api/base44/entities/Message?${params.toString()}`);
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -1396,7 +1396,7 @@ export const base44Messages = {
 
   async send(message: Partial<Message>): Promise<Message | null> {
     try {
-      const response = await api.post('/api/base44/entities/Message', {
+      const response = await mobileApi.post('/api/base44/entities/Message', {
         ...message,
         read: false,
         created_at: new Date().toISOString(),
@@ -1410,7 +1410,7 @@ export const base44Messages = {
 
   async markAsRead(messageId: string): Promise<Message | null> {
     try {
-      const response = await api.put(`/api/base44/entities/Message/${messageId}`, {
+      const response = await mobileApi.put(`/api/base44/entities/Message/${messageId}`, {
         read: true,
       });
       return response.data;
@@ -1458,7 +1458,7 @@ export interface Notification {
 export const base44Notifications2 = {
   async list(userId: string): Promise<Notification[]> {
     try {
-      const response = await api.get(`/api/base44/entities/Notification?user_id=${userId}&limit=50`);
+      const response = await mobileApi.get(`/api/base44/entities/Notification?user_id=${userId}&limit=50`);
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -1471,7 +1471,7 @@ export const base44Notifications2 = {
 
   async getUnread(userId: string): Promise<Notification[]> {
     try {
-      const response = await api.get(`/api/base44/entities/Notification?user_id=${userId}&read=false&limit=50`);
+      const response = await mobileApi.get(`/api/base44/entities/Notification?user_id=${userId}&read=false&limit=50`);
       const data = response.data;
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
@@ -1494,7 +1494,7 @@ export const base44Notifications2 = {
 
   async markAsRead(notificationId: string): Promise<Notification | null> {
     try {
-      const response = await api.put(`/api/base44/entities/Notification/${notificationId}`, {
+      const response = await mobileApi.put(`/api/base44/entities/Notification/${notificationId}`, {
         read: true,
       });
       return response.data;
@@ -1515,7 +1515,7 @@ export const base44Notifications2 = {
 
   async delete(notificationId: string): Promise<boolean> {
     try {
-      await api.delete(`/api/base44/entities/Notification/${notificationId}`);
+      await mobileApi.delete(`/api/base44/entities/Notification/${notificationId}`);
       return true;
     } catch (error) {
       console.error('[Notifications] Error deleting notification:', error);
@@ -1525,7 +1525,7 @@ export const base44Notifications2 = {
 
   async create(notification: Partial<Notification>): Promise<Notification | null> {
     try {
-      const response = await api.post('/api/base44/entities/Notification', {
+      const response = await mobileApi.post('/api/base44/entities/Notification', {
         ...notification,
         read: false,
         created_at: new Date().toISOString(),
@@ -1547,7 +1547,7 @@ export const base44Profiles = {
   async getProfile(userId: string): Promise<PublicProfile | null> {
     try {
       console.log('[Profiles] Fetching profile for user:', userId);
-      const response = await api.post('/api/base44/functions/invoke/getPublicProfiles', {
+      const response = await mobileApi.post('/api/base44/functions/invoke/getPublicProfiles', {
         userId,
       });
       
@@ -1570,7 +1570,7 @@ export const base44Profiles = {
   async listProfiles(filters?: { userType?: string; limit?: number }): Promise<PublicProfile[]> {
     try {
       console.log('[Profiles] Fetching profiles with filters:', filters);
-      const response = await api.post('/api/base44/functions/invoke/getPublicProfiles', {
+      const response = await mobileApi.post('/api/base44/functions/invoke/getPublicProfiles', {
         userType: filters?.userType,
         limit: filters?.limit || 50,
       });
