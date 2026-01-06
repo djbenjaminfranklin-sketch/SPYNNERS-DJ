@@ -3361,8 +3361,8 @@ async def generate_missing_avatars(authorization: str = Header(None)):
                 user_name = user.get('full_name') or user.get('artist_name') or user.get('email', 'user')
                 
                 # Generate avatar URL using DiceBear (free avatar service)
-                # Using initials style
-                avatar_url = f"https://api.dicebear.com/7.x/initials/svg?seed={user_name}&backgroundColor=00BCD4"
+                # Using PNG format (not SVG) for React Native compatibility
+                avatar_url = f"https://api.dicebear.com/7.x/initials/png?seed={user_name}&backgroundColor=00BCD4&size=200"
                 
                 # Update user with avatar
                 base44_url = f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{user_id}"
