@@ -548,11 +548,19 @@ const styles = StyleSheet.create({
   statNumber: { fontSize: 24, fontWeight: 'bold', color: Colors.text, marginTop: 8 },
   statLabel: { fontSize: 10, color: Colors.textMuted, marginTop: 4, textAlign: 'center' },
 
-  filterRow: { marginBottom: Spacing.md },
+  filterSection: { marginBottom: Spacing.md, backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.md, padding: Spacing.md },
+  filterTitle: { fontSize: 14, fontWeight: '600', color: Colors.text, marginBottom: Spacing.sm },
+  filterRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  dateFilterBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#00BFA520', paddingHorizontal: 16, paddingVertical: 12, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: '#00BFA550' },
+  dateFilterBtnText: { fontSize: 13, color: '#00BFA5', fontWeight: '500' },
+  clearFilterBtn: { padding: 8 },
+
+  actionRow: { marginBottom: Spacing.md },
   searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.backgroundCard, paddingHorizontal: Spacing.md, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border, marginBottom: Spacing.sm },
   searchInput: { flex: 1, paddingVertical: 12, paddingHorizontal: 10, fontSize: 14, color: Colors.text },
-  dateBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#00BFA5', paddingHorizontal: 16, paddingVertical: 10, borderRadius: BorderRadius.md, alignSelf: 'flex-start' },
-  dateBtnText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+  exportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#00BFA5', paddingHorizontal: 16, paddingVertical: 14, borderRadius: BorderRadius.md },
+  exportBtnDisabled: { opacity: 0.6 },
+  exportBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 
   sectionTitle: { fontSize: 16, fontWeight: '600', color: Colors.text, marginBottom: Spacing.md },
 
@@ -564,4 +572,23 @@ const styles = StyleSheet.create({
 
   genreTag: { backgroundColor: '#00BFA520', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, alignSelf: 'flex-start' },
   genreTagText: { fontSize: 10, color: '#00BFA5', fontWeight: '500' },
+
+  // Modal styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
+  modalContent: { backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.lg, padding: Spacing.lg, width: '100%', maxWidth: 400 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
+  modalTitle: { fontSize: 18, fontWeight: '600', color: Colors.text },
+  dateInputContainer: { marginBottom: Spacing.md },
+  dateInputLabel: { fontSize: 14, color: Colors.text, marginBottom: 8 },
+  dateInput: { backgroundColor: Colors.background, borderRadius: BorderRadius.md, paddingVertical: 14, paddingHorizontal: 16, fontSize: 16, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
+  presetsContainer: { marginTop: Spacing.md, marginBottom: Spacing.lg },
+  presetsTitle: { fontSize: 14, color: Colors.textMuted, marginBottom: Spacing.sm },
+  presetsRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.sm },
+  presetBtn: { flex: 1, backgroundColor: '#00BFA520', paddingVertical: 10, paddingHorizontal: 12, borderRadius: BorderRadius.sm, alignItems: 'center' },
+  presetBtnText: { fontSize: 12, color: '#00BFA5', fontWeight: '500' },
+  modalActions: { flexDirection: 'row', gap: Spacing.md },
+  clearBtn: { flex: 1, paddingVertical: 14, borderRadius: BorderRadius.md, backgroundColor: Colors.border, alignItems: 'center' },
+  clearBtnText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  applyBtn: { flex: 1, paddingVertical: 14, borderRadius: BorderRadius.md, backgroundColor: '#00BFA5', alignItems: 'center' },
+  applyBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 });
