@@ -3135,7 +3135,13 @@ async def get_admin_stats(authorization: str = Header(None)):
             # Ensure we're working with lists
             pending_count = len(pending_list) if isinstance(pending_list, list) else 0
             approved_count = len(approved_list) if isinstance(approved_list, list) else 0
-            vip_count = len(vip_list) if isinstance(vip_list, list) else 0
+            
+            # For VIP tracks, exclude rejected ones
+            if isinstance(vip_list, list):
+                active_vip_list = [t for t in vip_list if t.get('status', '').lower() != 'rejected']
+                vip_count = len(active_vip_list)
+            else:
+                vip_count = 0
             
             # Extract stats from the dashboard data
             stats = {
