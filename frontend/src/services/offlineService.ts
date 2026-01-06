@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://mobile-backend-fix.preview.emergentagent.com';
+  return 'https://app-revival-50.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

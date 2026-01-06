@@ -19,7 +19,7 @@ import AdminBadge, { isUserAdmin } from '../../src/components/AdminBadge';
 import axios from 'axios';
 
 // Backend URL
-const BACKEND_URL = 'https://mobile-backend-fix.preview.emergentagent.com';
+const BACKEND_URL = 'https://app-revival-50.preview.emergentagent.com';
 
 export default function RankingsScreen() {
   const router = useRouter();
