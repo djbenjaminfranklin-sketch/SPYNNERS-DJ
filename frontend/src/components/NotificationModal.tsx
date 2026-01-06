@@ -47,11 +47,11 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
     system: 0,
   });
 
-  // Build categories with current translations
+  // Build categories with current translations - with fallbacks
   const categories: NotificationCategory[] = [
     {
       type: 'track_received',
-      label: t('notifications.tracksReceived'),
+      label: t('notifications.tracksReceived') || 'Tracks Received',
       icon: 'mail',
       color: '#2196F3',
       count: categoryCounts.track_received,
@@ -59,7 +59,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
     },
     {
       type: 'message',
-      label: t('notifications.chatMessages'),
+      label: t('notifications.chatMessages') || 'Chat Messages',
       icon: 'chatbubbles',
       color: '#673AB7',
       count: categoryCounts.message,
@@ -67,7 +67,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
     },
     {
       type: 'track_played',
-      label: t('notifications.trackPlays'),
+      label: t('notifications.trackPlays') || 'Track Plays',
       icon: 'play-circle',
       color: '#4CAF50',
       count: categoryCounts.track_played,
@@ -75,7 +75,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
     },
     {
       type: 'download',
-      label: t('notifications.downloads'),
+      label: t('notifications.downloads') || 'Downloads',
       icon: 'download',
       color: '#FF9800',
       count: categoryCounts.download,
@@ -83,7 +83,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
     },
     {
       type: 'vip',
-      label: t('notifications.vipAlerts'),
+      label: t('notifications.vipAlerts') || 'VIP Alerts',
       icon: 'diamond',
       color: '#7C4DFF',
       count: categoryCounts.vip,
@@ -91,7 +91,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
     },
     {
       type: 'system',
-      label: t('notifications.system'),
+      label: t('notifications.system') || 'System',
       icon: 'notifications',
       color: Colors.textMuted,
       count: categoryCounts.system,
