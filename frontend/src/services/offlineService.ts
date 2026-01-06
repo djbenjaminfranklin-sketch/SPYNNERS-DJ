@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://admin-dashboard-fix-32.preview.emergentagent.com';
+  return 'https://admin-dashboard-646.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();
