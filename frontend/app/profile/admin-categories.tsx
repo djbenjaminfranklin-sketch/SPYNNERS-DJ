@@ -512,35 +512,31 @@ const styles = StyleSheet.create({
   userEmail: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
   userNationality: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
   userTypeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
+  userTypeBadgeContainer: { flexDirection: 'row', alignItems: 'center' },
   userTypeText: { fontSize: 9, fontWeight: '600', color: '#fff' },
   moreText: { fontSize: 12, color: Colors.textMuted, textAlign: 'center', marginVertical: Spacing.md },
 
   // Modal styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' },
-  emailModalContent: { backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.lg, padding: Spacing.lg, width: '90%', maxHeight: '85%' },
-  modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: Spacing.md },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.text, flex: 1 },
-  closeModalBtn: { padding: 4 },
-  inputLabel: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary, marginTop: Spacing.md, marginBottom: 4 },
-  emailInput: { backgroundColor: Colors.backgroundInput, borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: 14, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
-  emailBodyInput: { minHeight: 120 },
   
-  // Autocomplete suggestions
-  suggestionsContainer: { maxHeight: 150, backgroundColor: Colors.backgroundInput, borderRadius: BorderRadius.md, marginTop: 4, borderWidth: 1, borderColor: Colors.border },
-  suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  suggestionAvatar: { width: 32, height: 32, borderRadius: 16 },
-  suggestionInfo: { marginLeft: Spacing.sm, flex: 1 },
-  suggestionName: { fontSize: 13, fontWeight: '600', color: Colors.text },
-  suggestionEmail: { fontSize: 11, color: Colors.textMuted },
-  
-  // Selected recipient badge
-  selectedRecipientBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#4CAF5020', paddingHorizontal: 12, paddingVertical: 8, borderRadius: BorderRadius.md, marginTop: 8 },
-  selectedRecipientText: { fontSize: 13, color: '#4CAF50', flex: 1 },
-  
-  // Modal actions
-  modalActions: { flexDirection: 'row', gap: Spacing.md, marginTop: Spacing.lg },
+  // Edit Modal styles
+  editModalContent: { backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.lg, padding: Spacing.lg, width: '90%', maxHeight: '85%' },
+  editModalHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.lg },
+  editModalAvatar: { width: 56, height: 56, borderRadius: 28 },
+  editModalUserInfo: { flex: 1, marginLeft: Spacing.md },
+  editModalUserName: { fontSize: 18, fontWeight: 'bold', color: Colors.text },
+  editModalUserEmail: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
+  closeModalBtn: { padding: 8 },
+  editSectionTitle: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary, marginBottom: Spacing.md },
+  categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  categoryChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: BorderRadius.lg, borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.backgroundInput },
+  categoryChipText: { fontSize: 13, color: Colors.textMuted },
+  selectionSummary: { marginTop: Spacing.lg, padding: Spacing.md, backgroundColor: Colors.primary + '10', borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.primary + '30' },
+  selectionLabel: { fontSize: 11, color: Colors.primary, fontWeight: '600' },
+  selectionText: { fontSize: 13, color: Colors.text, marginTop: 4 },
+  editModalActions: { flexDirection: 'row', gap: Spacing.md, marginTop: Spacing.lg },
   cancelBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border },
   cancelBtnText: { fontSize: 14, color: Colors.textMuted },
-  sendBtn: { flex: 1, flexDirection: 'row', paddingVertical: 12, alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: BorderRadius.md, backgroundColor: '#4CAF50' },
-  sendBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+  saveBtn: { flex: 1, flexDirection: 'row', paddingVertical: 12, alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: BorderRadius.md, backgroundColor: '#4CAF50' },
+  saveBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 });
