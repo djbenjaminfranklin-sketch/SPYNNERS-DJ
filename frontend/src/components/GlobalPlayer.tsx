@@ -314,7 +314,7 @@ export default function GlobalPlayer() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Ajouter à une playlist</Text>
+              <Text style={styles.modalTitle}>{t('playlist.addToPlaylist')}</Text>
               <TouchableOpacity onPress={() => setShowPlaylistModal(false)}>
                 <Ionicons name="close" size={24} color={Colors.text} />
               </TouchableOpacity>
@@ -324,7 +324,7 @@ export default function GlobalPlayer() {
             <View style={styles.createSection}>
               <TextInput
                 style={styles.createInput}
-                placeholder="Nouvelle playlist..."
+                placeholder={t('playlist.newPlaylist')}
                 placeholderTextColor={Colors.textMuted}
                 value={newPlaylistName}
                 onChangeText={setNewPlaylistName}
@@ -346,7 +346,7 @@ export default function GlobalPlayer() {
             {loadingPlaylists ? (
               <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 20 }} />
             ) : playlists.length === 0 ? (
-              <Text style={styles.emptyText}>Aucune playlist. Créez-en une ci-dessus !</Text>
+              <Text style={styles.emptyText}>{t('playlist.noPlaylistsCreate')}</Text>
             ) : (
               <FlatList
                 data={playlists}
