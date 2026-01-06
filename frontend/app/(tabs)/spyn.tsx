@@ -760,6 +760,32 @@ export default function SpynScreen() {
           setCurrentTrack(trackResult);
           setIdentifiedTracks(prev => [trackResult, ...prev]);
           
+          // Save track to TrackPlay entity for PDF reports
+          if (session?.id) {
+            try {
+              await base44SessionTracks.saveSessionTrack({
+                session_mix_id: session.id,
+                track_id: response.data.spynners_track_id,
+                track_title: response.data.title,
+                track_artist: response.data.artist,
+                track_album: response.data.album,
+                track_genre: response.data.genre,
+                track_cover: response.data.cover_image,
+                producer_id: response.data.producer_id,
+                producer_email: response.data.producer_email,
+                played_at: new Date().toISOString(),
+                dj_id: user?.id || '',
+                dj_name: user?.full_name || 'DJ',
+                venue: location?.venue,
+                city: location?.city,
+                country: location?.country,
+              });
+              console.log('[SPYN] Track saved to TrackPlay entity');
+            } catch (saveError) {
+              console.error('[SPYN] Could not save track to database:', saveError);
+            }
+          }
+          
           // Send email immediately to the producer
           sendEmailForTrack(trackResult);
         } else {
