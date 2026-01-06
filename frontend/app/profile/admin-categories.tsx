@@ -153,51 +153,7 @@ export default function AdminCategories() {
     loadUsers();
   };
 
-  const sendGroupEmail = () => {
-    router.push('/profile/admin-broadcast');
-  };
-
-  const openIndividualEmail = () => {
-    setEmailSearch('');
-    setEmailSuggestions([]);
-    setSelectedRecipient(null);
-    setEmailSubject('');
-    setEmailBody('');
-    setShowEmailModal(true);
-  };
-
-  const selectRecipient = (u: UserItem) => {
-    setSelectedRecipient(u);
-    setEmailSearch(u.email);
-    setEmailSuggestions([]);
-  };
-
-  const sendIndividualEmail = async () => {
-    if (!selectedRecipient) {
-      Alert.alert('Erreur', 'Veuillez sélectionner un destinataire');
-      return;
-    }
-    if (!emailSubject.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un sujet');
-      return;
-    }
-    if (!emailBody.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un message');
-      return;
-    }
-
-    setSendingEmail(true);
-    try {
-      const response = await axios.post(`${BACKEND_URL}/api/admin/send-email`, {
-        to: selectedRecipient.email,
-        subject: emailSubject,
-        body: emailBody,
-        user_id: selectedRecipient.id
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.data?.success) {
+  if (!isAdmin) {
         Alert.alert('✅ Succès', `Email envoyé à ${selectedRecipient.email}`);
         setShowEmailModal(false);
       } else {
