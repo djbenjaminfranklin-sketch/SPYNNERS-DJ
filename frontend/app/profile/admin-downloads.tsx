@@ -78,23 +78,36 @@ export default function AdminDownloads() {
     try {
       console.log('[AdminDownloads] Loading downloads...');
       
-      // Try using Base44 function directly (works on mobile)
+      // Fetch tracks directly from Base44 entities API
       let tracksData: any[] = [];
       
       try {
-        // Use nativeGetTracks via Base44 SDK
-        const result = await invokeBase44Function('nativeGetTracks', { limit: 500 });
-        console.log('[AdminDownloads] Got tracks via Base44:', result);
+        const url = `${BASE44_API_URL}/entities/Track?limit=500`;
+        console.log('[AdminDownloads] Fetching from:', url);
         
-        if (result?.tracks) {
-          tracksData = result.tracks;
-        } else if (Array.isArray(result)) {
-          tracksData = result;
+        const response = await axios.get(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000,
+        });
+        
+        console.log('[AdminDownloads] Response status:', response.status);
+        
+        if (Array.isArray(response.data)) {
+          tracksData = response.data;
+        } else if (response.data?.items) {
+          tracksData = response.data.items;
+        } else if (response.data?.data) {
+          tracksData = response.data.data;
         }
-      } catch (base44Error) {
-        console.error('[AdminDownloads] Base44 error, trying backend:', base44Error);
         
-        // Fallback to backend if Base44 fails
+        console.log('[AdminDownloads] Got', tracksData.length, 'tracks from Base44');
+      } catch (base44Error: any) {
+        console.error('[AdminDownloads] Base44 error:', base44Error?.message);
+        
+        // Fallback to backend proxy
         try {
           const response = await axios.get(`${BACKEND_URL}/api/admin/downloads?limit=500`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -139,7 +152,7 @@ export default function AdminDownloads() {
             totalDownloads += downloadCount;
             tracksWithDownloads.push({
               id: track.id || track._id || Math.random().toString(),
-              date: (track.created_at || track.uploaded_at || '')?.split('T')[0] || new Date().toISOString().split('T')[0],
+              date: (track.created_date || track.created_at || track.uploaded_at || '')?.split('T')[0] || new Date().toISOString().split('T')[0],
               dj_name: track.uploaded_by_name || '-',
               track_title: track.title || 'Titre inconnu',
               producer: track.producer_name || track.artist_name || 'Producteur inconnu',
@@ -149,7 +162,7 @@ export default function AdminDownloads() {
           }
         }
         
-        console.log('[AdminDownloads] Processed:', tracksWithDownloads.length, 'tracks with downloads');
+        console.log('[AdminDownloads] Processed:', tracksWithDownloads.length, 'tracks with downloads, total:', totalDownloads);
         
         setDownloads(tracksWithDownloads);
         setStats({
