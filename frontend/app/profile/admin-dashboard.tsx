@@ -172,7 +172,7 @@ export default function AdminDashboard() {
       Alert.alert('Debug ACRCloud', 'Lancement du diagnostic ACRCloud...');
       
       // Call the backend function
-      const response = await api.post('/api/admin/debug-acrcloud', {}, {
+      const response = await axios.post(`${BACKEND_URL}/api/admin/debug-acrcloud`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
