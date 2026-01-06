@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://spynsession-fixes.preview.emergentagent.com';
+  return 'https://dj-spyn-dashboard.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();
