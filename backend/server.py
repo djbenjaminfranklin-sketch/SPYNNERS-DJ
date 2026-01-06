@@ -3974,15 +3974,40 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         print(f"[Admin Sessions PDF] Filtered to {len(filtered_sessions)} validated sessions (diamond_awarded=true)")
         
         # Now we need to get the actual track plays for each session
-        # Get all live track plays to match with sessions
+        # Get all live track plays from Base44 entity
         all_plays = []
         try:
-            result = await call_spynners_function("getLiveTrackPlays", {"limit": 10000}, authorization)
-            if isinstance(result, dict):
-                all_plays = result.get('recentPlays', []) or result.get('plays', []) or []
-            elif isinstance(result, list):
-                all_plays = result
-            print(f"[Admin Sessions PDF] Got {len(all_plays)} track plays for matching")
+            # First try Base44 entity API directly
+            base44_plays_url = "https://app.base44.com/api/apps/691a4d96d819355b52c063f3/entities/LiveTrackPlay"
+            headers = {
+                "Authorization": authorization,
+                "Content-Type": "application/json"
+            }
+            
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.get(
+                    f"{base44_plays_url}?limit=10000",
+                    headers=headers
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if isinstance(data, list):
+                        all_plays = data
+                    elif isinstance(data, dict):
+                        all_plays = data.get('items', data.get('data', []))
+                    print(f"[Admin Sessions PDF] Got {len(all_plays)} track plays from LiveTrackPlay entity")
+                    if all_plays and len(all_plays) > 0:
+                        print(f"[Admin Sessions PDF] Sample track keys: {list(all_plays[0].keys())}")
+                else:
+                    print(f"[Admin Sessions PDF] LiveTrackPlay API error: {response.status_code}")
+                    # Fallback to function
+                    result = await call_spynners_function("getLiveTrackPlays", {"limit": 10000}, authorization)
+                    if isinstance(result, dict):
+                        all_plays = result.get('recentPlays', []) or result.get('plays', []) or []
+                    elif isinstance(result, list):
+                        all_plays = result
+                    print(f"[Admin Sessions PDF] Fallback got {len(all_plays)} track plays")
         except Exception as e:
             print(f"[Admin Sessions PDF] Error getting track plays: {e}")
         
@@ -3998,7 +4023,7 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
             session_tracks = []
             for play in all_plays:
                 play_dj_id = play.get('user_id') or play.get('dj_id') or ''
-                play_session = play.get('session_id') or ''
+                play_session = play.get('session_mix_id') or play.get('session_id') or ''
                 
                 # Match by session_id or by dj_id and date
                 if play_session == session_id or (play_dj_id == dj_id and session_start[:10] in (play.get('played_at', '')[:10] if play.get('played_at') else '')):
