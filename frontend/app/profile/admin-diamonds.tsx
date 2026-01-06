@@ -68,7 +68,7 @@ export default function AdminDiamonds() {
 
   const loadUsers = async () => {
     try {
-      const response = await base44Users.list({ limit: 500 });
+      const response = await base44Users.list({ limit: 10000 });
       const userList = Array.isArray(response) ? response : (response?.items || []);
       setUsers(userList);
       setFilteredUsers(userList);
