@@ -296,6 +296,22 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.offlineSessions': 'Offline Sessions',
     'profile.offlineSessionsDesc': 'Manage SPYN offline sessions',
     
+    // Notifications
+    'notifications.title': 'Notifications',
+    'notifications.tracksReceived': 'Tracks Received',
+    'notifications.chatMessages': 'Chat Messages',
+    'notifications.trackPlays': 'Track Plays',
+    'notifications.downloads': 'Downloads',
+    'notifications.vipAlerts': 'VIP Alerts',
+    'notifications.system': 'System',
+    'notifications.markAllRead': 'Mark all as read',
+    'notifications.notification': 'notification',
+    'notifications.notifications': 'notifications',
+    'notifications.recent': 'Recent',
+    'notifications.recently': 'Recently',
+    'notifications.noNew': 'No new notifications',
+    'notifications.allCaughtUp': 'You\'re all caught up!',
+    
     // Common
     'common.cancel': 'Cancel',
     'common.save': 'Save',
