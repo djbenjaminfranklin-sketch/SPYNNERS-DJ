@@ -3947,12 +3947,13 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
             if session.get('diamond_awarded') != True:
                 continue
             
-            # If session_id is specified, only include that session
+            # If session_id is specified, only include that specific session
             if request.session_id:
                 if session.get('id') == request.session_id:
                     session['_parsed_date'] = None
                     filtered_sessions.append(session)
-                continue
+                    break  # Found the session, stop looking
+                continue  # Skip this session, keep looking for the right one
             
             session_date_str = session.get('started_at') or session.get('created_at') or session.get('timestamp')
             if session_date_str:
