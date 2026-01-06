@@ -286,7 +286,7 @@ export default function AdminDownloads() {
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(fileUri, {
             mimeType: 'application/pdf',
-            dialogTitle: 'Télécharger le rapport PDF',
+            dialogTitle: t('admin.downloadPdfDialog'),
           });
         } else {
           Alert.alert('Succès ✅', `PDF sauvegardé: ${filename}`);
@@ -324,7 +324,7 @@ export default function AdminDownloads() {
         <Ionicons name="lock-closed" size={64} color={Colors.textMuted} />
         <Text style={styles.accessDeniedTitle}>Accès Refusé</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Retour</Text>
+          <Text style={styles.backButtonText}>{t('admin.back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -411,7 +411,7 @@ export default function AdminDownloads() {
           <Ionicons name="search" size={20} color={Colors.textMuted} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Rechercher par DJ, track ou producteur..."
+            placeholder={t('admin.searchPlaceholder')}
             placeholderTextColor={Colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -430,7 +430,7 @@ export default function AdminDownloads() {
             <>
               <Ionicons name="document-text" size={18} color="#fff" />
               <Text style={styles.exportBtnText}>
-                Télécharger PDF ({filteredDownloads.length} tracks)
+                {t('admin.downloadPdf')} ({filteredDownloads.length} tracks)
               </Text>
             </>
           )}
@@ -468,7 +468,7 @@ export default function AdminDownloads() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filtrer par date</Text>
+              <Text style={styles.modalTitle}>{t('admin.filterByDate')}</Text>
               <TouchableOpacity onPress={() => setShowDateFilter(false)}>
                 <Ionicons name="close" size={24} color={Colors.text} />
               </TouchableOpacity>
@@ -498,7 +498,7 @@ export default function AdminDownloads() {
 
             {/* Quick presets */}
             <View style={styles.presetsContainer}>
-              <Text style={styles.presetsTitle}>Raccourcis</Text>
+              <Text style={styles.presetsTitle}>{t('admin.shortcuts')}</Text>
               <View style={styles.presetsRow}>
                 <TouchableOpacity 
                   style={styles.presetBtn}
@@ -514,7 +514,7 @@ export default function AdminDownloads() {
                     setShowDateFilter(false);
                   }}
                 >
-                  <Text style={styles.presetBtnText}>7 derniers jours</Text>
+                  <Text style={styles.presetBtnText}>{t('admin.last7days')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.presetBtn}
@@ -530,7 +530,7 @@ export default function AdminDownloads() {
                     setShowDateFilter(false);
                   }}
                 >
-                  <Text style={styles.presetBtnText}>30 derniers jours</Text>
+                  <Text style={styles.presetBtnText}>{t('admin.last30days')}</Text>
                 </TouchableOpacity>
               </View>
               <View style={styles.presetsRow}>
@@ -548,7 +548,7 @@ export default function AdminDownloads() {
                     setShowDateFilter(false);
                   }}
                 >
-                  <Text style={styles.presetBtnText}>Ce mois</Text>
+                  <Text style={styles.presetBtnText}>{t('admin.thisMonth')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.presetBtn}
@@ -574,7 +574,7 @@ export default function AdminDownloads() {
                 <Text style={styles.clearBtnText}>Effacer</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.applyBtn} onPress={applyDateFilter}>
-                <Text style={styles.applyBtnText}>Appliquer</Text>
+                <Text style={styles.applyBtnText}>{t('admin.apply')}</Text>
               </TouchableOpacity>
             </View>
           </View>
