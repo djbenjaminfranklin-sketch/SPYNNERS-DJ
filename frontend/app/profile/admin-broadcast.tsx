@@ -48,11 +48,11 @@ export default function AdminBroadcast() {
   const isAdmin = isUserAdmin(user);
 
   const CATEGORIES = [
-    { id: 'dj_star', name: 'DJ Star' },
-    { id: 'dj_resident', name: 'DJ Resident' },
-    { id: 'producer', name: 'Producer' },
     { id: 'dj', name: 'DJ' },
+    { id: 'producer', name: 'Producer' },
+    { id: 'both', name: 'DJ & Producer' },
     { id: 'music_lover', name: 'Music Lover' },
+    { id: 'label', name: 'Label' },
   ];
 
   useEffect(() => {
