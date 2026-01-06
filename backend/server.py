@@ -4497,6 +4497,45 @@ async def export_sessions_pdf(request: AnalyticsCSVRequest, authorization: str =
         raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
 
 
+# ==================== FILE UPLOADS ====================
+
+@app.get("/api/uploads/{filename}")
+async def serve_uploaded_file(filename: str):
+    """Serve uploaded audio/image files"""
+    import os
+    from fastapi.responses import FileResponse
+    
+    uploads_dir = "/app/backend/uploads"
+    file_path = os.path.join(uploads_dir, filename)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Determine content type
+    ext = os.path.splitext(filename)[1].lower()
+    content_types = {
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav',
+        '.m4a': 'audio/mp4',
+        '.ogg': 'audio/ogg',
+        '.flac': 'audio/flac',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp'
+    }
+    content_type = content_types.get(ext, 'application/octet-stream')
+    
+    return FileResponse(
+        file_path,
+        media_type=content_type,
+        headers={
+            "Accept-Ranges": "bytes",
+            "Access-Control-Allow-Origin": "*"
+        }
+    )
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/api/health")
