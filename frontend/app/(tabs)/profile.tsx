@@ -114,6 +114,24 @@ export default function ProfileScreen() {
       onPress: () => router.push('/profile/offline-sessions'),
     },
     {
+      icon: 'help-circle-outline',
+      title: t('profile.faq'),
+      subtitle: t('profile.faqDesc'),
+      onPress: () => router.push('/profile/faq'),
+    },
+    {
+      icon: 'document-text-outline',
+      title: t('profile.cgu'),
+      subtitle: t('profile.cguDesc'),
+      onPress: () => router.push('/profile/cgu'),
+    },
+    {
+      icon: 'information-circle-outline',
+      title: t('profile.legal'),
+      subtitle: t('profile.legalDesc'),
+      onPress: () => router.push('/profile/legal'),
+    },
+    {
       icon: 'log-out-outline',
       title: t('profile.logout'),
       subtitle: t('profile.logoutDesc'),
