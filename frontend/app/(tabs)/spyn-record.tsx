@@ -1068,6 +1068,15 @@ export default function SpynRecordScreen() {
 
   // Send email immediately for a single track
   const sendEmailForTrack = async (track: IdentifiedTrack) => {
+    // Create a unique key for this track
+    const trackKey = `${track.title.toLowerCase()}_${(track.artist || '').toLowerCase()}`.replace(/\s+/g, '_');
+    
+    // Check if email was already sent for this track in this session
+    if (sentEmailsRef.current.has(trackKey)) {
+      console.log(`[SPYN Record] 📧 Email already sent for ${track.title} - skipping duplicate`);
+      return;
+    }
+    
     // Need either producerId or spynnersTrackId to send email
     if (!track.spynnersTrackId && !track.producerId) {
       console.log(`[SPYN Record] Skipping email for ${track.title} - no track ID or producer ID`);
@@ -1078,6 +1087,9 @@ export default function SpynRecordScreen() {
       console.log('[SPYN Record] No auth token, skipping email');
       return;
     }
+    
+    // Mark as sent BEFORE attempting to prevent race conditions
+    sentEmailsRef.current.add(trackKey);
     
     try {
       const djName = user?.full_name || 'DJ';
@@ -1114,6 +1126,7 @@ export default function SpynRecordScreen() {
       console.log(`[SPYN Record] ✅ Email sent for: ${track.title}`, response.data);
     } catch (e: any) {
       console.log(`[SPYN Record] ❌ Email error for: ${track.title}`, e?.response?.data || e.message);
+      // Don't remove from sentEmailsRef on error to prevent retry spam
     }
   };
 
