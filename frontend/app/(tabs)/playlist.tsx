@@ -575,7 +575,9 @@ const styles = StyleSheet.create({
   detailModalContent: {
     flex: 1,
     paddingTop: 50,
-    paddingBottom: 160, // Leave space for GlobalPlayer
+  },
+  detailContentContainer: {
+    paddingBottom: 20,
   },
   detailModalHeader: {
     flexDirection: 'row',
@@ -619,6 +621,7 @@ const styles = StyleSheet.create({
   },
   sharePlaylistText: { color: Colors.primary, fontSize: 14, fontWeight: '500' },
   // Track list styles
+  trackListSection: { marginTop: 20, paddingHorizontal: 16 },
   trackListContainer: { flex: 1, marginTop: 20, paddingHorizontal: 16 },
   trackListTitle: { fontSize: 18, fontWeight: '600', color: Colors.text, marginBottom: 12 },
   trackListLoading: { alignItems: 'center', paddingVertical: 30 },
