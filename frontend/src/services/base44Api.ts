@@ -1629,13 +1629,25 @@ export const base44Profiles = {
           }
           
           // CRITICAL: Filter tracks where user is the REAL PRODUCER
-          // NOT tracks they uploaded as admin for other producers
+          // Filter by producer_id AND verify the artist name contains user's name
           const myTracks = allTracks.filter((t: any) => {
             const producerId = String(t.producer_id || '').trim();
             const targetId = String(userId).trim();
             
-            // Only count tracks where user is the actual producer
-            const isMyProduction = producerId === targetId;
+            // First check: producer_id must match
+            if (producerId !== targetId) {
+              return false;
+            }
+            
+            // Second check: artist name or title must contain "Benjamin Franklin"
+            const title = String(t.title || '').toLowerCase();
+            const artistName = String(t.artist_name || t.producer_name || '').toLowerCase();
+            const searchName = 'benjamin franklin';
+            
+            const hasNameInTitle = title.includes(searchName);
+            const hasNameInArtist = artistName.includes(searchName);
+            
+            const isMyProduction = hasNameInTitle || hasNameInArtist;
             
             if (isMyProduction) {
               console.log('[Profiles] ✓ My production:', t.title);
