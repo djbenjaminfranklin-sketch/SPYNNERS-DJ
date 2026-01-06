@@ -83,6 +83,21 @@ const translations: Record<Language, Record<string, string>> = {
     'playlist.newPlaylist': 'New playlist...',
     'playlist.noPlaylistsCreate': 'No playlist. Create one above!',
     
+    // Admin Dashboard
+    'admin.syncComplete': 'Sync complete',
+    'admin.diagnosticStarting': 'Starting ACRCloud diagnostic...',
+    'admin.diagnosticComplete': 'Diagnostic completed successfully',
+    'admin.diagnosticError': 'Error during ACRCloud diagnostic',
+    'admin.searchingDuplicates': 'Searching for duplicates...',
+    'admin.cleanupComplete': 'Cleanup completed successfully',
+    'admin.cleanupError': 'Error during cleanup',
+    'admin.analyzingBPM': 'Analyzing BPM...',
+    'admin.fixComplete': 'Fix completed successfully',
+    'admin.fixError': 'Error during fix',
+    
+    // Spyn Record
+    'spynRecord.stopError': 'Error stopping recording',
+    
     // Auth
     'login.title': 'Sign In',
     'login.email': 'Email',
@@ -844,6 +859,21 @@ const translations: Record<Language, Record<string, string>> = {
     'playlist.addToPlaylist': 'Ajouter à une playlist',
     'playlist.newPlaylist': 'Nouvelle playlist...',
     'playlist.noPlaylistsCreate': 'Aucune playlist. Créez-en une ci-dessus !',
+    
+    // Admin Dashboard
+    'admin.syncComplete': 'Synchronisation terminée',
+    'admin.diagnosticStarting': 'Lancement du diagnostic ACRCloud...',
+    'admin.diagnosticComplete': 'Diagnostic terminé avec succès',
+    'admin.diagnosticError': 'Erreur lors du diagnostic ACRCloud',
+    'admin.searchingDuplicates': 'Recherche des doublons en cours...',
+    'admin.cleanupComplete': 'Nettoyage terminé avec succès',
+    'admin.cleanupError': 'Erreur lors du nettoyage',
+    'admin.analyzingBPM': 'Analyse des BPM en cours...',
+    'admin.fixComplete': 'Correction terminée avec succès',
+    'admin.fixError': 'Erreur lors de la correction',
+    
+    // Spyn Record
+    'spynRecord.stopError': 'Erreur lors de l\'arrêt de l\'enregistrement',
     
     // Auth
     'login.title': 'Connexion',
