@@ -63,16 +63,20 @@ export default function AdminBroadcast() {
 
   const loadData = async () => {
     try {
-      // Fetch stats
+      // Fetch stats - use higher limit to get accurate user count
       const [usersRes, tracksRes, historyRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/api/admin/users?limit=1`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { total: 0 } })),
+        axios.get(`${BACKEND_URL}/api/admin/users?limit=10000`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { total: 0 } })),
         axios.get(`${BACKEND_URL}/api/admin/tracks?limit=10`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { tracks: [] } })),
         axios.get(`${BACKEND_URL}/api/admin/broadcast/history?limit=20`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { broadcasts: [] } })),
       ]);
       
-      setUserCount(usersRes.data?.total || usersRes.data?.users?.length || 0);
+      // Get user count from total field or array length
+      const userTotal = usersRes.data?.total || usersRes.data?.users?.length || 0;
+      setUserCount(userTotal);
       setRecentTracks(tracksRes.data?.tracks || []);
       setBroadcastHistory(historyRes.data?.broadcasts || []);
+      
+      console.log('[AdminBroadcast] Loaded - Users:', userTotal, 'Tracks:', tracksRes.data?.tracks?.length || 0);
     } catch (error) {
       console.error('[AdminBroadcast] Error:', error);
     } finally {
