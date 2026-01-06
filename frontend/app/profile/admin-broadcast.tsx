@@ -186,13 +186,18 @@ export default function AdminBroadcast() {
   // Pick attachment file
   const pickAttachment = async () => {
     try {
+      console.log('[AdminBroadcast] Opening document picker...');
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['image/*', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        type: '*/*',  // Accept all file types
         copyToCacheDirectory: true,
       });
       
+      console.log('[AdminBroadcast] Document picker result:', JSON.stringify(result));
+      
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
+        console.log('[AdminBroadcast] Selected file:', file.name, file.uri, file.mimeType);
+        
         setAttachment({
           name: file.name,
           uri: file.uri,
@@ -201,10 +206,12 @@ export default function AdminBroadcast() {
         
         // Upload the file immediately
         await uploadAttachment(file);
+      } else {
+        console.log('[AdminBroadcast] Document picker canceled or no file selected');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('[AdminBroadcast] Pick attachment error:', error);
-      Alert.alert('Erreur', 'Impossible de sélectionner le fichier');
+      Alert.alert('Erreur', `Impossible de sélectionner le fichier: ${error?.message || 'Erreur inconnue'}`);
     }
   };
 
