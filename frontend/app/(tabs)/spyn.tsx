@@ -1400,7 +1400,7 @@ export default function SpynScreen() {
                 placeholderTextColor="#666"
               />
 
-              <Text style={styles.startedAtText}>Démarré à {startedAtTime}</Text>
+              <Text style={styles.startedAtText}>{t('spyn.startedAt')} {startedAtTime}</Text>
               <View style={styles.tracksCountRow}>
                 <Ionicons name="musical-notes" size={16} color="#888" />
                 <Text style={styles.tracksCountText}>
