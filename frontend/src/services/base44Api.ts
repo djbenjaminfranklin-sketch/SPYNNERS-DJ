@@ -1583,6 +1583,36 @@ export const base44Profiles = {
   async getProfile(userId: string): Promise<PublicProfile | null> {
     try {
       console.log('[Profiles] Fetching profile for user:', userId);
+      
+      // On mobile, fetch directly from User entity
+      if (Platform.OS !== 'web') {
+        const response = await mobileApi.get(`/entities/User/${userId}`);
+        if (response.data) {
+          const user = response.data;
+          const userData = user.data || {};
+          console.log('[Profiles] Profile fetched from User entity');
+          return {
+            id: user.id || user._id,
+            email: user.email,
+            full_name: user.full_name,
+            artist_name: userData.artist_name || user.artist_name,
+            avatar_url: userData.avatar_url || user.avatar_url || user.generated_avatar_url,
+            user_type: userData.user_type || user.user_type,
+            bio: userData.bio || user.bio || '',
+            nationality: userData.nationality || user.nationality,
+            instagram_url: userData.instagram_url || user.instagram_url,
+            soundcloud_url: userData.soundcloud || user.soundcloud,
+            beatport_url: userData.beatport_url || user.beatport_url,
+            black_diamonds: userData.black_diamonds || user.black_diamonds || 0,
+            tracks_count: 0,
+            plays_count: 0,
+            downloads_count: 0,
+          };
+        }
+        return null;
+      }
+      
+      // On web, use the function
       const response = await mobileApi.post('/api/base44/functions/invoke/getPublicProfiles', {
         userId,
       });
@@ -1606,6 +1636,41 @@ export const base44Profiles = {
   async listProfiles(filters?: { userType?: string; limit?: number }): Promise<PublicProfile[]> {
     try {
       console.log('[Profiles] Fetching profiles with filters:', filters);
+      
+      // On mobile, fetch directly from User entity
+      if (Platform.OS !== 'web') {
+        const params = new URLSearchParams();
+        params.append('limit', (filters?.limit || 50).toString());
+        if (filters?.userType) params.append('user_type', filters.userType);
+        
+        const response = await mobileApi.get(`/entities/User?${params.toString()}`);
+        if (Array.isArray(response.data)) {
+          console.log('[Profiles] Got', response.data.length, 'profiles from User entity');
+          return response.data.map((user: any) => {
+            const userData = user.data || {};
+            return {
+              id: user.id || user._id,
+              email: user.email,
+              full_name: user.full_name,
+              artist_name: userData.artist_name || user.artist_name,
+              avatar_url: userData.avatar_url || user.avatar_url || user.generated_avatar_url,
+              user_type: userData.user_type || user.user_type,
+              bio: userData.bio || user.bio || '',
+              nationality: userData.nationality || user.nationality,
+              instagram_url: userData.instagram_url || user.instagram_url,
+              soundcloud_url: userData.soundcloud || user.soundcloud,
+              beatport_url: userData.beatport_url || user.beatport_url,
+              black_diamonds: userData.black_diamonds || user.black_diamonds || 0,
+              tracks_count: 0,
+              plays_count: 0,
+              downloads_count: 0,
+            };
+          });
+        }
+        return [];
+      }
+      
+      // On web, use the function
       const response = await mobileApi.post('/api/base44/functions/invoke/getPublicProfiles', {
         userType: filters?.userType,
         limit: filters?.limit || 50,
