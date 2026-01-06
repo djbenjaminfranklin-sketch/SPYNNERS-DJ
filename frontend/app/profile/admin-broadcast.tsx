@@ -221,35 +221,32 @@ export default function AdminBroadcast() {
     try {
       console.log('[AdminBroadcast] Starting upload for:', file.name, 'uri:', file.uri);
       
-      // For web, we need to handle the file differently
+      // For mobile, we need to read the file and send it properly
       const formData = new FormData();
       
-      // Check if we're on web and have a file object
-      if (typeof window !== 'undefined' && file.file) {
-        // Web: Use the actual File object
-        formData.append('file', file.file);
-        console.log('[AdminBroadcast] Using web File object');
-      } else {
-        // Mobile: Use the URI approach
-        formData.append('file', {
-          uri: file.uri,
-          name: file.name,
-          type: file.mimeType || 'application/octet-stream',
-        } as any);
-        console.log('[AdminBroadcast] Using mobile URI approach');
-      }
+      // Mobile: Use the URI approach with proper structure
+      formData.append('file', {
+        uri: file.uri,
+        name: file.name || 'attachment',
+        type: file.mimeType || 'application/octet-stream',
+      } as any);
       
-      console.log('[AdminBroadcast] Sending to:', `${BACKEND_URL}/api/admin/upload-attachment-local`);
+      const uploadUrl = `${BACKEND_URL}/api/admin/upload-attachment-local`;
+      console.log('[AdminBroadcast] Sending to:', uploadUrl);
+      console.log('[AdminBroadcast] Token available:', !!token);
       
       const response = await axios.post(
-        `${BACKEND_URL}/api/admin/upload-attachment-local`,
+        uploadUrl,
         formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data',
+            'Accept': 'application/json',
           },
-          timeout: 60000,
+          timeout: 120000, // 2 minutes timeout for slow connections
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
         }
       );
       
@@ -269,8 +266,20 @@ export default function AdminBroadcast() {
       }
     } catch (error: any) {
       console.error('[AdminBroadcast] Upload error:', error);
-      console.error('[AdminBroadcast] Error details:', error?.response?.data || error?.message);
-      Alert.alert('Erreur', `Échec du téléversement: ${error?.response?.data?.detail || error?.message || 'Erreur inconnue'}`);
+      
+      let errorMessage = 'Erreur inconnue';
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        errorMessage = 'Délai dépassé. Vérifiez votre connexion internet.';
+      } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network')) {
+        errorMessage = 'Erreur réseau. Vérifiez votre connexion.';
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      console.error('[AdminBroadcast] Error details:', errorMessage);
+      Alert.alert('Erreur', `Impossible de télécharger le fichier.\n${errorMessage}`);
       setAttachment(null);
     } finally {
       setUploadingAttachment(false);
