@@ -3657,7 +3657,7 @@ async def clean_duplicates(authorization: str = Header(None)):
 async def fix_missing_bpm(authorization: str = Header(None)):
     """
     Fix missing BPM for tracks.
-    Calls the detectBPM Spynners function.
+    Finds tracks without BPM and calls detectBPM for each.
     """
     try:
         if not authorization:
@@ -3665,21 +3665,52 @@ async def fix_missing_bpm(authorization: str = Header(None)):
         
         print("[Admin] Fixing missing BPM...")
         
-        # Call the Spynners detectBPM function
-        result = await call_spynners_function("detectBPM", {}, authorization)
+        # First, get all tracks to find those without BPM
+        tracks_result = await call_spynners_function("nativeGetTracks", {"limit": 500}, authorization)
         
-        if result:
-            print(f"[Admin] Fix BPM result: {result}")
+        if not tracks_result:
+            return {"success": True, "message": "Aucun track trouvé", "fixed": 0}
+        
+        tracks = tracks_result.get('tracks', []) if isinstance(tracks_result, dict) else tracks_result
+        
+        # Find tracks without BPM that have audio_url
+        tracks_without_bpm = [t for t in tracks if not t.get('bpm') and t.get('audio_url')]
+        
+        if not tracks_without_bpm:
             return {
                 "success": True,
-                "message": f"Correction terminée. {result.get('fixed', 0)} BPM corrigés.",
-                "data": result
+                "message": "Tous les tracks ont déjà un BPM ou n'ont pas d'audio",
+                "fixed": 0,
+                "total_checked": len(tracks)
             }
-        else:
-            return {
-                "success": True,
-                "message": "Correction terminée"
-            }
+        
+        print(f"[Admin] Found {len(tracks_without_bpm)} tracks without BPM")
+        
+        fixed_count = 0
+        errors = []
+        
+        # Process each track (limit to first 10 to avoid timeout)
+        for track in tracks_without_bpm[:10]:
+            try:
+                result = await call_spynners_function("detectBPM", {
+                    "audio_url": track.get('audio_url'),
+                    "trackId": track.get('id')
+                }, authorization)
+                
+                if result:
+                    fixed_count += 1
+                    print(f"[Admin] Fixed BPM for: {track.get('title')}")
+            except Exception as e:
+                errors.append(f"{track.get('title')}: {str(e)}")
+                print(f"[Admin] Error fixing BPM for {track.get('title')}: {e}")
+        
+        return {
+            "success": True,
+            "message": f"BPM corrigé pour {fixed_count} tracks sur {len(tracks_without_bpm)} sans BPM",
+            "fixed": fixed_count,
+            "total_without_bpm": len(tracks_without_bpm),
+            "errors": errors[:5] if errors else []
+        }
         
     except Exception as e:
         print(f"[Admin] Fix BPM error: {e}")
