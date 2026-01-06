@@ -491,33 +491,80 @@ export default function UploadScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('upload.genreTech')}</Text>
 
-          {/* Genre Dropdown */}
+          {/* Genre Dropdown - Multi-select */}
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('upload.genre')} *</Text>
+            <Text style={styles.inputLabel}>{t('upload.genre')} * (max 3)</Text>
             <TouchableOpacity 
               style={styles.dropdown} 
               onPress={() => setShowGenreDropdown(!showGenreDropdown)}
             >
-              <Text style={[styles.dropdownText, !genre && styles.dropdownPlaceholder]}>
-                {genre || t('upload.selectGenre')}
+              <Text style={[styles.dropdownText, genres.length === 0 && styles.dropdownPlaceholder]}>
+                {genres.length > 0 ? genres.join(', ') : t('upload.selectGenre')}
               </Text>
               <Ionicons name="chevron-down" size={20} color={Colors.textMuted} />
             </TouchableOpacity>
+            
+            {/* Selected genres as tags */}
+            {genres.length > 0 && (
+              <View style={styles.selectedGenresContainer}>
+                {genres.map((g) => (
+                  <TouchableOpacity 
+                    key={g} 
+                    style={styles.genreTag}
+                    onPress={() => setGenres(genres.filter(genre => genre !== g))}
+                  >
+                    <Text style={styles.genreTagText}>{g}</Text>
+                    <Ionicons name="close" size={14} color={Colors.text} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+            
             {showGenreDropdown && (
               <View style={styles.dropdownList}>
                 <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
-                  {GENRES.map((g) => (
-                    <TouchableOpacity 
-                      key={g} 
-                      style={[styles.dropdownItem, genre === g && styles.dropdownItemSelected]}
-                      onPress={() => { setGenre(g); setShowGenreDropdown(false); }}
-                    >
-                      <Text style={[styles.dropdownItemText, genre === g && styles.dropdownItemTextSelected]}>
-                        {g}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                  {GENRES.map((g) => {
+                    const isSelected = genres.includes(g);
+                    const isDisabled = !isSelected && genres.length >= 3;
+                    return (
+                      <TouchableOpacity 
+                        key={g} 
+                        style={[
+                          styles.dropdownItem, 
+                          isSelected && styles.dropdownItemSelected,
+                          isDisabled && styles.dropdownItemDisabled
+                        ]}
+                        disabled={isDisabled}
+                        onPress={() => {
+                          if (isSelected) {
+                            setGenres(genres.filter(genre => genre !== g));
+                          } else if (genres.length < 3) {
+                            setGenres([...genres, g]);
+                          }
+                        }}
+                      >
+                        <View style={styles.checkboxContainer}>
+                          <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                            {isSelected && <Ionicons name="checkmark" size={12} color="#fff" />}
+                          </View>
+                          <Text style={[
+                            styles.dropdownItemText, 
+                            isSelected && styles.dropdownItemTextSelected,
+                            isDisabled && styles.dropdownItemTextDisabled
+                          ]}>
+                            {g}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </ScrollView>
+                <TouchableOpacity 
+                  style={styles.closeDropdownButton}
+                  onPress={() => setShowGenreDropdown(false)}
+                >
+                  <Text style={styles.closeDropdownText}>Fermer</Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
