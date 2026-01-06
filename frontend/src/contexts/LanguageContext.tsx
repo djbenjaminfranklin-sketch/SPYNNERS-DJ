@@ -1280,6 +1280,7 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.noSessionsToSync': 'Aucune session à synchroniser',
     'admin.processed': 'traitées',
     'admin.noSpynnersTrack': 'Aucun track Spynners identifié',
+    'admin.apply': 'Appliquer',
   },
   
   es: {
