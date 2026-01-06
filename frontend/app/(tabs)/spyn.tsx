@@ -1345,7 +1345,7 @@ export default function SpynScreen() {
 
             <Text style={styles.endSessionTitle}>Terminer la session</Text>
             <Text style={styles.endSessionSubtitle}>
-              Confirm the end of your mixing session.
+              Confirmez la fin de votre session de mix.
             </Text>
 
             {/* Venue Info Card */}
