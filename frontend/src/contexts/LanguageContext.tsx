@@ -141,6 +141,7 @@ const translations: Record<Language, Record<string, string>> = {
     'spyn.activeSession': 'Active Session',
     'spyn.endSession': 'End Session',
     'spyn.confirmEndSession': 'Confirm the end of your mixing session.',
+    'spyn.confirmEndButton': 'Confirm End Session',
     'spyn.correctVenue': 'Correct the venue if necessary',
     'spyn.startedAt': 'Started at',
     'spyn.whoPlayed': 'Who played this session?',
