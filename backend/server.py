@@ -4617,8 +4617,43 @@ async def export_admin_downloads_pdf(request: AdminDownloadsPDFRequest, authoriz
         print(f"[Admin Downloads PDF] Generating PDF report...")
         print(f"[Admin Downloads PDF] Date range: {request.start_date} to {request.end_date}")
         
-        # Get tracks with download info
-        result = await call_spynners_function("nativeGetTracks", {"limit": 1000}, authorization)
+        # Get tracks with download info - use entities API to get created_at field
+        headers = {
+            "Authorization": authorization,
+            "X-Base44-App-Id": BASE44_APP_ID,
+            "Content-Type": "application/json"
+        }
+        
+        tracks = []
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as http_client:
+                response = await http_client.get(
+                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Track",
+                    params={"limit": 1000},
+                    headers=headers
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    if isinstance(data, list):
+                        tracks = data
+                    elif isinstance(data, dict):
+                        tracks = data.get('items', data.get('tracks', []))
+                    print(f"[Admin Downloads PDF] Got {len(tracks)} tracks from Base44 entities")
+                    
+                    # Log first track fields to debug
+                    if tracks:
+                        first_track = tracks[0]
+                        print(f"[Admin Downloads PDF] Sample track fields: {list(first_track.keys())[:15]}")
+                        print(f"[Admin Downloads PDF] Sample track created_at: {first_track.get('created_at')}")
+        except Exception as e:
+            print(f"[Admin Downloads PDF] Error fetching tracks from entities: {e}")
+            # Fallback to nativeGetTracks
+            result = await call_spynners_function("nativeGetTracks", {"limit": 1000}, authorization)
+            if result:
+                if isinstance(result, dict):
+                    tracks = result.get('tracks', result.get('items', []))
+                else:
+                    tracks = result if isinstance(result, list) else []
         
         downloads = []
         total_downloads = 0
