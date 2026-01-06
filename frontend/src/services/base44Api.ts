@@ -651,20 +651,29 @@ export const base44Tracks = {
 // ==================== USERS SERVICE ====================
 
 export const base44Users = {
-  async list(filters?: { user_type?: string; search?: string }): Promise<User[]> {
+  async list(filters?: { user_type?: string; search?: string; limit?: number }): Promise<User[]> {
     try {
+      console.log('[Users] Listing users with filters:', filters);
       const params = new URLSearchParams();
+      params.append('limit', String(filters?.limit || 500));
       if (filters?.user_type) params.append('user_type', filters.user_type);
       if (filters?.search) params.append('search', filters.search);
 
-      const response = await mobileApi.get(`/api/base44/entities/User?${params.toString()}`);
+      // Try fetching from User entity directly
+      const response = await mobileApi.get(`/entities/User?${params.toString()}`);
+      console.log('[Users] User entity response:', response.data?.length || 0, 'users');
+      
       const data = response.data;
-      if (Array.isArray(data)) return data;
-      if (data?.items) return data.items;
-      return [];
+      if (Array.isArray(data) && data.length > 0) return data;
+      if (data?.items && data.items.length > 0) return data.items;
+      
+      // If no users found, fallback to extracting from tracks
+      console.log('[Users] No users from entity, trying tracks fallback...');
+      return await this.fetchAllUsersFromTracks();
     } catch (error) {
-      console.error('[Users] Error listing users:', error);
-      return [];
+      console.error('[Users] Error listing users, falling back to tracks:', error);
+      // Fallback: extract users from tracks
+      return await this.fetchAllUsersFromTracks();
     }
   },
 
