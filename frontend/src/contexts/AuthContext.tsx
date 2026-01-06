@@ -26,31 +26,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Fetch complete user data from Base44 Users collection
   const fetchCompleteUserData = async (basicUser: User): Promise<User> => {
     try {
-      console.log('[AuthContext] Fetching complete user data for:', basicUser.email);
+      console.log('[AuthContext] ========== FETCH COMPLETE USER DATA ==========');
+      console.log('[AuthContext] basicUser.id:', basicUser.id);
+      console.log('[AuthContext] basicUser._id:', basicUser._id);
+      console.log('[AuthContext] basicUser.email:', basicUser.email);
       
       // Preserve black_diamonds from the login response (important!)
       const loginBlackDiamonds = basicUser.black_diamonds || basicUser.data?.black_diamonds || 0;
       console.log('[AuthContext] Login black_diamonds:', loginBlackDiamonds);
       
       // Try to find the user in the Users collection by email
-      const users = await base44Users.list({ limit: 100 });
+      const users = await base44Users.list({ limit: 500 });
+      console.log('[AuthContext] Total users fetched:', users.length);
+      
       const fullUser = users.find((u: User) => u.email === basicUser.email);
       
       if (fullUser) {
-        console.log('[AuthContext] Found full user data:', fullUser.full_name, 'avatar:', !!fullUser.avatar);
+        console.log('[AuthContext] Found full user in Users collection:');
+        console.log('[AuthContext]   fullUser.id:', fullUser.id);
+        console.log('[AuthContext]   fullUser._id:', fullUser._id);
+        console.log('[AuthContext]   fullUser.full_name:', fullUser.full_name);
+        
+        // CRITICAL: Use the ID from the Users collection (fullUser) as primary
+        // because that's what's used in tracks created_by_id
+        const finalId = fullUser._id || fullUser.id || basicUser.id || basicUser._id;
+        console.log('[AuthContext] FINAL USER ID:', finalId);
+        
         return {
           ...basicUser,
           ...fullUser,
-          id: basicUser.id || fullUser.id || fullUser._id,
-          _id: basicUser._id || fullUser._id || fullUser.id,
+          id: finalId,
+          _id: finalId,
           // Always preserve black_diamonds from login response
           black_diamonds: loginBlackDiamonds || fullUser.black_diamonds || fullUser.data?.black_diamonds || 0,
         };
       }
       
       // Return basicUser but make sure black_diamonds is preserved
+      const fallbackId = basicUser.id || basicUser._id;
+      console.log('[AuthContext] No fullUser found, using basicUser ID:', fallbackId);
+      
       return {
         ...basicUser,
+        id: fallbackId,
+        _id: fallbackId,
         black_diamonds: loginBlackDiamonds,
       };
     } catch (error) {
