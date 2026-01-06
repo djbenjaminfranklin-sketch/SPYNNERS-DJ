@@ -371,7 +371,7 @@ export default function ManageTracksScreen() {
               </View>
             </TouchableOpacity>
           ))
-        )}}
+        )}
         <View style={{ height: 100 }} />
       </ScrollView>
 
