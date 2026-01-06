@@ -19,7 +19,6 @@ import Constants from 'expo-constants';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { isUserAdmin } from '../../src/components/AdminBadge';
-import { base44Users } from '../../src/services/base44Api';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -35,7 +34,7 @@ type UserItem = {
 
 export default function AdminDiamonds() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +43,7 @@ export default function AdminDiamonds() {
   const [showSendModal, setShowSendModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
   const [diamondAmount, setDiamondAmount] = useState('');
+  const [sending, setSending] = useState(false);
 
   const isAdmin = isUserAdmin(user);
 
