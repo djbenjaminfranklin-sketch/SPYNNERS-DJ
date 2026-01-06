@@ -4002,15 +4002,6 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
             textColor=colors.HexColor('#E91E63')
         )
         
-        session_header_style = ParagraphStyle(
-            'SessionHeader',
-            parent=styles['Heading3'],
-            fontSize=12,
-            spaceBefore=15,
-            spaceAfter=5,
-            textColor=colors.HexColor('#00BCD4')
-        )
-        
         # Title
         elements.append(Paragraph("SPYNNERS - RAPPORT SESSIONS", title_style))
         
