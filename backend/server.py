@@ -3861,7 +3861,7 @@ class AdminSessionsPDFRequest(BaseModel):
 async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorization: str = Header(None)):
     """
     Export all validated sessions from all users as PDF report (Admin only).
-    Professional layout with session grouping and SPYNNERS branding.
+    Uses SessionMix entity data.
     """
     import io
     from fastapi.responses import Response
@@ -3877,47 +3877,76 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         if not authorization:
             raise HTTPException(status_code=401, detail="Authorization required")
         
-        print(f"[Admin Sessions PDF] Generating PDF report for ALL users...")
+        print(f"[Admin Sessions PDF] Generating PDF report from SessionMix...")
         print(f"[Admin Sessions PDF] Date range: {request.start_date} to {request.end_date}")
         
-        # Get all live track plays from all users
-        plays_data = []
+        # Fetch sessions from SessionMix entity
+        sessions_data = []
         try:
-            body = {"limit": 10000}  # Get all plays
-            result = await call_spynners_function("getLiveTrackPlays", body, authorization)
+            base44_url = "https://app.base44.com/api/apps/691a4d96d819355b52c063f3/entities/SessionMix"
+            headers = {
+                "Authorization": authorization,
+                "Content-Type": "application/json"
+            }
             
-            if isinstance(result, dict):
-                plays_data = result.get('recentPlays', []) or result.get('plays', []) or result.get('data', []) or []
-            elif isinstance(result, list):
-                plays_data = result
-            
-            print(f"[Admin Sessions PDF] Got {len(plays_data)} track plays from all users")
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.get(
+                    f"{base44_url}?limit=10000",
+                    headers=headers
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if isinstance(data, list):
+                        sessions_data = data
+                    elif isinstance(data, dict):
+                        sessions_data = data.get('items', data.get('data', []))
+                    print(f"[Admin Sessions PDF] Got {len(sessions_data)} sessions from SessionMix")
+                else:
+                    print(f"[Admin Sessions PDF] SessionMix API error: {response.status_code}")
         except Exception as e:
-            print(f"[Admin Sessions PDF] Error getting live plays: {e}")
-            # Try alternative function
+            print(f"[Admin Sessions PDF] Error fetching SessionMix: {e}")
+            # Fallback to getLiveTrackPlays
             try:
-                result = await call_spynners_function("nativeGetAllLiveTrackPlays", body, authorization)
+                result = await call_spynners_function("getLiveTrackPlays", {"limit": 10000}, authorization)
                 if isinstance(result, dict):
-                    plays_data = result.get('plays', []) or result.get('data', []) or []
+                    sessions_data = result.get('recentPlays', []) or result.get('plays', []) or []
                 elif isinstance(result, list):
-                    plays_data = result
-                print(f"[Admin Sessions PDF] Got {len(plays_data)} plays from alternative function")
+                    sessions_data = result
+                print(f"[Admin Sessions PDF] Fallback got {len(sessions_data)} items")
             except Exception as e2:
-                print(f"[Admin Sessions PDF] Alternative function also failed: {e2}")
+                print(f"[Admin Sessions PDF] Fallback also failed: {e2}")
         
         # Filter by date range
-        filtered_plays = []
-        for play in plays_data:
-            play_date_str = play.get('played_at') or play.get('created_at') or play.get('timestamp')
-            if play_date_str:
+        filtered_sessions = []
+        for session in sessions_data:
+            session_date_str = session.get('started_at') or session.get('created_at') or session.get('timestamp')
+            if session_date_str:
                 try:
-                    if 'T' in play_date_str:
-                        play_date = datetime.fromisoformat(play_date_str.replace('Z', '+00:00'))
+                    if 'T' in session_date_str:
+                        session_date = datetime.fromisoformat(session_date_str.replace('Z', '+00:00'))
                     else:
-                        play_date = datetime.strptime(play_date_str, '%Y-%m-%d')
+                        session_date = datetime.strptime(session_date_str, '%Y-%m-%d')
                     
                     include = True
                     if request.start_date:
+                        start = datetime.strptime(request.start_date, '%Y-%m-%d')
+                        if session_date.replace(tzinfo=None) < start:
+                            include = False
+                    if request.end_date:
+                        end = datetime.strptime(request.end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+                        if session_date.replace(tzinfo=None) > end:
+                            include = False
+                    
+                    if include:
+                        session['_parsed_date'] = session_date
+                        filtered_sessions.append(session)
+                except Exception as date_error:
+                    filtered_sessions.append(session)
+            else:
+                filtered_sessions.append(session)
+        
+        print(f"[Admin Sessions PDF] Filtered to {len(filtered_sessions)} sessions")
                         start = datetime.strptime(request.start_date, '%Y-%m-%d')
                         if play_date.replace(tzinfo=None) < start:
                             include = False
