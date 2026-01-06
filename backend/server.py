@@ -3375,6 +3375,73 @@ async def get_admin_tracks(authorization: str = Header(None), status: str = None
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.put("/api/admin/tracks/{track_id}/approve")
+async def approve_track(track_id: str, authorization: str = Header(None)):
+    """
+    Approve a pending track.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin] Approving track: {track_id}")
+        
+        # Try to use a native function to approve the track
+        result = await call_spynners_function("approveTrack", {"trackId": track_id}, authorization)
+        
+        if result:
+            print(f"[Admin] Track {track_id} approved successfully")
+            return {"success": True, "message": "Track approved", "track": result}
+        else:
+            # Fallback: update the track status directly
+            result = await call_spynners_function("updateTrack", {
+                "trackId": track_id,
+                "data": {"status": "approved"}
+            }, authorization)
+            return {"success": True, "message": "Track approved", "track": result}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin] Error approving track: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/admin/tracks/{track_id}/reject")
+async def reject_track(track_id: str, reason: str = None, authorization: str = Header(None)):
+    """
+    Reject a pending track.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin] Rejecting track: {track_id}, reason: {reason}")
+        
+        # Try to use a native function to reject the track
+        result = await call_spynners_function("rejectTrack", {
+            "trackId": track_id,
+            "reason": reason or "Rejeté par l'admin"
+        }, authorization)
+        
+        if result:
+            print(f"[Admin] Track {track_id} rejected successfully")
+            return {"success": True, "message": "Track rejected", "track": result}
+        else:
+            # Fallback: update the track status directly
+            result = await call_spynners_function("updateTrack", {
+                "trackId": track_id,
+                "data": {"status": "rejected", "rejection_reason": reason or "Rejeté par l'admin"}
+            }, authorization)
+            return {"success": True, "message": "Track rejected", "track": result}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin] Error rejecting track: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/admin/sessions")
 async def get_admin_sessions(authorization: str = Header(None), limit: int = 500):
     """
