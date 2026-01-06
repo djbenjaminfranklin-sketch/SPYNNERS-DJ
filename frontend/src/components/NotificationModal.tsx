@@ -32,6 +32,7 @@ interface NotificationCategory {
 
 export default function NotificationModal({ visible, onClose }: NotificationModalProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
