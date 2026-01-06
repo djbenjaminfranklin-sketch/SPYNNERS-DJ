@@ -3319,6 +3319,83 @@ async def get_admin_users(authorization: str = Header(None), limit: int = 10000)
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/admin/generate-avatars")
+async def generate_missing_avatars(authorization: str = Header(None)):
+    """
+    Generate missing avatars for users.
+    Calls the generateMissingAvatars Spynners function.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print("[Admin] Generating missing avatars...")
+        
+        # Call the Spynners function
+        result = await call_spynners_function("generateMissingAvatars", {}, authorization)
+        
+        if result:
+            print(f"[Admin] Generate avatars result: {result}")
+            return {
+                "success": True,
+                "message": f"Avatars générés pour {result.get('generated', 0)} utilisateurs.",
+                "data": result
+            }
+        else:
+            return {
+                "success": True,
+                "message": "Génération des avatars lancée"
+            }
+        
+    except Exception as e:
+        print(f"[Admin] Generate avatars error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/admin/users/{user_id}/role")
+async def update_user_role(user_id: str, request: Request, authorization: str = Header(None)):
+    """
+    Update a user's role.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        body = await request.json()
+        new_role = body.get('role', 'user')
+        
+        print(f"[Admin] Updating user {user_id} role to: {new_role}")
+        
+        # Use Base44 API to update user
+        base44_url = f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{user_id}"
+        headers = {
+            "Authorization": authorization,
+            "X-Base44-App-Id": BASE44_APP_ID,
+            "Content-Type": "application/json"
+        }
+        
+        update_data = {
+            "role": new_role,
+            "user_type": new_role if new_role in ['dj', 'producer'] else None
+        }
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.put(base44_url, json=update_data, headers=headers)
+            
+            if response.status_code == 200:
+                print(f"[Admin] User {user_id} role updated to {new_role}")
+                return {"success": True, "message": f"Rôle mis à jour: {new_role}"}
+            else:
+                print(f"[Admin] Failed to update role: {response.text[:200] if response.text else 'empty'}")
+                raise HTTPException(status_code=500, detail="Échec de la mise à jour du rôle")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin] Update role error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/admin/tracks")
 async def get_admin_tracks(authorization: str = Header(None), status: str = None, limit: int = 500):
     """
