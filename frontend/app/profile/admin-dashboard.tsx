@@ -163,7 +163,25 @@ export default function AdminDashboard() {
   };
 
   const syncACRCloud = async () => {
-    Alert.alert('Sync ACRCloud', 'Cette fonctionnalité synchronise les tracks avec ACRCloud.');
+    try {
+      setProcessing(true);
+      Alert.alert('Sync ACRCloud', 'Synchronisation en cours...');
+      
+      const response = await api.post('/api/admin/sync-acrcloud', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data?.success) {
+        Alert.alert('✅ Sync ACRCloud', response.data.message || 'Synchronisation terminée avec succès');
+      } else {
+        Alert.alert('Sync ACRCloud', response.data?.message || 'Synchronisation terminée');
+      }
+    } catch (error: any) {
+      console.error('[Admin] Sync ACRCloud error:', error);
+      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors de la synchronisation');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const debugACRCloud = async () => {
