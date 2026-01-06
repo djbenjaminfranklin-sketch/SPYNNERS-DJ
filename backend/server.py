@@ -3280,7 +3280,7 @@ async def get_admin_stats(authorization: str = Header(None)):
 async def get_admin_users(authorization: str = Header(None), limit: int = 10000):
     """
     Get all users for admin panel with full details including black_diamonds.
-    Uses Base44 entities API to get all user fields.
+    Uses Base44 entities API with pagination to get all users.
     """
     try:
         if not authorization:
@@ -3288,7 +3288,13 @@ async def get_admin_users(authorization: str = Header(None), limit: int = 10000)
         
         print(f"[Admin Users] Fetching users with black_diamonds (limit: {limit})...")
         
-        # Try Base44 entities API first to get all fields including black_diamonds
+        # Try Base44 entities API with pagination to get ALL users
+        all_users = []
+        offset = 0
+        page_size = 200  # Base44 typically returns max 200 per page
+        max_attempts = 20  # Safety limit
+        attempts = 0
+        
         try:
             headers = {
                 "Authorization": authorization,
@@ -3297,50 +3303,48 @@ async def get_admin_users(authorization: str = Header(None), limit: int = 10000)
             }
             
             async with httpx.AsyncClient(timeout=60.0) as http_client:
-                # Fetch all users from Base44 entities API
-                response = await http_client.get(
-                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User",
-                    params={"limit": limit},
-                    headers=headers
-                )
+                while attempts < max_attempts and len(all_users) < limit:
+                    response = await http_client.get(
+                        f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User",
+                        params={"limit": page_size, "offset": offset},
+                        headers=headers
+                    )
+                    
+                    if response.status_code == 200:
+                        users = response.json()
+                        
+                        if isinstance(users, dict):
+                            users = users.get('items', users.get('users', []))
+                        
+                        if not users or len(users) == 0:
+                            print(f"[Admin Users] No more users at offset {offset}")
+                            break
+                        
+                        # Check for duplicates
+                        existing_ids = set(u.get('id') or u.get('_id') for u in all_users)
+                        new_users = [u for u in users if (u.get('id') or u.get('_id')) not in existing_ids]
+                        
+                        if len(new_users) == 0:
+                            print(f"[Admin Users] All users at offset {offset} are duplicates, stopping")
+                            break
+                        
+                        all_users.extend(new_users)
+                        print(f"[Admin Users] Got {len(new_users)} new users at offset {offset}, total: {len(all_users)}")
+                        
+                        offset += page_size
+                        attempts += 1
+                        
+                        if len(users) < page_size:
+                            print(f"[Admin Users] Last page reached (got {len(users)} < {page_size})")
+                            break
+                    else:
+                        print(f"[Admin Users] Base44 API failed at offset {offset}: {response.status_code}")
+                        break
                 
-                if response.status_code == 200:
-                    users = response.json()
+                if all_users:
+                    print(f"[Admin Users] Total users fetched: {len(all_users)}")
+                    return {"success": True, "users": all_users, "total": len(all_users)}
                     
-                    # Check if it's a list or dict with items
-                    if isinstance(users, dict):
-                        users = users.get('items', users.get('users', []))
-                    
-                    if users and len(users) > 0:
-                        # Log first user to check fields
-                        first_user_fields = list(users[0].keys()) if isinstance(users[0], dict) else []
-                        print(f"[Admin Users] Base44 API - First user fields: {first_user_fields}")
-                        has_diamonds = 'black_diamonds' in first_user_fields
-                        print(f"[Admin Users] black_diamonds in response: {has_diamonds}")
-                        
-                        # Log user_type values to understand the data
-                        user_types_found = {}
-                        for u in users[:100]:  # Sample first 100 users
-                            ut = u.get('user_type', 'N/A')
-                            uts = u.get('user_types', [])
-                            if ut:
-                                user_types_found[ut] = user_types_found.get(ut, 0) + 1
-                            if uts and isinstance(uts, list):
-                                for t in uts:
-                                    key = f"user_types:{t}"
-                                    user_types_found[key] = user_types_found.get(key, 0) + 1
-                        print(f"[Admin Users] user_type distribution (sample): {user_types_found}")
-                        
-                        # Sample a user with diamonds for verification
-                        for u in users[:10]:
-                            if u.get('black_diamonds', 0) > 0:
-                                print(f"[Admin Users] Sample user with diamonds: {u.get('email')} = {u.get('black_diamonds')}")
-                                break
-                    
-                    print(f"[Admin Users] Got {len(users)} users from Base44 API")
-                    return {"success": True, "users": users, "total": len(users)}
-                else:
-                    print(f"[Admin Users] Base44 API failed: {response.status_code}, falling back to nativeGetAllUsers")
         except Exception as e:
             print(f"[Admin Users] Base44 API error: {e}, falling back to nativeGetAllUsers")
         
