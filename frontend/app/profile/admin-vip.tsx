@@ -182,6 +182,9 @@ export default function AdminVIP() {
     }
 
     setUploading(true);
+    setUploadProgress(0);
+    setUploadStatus('Préparation...');
+    
     try {
       // Create FormData for upload
       const formData = new FormData();
@@ -195,6 +198,9 @@ export default function AdminVIP() {
       formData.append('vip_stock', trackStock || '-1');
       formData.append('preview_start', previewStart || '0');
       formData.append('preview_end', previewEnd || '30');
+      
+      setUploadProgress(10);
+      setUploadStatus('Préparation audio...');
       
       // Add audio file
       if (Platform.OS === 'web') {
@@ -211,8 +217,11 @@ export default function AdminVIP() {
         } as any);
       }
       
+      setUploadProgress(20);
+      
       // Add image file if selected
       if (imageFile) {
+        setUploadStatus('Préparation image...');
         if (Platform.OS === 'web') {
           const imageResponse = await fetch(imageFile.uri);
           const imageBlob = await imageResponse.blob();
@@ -226,6 +235,8 @@ export default function AdminVIP() {
         }
       }
 
+      setUploadProgress(30);
+      setUploadStatus('Upload en cours...');
       console.log('[AdminVIP] Uploading VIP track:', trackTitle);
       
       const response = await axios.post(
