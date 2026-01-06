@@ -1370,9 +1370,10 @@ export default function SpynRecordScreen() {
         // Don't trust isOffline state or navigator.onLine - they can be wrong
         // The fact that we got API responses proves connectivity
         const wasAbleToAnalyze = allTracks.length > 0;
-        const isReallyOnline = wasAbleToAnalyze || (typeof navigator !== 'undefined' && navigator.onLine);
+        const hadSuccessfulApiCalls = hasSuccessfulApiCallRef.current;
+        const isReallyOnline = wasAbleToAnalyze || hadSuccessfulApiCalls || (typeof navigator !== 'undefined' && navigator.onLine);
         
-        console.log('[SPYN Record] Connection check - tracks analyzed:', allTracks.length, ', isReallyOnline:', isReallyOnline);
+        console.log('[SPYN Record] Connection check - tracks:', allTracks.length, ', hadApiCalls:', hadSuccessfulApiCalls, ', isReallyOnline:', isReallyOnline);
         
         if (isReallyOnline) {
           // ONLINE: Just log the session, don't save to offline storage
