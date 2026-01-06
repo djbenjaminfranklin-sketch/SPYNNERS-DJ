@@ -127,6 +127,9 @@ export default function SpynRecordScreen() {
   const [offlineSessionId, setOfflineSessionId] = useState<string | null>(null);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   
+  // Track if we successfully made API calls (proves we're online)
+  const hasSuccessfulApiCallRef = useRef(false);
+  
   // Analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [identifiedTracks, setIdentifiedTracks] = useState<IdentifiedTrack[]>([]);
