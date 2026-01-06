@@ -63,15 +63,6 @@ export default function AdminBroadcast() {
   // Email detail modal
   const [showEmailDetail, setShowEmailDetail] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<BroadcastHistory | null>(null);
-  
-  // Attachment state
-  const [attachment, setAttachment] = useState<{
-    name: string;
-    uri: string;
-    type: string;
-    url?: string;
-  } | null>(null);
-  const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
   const isAdmin = isUserAdmin(user);
 
