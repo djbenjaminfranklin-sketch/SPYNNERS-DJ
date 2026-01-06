@@ -444,41 +444,28 @@ export default function AdminSessions() {
         ) : (
           filteredSessions.map((session) => (
             <View key={session.id} style={styles.sessionRow}>
-              <Text style={[styles.sessionText, { flex: 1.5, fontWeight: '500' }]} numberOfLines={1}>
+              <Text style={[styles.sessionText, { flex: 1.2, fontWeight: '500' }]} numberOfLines={1}>
                 {session.dj_name}
               </Text>
-              <View style={{ flex: 1.5, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ flex: 1.3, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="business" size={12} color="#9C27B0" />
+                <Text style={styles.sessionText} numberOfLines={1}>{session.venue || '-'}</Text>
+              </View>
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Ionicons name="location" size={12} color="#00BCD4" />
                 <Text style={styles.sessionText} numberOfLines={1}>{session.location}</Text>
               </View>
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ flex: 0.8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Ionicons name="calendar" size={12} color={Colors.textMuted} />
                 <Text style={styles.sessionText}>
                   {new Date(session.started_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
                 </Text>
               </View>
-              <View style={{ flex: 0.6 }}>
-                <View style={[
-                  styles.statusBadge, 
-                  (session.status === 'validated' || session.status === 'ended') && styles.statusBadgeValidated
-                ]}>
-                  <View style={[
-                    styles.statusDot,
-                    (session.status === 'validated' || session.status === 'ended') && styles.statusDotValidated
-                  ]} />
-                  <Text style={[
-                    styles.statusText,
-                    (session.status === 'validated' || session.status === 'ended') && styles.statusTextValidated
-                  ]}>
-                    {session.status === 'ended' ? 'Terminé' : session.status === 'validated' ? 'Validé' : session.status === 'active' ? 'Active' : session.status}
-                  </Text>
-                </View>
-              </View>
               <View style={{ flex: 0.5, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Ionicons name="musical-note" size={12} color="#FF9800" />
                 <Text style={styles.sessionText}>{session.tracks_detected}</Text>
               </View>
-              <View style={{ flex: 0.5 }}>
+              <View style={{ flex: 0.4 }}>
                 <TouchableOpacity 
                   style={styles.downloadSessionBtn}
                   onPress={() => exportPDF(session)}
