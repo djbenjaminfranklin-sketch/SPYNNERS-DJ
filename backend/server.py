@@ -3656,7 +3656,7 @@ async def upload_vip_track(
         # Use the base44 entities API to create the Track directly
         async with httpx.AsyncClient(timeout=60.0) as client:
             create_response = await client.post(
-                f"{SPYNNERS_API_URL}/entities/Track",
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Track",
                 json=track_data,
                 headers={
                     'Authorization': authorization,
