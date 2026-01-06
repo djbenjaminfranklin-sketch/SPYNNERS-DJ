@@ -88,7 +88,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
       const cats: NotificationCategory[] = [
         {
           type: 'track_received',
-          label: 'Tracks Received',
+          label: t('notifications.tracksReceived'),
           icon: 'mail',
           color: '#2196F3',
           count: categoryCounts.track_received,
@@ -96,7 +96,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
         },
         {
           type: 'message',
-          label: 'Chat Messages',
+          label: t('notifications.chatMessages'),
           icon: 'chatbubbles',
           color: '#673AB7',
           count: categoryCounts.message,
@@ -104,7 +104,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
         },
         {
           type: 'track_played',
-          label: 'Track Plays',
+          label: t('notifications.trackPlays'),
           icon: 'play-circle',
           color: '#4CAF50',
           count: categoryCounts.track_played,
@@ -112,7 +112,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
         },
         {
           type: 'download',
-          label: 'Downloads',
+          label: t('notifications.downloads'),
           icon: 'download',
           color: '#FF9800',
           count: categoryCounts.download,
@@ -120,7 +120,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
         },
         {
           type: 'vip',
-          label: 'VIP Alerts',
+          label: t('notifications.vipAlerts'),
           icon: 'diamond',
           color: '#7C4DFF',
           count: categoryCounts.vip,
@@ -128,7 +128,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
         },
         {
           type: 'system',
-          label: 'System',
+          label: t('notifications.system'),
           icon: 'notifications',
           color: Colors.textMuted,
           count: categoryCounts.system,
