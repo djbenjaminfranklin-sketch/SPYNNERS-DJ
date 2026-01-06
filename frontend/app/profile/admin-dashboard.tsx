@@ -378,17 +378,17 @@ export default function AdminDashboard() {
                 )}
               </View>
               <View style={styles.trackInfo}>
-                <Text style={styles.trackTitle} numberOfLines={1}>{track.title}</Text>
-                <Text style={styles.trackArtist}>{track.artist}</Text>
+                <Text style={styles.trackTitle} numberOfLines={1}>{track.title || 'Sans titre'}</Text>
+                <Text style={styles.trackArtist}>{track.artist || 'Artiste inconnu'}</Text>
                 <View style={styles.trackMeta}>
-                  <Text style={styles.trackGenre}>{track.genre}</Text>
-                  {!track.audio_url && (
+                  <Text style={styles.trackGenre}>{track.genre || 'Unknown'}</Text>
+                  {!track.audio_url ? (
                     <Text style={styles.noAudioText}>Pas d'audio</Text>
-                  )}
+                  ) : null}
                 </View>
               </View>
               <View style={[styles.statusBadge, track.status === 'approved' && styles.statusApproved]}>
-                <Text style={styles.statusText}>{track.status}</Text>
+                <Text style={styles.statusText}>{track.status || 'pending'}</Text>
               </View>
             </TouchableOpacity>
           ))
