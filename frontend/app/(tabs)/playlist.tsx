@@ -119,28 +119,50 @@ export default function PlaylistScreen() {
         return;
       }
       
-      // Fetch all tracks and filter by IDs in the playlist
-      const allTracks = await base44Tracks.list({ limit: 500 });
-      console.log('[Playlist] Total tracks fetched:', allTracks.length);
+      // Method 1: Try to fetch tracks by specific IDs (more reliable for playlists)
+      const foundTracks: Track[] = [];
       
-      // Log first few track IDs from database for comparison
-      if (allTracks.length > 0) {
-        const sampleIds = allTracks.slice(0, 5).map((t: Track) => t.id || t._id);
-        console.log('[Playlist] Sample track IDs from DB:', JSON.stringify(sampleIds));
+      // Fetch each track by ID individually (works better on mobile)
+      for (const trackId of trackIds) {
+        try {
+          const track = await base44Tracks.getById(trackId);
+          if (track) {
+            foundTracks.push(track);
+            console.log('[Playlist] ✓ Found track by ID:', track.title);
+          }
+        } catch (e) {
+          console.log('[Playlist] Could not fetch track by ID:', trackId);
+        }
       }
+      
+      console.log('[Playlist] Found tracks by ID lookup:', foundTracks.length);
+      
+      // If we found all tracks, use them
+      if (foundTracks.length === trackIds.length) {
+        setPlaylistTracks(foundTracks);
+        return;
+      }
+      
+      // Method 2: Fallback - Fetch all tracks and filter
+      console.log('[Playlist] Some tracks not found by ID, trying batch fetch...');
+      const allTracks = await base44Tracks.list({ limit: 1000 });
+      console.log('[Playlist] Total tracks fetched:', allTracks.length);
       
       const filteredTracks = allTracks.filter((track: Track) => {
         const trackId = track.id || track._id || '';
-        const isInPlaylist = trackIds.includes(trackId);
-        if (isInPlaylist) {
-          console.log('[Playlist] ✓ Found track:', track.title, 'ID:', trackId);
-        }
-        return isInPlaylist;
+        return trackIds.includes(trackId);
       });
       
       console.log('[Playlist] Filtered tracks count:', filteredTracks.length);
+      
+      // Use whichever method found more tracks
+      if (filteredTracks.length > foundTracks.length) {
+        setPlaylistTracks(filteredTracks);
+      } else {
+        setPlaylistTracks(foundTracks);
+      }
+      
       console.log('[Playlist] ========================================');
-      setPlaylistTracks(filteredTracks);
     } catch (error) {
       console.error('[Playlist] Error loading playlist tracks:', error);
       setPlaylistTracks([]);
