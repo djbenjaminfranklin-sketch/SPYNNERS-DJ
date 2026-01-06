@@ -278,13 +278,9 @@ export default function AdminCategories() {
 
       {/* Action Buttons */}
       <View style={styles.actionsRow}>
-        <TouchableOpacity style={styles.sendEmailBtn} onPress={sendGroupEmail}>
-          <Ionicons name="send" size={16} color="#fff" />
-          <Text style={styles.actionBtnText}>Email Groupé</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.sendEmailBtn, { backgroundColor: '#4CAF50' }]} onPress={openIndividualEmail}>
+        <TouchableOpacity style={styles.sendEmailBtn} onPress={() => router.push('/profile/admin-broadcast')}>
           <Ionicons name="mail" size={16} color="#fff" />
-          <Text style={styles.actionBtnText}>Email Individuel</Text>
+          <Text style={styles.actionBtnText}>Aller aux Emails</Text>
         </TouchableOpacity>
       </View>
 
