@@ -644,7 +644,11 @@ export default function SpynRecordScreen() {
       
       // Reset sent emails tracker for new session
       sentEmailsRef.current.clear();
-      console.log('[SPYN Record] Reset sent emails tracker for new session');
+      
+      // Reset API call tracker for new session
+      hasSuccessfulApiCallRef.current = false;
+      
+      console.log('[SPYN Record] Reset trackers for new session');
       
       // Set session start time for display
       const now = new Date();
