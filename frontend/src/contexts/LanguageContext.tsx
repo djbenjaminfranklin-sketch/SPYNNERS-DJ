@@ -673,10 +673,17 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.done': 'Done!',
     'admin.vipUploadSuccess': 'V.I.P. track uploaded successfully!\n\nIt will appear in tracks to validate.',
     'admin.clickToAddVip': 'Click "+ V.I.P. Track" to add your first track',
+    'admin.trackApprovedMsg': '"{title}" has been approved!',
+    'admin.trackRejectedMsg': '"{title}" has been rejected.',
+    'admin.rejectedByAdmin': 'Rejected by admin',
+    'admin.confirmReject': 'Reject this track?',
+    'admin.confirmRejectMsg': 'Are you sure you want to reject "{title}"?',
     
     // Radar
     'radar.messageSent': 'Message sent!',
     'radar.messageSentTo': 'Your message was sent to {name}',
+    'radar.uploadMoreTracks': 'Upload more tracks to increase your visibility!',
+    'radar.checkBackLater': 'Check back later to see live plays',
   },
   
   fr: {
@@ -1347,10 +1354,17 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.done': 'Terminé !',
     'admin.vipUploadSuccess': 'Track V.I.P. uploadé avec succès !\n\nIl apparaîtra dans les tracks à valider.',
     'admin.clickToAddVip': 'Cliquez sur "+ Track V.I.P." pour ajouter votre premier track',
+    'admin.trackApprovedMsg': '"{title}" a été approuvé !',
+    'admin.trackRejectedMsg': '"{title}" a été rejeté.',
+    'admin.rejectedByAdmin': 'Rejeté par l\'admin',
+    'admin.confirmReject': 'Rejeter ce track ?',
+    'admin.confirmRejectMsg': 'Voulez-vous vraiment rejeter "{title}" ?',
     
     // Radar
     'radar.messageSent': 'Message envoyé !',
     'radar.messageSentTo': 'Votre message a été envoyé à {name}',
+    'radar.uploadMoreTracks': 'Uploadez plus de tracks pour augmenter votre visibilité !',
+    'radar.checkBackLater': 'Revenez plus tard pour voir les plays en direct',
   },
   
   es: {
