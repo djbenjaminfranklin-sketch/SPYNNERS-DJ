@@ -4063,7 +4063,7 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
                 city = session.get('city') or session.get('location') or '-'
                 status = session.get('status', 'ended')
                 status_text = 'Terminée' if status == 'ended' else ('Active' if status == 'active' else status)
-                tracks = str(session.get('tracks_detected', 0) or session.get('track_count', 0) or 0)
+                tracks = str(session.get('tracks_count', 0) or session.get('tracks_detected', 0) or 0)
                 
                 session_data.append([session_date, city[:30], status_text, tracks])
             
