@@ -3280,18 +3280,59 @@ async def get_admin_stats(authorization: str = Header(None)):
 async def get_admin_users(authorization: str = Header(None), limit: int = 10000):
     """
     Get all users for admin panel with full details including black_diamonds.
+    Uses Base44 entities API to get all user fields.
     """
     try:
         if not authorization:
             raise HTTPException(status_code=401, detail="Authorization required")
         
-        print(f"[Admin Users] Fetching users (limit: {limit})...")
+        print(f"[Admin Users] Fetching users with black_diamonds (limit: {limit})...")
         
-        # Request all fields including black_diamonds
-        result = await call_spynners_function("nativeGetAllUsers", {
-            "limit": limit,
-            "fields": ["id", "email", "full_name", "artist_name", "avatar_url", "user_type", "bio", "nationality", "black_diamonds", "role", "created_date"]
-        }, authorization)
+        # Try Base44 entities API first to get all fields including black_diamonds
+        try:
+            headers = {
+                "Authorization": authorization,
+                "X-Base44-App-Id": BASE44_APP_ID,
+                "Content-Type": "application/json"
+            }
+            
+            async with httpx.AsyncClient(timeout=60.0) as http_client:
+                # Fetch all users from Base44 entities API
+                response = await http_client.get(
+                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User",
+                    params={"limit": limit},
+                    headers=headers
+                )
+                
+                if response.status_code == 200:
+                    users = response.json()
+                    
+                    # Check if it's a list or dict with items
+                    if isinstance(users, dict):
+                        users = users.get('items', users.get('users', []))
+                    
+                    if users and len(users) > 0:
+                        # Log first user to check fields
+                        first_user_fields = list(users[0].keys()) if isinstance(users[0], dict) else []
+                        print(f"[Admin Users] Base44 API - First user fields: {first_user_fields}")
+                        has_diamonds = 'black_diamonds' in first_user_fields
+                        print(f"[Admin Users] black_diamonds in response: {has_diamonds}")
+                        
+                        # Sample a user with diamonds for verification
+                        for u in users[:10]:
+                            if u.get('black_diamonds', 0) > 0:
+                                print(f"[Admin Users] Sample user with diamonds: {u.get('email')} = {u.get('black_diamonds')}")
+                                break
+                    
+                    print(f"[Admin Users] Got {len(users)} users from Base44 API")
+                    return {"success": True, "users": users, "total": len(users)}
+                else:
+                    print(f"[Admin Users] Base44 API failed: {response.status_code}, falling back to nativeGetAllUsers")
+        except Exception as e:
+            print(f"[Admin Users] Base44 API error: {e}, falling back to nativeGetAllUsers")
+        
+        # Fallback to nativeGetAllUsers
+        result = await call_spynners_function("nativeGetAllUsers", {"limit": limit}, authorization)
         
         if result:
             # Handle different response formats
@@ -3299,17 +3340,7 @@ async def get_admin_users(authorization: str = Header(None), limit: int = 10000)
                 users = result.get('users', result.get('items', []))
             else:
                 users = result if isinstance(result, list) else []
-            
-            # Log first user to check if black_diamonds is included
-            if users and len(users) > 0:
-                first_user_fields = list(users[0].keys()) if isinstance(users[0], dict) else []
-                print(f"[Admin Users] First user fields: {first_user_fields}")
-                if 'black_diamonds' in first_user_fields:
-                    print(f"[Admin Users] black_diamonds found in response!")
-                else:
-                    print(f"[Admin Users] black_diamonds NOT in response - will need separate fetch")
-            
-            print(f"[Admin Users] Got {len(users)} users")
+            print(f"[Admin Users] Got {len(users)} users from nativeGetAllUsers (fallback)")
             return {"success": True, "users": users, "total": len(users)}
         
         return {"success": True, "users": [], "total": 0}
