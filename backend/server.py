@@ -3306,6 +3306,7 @@ async def get_admin_users(authorization: str = Header(None), limit: int = 500):
 async def get_admin_tracks(authorization: str = Header(None), status: str = None, limit: int = 500):
     """
     Get all tracks for admin panel, optionally filtered by status.
+    Uses getAdminDashboardData to get pending tracks, and nativeGetTracks for approved tracks.
     """
     try:
         if not authorization:
@@ -3313,23 +3314,53 @@ async def get_admin_tracks(authorization: str = Header(None), status: str = None
         
         print(f"[Admin Tracks] Fetching tracks (status: {status}, limit: {limit})...")
         
-        result = await call_spynners_function("nativeGetTracks", {"limit": limit}, authorization)
+        all_tracks = []
         
-        if result:
-            # Handle different response formats
-            if isinstance(result, dict):
-                tracks = result.get('tracks', result.get('items', []))
-            else:
-                tracks = result if isinstance(result, list) else []
-            
-            # Filter by status if specified
-            if status:
-                tracks = [t for t in tracks if t.get('status', '').lower() == status.lower()]
-            
-            print(f"[Admin Tracks] Got {len(tracks)} tracks")
-            return {"success": True, "tracks": tracks, "total": len(tracks)}
+        # First get pending tracks from getAdminDashboardData
+        try:
+            dashboard_data = await call_spynners_function("getAdminDashboardData", {}, authorization)
+            if dashboard_data and isinstance(dashboard_data, dict):
+                pending_list = dashboard_data.get('pendingTracks', [])
+                if isinstance(pending_list, list):
+                    # Mark these tracks as pending
+                    for track in pending_list:
+                        track['status'] = 'pending'
+                    all_tracks.extend(pending_list)
+                    print(f"[Admin Tracks] Got {len(pending_list)} pending tracks from dashboard")
+        except Exception as e:
+            print(f"[Admin Tracks] Error getting pending tracks: {e}")
         
-        return {"success": True, "tracks": [], "total": 0}
+        # Then get all tracks from nativeGetTracks (these are usually approved)
+        try:
+            result = await call_spynners_function("nativeGetTracks", {"limit": limit}, authorization)
+            if result:
+                if isinstance(result, dict):
+                    tracks = result.get('tracks', result.get('items', []))
+                else:
+                    tracks = result if isinstance(result, list) else []
+                
+                # Mark tracks without status as approved
+                for track in tracks:
+                    if not track.get('status'):
+                        track['status'] = 'approved'
+                
+                # Add only tracks not already in pending list (avoid duplicates)
+                pending_ids = {t.get('id') or t.get('_id') for t in all_tracks}
+                for track in tracks:
+                    track_id = track.get('id') or track.get('_id')
+                    if track_id not in pending_ids:
+                        all_tracks.append(track)
+                
+                print(f"[Admin Tracks] Got {len(tracks)} tracks from nativeGetTracks")
+        except Exception as e:
+            print(f"[Admin Tracks] Error getting tracks: {e}")
+        
+        # Filter by status if specified
+        if status:
+            all_tracks = [t for t in all_tracks if t.get('status', '').lower() == status.lower()]
+        
+        print(f"[Admin Tracks] Returning {len(all_tracks)} total tracks")
+        return {"success": True, "tracks": all_tracks, "total": len(all_tracks)}
         
     except HTTPException:
         raise
