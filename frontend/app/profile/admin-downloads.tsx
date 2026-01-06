@@ -221,10 +221,19 @@ export default function AdminDownloads() {
     setExporting(true);
     try {
       console.log('[AdminDownloads] Export PDF...');
+      console.log('[AdminDownloads] Current dateFilter:', JSON.stringify(dateFilter));
       
       const requestBody: any = {};
-      if (dateFilter.startDate) requestBody.start_date = dateFilter.startDate;
-      if (dateFilter.endDate) requestBody.end_date = dateFilter.endDate;
+      if (dateFilter.startDate) {
+        requestBody.start_date = dateFilter.startDate;
+        console.log('[AdminDownloads] Added start_date:', dateFilter.startDate);
+      }
+      if (dateFilter.endDate) {
+        requestBody.end_date = dateFilter.endDate;
+        console.log('[AdminDownloads] Added end_date:', dateFilter.endDate);
+      }
+      
+      console.log('[AdminDownloads] Final request body:', JSON.stringify(requestBody));
       
       const response = await axios.post(
         `${BACKEND_URL}/api/admin/downloads/pdf`,
