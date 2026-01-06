@@ -3761,39 +3761,88 @@ async def reject_track(track_id: str, reason: str = None, authorization: str = H
 
 
 @app.get("/api/admin/sessions")
-async def get_admin_sessions(authorization: str = Header(None), limit: int = 500):
+async def get_admin_sessions(authorization: str = Header(None), limit: int = 10000):
     """
-    Get all SPYN sessions for admin panel.
+    Get all SPYN sessions for admin panel from SessionMix entity.
     """
     try:
         if not authorization:
             raise HTTPException(status_code=401, detail="Authorization required")
         
-        print(f"[Admin Sessions] Fetching sessions (limit: {limit})...")
+        print(f"[Admin Sessions] Fetching sessions from SessionMix entity (limit: {limit})...")
         
-        # Try both function names
-        result = None
+        # Fetch from Base44 SessionMix entity directly
+        sessions = []
         try:
-            result = await call_spynners_function("nativeGetLiveTrackPlays", {"limit": limit}, authorization)
-        except:
-            pass
-        
-        if not result:
+            # Use Base44 entity API to get SessionMix data
+            base44_url = "https://app.base44.com/api/apps/691a4d96d819355b52c063f3/entities/SessionMix"
+            headers = {
+                "Authorization": authorization,
+                "Content-Type": "application/json"
+            }
+            
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.get(
+                    f"{base44_url}?limit={limit}",
+                    headers=headers
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if isinstance(data, list):
+                        sessions = data
+                    elif isinstance(data, dict):
+                        sessions = data.get('items', data.get('data', []))
+                    print(f"[Admin Sessions] Got {len(sessions)} sessions from SessionMix entity")
+                else:
+                    print(f"[Admin Sessions] SessionMix API error: {response.status_code}")
+                    
+        except Exception as e:
+            print(f"[Admin Sessions] Error fetching from SessionMix: {e}")
+            # Fallback to getLiveTrackPlays
             try:
                 result = await call_spynners_function("getLiveTrackPlays", {"limit": limit}, authorization)
-            except:
-                pass
+                if result:
+                    if isinstance(result, dict):
+                        sessions = result.get('recentPlays', result.get('plays', result.get('items', [])))
+                    else:
+                        sessions = result if isinstance(result, list) else []
+                    print(f"[Admin Sessions] Fallback got {len(sessions)} sessions")
+            except Exception as e2:
+                print(f"[Admin Sessions] Fallback also failed: {e2}")
         
-        if result:
-            # Handle different response formats
-            if isinstance(result, dict):
-                sessions = result.get('recentPlays', result.get('plays', result.get('items', [])))
-            else:
-                sessions = result if isinstance(result, list) else []
-            print(f"[Admin Sessions] Got {len(sessions)} sessions")
-            return {"success": True, "sessions": sessions, "total": len(sessions)}
+        # Format sessions for frontend
+        formatted_sessions = []
+        for s in sessions:
+            formatted_sessions.append({
+                "id": s.get('id') or s.get('_id') or str(uuid.uuid4()),
+                "dj_id": s.get('dj_id') or s.get('user_id') or '',
+                "dj_name": s.get('dj_name') or s.get('user_name') or 'Unknown DJ',
+                "city": s.get('city') or s.get('location') or '',
+                "venue": s.get('venue') or '',
+                "started_at": s.get('started_at') or s.get('created_at') or '',
+                "ended_at": s.get('ended_at') or '',
+                "status": s.get('status') or 'ended',
+                "tracks_detected": s.get('tracks_detected') or s.get('track_count') or 0,
+                "diamonds_earned": s.get('diamonds_earned') or 0,
+            })
         
-        return {"success": True, "sessions": [], "total": 0}
+        # Calculate stats
+        unique_djs = set(s['dj_name'] for s in formatted_sessions)
+        total_tracks = sum(s['tracks_detected'] for s in formatted_sessions)
+        active_sessions = len([s for s in formatted_sessions if s['status'] == 'active'])
+        
+        return {
+            "success": True, 
+            "sessions": formatted_sessions, 
+            "total": len(formatted_sessions),
+            "stats": {
+                "total_sessions": len(formatted_sessions),
+                "active_now": active_sessions,
+                "tracks_detected": total_tracks,
+                "unique_djs": len(unique_djs)
+            }
+        }
         
     except HTTPException:
         raise
