@@ -409,46 +409,56 @@ export default function AdminDashboard() {
             </View>
             {selectedTrack && (
               <ScrollView showsVerticalScrollIndicator={false}>
-                {selectedTrack.artwork_url && (
+                {selectedTrack.artwork_url ? (
                   <Image source={{ uri: selectedTrack.artwork_url }} style={styles.modalImage} />
+                ) : (
+                  <View style={[styles.modalImage, styles.modalImagePlaceholder]}>
+                    <Ionicons name="musical-note" size={48} color={Colors.textMuted} />
+                  </View>
                 )}
-                <Text style={styles.modalTrackTitle}>{selectedTrack.title}</Text>
-                <Text style={styles.modalTrackArtist}>{selectedTrack.producer_name || selectedTrack.artist}</Text>
+                <Text style={styles.modalTrackTitle}>{selectedTrack.title || 'Sans titre'}</Text>
+                <Text style={styles.modalTrackArtist}>{selectedTrack.producer_name || selectedTrack.artist || 'Artiste inconnu'}</Text>
                 
                 {/* Track Details */}
                 <View style={styles.trackDetails}>
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Genre:</Text>
-                    <Text style={styles.detailValue}>{selectedTrack.genre}</Text>
+                    <Text style={styles.detailValue}>{selectedTrack.genre || 'Non spécifié'}</Text>
                   </View>
-                  {selectedTrack.bpm && (
+                  {selectedTrack.bpm ? (
                     <View style={styles.detailRow}>
                       <Text style={styles.detailLabel}>BPM:</Text>
                       <Text style={styles.detailValue}>{selectedTrack.bpm}</Text>
                     </View>
-                  )}
-                  {selectedTrack.key && (
+                  ) : null}
+                  {selectedTrack.key ? (
                     <View style={styles.detailRow}>
                       <Text style={styles.detailLabel}>Key:</Text>
                       <Text style={styles.detailValue}>{selectedTrack.key}</Text>
                     </View>
-                  )}
-                  {selectedTrack.label && (
+                  ) : null}
+                  {selectedTrack.label ? (
                     <View style={styles.detailRow}>
                       <Text style={styles.detailLabel}>Label:</Text>
                       <Text style={styles.detailValue}>{selectedTrack.label}</Text>
                     </View>
-                  )}
-                  {selectedTrack.description && (
+                  ) : null}
+                  {selectedTrack.description ? (
                     <View style={styles.detailRow}>
                       <Text style={styles.detailLabel}>Description:</Text>
                       <Text style={styles.detailValue}>{selectedTrack.description}</Text>
                     </View>
-                  )}
+                  ) : null}
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Audio:</Text>
+                    <Text style={[styles.detailValue, !selectedTrack.audio_url && styles.noAudioValue]}>
+                      {selectedTrack.audio_url ? 'Disponible' : 'Non disponible'}
+                    </Text>
+                  </View>
                 </View>
 
                 {/* Play Button */}
-                {selectedTrack.audio_url && (
+                {selectedTrack.audio_url ? (
                   <TouchableOpacity 
                     style={styles.playBtn} 
                     onPress={() => handlePlayTrack(selectedTrack)}
@@ -456,6 +466,11 @@ export default function AdminDashboard() {
                     <Ionicons name="play" size={20} color="#fff" />
                     <Text style={styles.btnText}>Écouter</Text>
                   </TouchableOpacity>
+                ) : (
+                  <View style={styles.noAudioBtn}>
+                    <Ionicons name="volume-mute" size={20} color="#fff" />
+                    <Text style={styles.btnText}>Pas de fichier audio</Text>
+                  </View>
                 )}
                 
                 {/* Action Buttons */}
