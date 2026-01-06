@@ -3973,10 +3973,38 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         
         print(f"[Admin Sessions PDF] Filtered to {len(filtered_sessions)} validated sessions (diamond_awarded=true)")
         
-        # Group sessions by DJ
+        # Now we need to get the actual track plays for each session
+        # Get all live track plays to match with sessions
+        all_plays = []
+        try:
+            result = await call_spynners_function("getLiveTrackPlays", {"limit": 10000}, authorization)
+            if isinstance(result, dict):
+                all_plays = result.get('recentPlays', []) or result.get('plays', []) or []
+            elif isinstance(result, list):
+                all_plays = result
+            print(f"[Admin Sessions PDF] Got {len(all_plays)} track plays for matching")
+        except Exception as e:
+            print(f"[Admin Sessions PDF] Error getting track plays: {e}")
+        
+        # Group sessions by DJ with their tracks
         sessions_by_dj = defaultdict(list)
         for session in filtered_sessions:
             dj_name = session.get('dj_name') or session.get('user_name') or 'Unknown DJ'
+            dj_id = session.get('dj_id') or session.get('user_id') or ''
+            session_id = session.get('id')
+            session_start = session.get('started_at', '')
+            
+            # Find matching tracks for this session
+            session_tracks = []
+            for play in all_plays:
+                play_dj_id = play.get('user_id') or play.get('dj_id') or ''
+                play_session = play.get('session_id') or ''
+                
+                # Match by session_id or by dj_id and date
+                if play_session == session_id or (play_dj_id == dj_id and session_start[:10] in (play.get('played_at', '')[:10] if play.get('played_at') else '')):
+                    session_tracks.append(play)
+            
+            session['tracks'] = session_tracks
             sessions_by_dj[dj_name].append(session)
         
         print(f"[Admin Sessions PDF] Grouped into {len(sessions_by_dj)} DJs")
