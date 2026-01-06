@@ -1600,13 +1600,32 @@ export const base44Profiles = {
           try {
             const tracksResponse = await mobileApi.get(`/entities/Track?limit=1000`);
             if (Array.isArray(tracksResponse.data)) {
-              const myTracks = tracksResponse.data.filter((t: any) => 
-                t.producer_id === userId || t.created_by_id === userId || t.uploaded_by === userId
-              );
+              console.log('[Profiles] Total tracks fetched:', tracksResponse.data.length);
+              console.log('[Profiles] Filtering for userId:', userId);
+              
+              const myTracks = tracksResponse.data.filter((t: any) => {
+                const isMatch = t.producer_id === userId || t.created_by_id === userId || t.uploaded_by === userId;
+                if (isMatch) {
+                  console.log('[Profiles] Found matching track:', t.title);
+                }
+                return isMatch;
+              });
+              
               tracksCount = myTracks.length;
               totalPlays = myTracks.reduce((sum: number, t: any) => sum + (t.play_count || t.plays_count || 0), 0);
               totalDownloads = myTracks.reduce((sum: number, t: any) => sum + (t.download_count || t.downloads_count || 0), 0);
               console.log('[Profiles] Stats calculated:', { tracksCount, totalPlays, totalDownloads });
+              
+              // If no match found, show sample track IDs for debugging
+              if (myTracks.length === 0 && tracksResponse.data.length > 0) {
+                const sample = tracksResponse.data[0];
+                console.log('[Profiles] DEBUG - No match. Sample track IDs:', {
+                  producer_id: sample.producer_id,
+                  created_by_id: sample.created_by_id,
+                  uploaded_by: sample.uploaded_by,
+                  looking_for: userId
+                });
+              }
             }
           } catch (statsError) {
             console.log('[Profiles] Could not fetch stats:', statsError);
