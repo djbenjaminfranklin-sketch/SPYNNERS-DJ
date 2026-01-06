@@ -410,7 +410,7 @@ export default function AdminDownloads() {
         {/* Export PDF Button */}
         <TouchableOpacity 
           style={[styles.exportBtn, exporting && styles.exportBtnDisabled]} 
-          onPress={exportPDF}
+          onPress={() => exportPDF()}
           disabled={exporting}
         >
           {exporting ? (
