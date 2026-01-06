@@ -239,6 +239,14 @@ export default function AdminVIP() {
       setUploadStatus('Upload en cours...');
       console.log('[AdminVIP] Uploading VIP track:', trackTitle);
       
+      // Simulate progress during upload
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev < 90) return prev + 10;
+          return prev;
+        });
+      }, 500);
+      
       const response = await axios.post(
         `${BACKEND_URL}/api/admin/upload-vip-track`,
         formData,
@@ -248,11 +256,28 @@ export default function AdminVIP() {
             'Content-Type': 'multipart/form-data',
           },
           timeout: 120000, // 2 minutes timeout for upload
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round((progressEvent.loaded * 70) / progressEvent.total) + 30;
+              setUploadProgress(percentCompleted);
+              if (percentCompleted < 50) {
+                setUploadStatus('Upload audio...');
+              } else if (percentCompleted < 80) {
+                setUploadStatus('Upload image...');
+              } else {
+                setUploadStatus('Création du track...');
+              }
+            }
+          },
         }
       );
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      setUploadStatus('Terminé !');
 
       if (response.data?.success) {
-        Alert.alert('Succès ✅', 'Track V.I.P. uploadé avec succès!');
+        Alert.alert('Succès ✅', 'Track V.I.P. uploadé avec succès!\n\nIl apparaîtra dans les tracks à valider.');
         setShowUploadModal(false);
         resetForm();
         loadData();
@@ -264,6 +289,8 @@ export default function AdminVIP() {
       Alert.alert('Erreur', error?.response?.data?.detail || 'Échec de l\'upload du track');
     } finally {
       setUploading(false);
+      setUploadProgress(0);
+      setUploadStatus('');
     }
   };
 
