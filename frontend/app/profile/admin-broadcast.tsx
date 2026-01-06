@@ -307,6 +307,8 @@ export default function AdminBroadcast() {
                   categories: recipientType === 'category' ? selectedCategories : null,
                   individual_email: recipientType === 'individual' ? (selectedRecipient?.email || individualEmail.trim()) : null,
                   include_tracks: message.includes('TRACKS RÉCENTES'),
+                  attachment_url: attachment?.url || null,
+                  attachment_name: attachment?.name || null,
                 },
                 { headers: { Authorization: `Bearer ${token}` } }
               );
@@ -318,6 +320,7 @@ export default function AdminBroadcast() {
                 setIndividualEmail('');
                 setSelectedRecipient(null);
                 setSelectedCategories([]);
+                setAttachment(null);
                 loadData(); // Refresh history
               } else {
                 Alert.alert('Erreur', response.data?.message || 'Échec de l\'envoi');
