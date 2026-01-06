@@ -69,7 +69,7 @@ export default function ChatScreen() {
       // Method 1: Try direct User entity fetch (if authenticated)
       try {
         console.log('[Chat] Method 1: Trying direct User entity...');
-        allUsers = await base44Users.list({ limit: 500 });
+        allUsers = await base44Users.list({ limit: 2000 });
         console.log('[Chat] Method 1 got:', allUsers.length, 'users');
       } catch (e1) {
         console.log('[Chat] Method 1 failed');
