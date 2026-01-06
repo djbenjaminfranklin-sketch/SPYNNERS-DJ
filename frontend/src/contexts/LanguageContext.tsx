@@ -43,6 +43,34 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.cancelSend': 'Cancel send',
     'admin.amountToSend': 'Amount to send',
     
+    // Broadcast
+    'broadcast.recentTracks': 'RECENT TRACKS',
+    'broadcast.enterMessage': 'Please enter a message',
+    'broadcast.allUsers': 'all users',
+    'broadcast.categories': 'categories',
+    'broadcast.confirmSend': 'Confirm send',
+    'broadcast.sendEmailTo': 'Send this email to',
+    'broadcast.emailSentTo': 'Email sent to',
+    'broadcast.all': 'all',
+    'broadcast.recipients': 'recipients',
+    'broadcast.sendFailed': 'Send failed',
+    'broadcast.sendToUsers': 'Send message to users',
+    'broadcast.noEmailsSent': 'No emails sent',
+    'broadcast.sendEmail': 'Send email',
+    
+    // Admin Users
+    'admin.avatarsGenerated': 'Avatars generated',
+    'admin.avatarsSuccess': 'Avatars have been generated successfully',
+    'admin.avatars': 'Avatars',
+    'admin.operationComplete': 'Operation complete',
+    'admin.avatarsError': 'Error generating avatars',
+    'admin.changesSaved': 'Changes have been saved',
+    'admin.updateFailed': 'Update failed',
+    'admin.deleteUser': 'Delete user',
+    'admin.confirmDeleteUser': 'Are you sure you want to delete',
+    'admin.loadingUsers': 'Loading users...',
+    'admin.noUsers': 'No users',
+    
     // Auth
     'login.title': 'Sign In',
     'login.email': 'Email',
@@ -763,6 +791,34 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.usersWillReceive': 'utilisateurs recevront des diamonds',
     'admin.cancelSend': 'Annuler l\'envoi',
     'admin.amountToSend': 'Montant à envoyer',
+    
+    // Broadcast
+    'broadcast.recentTracks': 'TRACKS RÉCENTES',
+    'broadcast.enterMessage': 'Veuillez entrer un message',
+    'broadcast.allUsers': 'tous les utilisateurs',
+    'broadcast.categories': 'les catégories',
+    'broadcast.confirmSend': 'Confirmer l\'envoi',
+    'broadcast.sendEmailTo': 'Envoyer cet email à',
+    'broadcast.emailSentTo': 'Email envoyé à',
+    'broadcast.all': 'tous les',
+    'broadcast.recipients': 'destinataires',
+    'broadcast.sendFailed': 'Échec de l\'envoi',
+    'broadcast.sendToUsers': 'Envoyer un message aux utilisateurs',
+    'broadcast.noEmailsSent': 'Aucun email envoyé',
+    'broadcast.sendEmail': 'Envoyer l\'email',
+    
+    // Admin Users
+    'admin.avatarsGenerated': 'Avatars générés',
+    'admin.avatarsSuccess': 'Les avatars ont été générés avec succès',
+    'admin.avatars': 'Avatars',
+    'admin.operationComplete': 'Opération terminée',
+    'admin.avatarsError': 'Erreur lors de la génération des avatars',
+    'admin.changesSaved': 'Les modifications ont été enregistrées',
+    'admin.updateFailed': 'Échec de la mise à jour',
+    'admin.deleteUser': 'Supprimer l\'utilisateur',
+    'admin.confirmDeleteUser': 'Êtes-vous sûr de vouloir supprimer',
+    'admin.loadingUsers': 'Chargement des utilisateurs...',
+    'admin.noUsers': 'Aucun utilisateur',
     
     // Auth
     'login.title': 'Connexion',
