@@ -3790,70 +3790,60 @@ async def upload_vip_track(
             image_filename = image.filename or "artwork.jpg"
             print(f"[Admin VIP Upload] Image file: {image_filename}, size: {len(image_data)} bytes")
         
-        # First, upload the audio file to Base44 files storage
+        # First, try to upload the audio file to Base44 files storage
+        audio_url = None
         async with httpx.AsyncClient(timeout=180.0) as client:
-            print(f"[Admin VIP Upload] Uploading audio to Base44 files storage...")
+            print(f"[Admin VIP Upload] Attempting to upload audio to Base44...")
             
-            # Use multipart form data for file upload
-            files_upload_url = f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/files"
+            # Try the functions/invoke endpoint for file upload
+            import base64
+            audio_base64 = base64.b64encode(audio_content).decode('utf-8')
             
-            # Create multipart form data
-            files = {
-                'file': (audio_filename, audio_content, audio_content_type)
-            }
-            
+            # Try using a function to upload the file
             upload_response = await client.post(
-                files_upload_url,
-                files=files,
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/functions/invoke/uploadFile",
+                json={
+                    "file": f"data:{audio_content_type};base64,{audio_base64}",
+                    "filename": audio_filename,
+                    "type": "audio"
+                },
                 headers={
                     'Authorization': authorization,
-                    'X-Base44-App-Id': BASE44_APP_ID
+                    'X-Base44-App-Id': BASE44_APP_ID,
+                    'Content-Type': 'application/json'
                 }
             )
             
-            print(f"[Admin VIP Upload] Upload response status: {upload_response.status_code}")
-            print(f"[Admin VIP Upload] Upload response: {upload_response.text[:500] if upload_response.text else 'empty'}")
+            print(f"[Admin VIP Upload] Function upload response: {upload_response.status_code}")
             
-            audio_url = None
-            if upload_response.status_code == 200 or upload_response.status_code == 201:
+            if upload_response.status_code == 200:
                 upload_result = upload_response.json()
-                # Try different possible response formats
-                audio_url = (
-                    upload_result.get('url') or 
-                    upload_result.get('file_url') or 
-                    upload_result.get('public_url') or
-                    upload_result.get('result', {}).get('url') or
-                    f"https://base44.app/api/apps/{BASE44_APP_ID}/files/public/{BASE44_APP_ID}/{upload_result.get('filename', audio_filename)}"
-                )
-                print(f"[Admin VIP Upload] Audio uploaded successfully: {audio_url}")
+                audio_url = upload_result.get('url') or upload_result.get('file_url')
+                print(f"[Admin VIP Upload] Audio uploaded via function: {audio_url}")
             else:
-                print(f"[Admin VIP Upload] Audio upload failed, trying alternative method...")
+                # Try direct entity creation with embedded file
+                print(f"[Admin VIP Upload] Function upload failed, trying direct storage...")
                 
-                # Try alternative: POST with base64 encoded file
-                import base64
-                audio_base64 = base64.b64encode(audio_content).decode('utf-8')
+                # Store file locally and serve it
+                import os
+                import uuid
                 
-                alt_response = await client.post(
-                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/files/upload",
-                    json={
-                        "file": f"data:{audio_content_type};base64,{audio_base64}",
-                        "filename": audio_filename
-                    },
-                    headers={
-                        'Authorization': authorization,
-                        'X-Base44-App-Id': BASE44_APP_ID,
-                        'Content-Type': 'application/json'
-                    }
-                )
+                # Create uploads directory if not exists
+                uploads_dir = "/app/backend/uploads"
+                os.makedirs(uploads_dir, exist_ok=True)
                 
-                print(f"[Admin VIP Upload] Alternative upload response: {alt_response.status_code}")
+                # Generate unique filename
+                file_ext = os.path.splitext(audio_filename)[1] or '.mp3'
+                unique_filename = f"{uuid.uuid4().hex}{file_ext}"
+                file_path = os.path.join(uploads_dir, unique_filename)
                 
-                if alt_response.status_code == 200 or alt_response.status_code == 201:
-                    alt_result = alt_response.json()
-                    audio_url = alt_result.get('url') or alt_result.get('file_url') or alt_result.get('public_url')
-                    print(f"[Admin VIP Upload] Audio uploaded via alternative: {audio_url}")
-                else:
-                    print(f"[Admin VIP Upload] All upload methods failed: {alt_response.text[:200] if alt_response.text else 'empty'}")
+                # Save file
+                with open(file_path, 'wb') as f:
+                    f.write(audio_content)
+                
+                # Create URL for the file (will be served by our backend)
+                audio_url = f"/api/uploads/{unique_filename}"
+                print(f"[Admin VIP Upload] Audio saved locally: {audio_url}")
             
             # Upload image if provided
             artwork_url = None
