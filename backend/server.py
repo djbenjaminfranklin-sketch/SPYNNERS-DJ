@@ -4036,16 +4036,21 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
             session_tracks = []
             for play in all_plays:
                 play_dj_id = play.get('user_id') or play.get('dj_id') or ''
-                play_session = play.get('session_mix_id') or play.get('session_id') or ''
+                play_session = play.get('session_mix_id') or play.get('session_id') or play.get('session') or ''
                 
-                # Match by session_id or by dj_id and date
-                if play_session == session_id or (play_dj_id == dj_id and session_start[:10] in (play.get('played_at', '')[:10] if play.get('played_at') else '')):
+                # Match by session_id or session_mix_id
+                if play_session == session_id:
                     session_tracks.append(play)
+                # Or match by dj_id and same date
+                elif play_dj_id == dj_id and session_start:
+                    play_date = play.get('played_at', '') or play.get('created_at', '')
+                    if play_date and session_start[:10] == play_date[:10]:
+                        session_tracks.append(play)
             
             session['tracks'] = session_tracks
             sessions_by_dj[dj_name].append(session)
         
-        print(f"[Admin Sessions PDF] Grouped into {len(sessions_by_dj)} DJs")
+        print(f"[Admin Sessions PDF] Grouped into {len(sessions_by_dj)} DJs with tracks matched")
         
         # Create PDF
         buffer = io.BytesIO()
