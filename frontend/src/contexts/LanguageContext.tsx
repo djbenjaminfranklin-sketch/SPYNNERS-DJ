@@ -684,6 +684,11 @@ const translations: Record<Language, Record<string, string>> = {
     'radar.messageSentTo': 'Your message was sent to {name}',
     'radar.uploadMoreTracks': 'Upload more tracks to increase your visibility!',
     'radar.checkBackLater': 'Check back later to see live plays',
+    
+    // Admin Sessions
+    'admin.allValidatedSessions': 'All validated sessions',
+    'admin.totalSessions': 'Total sessions',
+    'admin.validated': 'Validated',
   },
   
   fr: {
@@ -1365,6 +1370,11 @@ const translations: Record<Language, Record<string, string>> = {
     'radar.messageSentTo': 'Votre message a été envoyé à {name}',
     'radar.uploadMoreTracks': 'Uploadez plus de tracks pour augmenter votre visibilité !',
     'radar.checkBackLater': 'Revenez plus tard pour voir les plays en direct',
+    
+    // Admin Sessions
+    'admin.allValidatedSessions': 'Toutes les sessions validées',
+    'admin.totalSessions': 'Total sessions',
+    'admin.validated': 'Validées',
   },
   
   es: {
