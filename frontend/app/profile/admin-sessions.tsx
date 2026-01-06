@@ -78,7 +78,7 @@ export default function AdminSessions() {
 
   const loadSessions = async () => {
     try {
-      // Fetch real sessions data from backend
+      // Fetch real sessions data from SessionMix entity
       const response = await axios.get(`${BACKEND_URL}/api/admin/sessions?limit=10000`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -88,24 +88,35 @@ export default function AdminSessions() {
           id: s.id || s._id || Math.random().toString(),
           dj_id: s.dj_id || s.user_id || '',
           dj_name: s.dj_name || s.user_name || 'Unknown DJ',
-          location: s.location || s.city || 'Unknown location',
+          location: s.city || s.location || 'Unknown location',
           venue: s.venue || '-',
-          started_at: s.created_at || s.timestamp || new Date().toISOString(),
-          status: s.status || 'validated',
-          tracks_detected: s.tracks_detected || 1,
+          started_at: s.started_at || s.created_at || new Date().toISOString(),
+          ended_at: s.ended_at || '',
+          status: s.status || 'ended',
+          tracks_detected: s.tracks_detected || s.track_count || 0,
           diamonds_earned: s.diamonds_earned || 0,
         }));
         
         setSessions(sessionsData);
         
-        // Calculate stats
-        const uniqueDjs = new Set(sessionsData.map((s: Session) => s.dj_name));
-        setStats({
-          total: sessionsData.length,
-          validated: sessionsData.filter((s: Session) => s.status === 'validated' || s.status === 'ended').length,
-          tracks_detected: sessionsData.reduce((sum: number, s: Session) => sum + s.tracks_detected, 0),
-          unique_djs: uniqueDjs.size,
-        });
+        // Use stats from backend if available
+        if (response.data.stats) {
+          setStats({
+            total: response.data.stats.total_sessions || sessionsData.length,
+            validated: response.data.stats.total_sessions || sessionsData.length,
+            tracks_detected: response.data.stats.tracks_detected || 0,
+            unique_djs: response.data.stats.unique_djs || 0,
+          });
+        } else {
+          // Calculate stats locally
+          const uniqueDjs = new Set(sessionsData.map((s: Session) => s.dj_name));
+          setStats({
+            total: sessionsData.length,
+            validated: sessionsData.filter((s: Session) => s.status === 'ended' || s.status === 'validated').length,
+            tracks_detected: sessionsData.reduce((sum: number, s: Session) => sum + s.tracks_detected, 0),
+            unique_djs: uniqueDjs.size,
+          });
+        }
       }
     } catch (error) {
       console.error('[AdminSessions] Error:', error);
