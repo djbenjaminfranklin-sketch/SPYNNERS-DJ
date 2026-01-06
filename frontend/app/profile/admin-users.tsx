@@ -25,6 +25,8 @@ import AdminBadge from '../../src/components/AdminBadge';
 import { Picker } from '@react-native-picker/picker';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const BASE44_APP_ID = '691a4d96d819355b52c063f3';
+const BASE44_API_URL = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}`;
 
 type UserItem = {
   id: string;
