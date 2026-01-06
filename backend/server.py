@@ -3418,10 +3418,11 @@ async def reject_track(track_id: str, reason: str = None, authorization: str = H
         
         print(f"[Admin] Rejecting track: {track_id}, reason: {reason}")
         
-        # Try calling Base44 REST API directly to update track status
-        base44_url = "https://spynners.com/api/entities/Track"
+        # Use Base44 REST API to update track status
+        base44_url = f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Track/{track_id}"
         headers = {
             "Authorization": authorization,
+            "X-Base44-App-Id": BASE44_APP_ID,
             "Content-Type": "application/json"
         }
         
@@ -3431,32 +3432,47 @@ async def reject_track(track_id: str, reason: str = None, authorization: str = H
         }
         
         async with httpx.AsyncClient(timeout=30.0) as client:
-            # Try PUT to update the track
-            response = await client.put(
-                f"{base44_url}/{track_id}",
-                json=update_data,
-                headers=headers
-            )
-            
-            print(f"[Admin] Base44 reject response: {response.status_code}")
-            
-            if response.status_code == 200:
-                print(f"[Admin] Track {track_id} rejected successfully")
-                return {"success": True, "message": "Track rejected", "track": response.json()}
-            
-            # If PUT fails, try PATCH
+            # Try PATCH first (most REST APIs use PATCH for partial updates)
             response = await client.patch(
-                f"{base44_url}/{track_id}",
+                base44_url,
                 json=update_data,
                 headers=headers
             )
             
-            if response.status_code == 200:
-                print(f"[Admin] Track {track_id} rejected via PATCH")
-                return {"success": True, "message": "Track rejected", "track": response.json()}
+            print(f"[Admin] Base44 PATCH response: {response.status_code} - {response.text[:200] if response.text else 'empty'}")
             
-            print(f"[Admin] Failed to reject track. Response: {response.text}")
-            raise HTTPException(status_code=response.status_code, detail=f"Base44 API error: {response.text}")
+            if response.status_code == 200:
+                print(f"[Admin] Track {track_id} rejected successfully via PATCH")
+                return {"success": True, "message": "Track rejected", "track": response.json() if response.text else {}}
+            
+            # If PATCH fails, try PUT
+            response = await client.put(
+                base44_url,
+                json=update_data,
+                headers=headers
+            )
+            
+            print(f"[Admin] Base44 PUT response: {response.status_code} - {response.text[:200] if response.text else 'empty'}")
+            
+            if response.status_code == 200:
+                print(f"[Admin] Track {track_id} rejected via PUT")
+                return {"success": True, "message": "Track rejected", "track": response.json() if response.text else {}}
+            
+            # If both fail, try POST to a function
+            function_url = f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/functions/invoke/updateTrackStatus"
+            response = await client.post(
+                function_url,
+                json={"trackId": track_id, "status": "rejected", "reason": reason or "Rejeté par l'admin"},
+                headers=headers
+            )
+            
+            print(f"[Admin] Function response: {response.status_code}")
+            
+            if response.status_code == 200:
+                return {"success": True, "message": "Track rejected", "track": response.json() if response.text else {}}
+            
+            print(f"[Admin] All methods failed. Last response: {response.text}")
+            raise HTTPException(status_code=500, detail=f"Failed to reject track: {response.text[:200] if response.text else 'No response'}")
         
     except HTTPException:
         raise
