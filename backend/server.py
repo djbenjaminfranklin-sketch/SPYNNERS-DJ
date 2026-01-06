@@ -3591,15 +3591,15 @@ async def upload_vip_track(
             image_filename = image.filename or "artwork.jpg"
             print(f"[Admin VIP Upload] Image file: {image_filename}, size: {len(image_data)} bytes")
         
-        # First, upload the audio file to Spynners storage
+        # First, upload the audio file to Spynners/Base44 storage
         async with httpx.AsyncClient(timeout=120.0) as client:
-            # Upload audio file
-            print(f"[Admin VIP Upload] Uploading audio to Spynners storage...")
+            # Upload audio file to Base44 storage
+            print(f"[Admin VIP Upload] Uploading audio to Base44 storage...")
             audio_files = {
                 'file': (audio_filename, audio_content, audio_content_type)
             }
             audio_upload_response = await client.post(
-                f"{SPYNNERS_API_URL}/files/upload",
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/files/upload",
                 files=audio_files,
                 headers={'Authorization': authorization}
             )
@@ -3615,12 +3615,12 @@ async def upload_vip_track(
             # Upload image if provided
             artwork_url = None
             if image_data:
-                print(f"[Admin VIP Upload] Uploading artwork to Spynners storage...")
+                print(f"[Admin VIP Upload] Uploading artwork to Base44 storage...")
                 image_files = {
                     'file': (image_filename, image_data, 'image/jpeg')
                 }
                 image_upload_response = await client.post(
-                    f"{SPYNNERS_API_URL}/files/upload",
+                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/files/upload",
                     files=image_files,
                     headers={'Authorization': authorization}
                 )
