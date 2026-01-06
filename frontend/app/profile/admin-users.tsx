@@ -103,7 +103,44 @@ export default function AdminUsers() {
 
   const loadUsers = async () => {
     try {
-      // Use new backend endpoint for real user data
+      console.log('[AdminUsers] Loading users, Platform:', Platform.OS);
+      
+      // On mobile, use Base44 API directly
+      if (Platform.OS !== 'web') {
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
+        
+        const response = await axios.get(`${BASE44_API_URL}/entities/User?limit=10000`, { headers });
+        const usersData = response.data || [];
+        
+        console.log('[AdminUsers] Got', usersData.length, 'users from Base44');
+        
+        const userList = usersData.map((u: any) => {
+          const userData = u.data || {};
+          return {
+            id: u.id || u._id,
+            full_name: u.full_name || userData.full_name || u.name,
+            artist_name: userData.artist_name || u.artist_name,
+            email: u.email,
+            avatar_url: userData.avatar_url || u.avatar_url || u.generated_avatar_url,
+            role: u.role || u._app_role || 'user',
+            user_type: userData.user_type || u.user_type || 'user',
+            nationality: userData.nationality || u.nationality,
+            black_diamonds: userData.black_diamonds || u.black_diamonds || 0,
+            is_admin: u.role === 'admin' || u._app_role === 'admin',
+          };
+        });
+        
+        setUsers(userList);
+        setFilteredUsers(userList);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      
+      // On web, use backend proxy
       const response = await axios.get(`${BACKEND_URL}/api/admin/users?limit=10000`, {
         headers: { Authorization: `Bearer ${token}` }
       });
