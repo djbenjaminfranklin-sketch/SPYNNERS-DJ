@@ -73,12 +73,15 @@ export default function AdminDashboard() {
   const { playTrack: globalPlayTrack, currentTrack, isPlaying: globalIsPlaying, togglePlayPause, closePlayer } = usePlayer();
   
   const [allTracks, setAllTracks] = useState<PendingTrack[]>([]);
+  const [allUsers, setAllUsers] = useState<AdminUser[]>([]);
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'pending' | 'requests' | 'vip' | 'approved' | 'unreleased' | 'users' | 'inactive'>('pending');
   const [selectedTrack, setSelectedTrack] = useState<PendingTrack | null>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [processing, setProcessing] = useState(false);
