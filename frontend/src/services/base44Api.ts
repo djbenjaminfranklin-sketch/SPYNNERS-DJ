@@ -1591,82 +1591,97 @@ export const base44Profiles = {
    */
   async getProfile(userId: string): Promise<PublicProfile | null> {
     try {
-      console.log('[Profiles] Fetching profile for user:', userId);
+      console.log('[Profiles] ========== FETCHING PROFILE ==========');
+      console.log('[Profiles] User ID:', userId);
+      console.log('[Profiles] Platform:', Platform.OS);
       
-      // On mobile, fetch directly from User entity
-      if (Platform.OS !== 'web') {
-        const response = await mobileApi.get(`/entities/User/${userId}`);
-        if (response.data) {
-          const user = response.data;
-          const userData = user.data || {};
-          console.log('[Profiles] Profile fetched from User entity');
+      // Fetch user data first
+      let userData: any = null;
+      try {
+        const userResponse = await mobileApi.get(`/entities/User/${userId}`);
+        userData = userResponse.data;
+        console.log('[Profiles] User data fetched:', userData?.full_name || userData?.email);
+      } catch (userError) {
+        console.log('[Profiles] Could not fetch user entity:', userError);
+      }
+      
+      // Fetch ALL tracks and filter for this user's tracks
+      let tracksCount = 0;
+      let totalPlays = 0;
+      let totalDownloads = 0;
+      
+      try {
+        console.log('[Profiles] Fetching all tracks to calculate stats...');
+        const tracksResponse = await mobileApi.get(`/entities/Track?limit=1000`);
+        
+        if (Array.isArray(tracksResponse.data)) {
+          const allTracks = tracksResponse.data;
+          console.log('[Profiles] Total tracks in database:', allTracks.length);
           
-          // Fetch user's tracks for stats using native API (more reliable)
-          let tracksCount = 0;
-          let totalPlays = 0;
-          let totalDownloads = 0;
-          
-          try {
-            // CRITICAL FIX: Fetch ALL tracks and filter locally by created_by_id
-            console.log('[Profiles] Fetching all tracks to filter for userId:', userId);
-            const tracksResponse = await mobileApi.get(`/entities/Track?limit=500`);
-            
-            if (Array.isArray(tracksResponse.data)) {
-              // Filter tracks that belong to this user using multiple possible ID fields
-              const myTracks = tracksResponse.data.filter((t: any) => {
-                const createdById = t.created_by_id || '';
-                const producerId = t.producer_id || '';
-                const uploadedBy = t.uploaded_by || '';
-                
-                return createdById === userId || producerId === userId || uploadedBy === userId;
-              });
-              
-              tracksCount = myTracks.length;
-              totalPlays = myTracks.reduce((sum: number, t: any) => sum + (t.play_count || 0), 0);
-              totalDownloads = myTracks.reduce((sum: number, t: any) => sum + (t.download_count || 0), 0);
-              console.log('[Profiles] Stats calculated from', tracksResponse.data.length, 'total tracks:', { tracksCount, totalPlays, totalDownloads });
-            }
-          } catch (tracksError) {
-            console.log('[Profiles] Error fetching tracks for stats:', tracksError);
+          // Log sample track to understand structure
+          if (allTracks.length > 0) {
+            const sample = allTracks[0];
+            console.log('[Profiles] Sample track IDs:', {
+              created_by_id: sample.created_by_id,
+              producer_id: sample.producer_id,
+              uploaded_by: sample.uploaded_by,
+            });
           }
           
-          return {
-            id: user.id || user._id,
-            email: user.email,
-            full_name: user.full_name,
-            artist_name: userData.artist_name || user.artist_name,
-            avatar_url: userData.avatar_url || user.avatar_url || user.generated_avatar_url,
-            user_type: userData.user_type || user.user_type,
-            bio: userData.bio || user.bio || '',
-            nationality: userData.nationality || user.nationality,
-            instagram_url: userData.instagram_url || user.instagram_url,
-            soundcloud_url: userData.soundcloud || user.soundcloud,
-            beatport_url: userData.beatport_url || user.beatport_url,
-            black_diamonds: userData.black_diamonds || user.black_diamonds || 0,
-            sacem_number: userData.sacem_number || user.sacem_number,
-            stats: {
-              tracks_count: tracksCount,
-              total_plays: totalPlays,
-              total_downloads: totalDownloads,
-              followers_count: 0,
-            },
-          };
+          // CRITICAL: Filter tracks that belong to this user
+          // Check multiple ID fields as different tracks may use different fields
+          const myTracks = allTracks.filter((t: any) => {
+            const createdById = String(t.created_by_id || '').trim();
+            const producerId = String(t.producer_id || '').trim();
+            const uploadedBy = String(t.uploaded_by || '').trim();
+            const targetId = String(userId).trim();
+            
+            const isMatch = createdById === targetId || producerId === targetId || uploadedBy === targetId;
+            
+            if (isMatch) {
+              console.log('[Profiles] ✓ My track found:', t.title);
+            }
+            
+            return isMatch;
+          });
+          
+          tracksCount = myTracks.length;
+          totalPlays = myTracks.reduce((sum: number, t: any) => sum + (t.play_count || 0), 0);
+          totalDownloads = myTracks.reduce((sum: number, t: any) => sum + (t.download_count || 0), 0);
+          
+          console.log('[Profiles] ========== STATS RESULT ==========');
+          console.log('[Profiles] MY tracks:', tracksCount, '/', allTracks.length, 'total');
+          console.log('[Profiles] MY plays:', totalPlays);
+          console.log('[Profiles] MY downloads:', totalDownloads);
         }
-        return null;
+      } catch (tracksError) {
+        console.log('[Profiles] Error fetching tracks for stats:', tracksError);
       }
       
-      // On web, use the function
-      const response = await mobileApi.post('/api/base44/functions/invoke/getPublicProfiles', {
-        userId,
-      });
+      // Build and return profile
+      const userDataNested = userData?.data || {};
       
-      if (response.data?.success && response.data?.profile) {
-        console.log('[Profiles] Profile fetched successfully');
-        return response.data.profile;
-      }
-      
-      console.log('[Profiles] No profile found');
-      return null;
+      return {
+        id: userData?.id || userData?._id || userId,
+        email: userData?.email || '',
+        full_name: userData?.full_name || '',
+        artist_name: userDataNested.artist_name || userData?.artist_name || '',
+        avatar_url: userDataNested.avatar_url || userData?.avatar_url || userData?.generated_avatar_url || '',
+        user_type: userDataNested.user_type || userData?.user_type || 'dj',
+        bio: userDataNested.bio || userData?.bio || '',
+        nationality: userDataNested.nationality || userData?.nationality || '',
+        instagram_url: userDataNested.instagram_url || userData?.instagram_url || '',
+        soundcloud_url: userDataNested.soundcloud || userData?.soundcloud || '',
+        beatport_url: userDataNested.beatport_url || userData?.beatport_url || '',
+        black_diamonds: userDataNested.black_diamonds || userData?.black_diamonds || 0,
+        sacem_number: userDataNested.sacem_number || userData?.sacem_number || '',
+        stats: {
+          tracks_count: tracksCount,
+          total_plays: totalPlays,
+          total_downloads: totalDownloads,
+          followers_count: 0,
+        },
+      };
     } catch (error) {
       console.error('[Profiles] Error fetching profile:', error);
       return null;
