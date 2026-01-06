@@ -3318,6 +3318,19 @@ async def get_admin_users(authorization: str = Header(None), limit: int = 10000)
                         has_diamonds = 'black_diamonds' in first_user_fields
                         print(f"[Admin Users] black_diamonds in response: {has_diamonds}")
                         
+                        # Log user_type values to understand the data
+                        user_types_found = {}
+                        for u in users[:100]:  # Sample first 100 users
+                            ut = u.get('user_type', 'N/A')
+                            uts = u.get('user_types', [])
+                            if ut:
+                                user_types_found[ut] = user_types_found.get(ut, 0) + 1
+                            if uts and isinstance(uts, list):
+                                for t in uts:
+                                    key = f"user_types:{t}"
+                                    user_types_found[key] = user_types_found.get(key, 0) + 1
+                        print(f"[Admin Users] user_type distribution (sample): {user_types_found}")
+                        
                         # Sample a user with diamonds for verification
                         for u in users[:10]:
                             if u.get('black_diamonds', 0) > 0:
