@@ -1255,7 +1255,7 @@ export default function SpynScreen() {
             {/* END SESSION BUTTON - DIRECTLY UNDER MIC */}
             <TouchableOpacity style={styles.endSessionButtonLarge} onPress={handleEndSession}>
               <Ionicons name="stop-circle" size={22} color="#fff" />
-              <Text style={styles.endSessionButtonText}>End Session</Text>
+              <Text style={styles.endSessionButtonText}>Terminer la session</Text>
             </TouchableOpacity>
 
             {/* Current Track - Show when identified */}
