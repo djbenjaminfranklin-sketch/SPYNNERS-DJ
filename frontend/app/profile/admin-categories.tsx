@@ -9,6 +9,8 @@ import {
   TextInput,
   ActivityIndicator,
   Image,
+  Modal,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
