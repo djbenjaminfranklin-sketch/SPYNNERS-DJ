@@ -1274,7 +1274,7 @@ export default function SpynRecordScreen() {
         }
       }
       
-      // Save session
+      // Save session - ONLINE or OFFLINE depending on connection status
       setCurrentAnalysis('Sauvegarde de la session...');
       try {
         const sessionData = {
@@ -1292,14 +1292,32 @@ export default function SpynRecordScreen() {
             producerId: t.producerId,
           })),
           audioUri: fileUri,
-          status: 'pending_sync' as const,
           venue: correctedVenue || location?.venue,
           city: location?.city,
           country: location?.country,
         };
         
-        await offlineService.saveOfflineSession(sessionData);
-        console.log('[SPYN Record] Session saved');
+        // Check if we're truly offline
+        const isCurrentlyOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+        
+        if (isCurrentlyOnline && !isOffline) {
+          // ONLINE: Just log the session, don't save to offline storage
+          console.log('[SPYN Record] Session completed ONLINE - not saving to offline storage');
+          console.log('[SPYN Record] Session data:', sessionData);
+          
+          // TODO: In the future, send session to Spynners API here
+          // For now, just show success without creating offline session
+        } else {
+          // OFFLINE: Save to offline storage for later sync
+          console.log('[SPYN Record] Session completed OFFLINE - saving to offline storage');
+          await offlineService.saveOfflineSession({
+            ...sessionData,
+            status: 'pending_sync' as const,
+          });
+          setPendingSyncCount(await offlineService.getPendingCount());
+        }
+        
+        console.log('[SPYN Record] Session saved successfully');
         
         // Save the mix if requested
         if (saveMix && fileUri) {
