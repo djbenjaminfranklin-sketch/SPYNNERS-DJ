@@ -3112,14 +3112,43 @@ async def admin_add_diamonds(request: AdminAddDiamondsRequest, authorization: st
 async def get_admin_stats(authorization: str = Header(None)):
     """
     Get comprehensive admin statistics from Spynners.
-    Returns: total users, tracks, pending, approved, downloads, sessions, etc.
+    Uses the getAdminDashboardData function for accurate stats.
     """
     try:
         if not authorization:
             raise HTTPException(status_code=401, detail="Authorization required")
         
-        print("[Admin Stats] Fetching comprehensive admin statistics...")
+        print("[Admin Stats] Fetching admin dashboard data from Spynners...")
         
+        # First try to get stats from getAdminDashboardData function
+        dashboard_data = await call_spynners_function("getAdminDashboardData", {}, authorization)
+        
+        if dashboard_data and isinstance(dashboard_data, dict):
+            print(f"[Admin Stats] Got dashboard data: {str(dashboard_data)[:500]}")
+            
+            # Extract stats from the dashboard data
+            stats = {
+                "total_users": dashboard_data.get('total_users', dashboard_data.get('totalUsers', 0)),
+                "total_tracks": dashboard_data.get('total_tracks', dashboard_data.get('totalTracks', 0)),
+                "pending_tracks": dashboard_data.get('pending_tracks', dashboard_data.get('pendingTracks', 0)),
+                "approved_tracks": dashboard_data.get('approved_tracks', dashboard_data.get('approvedTracks', 0)),
+                "rejected_tracks": dashboard_data.get('rejected_tracks', dashboard_data.get('rejectedTracks', 0)),
+                "vip_tracks": dashboard_data.get('vip_tracks', dashboard_data.get('vipTracks', 0)),
+                "total_downloads": dashboard_data.get('total_downloads', dashboard_data.get('totalDownloads', 0)),
+                "total_plays": dashboard_data.get('total_plays', dashboard_data.get('totalPlays', 0)),
+                "total_sessions": dashboard_data.get('total_sessions', dashboard_data.get('totalSessions', 0)),
+                "active_sessions": dashboard_data.get('active_sessions', dashboard_data.get('activeSessions', 0)),
+                "unique_djs": dashboard_data.get('unique_djs', dashboard_data.get('uniqueDjs', 0)),
+                "tracks_detected": dashboard_data.get('tracks_detected', dashboard_data.get('tracksDetected', 0)),
+                "vip_requests": dashboard_data.get('vip_requests', dashboard_data.get('vipRequests', 0)),
+            }
+            
+            print(f"[Admin Stats] Extracted stats: {stats}")
+            return {"success": True, "stats": stats, "source": "getAdminDashboardData"}
+        
+        print("[Admin Stats] getAdminDashboardData failed, falling back to manual counting...")
+        
+        # Fallback: manually compute stats
         stats = {
             "total_users": 0,
             "total_tracks": 0,
