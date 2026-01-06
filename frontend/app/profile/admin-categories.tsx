@@ -73,6 +73,15 @@ export default function AdminCategories() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [categories, setCategories] = useState(CATEGORIES);
+  
+  // Email modal state
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailSearch, setEmailSearch] = useState('');
+  const [emailSuggestions, setEmailSuggestions] = useState<UserItem[]>([]);
+  const [selectedRecipient, setSelectedRecipient] = useState<UserItem | null>(null);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const isAdmin = isUserAdmin(user);
 
@@ -86,10 +95,25 @@ export default function AdminCategories() {
     filterUsers();
   }, [searchQuery, activeFilter, users]);
 
+  // Update email suggestions when typing
+  useEffect(() => {
+    if (emailSearch.trim().length >= 2) {
+      const query = emailSearch.toLowerCase();
+      const suggestions = users.filter(u => 
+        u.email?.toLowerCase().includes(query) ||
+        u.full_name?.toLowerCase().includes(query) ||
+        u.artist_name?.toLowerCase().includes(query)
+      ).slice(0, 10);
+      setEmailSuggestions(suggestions);
+    } else {
+      setEmailSuggestions([]);
+    }
+  }, [emailSearch, users]);
+
   const loadUsers = async () => {
     try {
-      // Fetch from Spynners via admin endpoint
-      const response = await axios.get(`${BACKEND_URL}/api/admin/users?limit=1000`, {
+      // Fetch from Spynners via admin endpoint with higher limit
+      const response = await axios.get(`${BACKEND_URL}/api/admin/users?limit=10000`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -109,18 +133,34 @@ export default function AdminCategories() {
       
       setUsers(userList);
       
-      // Update category counts based on user_type
+      // Update category counts based on exact user_type matching
       const updatedCategories = CATEGORIES.map(cat => ({
         ...cat,
         count: userList.filter((u: any) => {
-          const ut = (u.user_type || '').toLowerCase().replace(/[_\s]/g, '');
-          const catId = cat.id.replace(/_/g, '');
-          return ut === catId || ut.includes(catId) || catId.includes(ut);
+          const userType = (u.user_type || '').toLowerCase().trim();
+          const catId = cat.id.toLowerCase();
+          
+          // Exact match or normalized match
+          if (userType === catId) return true;
+          if (userType.replace(/[\s_-]/g, '') === catId.replace(/[\s_-]/g, '')) return true;
+          
+          // Handle special cases
+          if (catId === 'dj' && userType === 'dj') return true;
+          if (catId === 'dj_star' && (userType === 'dj_star' || userType === 'djstar' || userType === 'dj star')) return true;
+          if (catId === 'dj_resident' && (userType === 'dj_resident' || userType === 'djresident' || userType === 'dj resident')) return true;
+          if (catId === 'dj_guest' && (userType.includes('guest') || userType === 'dj_guest' || userType === 'djguest')) return true;
+          if (catId === 'dj_producer' && (userType === 'dj_producer' || userType === 'djproducer' || userType === 'dj/producer')) return true;
+          if (catId === 'producer' && userType === 'producer') return true;
+          if (catId === 'producer_star' && (userType === 'producer_star' || userType === 'producerstar' || userType === 'producer star')) return true;
+          if (catId === 'music_lover' && (userType === 'music_lover' || userType === 'musiclover' || userType === 'music lover' || userType === 'fan')) return true;
+          
+          return false;
         }).length,
       }));
       setCategories(updatedCategories);
       
       console.log('[AdminCategories] Loaded', userList.length, 'users');
+      console.log('[AdminCategories] Category counts:', updatedCategories.map(c => `${c.name}: ${c.count}`).join(', '));
     } catch (error) {
       console.error('[AdminCategories] Error:', error);
     } finally {
@@ -143,9 +183,23 @@ export default function AdminCategories() {
     
     if (activeFilter !== 'all') {
       filtered = filtered.filter(u => {
-        const userType = (u.user_type || '').toLowerCase().replace(/[_\s]/g, '');
-        const filterId = activeFilter.replace(/_/g, '');
-        return userType === filterId || userType.includes(filterId) || filterId.includes(userType);
+        const userType = (u.user_type || '').toLowerCase().trim();
+        const filterId = activeFilter.toLowerCase();
+        
+        if (userType === filterId) return true;
+        if (userType.replace(/[\s_-]/g, '') === filterId.replace(/[\s_-]/g, '')) return true;
+        
+        // Handle special cases
+        if (filterId === 'dj' && userType === 'dj') return true;
+        if (filterId === 'dj_star' && (userType === 'dj_star' || userType === 'djstar' || userType === 'dj star')) return true;
+        if (filterId === 'dj_resident' && (userType === 'dj_resident' || userType === 'djresident' || userType === 'dj resident')) return true;
+        if (filterId === 'dj_guest' && (userType.includes('guest') || userType === 'dj_guest' || userType === 'djguest')) return true;
+        if (filterId === 'dj_producer' && (userType === 'dj_producer' || userType === 'djproducer' || userType === 'dj/producer')) return true;
+        if (filterId === 'producer' && userType === 'producer') return true;
+        if (filterId === 'producer_star' && (userType === 'producer_star' || userType === 'producerstar' || userType === 'producer star')) return true;
+        if (filterId === 'music_lover' && (userType === 'music_lover' || userType === 'musiclover' || userType === 'music lover' || userType === 'fan')) return true;
+        
+        return false;
       });
     }
     
@@ -159,6 +213,60 @@ export default function AdminCategories() {
 
   const sendGroupEmail = () => {
     router.push('/profile/admin-broadcast');
+  };
+
+  const openIndividualEmail = () => {
+    setEmailSearch('');
+    setEmailSuggestions([]);
+    setSelectedRecipient(null);
+    setEmailSubject('');
+    setEmailBody('');
+    setShowEmailModal(true);
+  };
+
+  const selectRecipient = (u: UserItem) => {
+    setSelectedRecipient(u);
+    setEmailSearch(u.email);
+    setEmailSuggestions([]);
+  };
+
+  const sendIndividualEmail = async () => {
+    if (!selectedRecipient) {
+      Alert.alert('Erreur', 'Veuillez sélectionner un destinataire');
+      return;
+    }
+    if (!emailSubject.trim()) {
+      Alert.alert('Erreur', 'Veuillez entrer un sujet');
+      return;
+    }
+    if (!emailBody.trim()) {
+      Alert.alert('Erreur', 'Veuillez entrer un message');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const response = await axios.post(`${BACKEND_URL}/api/admin/send-email`, {
+        to: selectedRecipient.email,
+        subject: emailSubject,
+        body: emailBody,
+        user_id: selectedRecipient.id
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data?.success) {
+        Alert.alert('✅ Succès', `Email envoyé à ${selectedRecipient.email}`);
+        setShowEmailModal(false);
+      } else {
+        Alert.alert('Erreur', response.data?.error || 'Impossible d\'envoyer l\'email');
+      }
+    } catch (error: any) {
+      console.error('[AdminCategories] Send email error:', error);
+      Alert.alert('Erreur', error.response?.data?.detail || 'Impossible d\'envoyer l\'email');
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   const autoAssignCategories = () => {
