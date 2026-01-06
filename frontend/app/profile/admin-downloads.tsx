@@ -268,7 +268,9 @@ export default function AdminDownloads() {
         const base64 = btoa(binary);
         
         const fileUri = `${LegacyFileSystem.cacheDirectory}${filename}`;
-        await LegacyFileSystem.writeAsStringAsync(fileUri, base64, 'base64');
+        await LegacyFileSystem.writeAsStringAsync(fileUri, base64, {
+          encoding: LegacyFileSystem.EncodingType.Base64,
+        });
         
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(fileUri, {
