@@ -338,7 +338,7 @@ export default function UploadScreen() {
     setArtistName('');
     setLabelName('');
     setCollaborators('');
-    setGenre('');
+    setGenres([]);
     setBpm('');
     setTrackKey('');
     setEnergyLevel('');
