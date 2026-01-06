@@ -132,11 +132,12 @@ export default function AdminDiamonds() {
     
     setSending(true);
     try {
-      console.log(`[AdminDiamonds] Sending ${diamondAmount} diamonds to user ${selectedUser.id}`);
+      console.log(`[AdminDiamonds] Sending ${diamondAmount} diamonds to user ${selectedUser.id} (${selectedUser.email})`);
       
-      // Send diamonds to user via API with token
+      // Send diamonds to user via API with token - include email as required by giveBlackDiamonds
       const response = await axios.post(`${BACKEND_URL}/api/base44/add-diamonds`, {
         user_id: selectedUser.id,
+        email: selectedUser.email,  // Required by giveBlackDiamonds
         amount: parseInt(diamondAmount),
       }, {
         headers: { Authorization: `Bearer ${token}` },
