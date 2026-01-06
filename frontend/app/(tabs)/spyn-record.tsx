@@ -1692,7 +1692,7 @@ export default function SpynRecordScreen() {
             </Text>
           </View>
         ) : (
-          <Text style={styles.readyText}>Prêt à enregistrer</Text>
+          <Text style={styles.readyText}>{t('spynRecord.readyToRecord')}</Text>
         )}
       </View>
 
