@@ -3794,6 +3794,10 @@ async def get_admin_sessions(authorization: str = Header(None), limit: int = 100
                     elif isinstance(data, dict):
                         sessions = data.get('items', data.get('data', []))
                     print(f"[Admin Sessions] Got {len(sessions)} sessions from SessionMix entity")
+                    # Log first session structure to see available fields
+                    if sessions and len(sessions) > 0:
+                        print(f"[Admin Sessions] Sample session keys: {list(sessions[0].keys())}")
+                        print(f"[Admin Sessions] Sample session: {sessions[0]}")
                 else:
                     print(f"[Admin Sessions] SessionMix API error: {response.status_code}")
                     
