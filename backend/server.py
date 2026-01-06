@@ -3138,8 +3138,19 @@ async def get_admin_stats(authorization: str = Header(None)):
             
             # For VIP tracks, exclude rejected ones
             if isinstance(vip_list, list):
-                active_vip_list = [t for t in vip_list if t.get('status', '').lower() != 'rejected']
+                # Log first VIP track to see structure
+                if vip_list:
+                    print(f"[Admin Stats] First VIP track structure: {list(vip_list[0].keys()) if isinstance(vip_list[0], dict) else 'not a dict'}")
+                    print(f"[Admin Stats] VIP track statuses: {[t.get('status') for t in vip_list[:5]]}")
+                
+                # Exclude rejected tracks (check both 'status' and 'is_rejected' fields)
+                active_vip_list = [
+                    t for t in vip_list 
+                    if t.get('status', '').lower() not in ['rejected', 'deleted'] 
+                    and not t.get('is_rejected', False)
+                ]
                 vip_count = len(active_vip_list)
+                print(f"[Admin Stats] VIP tracks: {len(vip_list)} total, {vip_count} active (excluding rejected)")
             else:
                 vip_count = 0
             
