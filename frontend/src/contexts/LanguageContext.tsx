@@ -657,6 +657,23 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.processed': 'processed',
     'admin.noSpynnersTrack': 'No Spynners track identified',
     'admin.apply': 'Apply',
+    'admin.preparing': 'Preparing...',
+    'admin.confirmSendAllDiamonds': 'Are you sure you want to send {amount} Black Diamond(s) to {count} users?',
+    'admin.sendInterrupted': 'Sending interrupted',
+    'admin.sent': 'Sent',
+    'admin.errors': 'Errors',
+    'admin.notProcessed': 'Not processed',
+    'admin.noSessionsFound': 'No sessions found',
+    'admin.noEmailsSent': 'No emails sent',
+    'admin.noRecentTracks': 'No recent tracks available',
+    'admin.enterSubject': 'Please enter a subject',
+    'admin.selectCategory': 'Please select at least one category',
+    'admin.selectRecipient': 'Please select a recipient',
+    'admin.loadingUsers': 'Loading users...',
+    
+    // Radar
+    'radar.messageSent': 'Message sent!',
+    'radar.messageSentTo': 'Your message was sent to {name}',
   },
   
   fr: {
