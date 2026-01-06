@@ -659,8 +659,8 @@ export const base44Users = {
       if (filters?.user_type) params.append('user_type', filters.user_type);
       if (filters?.search) params.append('search', filters.search);
 
-      // Try fetching from User entity directly
-      const response = await mobileApi.get(`/entities/User?${params.toString()}`);
+      // Try fetching from User entity directly with correct API path
+      const response = await mobileApi.get(`/api/base44/entities/User?${params.toString()}`);
       console.log('[Users] User entity response:', response.data?.length || 0, 'users');
       
       const data = response.data;
