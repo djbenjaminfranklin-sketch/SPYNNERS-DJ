@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../theme/colors';
 import { base44Notifications2, base44Messages, Notification, Message } from '../services/base44Api';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useRouter } from 'expo-router';
 
 interface NotificationModalProps {
