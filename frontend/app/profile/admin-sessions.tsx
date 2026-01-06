@@ -166,7 +166,7 @@ export default function AdminSessions() {
   const exportPDF = async (singleSession?: Session) => {
     setExporting(true);
     try {
-      console.log('[AdminSessions] Exporting PDF...', singleSession ? `Session: ${singleSession.id}` : 'All sessions');
+      console.log('[AdminSessions] Exporting PDF...', singleSession ? `Session: ${singleSession?.id}` : 'All sessions');
       
       const requestBody: any = {
         all_users: true,
@@ -191,6 +191,8 @@ export default function AdminSessions() {
         }
       }
       
+      console.log('[AdminSessions] Request body:', JSON.stringify(requestBody));
+      
       const response = await axios.post(
         `${BACKEND_URL}/api/admin/sessions/pdf`,
         requestBody,
@@ -204,75 +206,70 @@ export default function AdminSessions() {
         }
       );
       
-      // Convert arraybuffer to base64
-      const uint8Array = new Uint8Array(response.data);
-      let binary = '';
-      for (let i = 0; i < uint8Array.length; i++) {
-        binary += String.fromCharCode(uint8Array[i]);
-      }
-      const base64 = btoa(binary);
+      console.log('[AdminSessions] PDF received, size:', response.data.byteLength);
       
       // Generate filename
+      const djName = singleSession?.dj_name || 'all';
+      const safedjName = djName.replace(/[^a-zA-Z0-9]/g, '_');
       let filename = singleSession 
-        ? `session_${(singleSession.dj_name || 'unknown').replace(/\s+/g, '_')}_${singleSession.started_at?.split('T')[0] || 'unknown'}.pdf`
-        : 'spynners_all_sessions';
+        ? `session_${safedjName}_${singleSession.started_at?.split('T')[0] || 'unknown'}.pdf`
+        : 'spynners_sessions';
       
       if (!singleSession) {
         if (dateFilter.startDate) {
-          filename += `_from_${dateFilter.startDate}`;
+          filename += `_${dateFilter.startDate}`;
         }
         if (dateFilter.endDate) {
-          filename += `_to_${dateFilter.endDate}`;
+          filename += `_${dateFilter.endDate}`;
         }
         filename += '.pdf';
       }
       
-      // Use documentDirectory with proper encoding type check
-      if (FileSystem.documentDirectory) {
-        const fileUri = `${FileSystem.documentDirectory}${filename}`;
-        
-        try {
-          await FileSystem.writeAsStringAsync(fileUri, base64, {
-            encoding: 'base64' as any,
-          });
-          
-          // Share the file
-          const sharingAvailable = await Sharing.isAvailableAsync();
-          if (sharingAvailable) {
-            await Sharing.shareAsync(fileUri, {
-              mimeType: 'application/pdf',
-              dialogTitle: 'Télécharger le rapport PDF',
-            });
-          } else {
-            Alert.alert('Succès ✅', `PDF sauvegardé: ${filename}`);
-          }
-        } catch (writeError) {
-          console.error('[AdminSessions] Write error:', writeError);
-          // Fallback: try to open in browser on web
-          if (Platform.OS === 'web') {
-            const blob = new Blob([response.data], { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(url);
-            Alert.alert('Succès ✅', 'PDF téléchargé !');
-          } else {
-            throw writeError;
-          }
-        }
+      // Platform-specific handling
+      if (Platform.OS === 'web') {
+        // Web: Create blob and download link
+        console.log('[AdminSessions] Web platform - creating download link');
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        Alert.alert('Succès ✅', 'PDF téléchargé !');
       } else {
-        // Web fallback
-        if (Platform.OS === 'web') {
-          const blob = new Blob([response.data], { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = filename;
-          a.click();
-          URL.revokeObjectURL(url);
-          Alert.alert('Succès ✅', 'PDF téléchargé !');
+        // Mobile: Use FileSystem and Sharing
+        console.log('[AdminSessions] Mobile platform - using FileSystem');
+        
+        // Convert arraybuffer to base64
+        const uint8Array = new Uint8Array(response.data);
+        let binary = '';
+        const chunkSize = 8192;
+        for (let i = 0; i < uint8Array.length; i += chunkSize) {
+          const chunk = uint8Array.subarray(i, i + chunkSize);
+          binary += String.fromCharCode.apply(null, Array.from(chunk));
+        }
+        const base64 = btoa(binary);
+        
+        const fileUri = `${FileSystem.cacheDirectory}${filename}`;
+        console.log('[AdminSessions] Writing to:', fileUri);
+        
+        await FileSystem.writeAsStringAsync(fileUri, base64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        
+        console.log('[AdminSessions] File written, sharing...');
+        
+        // Share the file
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/pdf',
+            dialogTitle: 'Télécharger le rapport PDF',
+          });
+        } else {
+          Alert.alert('Succès ✅', `PDF sauvegardé: ${filename}`);
         }
       }
       
