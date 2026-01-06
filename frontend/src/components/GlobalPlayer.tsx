@@ -19,12 +19,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePlayer } from '../contexts/PlayerContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Colors } from '../theme/colors';
 import { Track, Playlist, base44Playlists } from '../services/base44Api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function GlobalPlayer() {
+  const { t } = useLanguage();
   const {
     currentTrack,
     isPlaying,
