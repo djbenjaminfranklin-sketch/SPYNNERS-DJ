@@ -19,6 +19,7 @@ import Constants from 'expo-constants';
 import * as LegacyFileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useLanguage } from '../../src/contexts/LanguageContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { isUserAdmin } from '../../src/components/AdminBadge';
 
