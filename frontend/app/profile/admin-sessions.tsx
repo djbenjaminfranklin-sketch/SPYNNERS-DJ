@@ -225,6 +225,7 @@ export default function AdminSessions() {
     setExporting(true);
     try {
       console.log('[AdminSessions] Exporting PDF...', singleSession ? `Session: ${singleSession?.id}` : 'All sessions');
+      console.log('[AdminSessions] Current dateFilter:', JSON.stringify(dateFilter));
       
       const requestBody: any = {
         all_users: true,
@@ -232,11 +233,14 @@ export default function AdminSessions() {
       
       // Add date filters if set (only for all sessions export)
       if (!singleSession) {
+        console.log('[AdminSessions] Adding date filters to request...');
         if (dateFilter.startDate) {
           requestBody.start_date = dateFilter.startDate;
+          console.log('[AdminSessions] Added start_date:', dateFilter.startDate);
         }
         if (dateFilter.endDate) {
           requestBody.end_date = dateFilter.endDate;
+          console.log('[AdminSessions] Added end_date:', dateFilter.endDate);
         }
       } else {
         // For single session, filter by that session's date
@@ -249,7 +253,7 @@ export default function AdminSessions() {
         }
       }
       
-      console.log('[AdminSessions] Request body:', JSON.stringify(requestBody));
+      console.log('[AdminSessions] Final request body:', JSON.stringify(requestBody));
       
       const response = await axios.post(
         `${BACKEND_URL}/api/admin/sessions/pdf`,
