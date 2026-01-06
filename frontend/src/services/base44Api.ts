@@ -418,10 +418,24 @@ export const base44Auth = {
   async updateUserDiamonds(userId: string, amount: number, currentBalance?: number): Promise<void> {
     try {
       console.log('[Auth] Updating user diamonds:', userId, amount, 'current:', currentBalance);
-      const response = await mobileApi.post('/api/base44/update-diamonds', {
+      
+      // IMPORTANT: Always use backend URL for this endpoint (not Base44 direct)
+      const backendUrl = Constants.expoConfig?.extra?.backendUrl || 
+        process.env.EXPO_PUBLIC_BACKEND_URL || 
+        'https://mobile-backend-fix.preview.emergentagent.com';
+      
+      const token = await AsyncStorage.getItem('auth_token');
+      
+      const response = await axios.post(`${backendUrl}/api/base44/update-diamonds`, {
         user_id: userId,
         amount: amount, // positive to add, negative to deduct
         current_balance: currentBalance, // pass current balance for reliable calculation
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        timeout: 30000,
       });
       console.log('[Auth] Diamonds updated:', response.data);
     } catch (error: any) {
