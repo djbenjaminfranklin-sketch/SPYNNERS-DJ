@@ -283,21 +283,6 @@ export default function AdminSessions() {
       setExporting(false);
     }
   };
-          }
-        } catch (err) {
-          console.error('[AdminSessions] Error saving PDF:', err);
-          Alert.alert('Erreur', 'Impossible de sauvegarder le PDF');
-        }
-      };
-      reader.readAsDataURL(blob);
-      
-    } catch (error: any) {
-      console.error('[AdminSessions] Export error:', error);
-      Alert.alert('Erreur', error?.response?.data?.detail || 'Impossible d\'exporter le rapport');
-    } finally {
-      setExporting(false);
-    }
-  };
 
   // Apply date filter
   const applyDateFilter = () => {
