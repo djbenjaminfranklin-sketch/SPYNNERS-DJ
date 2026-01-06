@@ -10,6 +10,8 @@ import {
   TextInput,
   ActivityIndicator,
   Image,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -25,7 +27,7 @@ const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_
 const CATEGORIES = [
   { id: 'dj_star', name: 'DJ Star', icon: 'star', color: '#FFD700', count: 0 },
   { id: 'dj_resident', name: 'DJ Resident', icon: 'home', color: '#1a237e', count: 0 },
-  { id: 'dj_guest', name: 'DJ Guest International', icon: 'globe', color: '#9C27B0', count: 0 },
+  { id: 'dj_guest', name: 'DJ Guest', icon: 'globe', color: '#9C27B0', count: 0 },
   { id: 'producer_star', name: 'Producer Star', icon: 'star', color: '#FF9800', count: 0 },
   { id: 'producer', name: 'Producer', icon: 'musical-note', color: '#4CAF50', count: 0 },
   { id: 'music_lover', name: 'Music Lover', icon: 'people', color: '#E91E63', count: 0 },
@@ -42,6 +44,23 @@ type UserItem = {
   user_type?: string;
   nationality?: string;
   role?: string;
+};
+
+// Helper to convert SVG avatar URLs to PNG for better display
+const getDisplayAvatarUrl = (url?: string): string | undefined => {
+  if (!url) return undefined;
+  // Convert Dicebear SVG to PNG for better React Native compatibility
+  if (url.includes('api.dicebear.com') && url.includes('/svg')) {
+    return url.replace('/svg', '/png');
+  }
+  if (url.includes('api.dicebear.com') && !url.includes('/png') && !url.endsWith('.png')) {
+    // Add png format if not specified
+    const urlParts = url.split('?');
+    if (urlParts.length > 1) {
+      return url.replace('/7.x/', '/7.x/adventurer/png?') || url;
+    }
+  }
+  return url;
 };
 
 export default function AdminCategories() {
