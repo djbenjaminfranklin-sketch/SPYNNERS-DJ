@@ -123,77 +123,25 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
       setUnreadMessages(messages.length);
       
       // Categorize notifications
-      const categoryCounts: Record<string, number> = {
+      const counts: Record<string, number> = {
         track_received: 0,
         message: messages.length,
         track_played: 0,
         download: 0,
-        follow: 0,
         vip: 0,
         system: 0,
       };
       
       notifs.forEach((n: Notification) => {
         const type = n.type || 'system';
-        if (categoryCounts[type] !== undefined) {
-          categoryCounts[type]++;
+        if (counts[type] !== undefined) {
+          counts[type]++;
         } else {
-          categoryCounts['system']++;
+          counts['system']++;
         }
       });
       
-      // Build categories array
-      const cats: NotificationCategory[] = [
-        {
-          type: 'track_received',
-          label: t('notifications.tracksReceived'),
-          icon: 'mail',
-          color: '#2196F3',
-          count: categoryCounts.track_received,
-          route: '/(tabs)/received',
-        },
-        {
-          type: 'message',
-          label: t('notifications.chatMessages'),
-          icon: 'chatbubbles',
-          color: '#673AB7',
-          count: categoryCounts.message,
-          route: '/(tabs)/chat',
-        },
-        {
-          type: 'track_played',
-          label: t('notifications.trackPlays'),
-          icon: 'play-circle',
-          color: '#4CAF50',
-          count: categoryCounts.track_played,
-          route: '/profile/radar',
-        },
-        {
-          type: 'download',
-          label: t('notifications.downloads'),
-          icon: 'download',
-          color: '#FF9800',
-          count: categoryCounts.download,
-          route: '/profile/analytics',
-        },
-        {
-          type: 'vip',
-          label: t('notifications.vipAlerts'),
-          icon: 'diamond',
-          color: '#7C4DFF',
-          count: categoryCounts.vip,
-          route: '/profile/vip',
-        },
-        {
-          type: 'system',
-          label: t('notifications.system'),
-          icon: 'notifications',
-          color: Colors.textMuted,
-          count: categoryCounts.system,
-        },
-      ];
-      
-      setCategories(cats);
+      setCategoryCounts(counts);
     } catch (error) {
       console.error('[Notifications] Error loading:', error);
     } finally {
