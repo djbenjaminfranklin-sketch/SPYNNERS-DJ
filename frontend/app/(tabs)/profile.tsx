@@ -47,11 +47,19 @@ export default function ProfileScreen() {
       setLoading(true);
       const userId = user.id || user._id || '';
       
+      // Get user's black diamonds from auth context (most reliable source)
+      const userDiamonds = user.black_diamonds || user.data?.black_diamonds || 0;
+      console.log('[Profile] User diamonds from auth:', userDiamonds);
+      
       // Use the new getPublicProfiles API
       const fetchedProfile = await base44Profiles.getProfile(userId);
       
       if (fetchedProfile) {
-        setProfile(fetchedProfile);
+        // Override black_diamonds with value from auth context (most reliable)
+        setProfile({
+          ...fetchedProfile,
+          black_diamonds: userDiamonds,
+        });
       } else {
         // Fallback - create basic profile from user data
         setProfile({
@@ -60,7 +68,7 @@ export default function ProfileScreen() {
           email: user.email,
           avatar_url: user.avatar,
           user_type: user.user_type,
-          black_diamonds: user.diamonds || 0,
+          black_diamonds: userDiamonds,
           stats: {
             tracks_count: 0,
             total_plays: 0,
