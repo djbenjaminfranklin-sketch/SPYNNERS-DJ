@@ -1705,6 +1705,115 @@ export const base44Profiles = {
   },
 };
 
+// ==================== SESSION TRACK SERVICE ====================
+// Stores tracks detected during a SPYN session
+
+export interface SessionTrack {
+  id?: string;
+  _id?: string;
+  session_mix_id: string;
+  track_id: string;
+  track_title: string;
+  track_artist: string;
+  track_album?: string;
+  track_genre?: string;
+  track_cover?: string;
+  producer_id?: string;
+  producer_email?: string;
+  played_at: string;
+  dj_id: string;
+  dj_name: string;
+  venue?: string;
+  city?: string;
+  country?: string;
+}
+
+export const base44SessionTracks = {
+  /**
+   * Save a detected track for a session
+   */
+  async saveSessionTrack(trackData: Partial<SessionTrack>): Promise<SessionTrack | null> {
+    try {
+      console.log('[SessionTrack] Saving track:', trackData.track_title);
+      const response = await mobileApi.post('/api/base44/entities/SessionTrack', trackData);
+      console.log('[SessionTrack] Track saved successfully');
+      return response.data;
+    } catch (error: any) {
+      // If entity doesn't exist, try creating via direct API
+      console.error('[SessionTrack] Error saving track:', error?.response?.status, error?.message);
+      
+      // Try alternative approach - save to TrackPlay entity
+      try {
+        console.log('[SessionTrack] Trying TrackPlay entity instead...');
+        const response = await mobileApi.post('/api/base44/entities/TrackPlay', {
+          session_mix_id: trackData.session_mix_id,
+          track_id: trackData.track_id,
+          track_title: trackData.track_title,
+          track_artist: trackData.track_artist,
+          album: trackData.track_album,
+          genre: trackData.track_genre,
+          cover_image: trackData.track_cover,
+          producer_id: trackData.producer_id,
+          played_at: trackData.played_at,
+          user_id: trackData.dj_id,
+          dj_name: trackData.dj_name,
+          venue: trackData.venue,
+          city: trackData.city,
+          country: trackData.country,
+        });
+        console.log('[SessionTrack] Saved to TrackPlay successfully');
+        return response.data;
+      } catch (e2) {
+        console.error('[SessionTrack] TrackPlay also failed:', e2);
+        return null;
+      }
+    }
+  },
+
+  /**
+   * Get all tracks for a session
+   */
+  async getSessionTracks(sessionMixId: string): Promise<SessionTrack[]> {
+    try {
+      // Try SessionTrack first
+      try {
+        const response = await mobileApi.get(`/api/base44/entities/SessionTrack?session_mix_id=${sessionMixId}`);
+        const data = response.data;
+        if (Array.isArray(data) && data.length > 0) return data;
+        if (data?.items && data.items.length > 0) return data.items;
+      } catch (e) {
+        // SessionTrack entity might not exist
+      }
+      
+      // Try TrackPlay as fallback
+      const response = await mobileApi.get(`/api/base44/entities/TrackPlay?session_mix_id=${sessionMixId}`);
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      if (data?.items) return data.items;
+      return [];
+    } catch (error) {
+      console.error('[SessionTrack] Error getting session tracks:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get all track plays (for PDF generation)
+   */
+  async getAllTrackPlays(): Promise<SessionTrack[]> {
+    try {
+      const response = await mobileApi.get('/api/base44/entities/TrackPlay?limit=10000');
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      if (data?.items) return data.items;
+      return [];
+    } catch (error) {
+      console.error('[SessionTrack] Error getting all track plays:', error);
+      return [];
+    }
+  },
+};
+
 // Export default api object
 export default {
   auth: base44Auth,
