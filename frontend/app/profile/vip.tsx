@@ -91,40 +91,45 @@ export default function VIPScreen() {
       const vipTracksList = allTracks.filter((t: Track) => t.is_vip === true);
       setVipTracks(vipTracksList);
       
-      // Load user's unlocked tracks from LOCAL STORAGE (primary)
+      // Load user's unlocked tracks - SYNC FROM SERVER + LOCAL STORAGE
       console.log('[VIP] Loading unlocks for userId:', userId);
       if (userId) {
         try {
-          // Load from AsyncStorage first (most reliable)
+          // Step 1: Load from AsyncStorage (local cache)
           const storageKey = `${UNLOCKED_TRACKS_KEY}_${userId}`;
           console.log('[VIP] AsyncStorage key:', storageKey);
           const storedUnlocks = await AsyncStorage.getItem(storageKey);
           let localUnlocks: string[] = [];
           if (storedUnlocks) {
             localUnlocks = JSON.parse(storedUnlocks);
-            console.log('[VIP] Loaded unlocks from storage:', localUnlocks);
-          } else {
-            console.log('[VIP] No unlocks in AsyncStorage');
+            console.log('[VIP] Loaded local unlocks:', localUnlocks.length);
           }
           
-          // Also try API (backup)
+          // Step 2: CRITICAL - Fetch from server API (source of truth)
+          let serverUnlocks: string[] = [];
           try {
+            console.log('[VIP] Fetching purchases from server for user:', userId);
             const purchases = await base44VIP.listMyPurchases(userId);
-            console.log('[VIP] API purchases:', purchases);
-            const apiUnlocks = purchases
-              .filter((p: any) => p.track_id)
+            console.log('[VIP] Server returned purchases:', purchases.length);
+            
+            // Extract track IDs from all purchases (track_unlock type)
+            serverUnlocks = purchases
+              .filter((p: any) => p.track_id && (p.type === 'track_unlock' || p.promo_id === 'diamond_unlock'))
               .map((p: any) => p.track_id);
             
-            // Merge both sources (no duplicates)
-            const allUnlocks = [...new Set([...localUnlocks, ...apiUnlocks])];
-            setUnlockedTracks(allUnlocks);
-            
-            // Update storage with merged list
-            await AsyncStorage.setItem(`${UNLOCKED_TRACKS_KEY}_${userId}`, JSON.stringify(allUnlocks));
-            console.log('[VIP] Total unlocked tracks:', allUnlocks.length);
+            console.log('[VIP] Track unlocks from server:', serverUnlocks.length);
           } catch (apiError) {
-            console.log('[VIP] API purchases failed, using local only:', apiError);
-            setUnlockedTracks(localUnlocks);
+            console.log('[VIP] Server API failed, using local only:', apiError);
+          }
+          
+          // Step 3: Merge server + local (server takes priority as source of truth)
+          const allUnlocks = [...new Set([...serverUnlocks, ...localUnlocks])];
+          setUnlockedTracks(allUnlocks);
+          
+          // Step 4: Update local storage with merged list (sync local with server)
+          if (allUnlocks.length > 0) {
+            await AsyncStorage.setItem(storageKey, JSON.stringify(allUnlocks));
+            console.log('[VIP] Synced to local storage:', allUnlocks.length, 'unlocked tracks');
           }
         } catch (e) {
           console.log('[VIP] Could not load unlocks:', e);
