@@ -4093,6 +4093,66 @@ async def upload_email_attachment(
         print(f"[Admin Attachment] Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.post("/api/admin/upload-attachment-local")
+async def upload_email_attachment_local(
+    file: UploadFile = File(...),
+    authorization: str = Header(None)
+):
+    """
+    Fallback: Upload attachment locally and return a public URL.
+    This is used when Base44 upload fails.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin Attachment Local] Uploading file: {file.filename}")
+        
+        # Create uploads directory if it doesn't exist
+        upload_dir = "/app/backend/uploads/attachments"
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Generate unique filename
+        file_ext = os.path.splitext(file.filename)[1] if file.filename else '.bin'
+        unique_filename = f"{uuid.uuid4().hex}{file_ext}"
+        file_path = os.path.join(upload_dir, unique_filename)
+        
+        # Save file
+        content = await file.read()
+        with open(file_path, 'wb') as f:
+            f.write(content)
+        
+        print(f"[Admin Attachment Local] Saved to: {file_path}")
+        
+        # Generate public URL - use the backend URL
+        # The file will be served via a static endpoint
+        public_url = f"/api/attachments/{unique_filename}"
+        
+        return {
+            "success": True,
+            "url": public_url,
+            "file_name": file.filename,
+            "file_size": len(content)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Attachment Local] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Serve uploaded attachments
+@app.get("/api/attachments/{filename}")
+async def serve_attachment(filename: str):
+    """Serve uploaded attachment files."""
+    file_path = f"/app/backend/uploads/attachments/{filename}"
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(file_path)
+
+
 @app.post("/api/admin/broadcast")
 async def send_broadcast_email(request: BroadcastEmailRequest, authorization: str = Header(None)):
     """
