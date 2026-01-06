@@ -383,7 +383,7 @@ export default function AdminCategories() {
         {filteredUsers.slice(0, 100).map((u) => (
           <View key={u.id} style={styles.userCard}>
             {u.avatar_url ? (
-              <Image source={{ uri: u.avatar_url }} style={styles.userAvatarImg} />
+              <Image source={{ uri: getDisplayAvatarUrl(u.avatar_url) }} style={styles.userAvatarImg} />
             ) : (
               <View style={styles.userAvatar}>
                 <Text style={styles.avatarText}>{u.full_name?.charAt(0).toUpperCase() || 'U'}</Text>
