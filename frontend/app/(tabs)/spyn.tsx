@@ -1371,7 +1371,7 @@ export default function SpynScreen() {
 
             <Text style={styles.endSessionTitle}>{t('spyn.endSession')}</Text>
             <Text style={styles.endSessionSubtitle}>
-              Confirmez la fin de votre session de mix.
+              {t('spyn.confirmEndSession')}
             </Text>
 
             {/* Venue Info Card */}
@@ -1383,20 +1383,20 @@ export default function SpynScreen() {
                 ]} />
                 <View style={styles.venueTextContainer}>
                   <Text style={styles.venueName}>
-                    {location?.venue || 'Lieu inconnu'}
+                    {location?.venue || t('spynRecord.unknownLocation')}
                   </Text>
                   <Text style={styles.venueCity}>
-                    {location?.city || 'Inconnu'} • {location?.is_valid_venue ? 'Club vérifié ✓' : 'Lieu non vérifié'}
+                    {location?.city || t('spynRecord.unknown')} • {location?.is_valid_venue ? t('spynRecord.clubVerified') : t('spynRecord.unverifiedVenue')}
                   </Text>
                 </View>
               </View>
 
-              <Text style={styles.correctLabel}>Corriger le nom du lieu si nécessaire :</Text>
+              <Text style={styles.correctLabel}>{t('spynRecord.correctVenueName')}</Text>
               <TextInput
                 style={styles.venueInput}
                 value={correctedVenue}
                 onChangeText={setCorrectedVenue}
-                placeholder={location?.venue || 'Entrer le nom du lieu'}
+                placeholder={location?.venue || t('spynRecord.enterVenueName')}
                 placeholderTextColor="#666"
               />
 
@@ -1404,20 +1404,20 @@ export default function SpynScreen() {
               <View style={styles.tracksCountRow}>
                 <Ionicons name="musical-notes" size={16} color="#888" />
                 <Text style={styles.tracksCountText}>
-                  {identifiedTracks.length} tracks identified
+                  {identifiedTracks.length} {t('spynRecord.tracksIdentifiedCount')}
                 </Text>
               </View>
             </View>
 
             {/* Who Played Selection */}
-            <Text style={styles.whoPlayedTitle}>Who played this session?</Text>
+            <Text style={styles.whoPlayedTitle}>{t('spyn.whoPlayed')}</Text>
             
             <TouchableOpacity 
               style={[styles.radioOption, whoPlayed === 'me' && styles.radioOptionSelected]} 
               onPress={() => setWhoPlayed('me')}
             >
               <View style={[styles.radioCircle, whoPlayed === 'me' && styles.radioCircleSelected]} />
-              <Text style={styles.radioText}>It was me</Text>
+              <Text style={styles.radioText}>{t('spyn.itWasMe')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -1425,18 +1425,18 @@ export default function SpynScreen() {
               onPress={() => setWhoPlayed('another')}
             >
               <View style={[styles.radioCircle, whoPlayed === 'another' && styles.radioCircleSelected]} />
-              <Text style={styles.radioText}>Another DJ</Text>
+              <Text style={styles.radioText}>{t('spyn.anotherDj')}</Text>
             </TouchableOpacity>
 
             {/* DJ Name Input - appears when "Another DJ" is selected */}
             {whoPlayed === 'another' && (
               <View style={styles.otherDjContainer}>
-                <Text style={styles.otherDjLabel}>Nom du DJ :</Text>
+                <Text style={styles.otherDjLabel}>{t('spynRecord.djName')}</Text>
                 <TextInput
                   style={styles.otherDjInput}
                   value={otherDjName}
                   onChangeText={setOtherDjName}
-                  placeholder="Entrez le nom du DJ"
+                  placeholder={t('spynRecord.enterDjName')}
                   placeholderTextColor="#666"
                   autoCapitalize="words"
                 />
@@ -1448,7 +1448,7 @@ export default function SpynScreen() {
               <View style={styles.warningBox}>
                 <Ionicons name="warning" size={18} color="#FFB74D" />
                 <Text style={styles.warningText}>
-                  No track identified - No Black Diamond awarded
+                  {t('spynRecord.noTrackNoBlackDiamond')}
                 </Text>
               </View>
             )}
@@ -1457,7 +1457,7 @@ export default function SpynScreen() {
               <View style={styles.warningBox}>
                 <Ionicons name="warning" size={18} color="#FFB74D" />
                 <Text style={styles.warningText}>
-                  Location not recognized as club/bar - No Black Diamond
+                  {t('spynRecord.venueNotRecognized')}
                 </Text>
               </View>
             )}
@@ -1466,7 +1466,7 @@ export default function SpynScreen() {
               <View style={styles.successBox}>
                 <Ionicons name="diamond" size={18} color={CYAN_COLOR} />
                 <Text style={styles.successBoxText}>
-                  You will earn a Black Diamond! 💎
+                  {t('spynRecord.willEarnBlackDiamond')}
                 </Text>
               </View>
             )}
@@ -1488,8 +1488,8 @@ export default function SpynScreen() {
                 <Ionicons name="diamond" size={80} color="#1a1a2e" />
               </View>
             </Animated.View>
-            <Text style={styles.diamondTitle}>Félicitations !</Text>
-            <Text style={styles.diamondSubtitle}>Vous avez gagné un Black Diamond 💎</Text>
+            <Text style={styles.diamondTitle}>{t('common.congratulations')}</Text>
+            <Text style={styles.diamondSubtitle}>{t('spyn.blackDiamondEarned')}</Text>
           </View>
         </View>
       </Modal>
@@ -1516,7 +1516,7 @@ export default function SpynScreen() {
             <Ionicons name="cloud-upload" size={50} color={CYAN_COLOR} style={{ marginBottom: 16 }} />
             
             <Text style={styles.syncModalTitle}>
-              {isSyncing ? 'Synchronisation...' : syncResults.length > 0 ? 'Résultats' : 'Session Offline'}
+              {isSyncing ? t('offline.syncing') : syncResults.length > 0 ? t('admin.results') : t('offline.title')}
             </Text>
             
             {!isSyncing && syncResults.length === 0 && (
