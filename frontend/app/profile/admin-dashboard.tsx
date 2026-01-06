@@ -283,11 +283,11 @@ export default function AdminDashboard() {
       if (response.data?.success) {
         Alert.alert('✅ Sync ACRCloud', response.data.message || 'Synchronisation terminée avec succès');
       } else {
-        Alert.alert('Sync ACRCloud', response.data?.message || 'Synchronisation terminée');
+        Alert.alert('Sync ACRCloud', response.data?.message || t('admin.syncComplete'));
       }
     } catch (error: any) {
       console.error('[Admin] Sync ACRCloud error:', error);
-      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors de la synchronisation');
+      Alert.alert(t('common.error'), error.response?.data?.detail || t('admin.syncError'));
     } finally {
       setProcessing(false);
     }
@@ -296,7 +296,7 @@ export default function AdminDashboard() {
   const debugACRCloud = async () => {
     try {
       setProcessing(true);
-      Alert.alert('Debug ACRCloud', 'Lancement du diagnostic ACRCloud...');
+      Alert.alert('Debug ACRCloud', t('admin.diagnosticStarting'));
       
       // Call the backend function
       const response = await axios.post(`${BACKEND_URL}/api/admin/debug-acrcloud`, {}, {
@@ -304,13 +304,13 @@ export default function AdminDashboard() {
       });
       
       if (response.data?.success) {
-        Alert.alert('✅ Debug ACRCloud', response.data.message || 'Diagnostic terminé avec succès');
+        Alert.alert('✅ Debug ACRCloud', response.data.message || t('admin.diagnosticComplete'));
       } else {
-        Alert.alert('Debug ACRCloud', response.data?.message || 'Diagnostic terminé');
+        Alert.alert('Debug ACRCloud', response.data?.message || t('admin.diagnosticComplete'));
       }
     } catch (error: any) {
       console.error('[Admin] Debug ACRCloud error:', error);
-      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors du diagnostic ACRCloud');
+      Alert.alert(t('common.error'), error.response?.data?.detail || t('admin.diagnosticError'));
     } finally {
       setProcessing(false);
     }
@@ -319,20 +319,20 @@ export default function AdminDashboard() {
   const cleanDuplicates = async () => {
     try {
       setProcessing(true);
-      Alert.alert('Clean Duplicates', 'Recherche des doublons en cours...');
+      Alert.alert('Clean Duplicates', t('admin.searchingDuplicates'));
       
       const response = await axios.post(`${BACKEND_URL}/api/admin/clean-duplicates`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       if (response.data?.success) {
-        Alert.alert('✅ Clean Duplicates', response.data.message || 'Nettoyage terminé avec succès');
+        Alert.alert('✅ Clean Duplicates', response.data.message || t('admin.cleanupComplete'));
       } else {
-        Alert.alert('Clean Duplicates', response.data?.message || 'Nettoyage terminé');
+        Alert.alert('Clean Duplicates', response.data?.message || t('admin.cleanupComplete'));
       }
     } catch (error: any) {
       console.error('[Admin] Clean Duplicates error:', error);
-      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors du nettoyage');
+      Alert.alert(t('common.error'), error.response?.data?.detail || t('admin.cleanupError'));
     } finally {
       setProcessing(false);
     }
@@ -341,20 +341,20 @@ export default function AdminDashboard() {
   const fixMissingBPM = async () => {
     try {
       setProcessing(true);
-      Alert.alert('Fix Missing BPM', 'Analyse des BPM en cours...');
+      Alert.alert('Fix Missing BPM', t('admin.analyzingBPM'));
       
       const response = await axios.post(`${BACKEND_URL}/api/admin/fix-bpm`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       if (response.data?.success) {
-        Alert.alert('✅ Fix Missing BPM', response.data.message || 'Correction terminée avec succès');
+        Alert.alert('✅ Fix Missing BPM', response.data.message || t('admin.fixComplete'));
       } else {
-        Alert.alert('Fix Missing BPM', response.data?.message || 'Correction terminée');
+        Alert.alert('Fix Missing BPM', response.data?.message || t('admin.fixComplete'));
       }
     } catch (error: any) {
       console.error('[Admin] Fix BPM error:', error);
-      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors de la correction');
+      Alert.alert(t('common.error'), error.response?.data?.detail || t('admin.fixError'));
     } finally {
       setProcessing(false);
     }
