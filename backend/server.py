@@ -3410,7 +3410,7 @@ async def approve_track(track_id: str, authorization: str = Header(None)):
 @app.put("/api/admin/tracks/{track_id}/reject")
 async def reject_track(track_id: str, reason: str = None, authorization: str = Header(None)):
     """
-    Reject a pending track.
+    Reject a pending track by updating its status.
     """
     try:
         if not authorization:
@@ -3418,22 +3418,31 @@ async def reject_track(track_id: str, reason: str = None, authorization: str = H
         
         print(f"[Admin] Rejecting track: {track_id}, reason: {reason}")
         
-        # Try to use a native function to reject the track
-        result = await call_spynners_function("rejectTrack", {
+        # Use updateTrack to change status to rejected
+        result = await call_spynners_function("updateTrack", {
             "trackId": track_id,
-            "reason": reason or "Rejeté par l'admin"
+            "data": {
+                "status": "rejected",
+                "rejection_reason": reason or "Rejeté par l'admin"
+            }
         }, authorization)
         
         if result:
-            print(f"[Admin] Track {track_id} rejected successfully")
+            print(f"[Admin] Track {track_id} rejected successfully via updateTrack")
             return {"success": True, "message": "Track rejected", "track": result}
-        else:
-            # Fallback: update the track status directly
-            result = await call_spynners_function("updateTrack", {
-                "trackId": track_id,
-                "data": {"status": "rejected", "rejection_reason": reason or "Rejeté par l'admin"}
-            }, authorization)
+        
+        # If updateTrack fails, try nativeUpdateTrack
+        result = await call_spynners_function("nativeUpdateTrack", {
+            "trackId": track_id,
+            "status": "rejected",
+            "rejection_reason": reason or "Rejeté par l'admin"
+        }, authorization)
+        
+        if result:
+            print(f"[Admin] Track {track_id} rejected successfully via nativeUpdateTrack")
             return {"success": True, "message": "Track rejected", "track": result}
+        
+        raise HTTPException(status_code=500, detail="Failed to reject track")
         
     except HTTPException:
         raise
