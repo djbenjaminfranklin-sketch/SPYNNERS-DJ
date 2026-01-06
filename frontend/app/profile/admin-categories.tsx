@@ -69,6 +69,12 @@ export default function AdminCategories() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [categories, setCategories] = useState(CATEGORIES);
+  
+  // Edit user modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [userCategories, setUserCategories] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const isAdmin = isUserAdmin(user);
 
