@@ -104,15 +104,18 @@ export default function AdminDiamonds() {
   };
 
   const [sendAllCancelled, setSendAllCancelled] = useState(false);
+  const cancelledRef = useRef(false);
 
   const sendDiamondsToAll = () => {
     setSendAllAmount('');
     setSendAllCancelled(false);
+    cancelledRef.current = false;
     setShowSendAllModal(true);
   };
 
   const cancelSendAll = () => {
     setSendAllCancelled(true);
+    cancelledRef.current = true;
   };
 
   const executeSendToAll = async () => {
@@ -133,6 +136,7 @@ export default function AdminDiamonds() {
           onPress: async () => {
             setSendingAll(true);
             setSendAllCancelled(false);
+            cancelledRef.current = false;
             setSendAllProgress({ current: 0, total: users.length });
             
             let successCount = 0;
@@ -140,8 +144,8 @@ export default function AdminDiamonds() {
             let wasCancelled = false;
             
             for (let i = 0; i < users.length; i++) {
-              // Check if cancelled
-              if (sendAllCancelled) {
+              // Check if cancelled using ref (works in async loop)
+              if (cancelledRef.current) {
                 wasCancelled = true;
                 break;
               }
