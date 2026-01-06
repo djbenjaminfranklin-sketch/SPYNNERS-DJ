@@ -38,6 +38,7 @@ type UserItem = {
   email: string;
   avatar_url?: string;
   user_type?: string;
+  user_types?: string[];  // Array of cumulative categories
   nationality?: string;
   role?: string;
 };
