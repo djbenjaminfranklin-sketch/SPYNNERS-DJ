@@ -304,7 +304,7 @@ export default function AdminDiamonds() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#FFD700" />
-        <Text style={styles.loadingText}>Chargement...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -321,7 +321,7 @@ export default function AdminDiamonds() {
         </View>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Black Diamonds Manager</Text>
-          <Text style={styles.headerSubtitle}>Gérer les diamonds des utilisateurs</Text>
+          <Text style={styles.headerSubtitle}>{t('admin.manageDiamonds')}</Text>
         </View>
       </View>
 
@@ -331,7 +331,7 @@ export default function AdminDiamonds() {
           <Ionicons name="search" size={20} color={Colors.textMuted} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Rechercher un utilisateur..."
+            placeholder={t('admin.searchUser')}
             placeholderTextColor={Colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -345,7 +345,7 @@ export default function AdminDiamonds() {
             style={styles.sendAllGradient}
           >
             <Ionicons name="diamond" size={16} color="#fff" />
-            <Text style={styles.sendAllText}>Envoyer à tous</Text>
+            <Text style={styles.sendAllText}>{t('admin.sendToAll')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -372,7 +372,7 @@ export default function AdminDiamonds() {
               )}
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>{u.artist_name || u.full_name || 'Sans nom'}</Text>
+              <Text style={styles.userName}>{u.artist_name || u.full_name || t('admin.noName')}</Text>
               <Text style={styles.userEmail}>{u.email}</Text>
             </View>
             <View style={styles.diamondBadge}>
@@ -391,12 +391,12 @@ export default function AdminDiamonds() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Ionicons name="diamond" size={32} color="#FFD700" />
-              <Text style={styles.modalTitle}>Envoyer des Black Diamonds</Text>
+              <Text style={styles.modalTitle}>{t('admin.sendBlackDiamonds')}</Text>
             </View>
-            <Text style={styles.modalSubtitle}>À: {selectedUser?.full_name}</Text>
+            <Text style={styles.modalSubtitle}>{t('admin.to')}: {selectedUser?.full_name}</Text>
             <TextInput
               style={styles.amountInput}
-              placeholder="Montant"
+              placeholder={t('admin.amount')}
               placeholderTextColor={Colors.textMuted}
               keyboardType="numeric"
               value={diamondAmount}
@@ -404,10 +404,10 @@ export default function AdminDiamonds() {
             />
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowSendModal(false)}>
-                <Text style={styles.cancelBtnText}>Annuler</Text>
+                <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.sendBtn} onPress={sendDiamonds}>
-                <Text style={styles.sendBtnText}>Envoyer</Text>
+                <Text style={styles.sendBtnText}>{t('admin.send')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -420,12 +420,12 @@ export default function AdminDiamonds() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Ionicons name="diamond" size={32} color="#9C27B0" />
-              <Text style={styles.modalTitle}>Envoyer à tous</Text>
+              <Text style={styles.modalTitle}>{t('admin.sendToAll')}</Text>
             </View>
             <Text style={styles.modalSubtitle}>
               {sendingAll 
-                ? `Envoi en cours... ${sendAllProgress.current}/${sendAllProgress.total}`
-                : `${users.length} utilisateurs recevront des diamonds`
+                ? `${t('admin.sendingInProgress')}... ${sendAllProgress.current}/${sendAllProgress.total}`
+                : `${users.length} ${t('admin.usersWillReceive')}`
               }
             </Text>
             {sendingAll ? (
@@ -441,14 +441,14 @@ export default function AdminDiamonds() {
                   style={[styles.cancelBtn, { marginTop: 20, width: '100%', backgroundColor: '#ff4444', borderColor: '#ff4444' }]} 
                   onPress={cancelSendAll}
                 >
-                  <Text style={[styles.cancelBtnText, { color: '#fff', fontWeight: '600' }]}>⏹️ Annuler l'envoi</Text>
+                  <Text style={[styles.cancelBtnText, { color: '#fff', fontWeight: '600' }]}>⏹️ {t('admin.cancelSend')}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
                 <TextInput
                   style={styles.amountInput}
-                  placeholder="Montant à envoyer"
+                  placeholder={t('admin.amountToSend')}
                   placeholderTextColor={Colors.textMuted}
                   keyboardType="numeric"
                   value={sendAllAmount}
@@ -456,10 +456,10 @@ export default function AdminDiamonds() {
                 />
                 <View style={styles.modalActions}>
                   <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowSendAllModal(false)}>
-                    <Text style={styles.cancelBtnText}>Annuler</Text>
+                    <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.sendBtn, { backgroundColor: '#9C27B0' }]} onPress={executeSendToAll}>
-                    <Text style={styles.sendBtnText}>Envoyer à tous</Text>
+                    <Text style={styles.sendBtnText}>{t('admin.sendToAll')}</Text>
                   </TouchableOpacity>
                 </View>
               </>
