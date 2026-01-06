@@ -500,7 +500,7 @@ export default function AdminDashboard() {
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[styles.rejectBtn, processing && styles.btnDisabled]} 
-                    onPress={() => setShowRejectModal(true)}
+                    onPress={() => selectedTrack && handleQuickReject(selectedTrack)}
                     disabled={processing}
                   >
                     <Ionicons name="close" size={24} color="#fff" />
