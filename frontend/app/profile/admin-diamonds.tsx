@@ -130,15 +130,18 @@ export default function AdminDiamonds() {
     
     if (!selectedUser) return;
     
+    setSending(true);
     try {
-      // Send diamonds to user via API
+      // Send diamonds to user via API with token
       const response = await axios.post(`${BACKEND_URL}/api/base44/add-diamonds`, {
         user_id: selectedUser.id,
         amount: parseInt(diamondAmount),
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       
       if (response.data?.success) {
-        Alert.alert('✅ Succès', `${diamondAmount} Black Diamonds envoyés à ${selectedUser?.full_name}!`);
+        Alert.alert('✅ Succès', `${diamondAmount} Black Diamonds envoyés à ${selectedUser?.full_name || selectedUser?.artist_name}!`);
         setShowSendModal(false);
         loadUsers(); // Refresh the list
       } else {
@@ -146,7 +149,9 @@ export default function AdminDiamonds() {
       }
     } catch (error: any) {
       console.error('[AdminDiamonds] Send error:', error);
-      Alert.alert('Erreur', 'Impossible d\'envoyer les diamonds. Vérifiez votre connexion.');
+      Alert.alert('Erreur', error.response?.data?.detail || 'Impossible d\'envoyer les diamonds.');
+    } finally {
+      setSending(false);
     }
   };
 
