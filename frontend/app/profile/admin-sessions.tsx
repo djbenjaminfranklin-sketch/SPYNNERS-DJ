@@ -382,7 +382,7 @@ export default function AdminSessions() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#2196F3" />
-        <Text style={styles.loadingText}>Chargement...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -399,7 +399,7 @@ export default function AdminSessions() {
         </View>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>SPYN SESSION</Text>
-          <Text style={styles.headerSubtitle}>Toutes les sessions validées</Text>
+          <Text style={styles.headerSubtitle}>{t('admin.allValidatedSessions')}</Text>
         </View>
       </View>
 
