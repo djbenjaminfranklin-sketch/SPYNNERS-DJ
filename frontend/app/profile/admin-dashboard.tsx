@@ -702,6 +702,76 @@ export default function AdminDashboard() {
           </View>
         </View>
       </Modal>
+
+      {/* User Edit Modal */}
+      <Modal visible={showUserModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Éditer l'utilisateur</Text>
+              <TouchableOpacity onPress={() => setShowUserModal(false)}>
+                <Ionicons name="close" size={28} color={Colors.text} />
+              </TouchableOpacity>
+            </View>
+            {selectedUser && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {selectedUser.avatar_url ? (
+                  <Image source={{ uri: selectedUser.avatar_url }} style={styles.modalUserAvatar} />
+                ) : (
+                  <View style={[styles.modalUserAvatar, styles.modalImagePlaceholder]}>
+                    <Ionicons name="person" size={48} color={Colors.textMuted} />
+                  </View>
+                )}
+                <Text style={styles.modalTrackTitle}>{selectedUser.full_name || selectedUser.artist_name || 'Sans nom'}</Text>
+                <Text style={styles.modalTrackArtist}>{selectedUser.email}</Text>
+                
+                {/* User Details */}
+                <View style={styles.trackDetails}>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>ID:</Text>
+                    <Text style={styles.detailValue}>{selectedUser.id}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Nom complet:</Text>
+                    <Text style={styles.detailValue}>{selectedUser.full_name || 'Non renseigné'}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Nom d'artiste:</Text>
+                    <Text style={styles.detailValue}>{selectedUser.artist_name || 'Non renseigné'}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Type:</Text>
+                    <Text style={styles.detailValue}>{selectedUser.user_type || 'user'}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Rôle:</Text>
+                    <Text style={styles.detailValue}>{selectedUser.role || 'user'}</Text>
+                  </View>
+                  {selectedUser.bio ? (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Bio:</Text>
+                      <Text style={[styles.detailValue, { flex: 1 }]}>{selectedUser.bio}</Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                {/* Action Buttons */}
+                <View style={styles.modalActions}>
+                  <TouchableOpacity 
+                    style={[styles.approveBtn, { flex: 1 }]} 
+                    onPress={() => {
+                      Alert.alert('Info', 'Fonctionnalité d\'édition à implémenter avec les champs modifiables.');
+                    }}
+                  >
+                    <Ionicons name="create" size={20} color="#fff" />
+                    <Text style={styles.btnText}>Modifier</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
