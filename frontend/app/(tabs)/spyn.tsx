@@ -1473,7 +1473,7 @@ export default function SpynScreen() {
 
             <TouchableOpacity style={styles.confirmEndButton} onPress={confirmEndSession}>
               <Ionicons name="stop-circle" size={20} color="#fff" />
-              <Text style={styles.confirmEndButtonText}>{t('spyn.confirmEndSession')}</Text>
+              <Text style={styles.confirmEndButtonText}>{t('spyn.confirmEndButton')}</Text>
             </TouchableOpacity>
           </View>
         </View>
