@@ -184,18 +184,24 @@ export default function AdminBroadcast() {
       Alert.alert('Erreur', 'Veuillez entrer un message');
       return;
     }
-    if (recipientType === 'category' && !selectedCategory) {
-      Alert.alert('Erreur', 'Veuillez sélectionner une catégorie');
+    if (recipientType === 'category' && selectedCategories.length === 0) {
+      Alert.alert('Erreur', 'Veuillez sélectionner au moins une catégorie');
       return;
     }
-    if (recipientType === 'individual' && !individualEmail.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer une adresse email');
+    if (recipientType === 'individual' && !selectedRecipient) {
+      Alert.alert('Erreur', 'Veuillez sélectionner un destinataire');
       return;
     }
 
+    const recipientText = recipientType === 'all' 
+      ? 'tous les utilisateurs' 
+      : recipientType === 'category' 
+        ? `les catégories: ${selectedCategories.map(c => CATEGORIES.find(cat => cat.id === c)?.name || c).join(', ')}`
+        : selectedRecipient?.email || individualEmail;
+
     Alert.alert(
       'Confirmer l\'envoi',
-      `Envoyer cet email à ${recipientType === 'all' ? 'tous les utilisateurs' : recipientType === 'category' ? `la catégorie "${selectedCategory}"` : individualEmail} ?`,
+      `Envoyer cet email à ${recipientText} ?`,
       [
         { text: 'Annuler', style: 'cancel' },
         { 
@@ -209,8 +215,8 @@ export default function AdminBroadcast() {
                   subject: subject.trim(),
                   message: message.trim(),
                   recipient_type: recipientType,
-                  category: recipientType === 'category' ? selectedCategory : null,
-                  individual_email: recipientType === 'individual' ? individualEmail.trim() : null,
+                  categories: recipientType === 'category' ? selectedCategories : null,
+                  individual_email: recipientType === 'individual' ? (selectedRecipient?.email || individualEmail.trim()) : null,
                   include_tracks: message.includes('TRACKS RÉCENTES'),
                 },
                 { headers: { Authorization: `Bearer ${token}` } }
@@ -221,6 +227,8 @@ export default function AdminBroadcast() {
                 setSubject('');
                 setMessage('');
                 setIndividualEmail('');
+                setSelectedRecipient(null);
+                setSelectedCategories([]);
                 loadData(); // Refresh history
               } else {
                 Alert.alert('Erreur', response.data?.message || 'Échec de l\'envoi');
