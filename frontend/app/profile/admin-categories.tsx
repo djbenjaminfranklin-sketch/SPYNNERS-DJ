@@ -118,7 +118,54 @@ export default function AdminCategories() {
 
   const loadUsers = async () => {
     try {
-      // Fetch from Spynners via admin endpoint with higher limit
+      console.log('[AdminCategories] Loading users, Platform:', Platform.OS);
+      
+      // On mobile, use Base44 API directly
+      if (Platform.OS !== 'web') {
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
+        
+        const response = await axios.get(`${BASE44_API_URL}/entities/User?limit=10000`, { headers });
+        const usersData = response.data || [];
+        
+        console.log('[AdminCategories] Got', usersData.length, 'users from Base44');
+        
+        const userList = usersData.map((u: any) => {
+          const userData = u.data || {};
+          return {
+            id: u.id || u._id,
+            full_name: u.full_name || userData.full_name || u.name,
+            artist_name: userData.artist_name || u.artist_name,
+            email: u.email,
+            avatar_url: userData.avatar_url || u.avatar_url || u.generated_avatar_url,
+            user_type: userData.user_type || u.user_type,
+            user_types: userData.user_types || u.user_types || [],
+            nationality: userData.nationality || u.nationality,
+            role: u.role || u._app_role,
+          };
+        });
+        
+        setUsers(userList);
+        
+        // Update category counts
+        const updatedCategories = CATEGORIES.map(cat => ({
+          ...cat,
+          count: userList.filter((u: any) => {
+            const userType = (u.user_type || '').toLowerCase().trim();
+            return userType === cat.id.toLowerCase();
+          }).length,
+        }));
+        setCategories(updatedCategories);
+        
+        console.log('[AdminCategories] Category counts:', updatedCategories.map(c => `${c.name}: ${c.count}`).join(', '));
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      
+      // On web, use backend proxy
       const response = await axios.get(`${BACKEND_URL}/api/admin/users?limit=10000`, {
         headers: { Authorization: `Bearer ${token}` }
       });
