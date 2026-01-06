@@ -178,7 +178,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <Ionicons name="notifications" size={24} color={Colors.primary} />
-              <Text style={styles.headerTitle}>Notifications</Text>
+              <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
               {totalCount > 0 && (
                 <View style={styles.totalBadge}>
                   <Text style={styles.totalBadgeText}>{totalCount}</Text>
@@ -194,7 +194,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
           {totalCount > 0 && (
             <TouchableOpacity style={styles.markAllButton} onPress={handleMarkAllRead}>
               <Ionicons name="checkmark-done" size={18} color={Colors.primary} />
-              <Text style={styles.markAllText}>Mark all as read</Text>
+              <Text style={styles.markAllText}>{t('notifications.markAllRead')}</Text>
             </TouchableOpacity>
           )}
 
@@ -208,7 +208,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
             {loading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={Colors.primary} />
-                <Text style={styles.loadingText}>Loading notifications...</Text>
+                <Text style={styles.loadingText}>{t('common.loading')}</Text>
               </View>
             ) : (
               <>
@@ -229,7 +229,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
                     <View style={styles.categoryInfo}>
                       <Text style={styles.categoryLabel}>{category.label}</Text>
                       <Text style={styles.categoryCount}>
-                        {category.count} {category.count === 1 ? 'notification' : 'notifications'}
+                        {category.count} {category.count === 1 ? t('notifications.notification') : t('notifications.notifications')}
                       </Text>
                     </View>
                     
@@ -248,7 +248,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
                 {/* Recent Notifications */}
                 {notifications.length > 0 && (
                   <View style={styles.recentSection}>
-                    <Text style={styles.recentTitle}>Recent</Text>
+                    <Text style={styles.recentTitle}>{t('notifications.recent')}</Text>
                     {notifications.slice(0, 5).map((notif, index) => (
                       <View key={notif.id || notif._id || index} style={styles.notifItem}>
                         <View style={styles.notifDot} />
@@ -259,7 +259,7 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
                           <Text style={styles.notifTime}>
                             {notif.created_at 
                               ? new Date(notif.created_at).toLocaleDateString() 
-                              : 'Recently'}
+                              : t('notifications.recently')}
                           </Text>
                         </View>
                       </View>
@@ -270,8 +270,8 @@ export default function NotificationModal({ visible, onClose }: NotificationModa
                 {totalCount === 0 && !loading && (
                   <View style={styles.emptyContainer}>
                     <Ionicons name="notifications-off-outline" size={60} color={Colors.textMuted} />
-                    <Text style={styles.emptyText}>No new notifications</Text>
-                    <Text style={styles.emptySubtext}>You're all caught up!</Text>
+                    <Text style={styles.emptyText}>{t('notifications.noNew')}</Text>
+                    <Text style={styles.emptySubtext}>{t('notifications.allCaughtUp')}</Text>
                   </View>
                 )}
               </>
