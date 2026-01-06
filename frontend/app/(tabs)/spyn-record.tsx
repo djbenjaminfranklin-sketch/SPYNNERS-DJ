@@ -55,7 +55,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return 'https://spynapp-1.preview.emergentagent.com';
+  return 'https://mobile-backend-fix.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 

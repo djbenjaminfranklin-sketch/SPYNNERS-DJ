@@ -11,7 +11,7 @@ import { Platform } from 'react-native';
 // Backend URL for web proxy
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || 
   process.env.EXPO_PUBLIC_BACKEND_URL || 
-  'https://spynapp-1.preview.emergentagent.com';
+  'https://mobile-backend-fix.preview.emergentagent.com';
 
 // Direct Base44 API URL for mobile - MUST use app subdomain
 const BASE44_APP_ID = '691a4d96d819355b52c063f3';

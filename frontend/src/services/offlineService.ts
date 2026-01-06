@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://spynapp-1.preview.emergentagent.com';
+  return 'https://mobile-backend-fix.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();
