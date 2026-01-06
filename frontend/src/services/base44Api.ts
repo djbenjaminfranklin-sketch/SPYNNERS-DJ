@@ -84,6 +84,33 @@ const createApi = (): AxiosInstance => {
 
 const api = createApi();
 
+// Helper function to get the correct API path based on platform
+// On mobile: use direct Base44 paths
+// On web: use proxy paths through backend
+const getApiPath = (path: string): string => {
+  if (Platform.OS === 'web') {
+    // Web uses proxy
+    return path;
+  }
+  
+  // Mobile uses direct Base44 API - transform paths
+  // /api/base44/entities/Track -> /entities/Track
+  // /api/base44/auth/login -> /auth/login
+  // /api/tracks -> /entities/Track (for backend proxy routes)
+  if (path.startsWith('/api/base44/')) {
+    return path.replace('/api/base44', '');
+  }
+  if (path.startsWith('/api/admin/')) {
+    // Admin routes need special handling - they call cloud functions
+    return path;
+  }
+  if (path === '/api/tracks' || path.startsWith('/api/tracks?')) {
+    return path.replace('/api/tracks', '/entities/Track');
+  }
+  
+  return path;
+};
+
 // ==================== TRACK TYPE ====================
 
 export interface Track {
