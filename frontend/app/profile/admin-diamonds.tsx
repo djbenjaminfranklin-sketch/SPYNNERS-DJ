@@ -234,7 +234,7 @@ export default function AdminDiamonds() {
 
   const sendDiamonds = async () => {
     if (!diamondAmount || parseInt(diamondAmount) <= 0) {
-      Alert.alert('Erreur', 'Veuillez entrer un montant valide');
+      Alert.alert(t('common.error'), t('admin.enterValidAmount'));
       return;
     }
     
@@ -260,20 +260,20 @@ export default function AdminDiamonds() {
         const prevBalance = response.data?.previous_balance || 0;
         const newBalance = response.data?.new_balance || parseInt(diamondAmount);
         Alert.alert(
-          '✅ Succès', 
-          `${diamondAmount} Black Diamonds envoyés à ${selectedUser?.full_name || selectedUser?.artist_name}!\n\nAncien solde: ${prevBalance}\nNouveau solde: ${newBalance}`
+          '✅ ' + t('common.success'), 
+          `${diamondAmount} Black Diamonds ${t('admin.sent').toLowerCase()} ${selectedUser?.full_name || selectedUser?.artist_name}!\n\n${t('admin.previousBalance')}: ${prevBalance}\n${t('admin.newBalance')}: ${newBalance}`
         );
         setShowSendModal(false);
         loadUsers(); // Refresh the list
       } else {
-        Alert.alert('Erreur', response.data?.error || response.data?.message || 'Impossible d\'envoyer les diamonds.');
+        Alert.alert(t('common.error'), response.data?.error || response.data?.message || t('admin.sendDiamondsError'));
       }
     } catch (error: any) {
       console.error('[AdminDiamonds] Send error:', error);
       console.error('[AdminDiamonds] Error response:', error.response?.data);
       
       // More detailed error message
-      let errorMsg = 'Impossible d\'envoyer les diamonds.';
+      let errorMsg = t('admin.sendDiamondsError');
       if (error.response?.data?.detail) {
         errorMsg = error.response.data.detail;
       } else if (error.response?.data?.message) {
@@ -282,7 +282,7 @@ export default function AdminDiamonds() {
         errorMsg = error.message;
       }
       
-      Alert.alert('Erreur', errorMsg);
+      Alert.alert(t('common.error'), errorMsg);
     } finally {
       setSending(false);
     }
