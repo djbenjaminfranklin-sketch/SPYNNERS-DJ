@@ -48,23 +48,30 @@ export default function AdminBroadcast() {
   const [sending, setSending] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [userCount, setUserCount] = useState(0);
+  const [allUsers, setAllUsers] = useState<UserItem[]>([]);
   const [recentTracks, setRecentTracks] = useState<any[]>([]);
   const [broadcastHistory, setBroadcastHistory] = useState<BroadcastHistory[]>([]);
   const [recipientType, setRecipientType] = useState<'all' | 'category' | 'individual'>('all');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);  // Multiple categories
   const [individualEmail, setIndividualEmail] = useState('');
+  const [emailSuggestions, setEmailSuggestions] = useState<UserItem[]>([]);
+  const [selectedRecipient, setSelectedRecipient] = useState<UserItem | null>(null);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'compose' | 'history'>('compose');
+  
+  // Email detail modal
+  const [showEmailDetail, setShowEmailDetail] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState<BroadcastHistory | null>(null);
 
   const isAdmin = isUserAdmin(user);
 
   const CATEGORIES = [
-    { id: 'dj', name: 'DJ' },
-    { id: 'producer', name: 'Producer' },
-    { id: 'both', name: 'DJ & Producer' },
-    { id: 'music_lover', name: 'Music Lover' },
-    { id: 'label', name: 'Label' },
+    { id: 'dj', name: 'DJ', color: '#2196F3' },
+    { id: 'producer', name: 'Producer', color: '#4CAF50' },
+    { id: 'both', name: 'DJ & Producer', color: '#00BCD4' },
+    { id: 'music_lover', name: 'Music Lover', color: '#E91E63' },
+    { id: 'label', name: 'Label', color: '#FF9800' },
   ];
 
   useEffect(() => {
