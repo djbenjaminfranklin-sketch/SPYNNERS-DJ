@@ -190,15 +190,12 @@ export default function AdminDashboard() {
     }
   };
 
-  // Reject a track
-  const handleRejectTrack = async (track: PendingTrack) => {
-    if (!rejectionReason.trim()) {
-      Alert.alert('Erreur', 'Veuillez indiquer une raison de rejet.');
-      return;
-    }
+  // Reject a track - simplified, reason is optional
+  const handleRejectTrack = async (track: PendingTrack, reason?: string) => {
     setProcessing(true);
     try {
-      await base44Admin.rejectTrack(track.id, rejectionReason);
+      console.log('[Admin] Rejecting track:', track.id, 'reason:', reason);
+      await base44Admin.rejectTrack(track.id, reason || 'Rejeté par l\'admin');
       Alert.alert('❌ Track Rejetée', `"${track.title}" a été rejetée.`);
       setShowRejectModal(false);
       setShowDetailModal(false);
@@ -206,10 +203,22 @@ export default function AdminDashboard() {
       fetchAllData(); // Refresh the list
     } catch (error) {
       console.error('[Admin] Reject error:', error);
-      Alert.alert('Erreur', 'Impossible de rejeter cette track.');
+      Alert.alert('Erreur', 'Impossible de rejeter cette track. Vérifiez votre connexion.');
     } finally {
       setProcessing(false);
     }
+  };
+
+  // Quick reject without reason
+  const handleQuickReject = (track: PendingTrack) => {
+    Alert.alert(
+      'Rejeter ce track ?',
+      `Voulez-vous vraiment rejeter "${track.title}" ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Rejeter', style: 'destructive', onPress: () => handleRejectTrack(track) },
+      ]
+    );
   };
 
   // Play track preview
