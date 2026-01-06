@@ -57,6 +57,9 @@ const translations: Record<Language, Record<string, string>> = {
     'broadcast.sendToUsers': 'Send message to users',
     'broadcast.noEmailsSent': 'No emails sent',
     'broadcast.sendEmail': 'Send email',
+    'broadcast.groupEmail': 'Group Email',
+    'broadcast.compose': 'Compose',
+    'broadcast.history': 'History',
     
     // Admin Users
     'admin.avatarsGenerated': 'Avatars generated',
@@ -806,6 +809,9 @@ const translations: Record<Language, Record<string, string>> = {
     'broadcast.sendToUsers': 'Envoyer un message aux utilisateurs',
     'broadcast.noEmailsSent': 'Aucun email envoyé',
     'broadcast.sendEmail': 'Envoyer l\'email',
+    'broadcast.groupEmail': 'Email Groupé',
+    'broadcast.compose': 'Composer',
+    'broadcast.history': 'Historique',
     
     // Admin Users
     'admin.avatarsGenerated': 'Avatars générés',
