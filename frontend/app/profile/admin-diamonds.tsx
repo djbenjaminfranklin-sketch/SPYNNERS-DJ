@@ -167,7 +167,7 @@ export default function AdminDiamonds() {
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Confirmer',
+          text: t('common.confirm'),
           style: 'destructive',
           onPress: async () => {
             setSendingAll(true);
@@ -209,13 +209,13 @@ export default function AdminDiamonds() {
             
             if (wasCancelled) {
               Alert.alert(
-                '⏹️ Annulé',
-                `Envoi interrompu.\n\n✅ Envoyés: ${successCount}\n❌ Erreurs: ${errorCount}\n⏭️ Non traités: ${users.length - successCount - errorCount}`
+                '⏹️ ' + t('common.cancel'),
+                `${t('admin.sendInterrupted')}.\n\n✅ ${t('admin.sent')}: ${successCount}\n❌ ${t('admin.errors')}: ${errorCount}\n⏭️ ${t('admin.notProcessed')}: ${users.length - successCount - errorCount}`
               );
             } else {
               Alert.alert(
-                '✅ Terminé',
-                `${amount} Black Diamond${amount > 1 ? 's' : ''} envoyé${amount > 1 ? 's' : ''} !\n\n✅ Succès: ${successCount}\n❌ Erreurs: ${errorCount}`
+                '✅ ' + t('admin.done'),
+                `${amount} Black Diamond${amount > 1 ? 's' : ''} ${t('admin.sent').toLowerCase()}!\n\n✅ ${t('common.success')}: ${successCount}\n❌ ${t('admin.errors')}: ${errorCount}`
               );
             }
             

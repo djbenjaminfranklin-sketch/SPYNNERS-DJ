@@ -284,15 +284,15 @@ export default function AdminCategories() {
       );
 
       if (response.data?.success) {
-        Alert.alert('✅ Succès', `Catégories mises à jour pour ${selectedUser.artist_name || selectedUser.full_name}`);
+        Alert.alert('✅ ' + t('common.success'), t('admin.categoriesUpdated') + ` ${selectedUser.artist_name || selectedUser.full_name}`);
         setShowEditModal(false);
         loadUsers(); // Refresh the list
       } else {
-        Alert.alert('Erreur', response.data?.error || 'Impossible de sauvegarder');
+        Alert.alert(t('common.error'), response.data?.error || t('admin.saveError'));
       }
     } catch (error: any) {
       console.error('[AdminCategories] Save error:', error);
-      Alert.alert('Erreur', error.response?.data?.detail || 'Impossible de sauvegarder');
+      Alert.alert(t('common.error'), error.response?.data?.detail || t('admin.saveError'));
     } finally {
       setSaving(false);
     }
@@ -302,9 +302,9 @@ export default function AdminCategories() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <Ionicons name="lock-closed" size={64} color={Colors.textMuted} />
-        <Text style={styles.accessDeniedTitle}>Accès Refusé</Text>
+        <Text style={styles.accessDeniedTitle}>{t('admin.accessDenied')}</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Retour</Text>
+          <Text style={styles.backButtonText}>{t('admin.back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -314,7 +314,7 @@ export default function AdminCategories() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#FF5722" />
-        <Text style={styles.loadingText}>Chargement...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
