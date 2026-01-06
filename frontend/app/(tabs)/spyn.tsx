@@ -1343,7 +1343,7 @@ export default function SpynScreen() {
               <Ionicons name="close" size={24} color="#888" />
             </TouchableOpacity>
 
-            <Text style={styles.endSessionTitle}>End Session</Text>
+            <Text style={styles.endSessionTitle}>Terminer la session</Text>
             <Text style={styles.endSessionSubtitle}>
               Confirm the end of your mixing session.
             </Text>
