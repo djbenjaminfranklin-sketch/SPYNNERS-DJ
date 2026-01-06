@@ -287,47 +287,47 @@ export default function AdminUsers() {
           
           return (
             <View key={u.id} style={styles.userCard}>
-            <View style={styles.userAvatar}>
-              {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
-              ) : (
-                <Text style={styles.avatarText}>{u.full_name?.charAt(0).toUpperCase() || 'U'}</Text>
-              )}
-            </View>
-            <View style={styles.userInfo}>
-              <View style={styles.userNameRow}>
-                <Text style={styles.userName}>{u.artist_name || u.full_name}</Text>
-                {isUserAdmin(u) && <AdminBadge size="small" />}
-              </View>
-              <Text style={styles.userEmail}>{u.email}</Text>
-              <View style={styles.userTags}>
-                {u.user_type && (
-                  <View style={[styles.userTag, { backgroundColor: getUserTypeColor(u.user_type) }]}>
-                    <Text style={styles.userTagText}>{u.user_type.toUpperCase()}</Text>
-                  </View>
-                )}
-                {u.nationality && (
-                  <View style={[styles.userTag, { backgroundColor: '#9C27B0' }]}>
-                    <Text style={styles.userTagText}>{u.nationality}</Text>
-                  </View>
-                )}
-                {(u.black_diamonds || 0) > 0 && (
-                  <View style={styles.diamondBadge}>
-                    <Ionicons name="diamond" size={12} color="#FFD700" />
-                    <Text style={styles.diamondText}>{u.black_diamonds}</Text>
-                  </View>
+              <View style={styles.userAvatar}>
+                {avatarUrl ? (
+                  <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+                ) : (
+                  <Text style={styles.avatarText}>{u.full_name?.charAt(0).toUpperCase() || 'U'}</Text>
                 )}
               </View>
+              <View style={styles.userInfo}>
+                <View style={styles.userNameRow}>
+                  <Text style={styles.userName}>{u.artist_name || u.full_name}</Text>
+                  {isUserAdmin(u) && <AdminBadge size="small" />}
+                </View>
+                <Text style={styles.userEmail}>{u.email}</Text>
+                <View style={styles.userTags}>
+                  {u.user_type && (
+                    <View style={[styles.userTag, { backgroundColor: getUserTypeColor(u.user_type) }]}>
+                      <Text style={styles.userTagText}>{u.user_type.toUpperCase()}</Text>
+                    </View>
+                  )}
+                  {u.nationality && (
+                    <View style={[styles.userTag, { backgroundColor: '#9C27B0' }]}>
+                      <Text style={styles.userTagText}>{u.nationality}</Text>
+                    </View>
+                  )}
+                  {(u.black_diamonds || 0) > 0 && (
+                    <View style={styles.diamondBadge}>
+                      <Ionicons name="diamond" size={12} color="#FFD700" />
+                      <Text style={styles.diamondText}>{u.black_diamonds}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+              <View style={styles.userActions}>
+                <TouchableOpacity style={styles.editBtn} onPress={() => editUser(u.id)}>
+                  <Ionicons name="pencil" size={18} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteUser(u.id, u.full_name)}>
+                  <Ionicons name="trash" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.userActions}>
-              <TouchableOpacity style={styles.editBtn} onPress={() => editUser(u.id)}>
-                <Ionicons name="pencil" size={18} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteUser(u.id, u.full_name)}>
-                <Ionicons name="trash" size={18} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
           );
         })}
         <View style={{ height: 40 }} />
