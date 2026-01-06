@@ -1887,14 +1887,14 @@ export default function SpynRecordScreen() {
               </View>
 
               {/* Who Played Selection */}
-              <Text style={styles.whoPlayedTitle}>Qui a joué cette session ?</Text>
+              <Text style={styles.whoPlayedTitle}>{t('spyn.whoPlayed')}</Text>
               
               <TouchableOpacity 
                 style={[styles.radioOption, whoPlayed === 'me' && styles.radioOptionSelected]} 
                 onPress={() => setWhoPlayed('me')}
               >
                 <View style={[styles.radioCircle, whoPlayed === 'me' && styles.radioCircleSelected]} />
-                <Text style={styles.radioText}>C'était moi</Text>
+                <Text style={styles.radioText}>{t('spyn.itWasMe')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -1902,7 +1902,7 @@ export default function SpynRecordScreen() {
                 onPress={() => setWhoPlayed('another')}
               >
                 <View style={[styles.radioCircle, whoPlayed === 'another' && styles.radioCircleSelected]} />
-                <Text style={styles.radioText}>Un autre DJ</Text>
+                <Text style={styles.radioText}>{t('spyn.anotherDj')}</Text>
               </TouchableOpacity>
 
               {whoPlayed === 'another' && (
