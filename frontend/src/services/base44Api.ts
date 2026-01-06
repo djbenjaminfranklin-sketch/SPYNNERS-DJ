@@ -1399,11 +1399,26 @@ export const base44VIP = {
   async listMyPurchases(userId: string): Promise<VIPPurchase[]> {
     try {
       console.log('[VIP listMyPurchases] Fetching for userId:', userId);
-      const url = `/api/base44/entities/VIPPurchase?user_id=${userId}`;
-      console.log('[VIP listMyPurchases] URL:', url);
-      const response = await mobileApi.get(url);
+      
+      // On mobile, we need to call Base44 directly for VIPPurchase entity
+      const isMobile = Platform.OS !== 'web';
+      let response;
+      
+      if (isMobile) {
+        // Direct Base44 API call on mobile
+        const url = `/entities/VIPPurchase?user_id=${userId}`;
+        console.log('[VIP listMyPurchases] Mobile - calling Base44 directly:', url);
+        response = await backendApi.get(url);
+      } else {
+        // Via backend proxy on web
+        const url = `/api/base44/entities/VIPPurchase?user_id=${userId}`;
+        console.log('[VIP listMyPurchases] Web - calling via backend:', url);
+        response = await backendApi.get(url);
+      }
+      
       console.log('[VIP listMyPurchases] Response status:', response.status);
       console.log('[VIP listMyPurchases] Response data:', JSON.stringify(response.data).substring(0, 500));
+      
       const data = response.data;
       if (Array.isArray(data)) {
         console.log('[VIP listMyPurchases] Returning array of', data.length, 'purchases');
