@@ -85,7 +85,7 @@ export default function UploadScreen() {
   const [artistName, setArtistName] = useState('');
   const [labelName, setLabelName] = useState('');
   const [collaborators, setCollaborators] = useState('');
-  const [genre, setGenre] = useState('');
+  const [genres, setGenres] = useState<string[]>([]); // Multi-genre support
   const [bpm, setBpm] = useState('');
   const [trackKey, setTrackKey] = useState('');
   const [energyLevel, setEnergyLevel] = useState('');
