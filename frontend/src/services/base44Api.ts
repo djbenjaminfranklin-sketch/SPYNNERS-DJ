@@ -936,11 +936,11 @@ export const base44Admin = {
     }
   },
 
-  async rejectTrack(trackId: string, reason?: string): Promise<Track | null> {
+  async rejectTrack(trackId: string, reason?: string): Promise<any> {
     try {
-      const response = await api.put(`/api/base44/entities/Track/${trackId}`, {
-        status: 'rejected',
-        rejection_reason: reason,
+      console.log('[Admin] Calling reject endpoint for track:', trackId);
+      const response = await api.put(`/api/admin/tracks/${trackId}/reject`, null, {
+        params: { reason: reason || 'Rejeté par l\'admin' }
       });
       return response.data;
     } catch (error) {
