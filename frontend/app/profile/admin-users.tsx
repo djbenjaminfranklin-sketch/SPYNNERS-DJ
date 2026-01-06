@@ -156,62 +156,47 @@ export default function AdminUsers() {
   };
 
   const editUser = (userId: string) => {
-    // Navigate to user edit page or show edit modal
-    Alert.alert(
-      'Éditer l\'utilisateur',
-      'Que voulez-vous faire ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { 
-          text: 'Voir le profil', 
-          onPress: () => {
-            // Could navigate to profile or show detailed modal
-            const userToEdit = users.find(u => u.id === userId);
-            if (userToEdit) {
-              Alert.alert(
-                userToEdit.full_name || userToEdit.artist_name || 'Utilisateur',
-                `Email: ${userToEdit.email}\nType: ${userToEdit.user_type || 'N/A'}\nRole: ${userToEdit.role || 'user'}\nBlack Diamonds: ${userToEdit.black_diamonds || 0}`,
-                [{ text: 'OK' }]
-              );
-            }
-          }
-        },
-        {
-          text: 'Changer le rôle',
-          onPress: () => changeUserRole(userId)
-        }
-      ]
-    );
+    const userToEdit = users.find(u => u.id === userId);
+    if (userToEdit) {
+      setSelectedUser(userToEdit);
+      setEditForm({
+        full_name: userToEdit.full_name || '',
+        artist_name: userToEdit.artist_name || '',
+        user_type: userToEdit.user_type || 'user',
+        role: userToEdit.role || 'user',
+        nationality: userToEdit.nationality || '',
+        residence_club: userToEdit.residence_club || '',
+        instagram_url: userToEdit.instagram_url || '',
+        bio: userToEdit.bio || '',
+        read_only: userToEdit.read_only || false,
+      });
+      setShowEditModal(true);
+    }
   };
 
-  const changeUserRole = async (userId: string) => {
-    Alert.alert(
-      'Changer le rôle',
-      'Sélectionnez le nouveau rôle :',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'User', onPress: () => updateUserRole(userId, 'user') },
-        { text: 'DJ', onPress: () => updateUserRole(userId, 'dj') },
-        { text: 'Producer', onPress: () => updateUserRole(userId, 'producer') },
-        { text: 'Admin', onPress: () => updateUserRole(userId, 'admin') },
-      ]
-    );
-  };
-
-  const updateUserRole = async (userId: string, newRole: string) => {
+  const saveUserChanges = async () => {
+    if (!selectedUser) return;
+    
+    setSaving(true);
     try {
-      const response = await axios.put(`${BACKEND_URL}/api/admin/users/${userId}/role`, 
-        { role: newRole },
+      const response = await axios.put(
+        `${BACKEND_URL}/api/admin/users/${selectedUser.id}`,
+        editForm,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
       if (response.data?.success) {
-        Alert.alert('✅ Rôle mis à jour', `L'utilisateur a maintenant le rôle: ${newRole}`);
+        Alert.alert('✅ Succès', 'Les modifications ont été enregistrées');
+        setShowEditModal(false);
         loadUsers(); // Refresh
+      } else {
+        Alert.alert('Erreur', response.data?.message || 'Échec de la mise à jour');
       }
     } catch (error: any) {
-      console.error('[AdminUsers] Update role error:', error);
-      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors de la mise à jour du rôle');
+      console.error('[AdminUsers] Save error:', error);
+      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors de la sauvegarde');
+    } finally {
+      setSaving(false);
     }
   };
 
