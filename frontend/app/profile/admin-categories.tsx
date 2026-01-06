@@ -60,6 +60,30 @@ const getDisplayAvatarUrl = (url?: string): string | undefined => {
   return url;
 };
 
+// Avatar component with error handling
+const UserAvatar = ({ url, name, size = 44 }: { url?: string; name?: string; size?: number }) => {
+  const [hasError, setHasError] = React.useState(false);
+  const displayUrl = getDisplayAvatarUrl(url);
+  
+  if (!displayUrl || hasError) {
+    return (
+      <View style={[styles.userAvatar, { width: size, height: size, borderRadius: size / 2 }]}>
+        <Text style={[styles.avatarText, { fontSize: size * 0.4 }]}>
+          {name?.charAt(0).toUpperCase() || 'U'}
+        </Text>
+      </View>
+    );
+  }
+  
+  return (
+    <Image 
+      source={{ uri: displayUrl }} 
+      style={[styles.userAvatarImg, { width: size, height: size, borderRadius: size / 2 }]}
+      onError={() => setHasError(true)}
+    />
+  );
+};
+
 export default function AdminCategories() {
   const router = useRouter();
   const { user, token } = useAuth();
