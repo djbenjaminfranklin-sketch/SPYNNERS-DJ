@@ -809,6 +809,9 @@ export default function SpynRecordScreen() {
   const isAnalyzingRef = useRef(false);
   const isRecordingRef = useRef(false);
   const identifiedTracksRef = useRef<IdentifiedTrack[]>([]);
+  
+  // Track emails already sent to prevent duplicates
+  const sentEmailsRef = useRef<Set<string>>(new Set());
 
   // Update ref when state changes
   useEffect(() => {
