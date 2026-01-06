@@ -441,11 +441,17 @@ const styles = StyleSheet.create({
   modalContent: { backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.lg, padding: Spacing.lg, width: '85%', alignItems: 'center' },
   modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.text },
-  modalSubtitle: { fontSize: 14, color: Colors.textSecondary, marginTop: Spacing.md },
+  modalSubtitle: { fontSize: 14, color: Colors.textSecondary, marginTop: Spacing.md, textAlign: 'center' },
   amountInput: { backgroundColor: Colors.backgroundInput, borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: 18, color: Colors.text, width: '100%', textAlign: 'center', marginTop: Spacing.md, borderWidth: 1, borderColor: '#FFD700' },
   modalActions: { flexDirection: 'row', gap: Spacing.md, marginTop: Spacing.lg, width: '100%' },
   cancelBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border },
   cancelBtnText: { fontSize: 14, color: Colors.textMuted },
   sendBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: BorderRadius.md, backgroundColor: '#FFD700' },
   sendBtnText: { fontSize: 14, fontWeight: '600', color: '#1a1a2e' },
+  
+  // Progress styles for Send All
+  progressContainer: { width: '100%', alignItems: 'center', marginTop: Spacing.lg },
+  progressBar: { width: '100%', height: 8, backgroundColor: Colors.border, borderRadius: 4, marginTop: Spacing.md, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: '#9C27B0', borderRadius: 4 },
+  progressText: { fontSize: 16, fontWeight: 'bold', color: '#9C27B0', marginTop: Spacing.sm },
 });
