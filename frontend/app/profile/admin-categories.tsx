@@ -83,21 +83,6 @@ export default function AdminCategories() {
     filterUsers();
   }, [searchQuery, activeFilter, users]);
 
-  // Update email suggestions when typing
-  useEffect(() => {
-    if (emailSearch.trim().length >= 2) {
-      const query = emailSearch.toLowerCase();
-      const suggestions = users.filter(u => 
-        u.email?.toLowerCase().includes(query) ||
-        u.full_name?.toLowerCase().includes(query) ||
-        u.artist_name?.toLowerCase().includes(query)
-      ).slice(0, 10);
-      setEmailSuggestions(suggestions);
-    } else {
-      setEmailSuggestions([]);
-    }
-  }, [emailSearch, users]);
-
   const loadUsers = async () => {
     try {
       // Fetch from Spynners via admin endpoint with higher limit
