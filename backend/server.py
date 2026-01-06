@@ -4094,29 +4094,18 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         elements.append(summary_table)
         elements.append(Spacer(1, 30))
         
-        # Sessions by DJ - same format as Analytics PDF
-        session_counter = 1
+        # Create one big table with all sessions (Excel style)
+        # Header row
+        table_data = [['#', 'DJ', 'Ville', 'Pays', 'Date', 'Début', 'Fin', 'Tracks', 'Black Diamond']]
         
-        session_title_style = ParagraphStyle(
-            'SessionTitle',
-            parent=styles['Heading2'],
-            fontSize=14,
-            textColor=colors.HexColor('#333333'),
-            spaceBefore=15,
-            spaceAfter=8
-        )
-        
+        # Add all sessions as rows
+        row_num = 1
         for dj_name, dj_sessions in sorted(sessions_by_dj.items()):
-            # DJ Header
-            dj_track_count = sum(s.get('tracks_count', 0) or s.get('tracks_detected', 0) or len(s.get('tracks', [])) for s in dj_sessions)
-            elements.append(Paragraph(f"🎧 {dj_name} ({len(dj_sessions)} sessions, {dj_track_count} tracks)", dj_header_style))
-            
-            # Each session for this DJ
             for session in sorted(dj_sessions, key=lambda x: x.get('started_at', '') or '', reverse=True):
-                # Session info
+                # Parse dates
                 session_date = ''
-                start_time = 'N/A'
-                end_time = 'N/A'
+                start_time = ''
+                end_time = ''
                 
                 if session.get('started_at'):
                     try:
@@ -4124,10 +4113,62 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
                         session_date = dt.strftime('%d/%m/%Y')
                         start_time = dt.strftime('%H:%M')
                     except:
-                        session_date = session['started_at'][:10]
+                        session_date = session['started_at'][:10] if session.get('started_at') else ''
                 
                 if session.get('ended_at'):
                     try:
+                        dt_end = datetime.fromisoformat(session['ended_at'].replace('Z', '+00:00'))
+                        end_time = dt_end.strftime('%H:%M')
+                    except:
+                        pass
+                
+                city = session.get('city') or ''
+                country = session.get('country') or ''
+                tracks = str(session.get('tracks_count', 0) or 0)
+                diamond = '✓' if session.get('diamond_awarded') else ''
+                
+                # Truncate long names
+                dj_display = dj_name[:25] + '...' if len(dj_name) > 25 else dj_name
+                city_display = city[:20] + '...' if len(city) > 20 else city
+                
+                table_data.append([
+                    str(row_num),
+                    dj_display,
+                    city_display,
+                    country,
+                    session_date,
+                    start_time,
+                    end_time,
+                    tracks,
+                    diamond
+                ])
+                row_num += 1
+        
+        # Create the main table
+        main_table = Table(table_data, colWidths=[1*cm, 5*cm, 4*cm, 3*cm, 2.5*cm, 1.5*cm, 1.5*cm, 1.5*cm, 2*cm])
+        main_table.setStyle(TableStyle([
+            # Header row
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#9C27B0')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            # Data rows
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('ALIGN', (0, 1), (0, -1), 'CENTER'),  # # column
+            ('ALIGN', (4, 1), (-1, -1), 'CENTER'),  # Date and after
+            # Alternating row colors
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+            # Grid
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
+            # Padding
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING', (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        ]))
+        elements.append(main_table):
                         dt_end = datetime.fromisoformat(session['ended_at'].replace('Z', '+00:00'))
                         end_time = dt_end.strftime('%H:%M')
                     except:
