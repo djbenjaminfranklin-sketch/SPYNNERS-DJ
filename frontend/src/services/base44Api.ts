@@ -13,9 +13,9 @@ const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl ||
   process.env.EXPO_PUBLIC_BACKEND_URL || 
   'https://agent-env-5bd6c1bc-7d9d-4962-8663-5852546af7fb-preview.preview.emergentagent.com';
 
-// Direct Base44 API URL for mobile
+// Direct Base44 API URL for mobile - MUST use app subdomain
 const BASE44_APP_ID = '691a4d96d819355b52c063f3';
-const BASE44_DIRECT_URL = `https://app.base44.com/api/apps/${BASE44_APP_ID}`;
+const BASE44_DIRECT_URL = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}`;
 
 // Determine which URL to use based on platform
 const API_BASE_URL = Platform.OS === 'web' ? BACKEND_URL : BASE44_DIRECT_URL;
