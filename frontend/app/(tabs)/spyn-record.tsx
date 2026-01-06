@@ -1321,31 +1321,13 @@ export default function SpynRecordScreen() {
           country: location?.country,
         };
         
-        // IMPORTANT: If we successfully analyzed tracks via API, we ARE online
-        // Don't trust isOffline state or navigator.onLine - they can be wrong
-        // The fact that we got API responses proves connectivity
-        const wasAbleToAnalyze = allTracks.length > 0;
-        const hadSuccessfulApiCalls = hasSuccessfulApiCallRef.current;
-        const isReallyOnline = wasAbleToAnalyze || hadSuccessfulApiCalls || (typeof navigator !== 'undefined' && navigator.onLine);
+        // SIMPLIFIED: Never save to offline storage
+        // If we got here, we successfully communicated with the backend
+        // Just log the session data
+        console.log('[SPYN Record] Session completed - not saving to offline storage');
+        console.log('[SPYN Record] Session data:', JSON.stringify(sessionData, null, 2));
         
-        console.log('[SPYN Record] Connection check - tracks:', allTracks.length, ', hadApiCalls:', hadSuccessfulApiCalls, ', isReallyOnline:', isReallyOnline);
-        
-        if (isReallyOnline) {
-          // ONLINE: Just log the session, don't save to offline storage
-          console.log('[SPYN Record] Session completed ONLINE - not saving to offline storage');
-          console.log('[SPYN Record] Session data:', sessionData);
-          
-          // TODO: In the future, send session to Spynners API here
-          // For now, just show success without creating offline session
-        } else {
-          // OFFLINE: Save to offline storage for later sync
-          console.log('[SPYN Record] Session completed OFFLINE - saving to offline storage');
-          await offlineService.saveOfflineSession({
-            ...sessionData,
-            status: 'pending_sync' as const,
-          });
-          setPendingSyncCount(await offlineService.getPendingCount());
-        }
+        // TODO: In the future, send session to Spynners API here
         
         console.log('[SPYN Record] Session saved successfully');
         
