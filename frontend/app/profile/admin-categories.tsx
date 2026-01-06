@@ -91,6 +91,7 @@ const UserAvatar = ({ url, name, size = 44 }: { url?: string; name?: string; siz
 export default function AdminCategories() {
   const router = useRouter();
   const { user, token } = useAuth();
+  const { t } = useLanguage();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -338,7 +339,7 @@ export default function AdminCategories() {
       <View style={styles.actionsRow}>
         <TouchableOpacity style={styles.sendEmailBtn} onPress={() => router.push('/profile/admin-broadcast')}>
           <Ionicons name="mail" size={16} color="#fff" />
-          <Text style={styles.actionBtnText}>Aller aux Emails</Text>
+          <Text style={styles.actionBtnText}>{t('admin.goToEmails')}</Text>
         </TouchableOpacity>
       </View>
 
