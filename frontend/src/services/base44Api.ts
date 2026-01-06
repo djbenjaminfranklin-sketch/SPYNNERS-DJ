@@ -30,7 +30,7 @@ const USER_KEY = 'user';
 // Create axios instance
 const createApi = (): AxiosInstance => {
   const instance = axios.create({
-    baseURL: BACKEND_URL,
+    baseURL: API_BASE_URL,
     timeout: 30000,
     headers: {
       'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ const createApi = (): AxiosInstance => {
     } catch (e) {
       console.error('[API] Error getting token:', e);
     }
-    console.log('[API] Request:', config.method?.toUpperCase(), config.url);
+    console.log('[API] Request:', config.method?.toUpperCase(), config.baseURL, config.url);
     return config;
   });
 
