@@ -135,23 +135,7 @@ export default function AdminCategories() {
         ...cat,
         count: userList.filter((u: any) => {
           const userType = (u.user_type || '').toLowerCase().trim();
-          const catId = cat.id.toLowerCase();
-          
-          // Exact match or normalized match
-          if (userType === catId) return true;
-          if (userType.replace(/[\s_-]/g, '') === catId.replace(/[\s_-]/g, '')) return true;
-          
-          // Handle special cases
-          if (catId === 'dj' && userType === 'dj') return true;
-          if (catId === 'dj_star' && (userType === 'dj_star' || userType === 'djstar' || userType === 'dj star')) return true;
-          if (catId === 'dj_resident' && (userType === 'dj_resident' || userType === 'djresident' || userType === 'dj resident')) return true;
-          if (catId === 'dj_guest' && (userType.includes('guest') || userType === 'dj_guest' || userType === 'djguest')) return true;
-          if (catId === 'dj_producer' && (userType === 'dj_producer' || userType === 'djproducer' || userType === 'dj/producer')) return true;
-          if (catId === 'producer' && userType === 'producer') return true;
-          if (catId === 'producer_star' && (userType === 'producer_star' || userType === 'producerstar' || userType === 'producer star')) return true;
-          if (catId === 'music_lover' && (userType === 'music_lover' || userType === 'musiclover' || userType === 'music lover' || userType === 'fan')) return true;
-          
-          return false;
+          return userType === cat.id.toLowerCase();
         }).length,
       }));
       setCategories(updatedCategories);
