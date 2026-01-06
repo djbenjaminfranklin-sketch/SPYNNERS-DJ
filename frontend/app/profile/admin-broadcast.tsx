@@ -175,7 +175,7 @@ export default function AdminBroadcast() {
 
   const insertRecentTracks = () => {
     if (recentTracks.length === 0) {
-      Alert.alert('Info', 'Aucune track récente disponible');
+      Alert.alert(t('offline.info'), t('admin.noRecentTracks'));
       return;
     }
     
@@ -183,40 +183,40 @@ export default function AdminBroadcast() {
       `${i + 1}. ${t.title} - ${t.producer_name || t.artist_name || 'Unknown'}`
     ).join('\n');
     
-    setMessage(prev => prev + `\n\n🎵 TRACKS RÉCENTES:\n${trackList}`);
+    setMessage(prev => prev + `\n\n🎵 ${t('broadcast.recentTracks')}:\n${trackList}`);
   };
 
   const sendEmail = async () => {
     if (!subject.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un sujet');
+      Alert.alert(t('common.error'), t('admin.enterSubject'));
       return;
     }
     if (!message.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un message');
+      Alert.alert(t('common.error'), t('broadcast.enterMessage'));
       return;
     }
     if (recipientType === 'category' && selectedCategories.length === 0) {
-      Alert.alert('Erreur', 'Veuillez sélectionner au moins une catégorie');
+      Alert.alert(t('common.error'), t('admin.selectCategory'));
       return;
     }
     if (recipientType === 'individual' && !selectedRecipient) {
-      Alert.alert('Erreur', 'Veuillez sélectionner un destinataire');
+      Alert.alert(t('common.error'), t('admin.selectRecipient'));
       return;
     }
 
     const recipientText = recipientType === 'all' 
-      ? 'tous les utilisateurs' 
+      ? t('broadcast.allUsers')
       : recipientType === 'category' 
-        ? `les catégories: ${selectedCategories.map(c => CATEGORIES.find(cat => cat.id === c)?.name || c).join(', ')}`
+        ? `${t('broadcast.categories')}: ${selectedCategories.map(c => CATEGORIES.find(cat => cat.id === c)?.name || c).join(', ')}`
         : selectedRecipient?.email || individualEmail;
 
     Alert.alert(
-      'Confirmer l\'envoi',
-      `Envoyer cet email à ${recipientText} ?`,
+      t('broadcast.confirmSend'),
+      `${t('broadcast.sendEmailTo')} ${recipientText}?`,
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         { 
-          text: 'Envoyer', 
+          text: t('admin.send'), 
           onPress: async () => {
             setSending(true);
             try {
@@ -228,7 +228,7 @@ export default function AdminBroadcast() {
                   recipient_type: recipientType,
                   categories: recipientType === 'category' ? selectedCategories : null,
                   individual_email: recipientType === 'individual' ? (selectedRecipient?.email || individualEmail.trim()) : null,
-                  include_tracks: message.includes('TRACKS RÉCENTES'),
+                  include_tracks: message.includes('TRACKS RÉCENTES') || message.includes('RECENT TRACKS'),
                   attachment_url: attachment?.url || null,
                   attachment_name: attachment?.name || null,
                 },
@@ -236,7 +236,7 @@ export default function AdminBroadcast() {
               );
 
               if (response.data?.success) {
-                Alert.alert('Succès ✅', `Email envoyé à ${response.data.sent_count || 'tous les'} destinataires!`);
+                Alert.alert(t('common.success') + ' ✅', `${t('broadcast.emailSentTo')} ${response.data.sent_count || t('broadcast.all')} ${t('broadcast.recipients')}!`);
                 setSubject('');
                 setMessage('');
                 setIndividualEmail('');
@@ -245,11 +245,11 @@ export default function AdminBroadcast() {
                 setAttachment(null);
                 loadData(); // Refresh history
               } else {
-                Alert.alert('Erreur', response.data?.message || 'Échec de l\'envoi');
+                Alert.alert(t('common.error'), response.data?.message || t('broadcast.sendFailed'));
               }
             } catch (error: any) {
               console.error('[AdminBroadcast] Send error:', error);
-              Alert.alert('Erreur', error?.response?.data?.detail || 'Échec de l\'envoi de l\'email');
+              Alert.alert(t('common.error'), error?.response?.data?.detail || t('broadcast.sendFailed'));
             } finally {
               setSending(false);
             }

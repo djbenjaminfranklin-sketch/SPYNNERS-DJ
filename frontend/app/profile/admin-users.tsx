@@ -183,14 +183,14 @@ export default function AdminUsers() {
       });
       
       if (response.data?.success) {
-        Alert.alert('✅ Avatars générés', response.data.message || 'Les avatars ont été générés avec succès');
+        Alert.alert('✅ ' + t('admin.avatarsGenerated'), response.data.message || t('admin.avatarsSuccess'));
         loadUsers(); // Refresh the list
       } else {
-        Alert.alert('Avatars', response.data?.message || 'Opération terminée');
+        Alert.alert(t('admin.avatars'), response.data?.message || t('admin.operationComplete'));
       }
     } catch (error: any) {
       console.error('[AdminUsers] Generate avatars error:', error);
-      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors de la génération des avatars');
+      Alert.alert(t('common.error'), error.response?.data?.detail || t('admin.avatarsError'));
     }
   };
 
@@ -225,15 +225,15 @@ export default function AdminUsers() {
       );
       
       if (response.data?.success) {
-        Alert.alert('✅ Succès', 'Les modifications ont été enregistrées');
+        Alert.alert('✅ ' + t('common.success'), t('admin.changesSaved'));
         setShowEditModal(false);
         loadUsers(); // Refresh
       } else {
-        Alert.alert('Erreur', response.data?.message || 'Échec de la mise à jour');
+        Alert.alert(t('common.error'), response.data?.message || t('admin.updateFailed'));
       }
     } catch (error: any) {
       console.error('[AdminUsers] Save error:', error);
-      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors de la sauvegarde');
+      Alert.alert(t('common.error'), error.response?.data?.detail || t('admin.saveError'));
     } finally {
       setSaving(false);
     }
@@ -241,11 +241,11 @@ export default function AdminUsers() {
 
   const deleteUser = (userId: string, userName: string) => {
     Alert.alert(
-      'Supprimer l\'utilisateur',
-      `Êtes-vous sûr de vouloir supprimer ${userName}?`,
+      t('admin.deleteUser'),
+      `${t('admin.confirmDeleteUser')} ${userName}?`,
       [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Supprimer', style: 'destructive', onPress: () => console.log('Delete', userId) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => console.log('Delete', userId) },
       ]
     );
   };
