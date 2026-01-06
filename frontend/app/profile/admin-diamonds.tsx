@@ -247,7 +247,8 @@ export default function AdminDiamonds() {
               <Text style={styles.diamondCount}>{u.black_diamonds || 0}</Text>
             </View>
           </TouchableOpacity>
-        ))}
+          );
+        })}
         <View style={{ height: 40 }} />
       </ScrollView>
 
