@@ -1357,24 +1357,24 @@ export default function SpynScreen() {
                 ]} />
                 <View style={styles.venueTextContainer}>
                   <Text style={styles.venueName}>
-                    {location?.venue || 'Unknown Venue'}
+                    {location?.venue || 'Lieu inconnu'}
                   </Text>
                   <Text style={styles.venueCity}>
-                    {location?.city || 'Unknown'} • {location?.is_valid_venue ? 'Club verified ✓' : 'Unverified location'}
+                    {location?.city || 'Inconnu'} • {location?.is_valid_venue ? 'Club vérifié ✓' : 'Lieu non vérifié'}
                   </Text>
                 </View>
               </View>
 
-              <Text style={styles.correctLabel}>Correct venue name if needed:</Text>
+              <Text style={styles.correctLabel}>Corriger le nom du lieu si nécessaire :</Text>
               <TextInput
                 style={styles.venueInput}
                 value={correctedVenue}
                 onChangeText={setCorrectedVenue}
-                placeholder={location?.venue || 'Enter venue name'}
+                placeholder={location?.venue || 'Entrer le nom du lieu'}
                 placeholderTextColor="#666"
               />
 
-              <Text style={styles.startedAtText}>Started at {startedAtTime}</Text>
+              <Text style={styles.startedAtText}>Démarré à {startedAtTime}</Text>
               <View style={styles.tracksCountRow}>
                 <Ionicons name="musical-notes" size={16} color="#888" />
                 <Text style={styles.tracksCountText}>
