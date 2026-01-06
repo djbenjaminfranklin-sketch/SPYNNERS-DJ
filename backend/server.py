@@ -3630,7 +3630,8 @@ async def upload_vip_track(
                     artwork_url = image_result.get('url') or image_result.get('file_url')
                     print(f"[Admin VIP Upload] Artwork uploaded: {artwork_url}")
         
-        # Create the track in Spynners database
+        # Create the track in Spynners database using the Track entity API
+        # Based on the Spynners schema: is_vip, vip_preview_start, vip_preview_end
         track_data = {
             "title": title,
             "artist_name": artist or "Unknown Artist",
@@ -3639,41 +3640,45 @@ async def upload_vip_track(
             "bpm": int(bpm) if bpm and bpm.isdigit() else 0,
             "audio_url": audio_url,
             "artwork_url": artwork_url,
-            "is_vip": True,
-            "vip_price": int(vip_price) if vip_price else 2,
-            "vip_stock": int(vip_stock) if vip_stock else -1,
-            "preview_start": int(preview_start) if preview_start else 0,
-            "preview_end": int(preview_end) if preview_end else 30,
+            # VIP fields - matching Spynners Track entity schema
+            "is_vip": True,  # This marks the track as VIP with padlock
+            "vip_requested": False,  # Already approved by admin
+            "vip_preview_start": int(preview_start) if preview_start else 0,
+            "vip_preview_end": int(preview_end) if preview_end else 30,
+            # Track approval status
             "status": "approved",  # Auto-approve VIP tracks from admin
+            "approved": True,
         }
         
-        print(f"[Admin VIP Upload] Creating track in database: {track_data}")
+        print(f"[Admin VIP Upload] Creating VIP track in database with is_vip=True")
+        print(f"[Admin VIP Upload] Track data: {track_data}")
         
-        result = await call_spynners_function("createVIPTrack", track_data, authorization)
-        
-        if result:
-            print(f"[Admin VIP Upload] ✅ Track created successfully: {result.get('id', 'unknown')}")
-            return {
-                "success": True,
-                "track": result,
-                "message": "Track V.I.P. uploadé avec succès!"
-            }
-        else:
-            # Fallback: Try to create via entity API
-            print(f"[Admin VIP Upload] Trying fallback entity creation...")
-            entity_result = await call_spynners_function("createEntity", {
-                "entity_type": "Track",
-                "data": track_data
-            }, authorization)
+        # Use the base44 entities API to create the Track directly
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            create_response = await client.post(
+                f"{SPYNNERS_API_URL}/entities/Track",
+                json=track_data,
+                headers={
+                    'Authorization': authorization,
+                    'Content-Type': 'application/json'
+                }
+            )
             
-            if entity_result:
+            print(f"[Admin VIP Upload] Create response status: {create_response.status_code}")
+            print(f"[Admin VIP Upload] Create response: {create_response.text[:500]}")
+            
+            if create_response.status_code in [200, 201]:
+                result = create_response.json()
+                track_id = result.get('id') or result.get('_id')
+                print(f"[Admin VIP Upload] ✅ VIP Track created successfully: {track_id}")
                 return {
                     "success": True,
-                    "track": entity_result,
+                    "track": result,
                     "message": "Track V.I.P. uploadé avec succès!"
                 }
-            
-            return {"success": False, "message": "Failed to create track in database"}
+            else:
+                print(f"[Admin VIP Upload] ❌ Failed to create track: {create_response.text}")
+                return {"success": False, "message": f"Failed to create track: {create_response.text}"}
         
     except HTTPException:
         raise
