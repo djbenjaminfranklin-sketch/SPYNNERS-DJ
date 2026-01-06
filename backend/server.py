@@ -3905,7 +3905,7 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         # Fetch sessions from SessionMix entity
         sessions_data = []
         try:
-            base44_url = "https://app.base44.com/api/apps/691a4d96d819355b52c063f3/entities/SessionMix"
+            base44_url = "https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/entities/SessionMix"
             headers = {
                 "Authorization": authorization,
                 "Content-Type": "application/json"
