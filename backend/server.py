@@ -3400,14 +3400,14 @@ async def approve_track(track_id: str, authorization: str = Header(None)):
         }
         
         async with httpx.AsyncClient(timeout=30.0) as client:
-            # Use PATCH for partial updates
-            response = await client.patch(
+            # Use PUT for updates (Base44 preference)
+            response = await client.put(
                 base44_url,
                 json=update_data,
                 headers=headers
             )
             
-            print(f"[Admin] Base44 PATCH response: {response.status_code}")
+            print(f"[Admin] Base44 PUT response: {response.status_code}")
             
             if response.status_code == 200:
                 print(f"[Admin] Track {track_id} approved successfully")
