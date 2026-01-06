@@ -442,9 +442,32 @@ export const base44Tracks = {
     is_vip?: boolean;
   }): Promise<Track[]> {
     try {
-      console.log('[Tracks] Fetching tracks via native API with filters:', filters);
+      console.log('[Tracks] Fetching tracks with filters:', filters);
       
-      // Try native API first
+      // On mobile, use Base44 entities directly
+      if (Platform.OS !== 'web') {
+        const params = new URLSearchParams();
+        params.append('limit', (filters?.limit || 100).toString());
+        if (filters?.sort) params.append('sort', filters.sort);
+        else params.append('sort', '-created_date');
+        if (filters?.genre) params.append('genre', filters.genre);
+        if (filters?.energy_level) params.append('energy_level', filters.energy_level);
+        if (filters?.is_vip !== undefined) params.append('is_vip', filters.is_vip.toString());
+
+        const url = `/entities/Track?${params.toString()}`;
+        console.log('[Tracks] Mobile API URL:', url);
+        
+        const response = await mobileApi.get(url);
+        const data = response.data;
+        
+        if (Array.isArray(data)) {
+          console.log('[Tracks] Got', data.length, 'tracks from Base44');
+          return data;
+        }
+        return [];
+      }
+      
+      // On web, try native API first
       try {
         const nativeResponse = await mobileApi.post('/api/tracks/all', {
           genre: filters?.genre,
