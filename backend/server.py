@@ -3592,21 +3592,24 @@ async def upload_vip_track(
             print(f"[Admin VIP Upload] Image file: {image_filename}, size: {len(image_data)} bytes")
         
         # First, upload the audio file using Base44 integrations
-        # The UploadFile integration is available through Spynners functions
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            # Method 1: Try uploading via the integrations endpoint
-            print(f"[Admin VIP Upload] Uploading audio via Base44 integrations...")
+        # Using base44.integrations.Core.UploadFile()
+        async with httpx.AsyncClient(timeout=180.0) as client:
+            print(f"[Admin VIP Upload] Uploading audio via Base44 Core.UploadFile integration...")
             
             # Convert audio to base64 for the upload
             import base64
             audio_base64 = base64.b64encode(audio_content).decode('utf-8')
             
+            # Call the Core.UploadFile integration
             upload_response = await client.post(
-                f"{SPYNNERS_FUNCTIONS_URL}/uploadTrackFile",
+                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/integrations/Core/UploadFile",
                 json={
-                    "file_base64": audio_base64,
+                    "file": f"data:{audio_content_type};base64,{audio_base64}",
                     "filename": audio_filename,
-                    "content_type": audio_content_type,
+                    "metadata": {
+                        "type": "audio",
+                        "track_type": "vip"
+                    }
                 },
                 headers={
                     'Authorization': authorization,
@@ -3615,36 +3618,31 @@ async def upload_vip_track(
             )
             
             print(f"[Admin VIP Upload] Upload response status: {upload_response.status_code}")
-            print(f"[Admin VIP Upload] Upload response: {upload_response.text[:500]}")
+            print(f"[Admin VIP Upload] Upload response: {upload_response.text[:500] if upload_response.text else 'empty'}")
             
+            audio_url = None
             if upload_response.status_code == 200:
                 upload_result = upload_response.json()
-                audio_url = upload_result.get('url') or upload_result.get('file_url')
-                print(f"[Admin VIP Upload] Audio uploaded: {audio_url}")
+                audio_url = upload_result.get('url') or upload_result.get('file_url') or upload_result.get('result', {}).get('url')
+                print(f"[Admin VIP Upload] Audio uploaded successfully: {audio_url}")
             else:
-                # Fallback: Store file locally and use a placeholder URL
-                print(f"[Admin VIP Upload] Upload failed, using base64 storage fallback")
-                # Store the audio as a data URL for now
-                audio_url = f"data:{audio_content_type};base64,{audio_base64[:100]}..."  # Truncated for logging
-                print(f"[Admin VIP Upload] Using data URL (first 100 chars)")
-                # For real implementation, we need to save to a storage
-                
-                # Actually, let's try a different approach - create the track without audio first
-                # and let the admin upload via Spynners web interface
-                audio_url = None
+                print(f"[Admin VIP Upload] Audio upload failed, will create track without audio")
             
             # Upload image if provided
             artwork_url = None
             if image_data:
-                print(f"[Admin VIP Upload] Processing artwork...")
+                print(f"[Admin VIP Upload] Uploading artwork via Base44 Core.UploadFile...")
                 image_base64 = base64.b64encode(image_data).decode('utf-8')
                 
                 image_response = await client.post(
-                    f"{SPYNNERS_FUNCTIONS_URL}/uploadTrackFile",
+                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/integrations/Core/UploadFile",
                     json={
-                        "file_base64": image_base64,
-                        "filename": image_filename,
-                        "content_type": "image/jpeg",
+                        "file": f"data:image/jpeg;base64,{image_base64}",
+                        "filename": image_filename or "artwork.jpg",
+                        "metadata": {
+                            "type": "image",
+                            "track_type": "vip"
+                        }
                     },
                     headers={
                         'Authorization': authorization,
@@ -3654,10 +3652,10 @@ async def upload_vip_track(
                 
                 if image_response.status_code == 200:
                     image_result = image_response.json()
-                    artwork_url = image_result.get('url') or image_result.get('file_url')
+                    artwork_url = image_result.get('url') or image_result.get('file_url') or image_result.get('result', {}).get('url')
                     print(f"[Admin VIP Upload] Artwork uploaded: {artwork_url}")
                 else:
-                    print(f"[Admin VIP Upload] Artwork upload failed: {image_response.text[:200]}")
+                    print(f"[Admin VIP Upload] Artwork upload failed: {image_response.text[:200] if image_response.text else 'empty'}")
         
         # Create the track in Spynners database using the Track entity API
         # Based on the Spynners schema: is_vip, vip_preview_start, vip_preview_end
