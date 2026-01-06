@@ -3866,12 +3866,14 @@ class AdminSessionsPDFRequest(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     all_users: Optional[bool] = True
+    session_id: Optional[str] = None  # For individual session export
+    dj_name: Optional[str] = None  # For individual session export
 
 
 @app.post("/api/admin/sessions/pdf")
 async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorization: str = Header(None)):
     """
-    Export all validated sessions from all users as PDF report (Admin only).
+    Export validated sessions (diamond_awarded=true) as PDF report (Admin only).
     Uses SessionMix entity data.
     """
     import io
