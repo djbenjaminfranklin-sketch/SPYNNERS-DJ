@@ -44,6 +44,18 @@ type PendingTrack = {
   rejection_reason?: string;
 };
 
+type AdminUser = {
+  id: string;
+  email: string;
+  full_name?: string;
+  artist_name?: string;
+  avatar_url?: string;
+  user_type?: string;
+  role?: string;
+  bio?: string;
+  created_date?: string;
+};
+
 type AdminStats = {
   total_tracks: number;
   total_users: number;
