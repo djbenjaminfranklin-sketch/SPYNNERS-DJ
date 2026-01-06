@@ -3378,7 +3378,7 @@ async def get_admin_tracks(authorization: str = Header(None), status: str = None
 @app.put("/api/admin/tracks/{track_id}/approve")
 async def approve_track(track_id: str, authorization: str = Header(None)):
     """
-    Approve a pending track.
+    Approve a pending track by calling Base44 REST API directly.
     """
     try:
         if not authorization:
@@ -3386,19 +3386,35 @@ async def approve_track(track_id: str, authorization: str = Header(None)):
         
         print(f"[Admin] Approving track: {track_id}")
         
-        # Try to use a native function to approve the track
-        result = await call_spynners_function("approveTrack", {"trackId": track_id}, authorization)
+        # Use Base44 REST API to update track status
+        base44_url = f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/Track/{track_id}"
+        headers = {
+            "Authorization": authorization,
+            "X-Base44-App-Id": BASE44_APP_ID,
+            "Content-Type": "application/json"
+        }
         
-        if result:
-            print(f"[Admin] Track {track_id} approved successfully")
-            return {"success": True, "message": "Track approved", "track": result}
-        else:
-            # Fallback: update the track status directly
-            result = await call_spynners_function("updateTrack", {
-                "trackId": track_id,
-                "data": {"status": "approved"}
-            }, authorization)
-            return {"success": True, "message": "Track approved", "track": result}
+        update_data = {
+            "status": "approved",
+            "is_approved": True
+        }
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # Use PATCH for partial updates
+            response = await client.patch(
+                base44_url,
+                json=update_data,
+                headers=headers
+            )
+            
+            print(f"[Admin] Base44 PATCH response: {response.status_code}")
+            
+            if response.status_code == 200:
+                print(f"[Admin] Track {track_id} approved successfully")
+                return {"success": True, "message": "Track approved", "track": response.json() if response.text else {}}
+            
+            print(f"[Admin] Failed to approve track. Response: {response.text[:200] if response.text else 'empty'}")
+            raise HTTPException(status_code=500, detail=f"Failed to approve track: {response.text[:200] if response.text else 'No response'}")
         
     except HTTPException:
         raise
