@@ -1398,13 +1398,25 @@ export const base44VIP = {
   // VIP Purchases
   async listMyPurchases(userId: string): Promise<VIPPurchase[]> {
     try {
-      const response = await mobileApi.get(`/api/base44/entities/VIPPurchase?user_id=${userId}`);
+      console.log('[VIP listMyPurchases] Fetching for userId:', userId);
+      const url = `/api/base44/entities/VIPPurchase?user_id=${userId}`;
+      console.log('[VIP listMyPurchases] URL:', url);
+      const response = await mobileApi.get(url);
+      console.log('[VIP listMyPurchases] Response status:', response.status);
+      console.log('[VIP listMyPurchases] Response data:', JSON.stringify(response.data).substring(0, 500));
       const data = response.data;
-      if (Array.isArray(data)) return data;
-      if (data?.items) return data.items;
+      if (Array.isArray(data)) {
+        console.log('[VIP listMyPurchases] Returning array of', data.length, 'purchases');
+        return data;
+      }
+      if (data?.items) {
+        console.log('[VIP listMyPurchases] Returning items array of', data.items.length, 'purchases');
+        return data.items;
+      }
+      console.log('[VIP listMyPurchases] No valid data, returning empty array');
       return [];
     } catch (error) {
-      console.error('[VIP] Error listing purchases:', error);
+      console.error('[VIP listMyPurchases] Error:', error);
       return [];
     }
   },
