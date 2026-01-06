@@ -67,6 +67,7 @@ export default function AdminDownloads() {
     tracks_downloaded: 0,
   });
 
+  const { t } = useLanguage();
   const isAdmin = isUserAdmin(user);
 
   useEffect(() => {
