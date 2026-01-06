@@ -101,12 +101,84 @@ export default function AdminUsers() {
     loadUsers();
   };
 
-  const generateMissingAvatars = () => {
-    Alert.alert('Generate Avatars', 'Génération des avatars manquants en cours...');
+  const generateMissingAvatars = async () => {
+    try {
+      Alert.alert('Generate Avatars', 'Génération des avatars manquants en cours...');
+      
+      const response = await axios.post(`${BACKEND_URL}/api/admin/generate-avatars`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data?.success) {
+        Alert.alert('✅ Avatars générés', response.data.message || 'Les avatars ont été générés avec succès');
+        loadUsers(); // Refresh the list
+      } else {
+        Alert.alert('Avatars', response.data?.message || 'Opération terminée');
+      }
+    } catch (error: any) {
+      console.error('[AdminUsers] Generate avatars error:', error);
+      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors de la génération des avatars');
+    }
   };
 
   const editUser = (userId: string) => {
-    Alert.alert('Edit User', `Modifier l'utilisateur ${userId}`);
+    // Navigate to user edit page or show edit modal
+    Alert.alert(
+      'Éditer l\'utilisateur',
+      'Que voulez-vous faire ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { 
+          text: 'Voir le profil', 
+          onPress: () => {
+            // Could navigate to profile or show detailed modal
+            const userToEdit = users.find(u => u.id === userId);
+            if (userToEdit) {
+              Alert.alert(
+                userToEdit.full_name || userToEdit.artist_name || 'Utilisateur',
+                `Email: ${userToEdit.email}\nType: ${userToEdit.user_type || 'N/A'}\nRole: ${userToEdit.role || 'user'}\nBlack Diamonds: ${userToEdit.black_diamonds || 0}`,
+                [{ text: 'OK' }]
+              );
+            }
+          }
+        },
+        {
+          text: 'Changer le rôle',
+          onPress: () => changeUserRole(userId)
+        }
+      ]
+    );
+  };
+
+  const changeUserRole = async (userId: string) => {
+    Alert.alert(
+      'Changer le rôle',
+      'Sélectionnez le nouveau rôle :',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'User', onPress: () => updateUserRole(userId, 'user') },
+        { text: 'DJ', onPress: () => updateUserRole(userId, 'dj') },
+        { text: 'Producer', onPress: () => updateUserRole(userId, 'producer') },
+        { text: 'Admin', onPress: () => updateUserRole(userId, 'admin') },
+      ]
+    );
+  };
+
+  const updateUserRole = async (userId: string, newRole: string) => {
+    try {
+      const response = await axios.put(`${BACKEND_URL}/api/admin/users/${userId}/role`, 
+        { role: newRole },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data?.success) {
+        Alert.alert('✅ Rôle mis à jour', `L'utilisateur a maintenant le rôle: ${newRole}`);
+        loadUsers(); // Refresh
+      }
+    } catch (error: any) {
+      console.error('[AdminUsers] Update role error:', error);
+      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors de la mise à jour du rôle');
+    }
   };
 
   const deleteUser = (userId: string, userName: string) => {
