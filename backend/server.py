@@ -4118,7 +4118,7 @@ class IndividualEmailRequest(BaseModel):
 async def send_individual_email(request: IndividualEmailRequest, authorization: str = Header(None)):
     """
     Send individual email to a specific user.
-    Uses Base44 integrations Core.SendEmail.
+    Uses Spynners sendBroadcastEmail function with individual recipient.
     """
     try:
         if not authorization:
@@ -4127,57 +4127,30 @@ async def send_individual_email(request: IndividualEmailRequest, authorization: 
         print(f"[Admin Email] Sending email to: {request.to}")
         print(f"[Admin Email] Subject: {request.subject}")
         
-        headers = {
-            "Content-Type": "application/json",
-            "X-Base44-App-Id": BASE44_APP_ID,
-            "Authorization": authorization
-        }
+        # Use sendBroadcastEmail Spynners function with recipientType=individual
+        result = await call_spynners_function("sendBroadcastEmail", {
+            "subject": request.subject,
+            "message": request.body,
+            "recipientType": "individual",
+            "recipientEmail": request.to,
+            "individualEmail": request.to,  # Alternative parameter name
+        }, authorization)
         
-        # Use Base44 Core.SendEmail integration
-        async with httpx.AsyncClient(timeout=30.0) as http_client:
-            response = await http_client.post(
-                f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/integrations/Core/SendEmail",
-                headers=headers,
-                json={
-                    "to": request.to,
-                    "subject": request.subject,
-                    "body": request.body,
-                    "html": True  # Send as HTML email
-                }
-            )
-            
-            print(f"[Admin Email] Response status: {response.status_code}")
-            print(f"[Admin Email] Response: {response.text[:200] if response.text else 'empty'}")
-            
-            if response.status_code in [200, 201]:
-                result = response.json() if response.text else {}
-                
-                # Also save to BroadcastEmail entity for history
-                try:
-                    await http_client.post(
-                        f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/BroadcastEmail",
-                        headers=headers,
-                        json={
-                            "subject": request.subject,
-                            "message": request.body,
-                            "recipient_type": "individual",
-                            "recipient_email": request.to,
-                            "sent_count": 1,
-                            "sent_date": datetime.now().isoformat()
-                        }
-                    )
-                    print(f"[Admin Email] Saved to BroadcastEmail history")
-                except Exception as e:
-                    print(f"[Admin Email] Failed to save history: {e}")
-                
+        print(f"[Admin Email] Spynners response: {result}")
+        
+        if result:
+            if result.get('success') or result.get('sent') or result.get('messageId'):
                 return {
                     "success": True,
                     "message": f"Email envoyé à {request.to}",
                     "details": result
                 }
-            else:
-                print(f"[Admin Email] Failed: {response.status_code} - {response.text}")
-                raise HTTPException(status_code=response.status_code, detail=response.text)
+            elif result.get('error'):
+                raise HTTPException(status_code=400, detail=result.get('error'))
+        
+        # If Spynners function didn't work, try alternative approach
+        print(f"[Admin Email] Spynners function failed, result: {result}")
+        raise HTTPException(status_code=500, detail="Impossible d'envoyer l'email via Spynners")
         
     except HTTPException:
         raise
