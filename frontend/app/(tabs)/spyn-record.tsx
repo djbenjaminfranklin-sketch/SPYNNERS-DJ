@@ -55,7 +55,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return 'https://dj-session-tracker.preview.emergentagent.com';
+  return 'https://admin-dashboard-646.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 
