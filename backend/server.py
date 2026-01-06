@@ -4020,7 +4020,7 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         # Summary stats
         total_djs = len(sessions_by_dj)
         total_sessions_count = len(filtered_sessions)
-        total_tracks = sum(s.get('tracks_detected', 0) or s.get('track_count', 0) or 0 for s in filtered_sessions)
+        total_tracks = sum(s.get('tracks_count', 0) or s.get('tracks_detected', 0) or 0 for s in filtered_sessions)
         
         summary_data = [
             ['DJs Uniques', 'Sessions Totales', 'Tracks Détectées'],
