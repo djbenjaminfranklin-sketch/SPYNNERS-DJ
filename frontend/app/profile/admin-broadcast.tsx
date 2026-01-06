@@ -590,48 +590,6 @@ export default function AdminBroadcast() {
                 <Ionicons name="musical-note" size={16} color="#FF9800" />
                 <Text style={styles.insertTracksText}>Insérer les tracks récentes</Text>
               </TouchableOpacity>
-
-              {/* Attachment Section */}
-              <View style={styles.attachmentSection}>
-                <TouchableOpacity 
-                  style={styles.attachmentBtn} 
-                  onPress={pickAttachment}
-                  disabled={uploadingAttachment}
-                >
-                  {uploadingAttachment ? (
-                    <ActivityIndicator size="small" color="#9C27B0" />
-                  ) : (
-                    <>
-                      <Ionicons name="attach" size={18} color="#9C27B0" />
-                      <Text style={styles.attachmentBtnText}>
-                        {attachment ? 'Changer la pièce jointe' : 'Ajouter une pièce jointe'}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-
-                {/* Show attached file */}
-                {attachment && (
-                  <View style={styles.attachedFile}>
-                    <Ionicons 
-                      name={attachment.type?.startsWith('image/') ? 'image' : 'document'} 
-                      size={20} 
-                      color="#9C27B0" 
-                    />
-                    <Text style={styles.attachedFileName} numberOfLines={1}>
-                      {attachment.name}
-                    </Text>
-                    {attachment.url ? (
-                      <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                    ) : (
-                      <ActivityIndicator size="small" color="#9C27B0" />
-                    )}
-                    <TouchableOpacity onPress={removeAttachment} style={styles.removeAttachmentBtn}>
-                      <Ionicons name="close-circle" size={20} color="#f44336" />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
             </View>
 
             {/* Send Button */}
