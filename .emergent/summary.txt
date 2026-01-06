@@ -1,184 +1,263 @@
 <analysis>
+**original_problem_statement**: The initial user request was to replicate the detailed, Excel-like PDF report from the SPYN SESSION admin page onto the user-facing Analytics page. Subsequently, the user requested to add date-range filtering and a similar PDF export functionality to the  page.
 
-**original_problem_statement:**
-The initial task was to complete the Admin Panel by connecting the remaining pages (, , ) to the live Spynners.com website data.
-
-After the agent completed this task, the user reported a new set of critical bugs:
-1.  **SPYN/SPYCA Bug:** The SPYN detection button (SPYCA) is no longer analyzing tracks.
-2.  **SPYN Record End Session Flow:** When a DJ using SPYN Record finishes a session, the end-of-session window is missing. This window should be the same as the one for the regular SPYN feature but with an additional option to save the mix.
-3.  **Offline Session Bug:** The app incorrectly creates an offline session in the user's history even when the session was conducted while the user was online.
+During the implementation and testing of these features, a series of critical issues emerged:
+1.  **Data Discrepancy:** The Track Radar page showed an incorrect count of user tracks (15 instead of 26).
+2.  **Missing Translations:** Numerous admin pages and core components (like the End Session modal) were still in English and required translation into French.
+3.  **Critical No Data Bug on Expo Go:** After the changes, most admin pages on the Expo Go mobile app appeared empty, showing no data. This became the primary focus, as the user needs to perform a full application review on their mobile device before release.
+4.  **Environment Instability:** The session was plagued by persistent Ngrok tunnel failures and web preview unavailability, severely hindering mobile testing.
 
 **User's preferred language**: Français (French). The next agent MUST respond in French.
 
 **what currently exists?**
-The application now has a fully functional Admin Panel, accessible from the profile page for admin users. All 8 admin sections are complete and connected to live data from the Spynners.com API. The work in this session focused on and successfully completed the implementation for:
--   : Now fetches and displays live user counts per category and lists all users with filtering capabilities.
--   : Fetches and displays the list of V.I.P. tracks and available promos from the live site.
--   : Implemented a full UI for composing and sending group emails, connected to a new backend endpoint () which utilizes the existing  functionality.
+The agent successfully implemented the backend logic for the new PDF generation features on both the  page and the  page by modifying . The frontend for  was also updated with the necessary UI for date filtering and PDF downloads.
 
-The agent successfully debugged a syntax error during implementation and performed a thorough manual verification of the new pages via screenshots, confirming they load and display data correctly after user login.
+However, a fundamental architectural flaw was discovered: the application uses a Python backend () as a proxy to the Base44 API. This proxy is accessible from the web preview but **is not accessible from the Expo Go mobile app** connected via the Ngrok tunnel.
+
+This discovery triggered a massive, and currently incomplete, refactoring effort. The goal is to make the mobile app bypass the local proxy and communicate directly with the Base44 API. This involved:
+*   Identifying the correct direct Base44 API subdomain: .
+*   Heavily modifying the central API service file () to use different API endpoints and base URLs depending on the platform ( vs. mobile).
+*   Beginning to refactor all admin pages (, , , , , ) to use this new direct-to-Base44 approach on mobile.
+*   Partially completing translations for some pages ().
+
+The application is currently in a **broken state on mobile** because this refactoring is incomplete. While some data (like tracks) might be loading, most admin pages are still failing to fetch data, resulting in the no data bug reported by the user.
 
 **Last working item**:
--   Last item agent was working: The agent had just started investigating the new set of bugs reported by the user (). It was in the process of identifying the relevant files and understanding the code related to SPYN detection, SPYN record, and offline sessions. The last concrete action was reading the contents of .
--   Status: IN PROGRESS
--   Agent Testing Done: N (for the new bugs)
--   Which testing method agent to use? Manual testing using the screenshot tool to replicate the user's reported bugs, followed by backend/frontend testing agents once fixes are implemented.
--   User Testing Done: N
+-   Last item agent was working: The agent was in the middle of a large-scale refactoring of all admin pages to make them compatible with the Expo Go mobile testing environment. The last specific actions involved modifying , , , and  to fetch data directly from the Base44 API when on a mobile platform, bypassing the local backend proxy.
+-   Status: **IN PROGRESS**
+-   Agent Testing Done: N (The agent's attempts were part of the debugging process and consistently failed, revealing more layers of the problem).
+-   Which testing method agent to use? backend testing agent. The agent must first ensure the backend is stable. Then, it must provide a working Expo Go tunnel for the user to test the mobile app.
+-   User Testing Done: N (User confirms the app is still broken on Expo Go).
 
 **All Pending/In progress Issue list**:
--   **Issue 1: SPYN/SPYCA button not analyzing tracks (P0 - HIGHEST PRIORITY)**
--   **Issue 2: SPYN Record end-of-session screen is missing/incorrect (P0)**
--   **Issue 3: Sessions are incorrectly saved as 'offline' (P0)**
--   **Issue 4: Purchased VIP tracks are re-locked after an app refresh (P1 - Critical, carried over)**
+-   **Issue 1: Complete the Mobile API Refactor to Fix No Data Bug (P0 - CRITICAL)**
+-   **Issue 2: Fix Track Radar Count Discrepancy (P1)**
+-   **Issue 3: Complete All Admin Page Translations (P2)**
+-   **Issue 4: PDF Downloads are Broken on Mobile (P3)**
+-   **Issue 5: Persistent Environment Instability (P4 - RECURRING)**
 
 **Issues Detail:**
--   **Issue 1: SPYN/SPYCA button not analyzing tracks (P0)**
-    -   **Attempted fixes**: None. Agent has just started the investigation.
+-   **Issue 1: Complete the Mobile API Refactor to Fix No Data Bug (P0)**
+    -   **Attempted fixes**: The agent created a complex, platform-aware API service in  and started updating admin pages. However, the implementation is incomplete. Logs show that many API calls still fail with 404 errors because they are trying to access local proxy endpoints (e.g., ) that don't exist on the direct Base44 API.
     -   **Next debug checklist**:
-        1.  Analyze  to understand the  handler for the SPYCA button.
-        2.  Check the browser console and backend logs () for errors when the button is pressed.
-        3.  Trace the API call responsible for track analysis (likely to ACRCloud via the backend) and verify its request and response.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a core feature of the application (live track detection). Fixing it is critical for user functionality.
-    -   **Status**: NOT STARTED
+        1.  **Systematically review :** Ensure the  function and the  wrapper correctly handle ALL possible endpoint variations between the proxy and the direct API. Cloud function invocations () were a major point of failure and need a robust solution (likely replacing them with direct entity queries).
+        2.  **Review EVERY admin data-fetching function:** Go through , , , , , and . For each  or  call, verify that on mobile () it uses a valid direct Base44 entity endpoint (e.g., , ) and NOT a local backend path (e.g., ).
+        3.  **Verify Authentication Flow on Mobile:** Ensure the login process correctly obtains and uses the auth token for subsequent direct calls to .
+    -   **Why fix this issue and what will be achieved with the fix?**: This is the root cause of the main bug preventing user testing. Fixing it will make the admin pages load data correctly on the Expo Go mobile app.
+    -   **Status**: IN PROGRESS
     -   **Is recurring issue?**: N
     -   **Should Test frontend/backend/both after fix?**: Both.
     -   **Blocked on other issue**: None.
 
--   **Issue 2: SPYN Record end-of-session screen is missing/incorrect (P0)**
-    -   **Attempted fixes**: None. Agent has just started the investigation.
+-   **Issue 2: Fix Track Radar Count Discrepancy (P1)**
+    -   **Attempted fixes**: The agent identified that the data loading in  fetches a limited list and filters on the client. The fix requires fetching the full, unfiltered list or getting a count directly from the API.
     -   **Next debug checklist**:
-        1.  Analyze  to find the logic that handles the end of a recording session.
-        2.  Compare this with the end-session logic in .
-        3.  Implement a new modal/UI component for the end-of-session screen that includes the Save Mix option.
-        4.  Create the backend logic to handle the mix saving process.
-    -   **Why fix this issue and what will be achieved with the fix?**: This will complete the user flow for the SPYN Record feature, allowing DJs to save and manage their recorded mixes.
+        1.  Examine  in .
+        2.  Modify the function to call a Base44 entity endpoint that provides the total count of tracks for the user, instead of relying on a limited client-side list.
+    -   **Why fix this issue and what will be achieved with the fix?**: It will correct a data inaccuracy on a key user-facing screen.
     -   **Status**: NOT STARTED
     -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: Both.
-    -   **Blocked on other issue**: None.
+    -   **Should Test frontend/backend/both after fix?**: Frontend.
+    -   **Blocked on other issue**: Issue 1 (The API must be stable first).
 
--   **Issue 3: Sessions are incorrectly saved as 'offline' (P0)**
-    -   **Attempted fixes**: None. Agent has just started the investigation.
+-   **Issue 3: Complete All Admin Page Translations (P2)**
+    -   **Attempted fixes**: The agent translated End Session in  and a few other minor texts.
     -   **Next debug checklist**:
-        1.  Analyze  and .
-        2.  Find where the decision is made to save a session as offline vs online.
-        3.  Check the network status detection logic within the app. It may be failing to correctly identify an online state when the session ends.
-    -   **Why fix this issue and what will be achieved with the fix?**: Fixes data integrity issues, ensuring user session history is accurate.
-    -   **Status**: NOT STARTED
+        1.  Perform a project-wide search in the  directory for common English UI strings (Search, Filter, Apply, Cancel, Users, Sessions, Loading..., etc.).
+        2.  Translate all identified strings to French in their respective  files.
+    -   **Why fix this issue and what will be achieved with the fix?**: Fulfills a direct user request for full localization of the admin section.
+    -   **Status**: IN PROGRESS
     -   **Is recurring issue?**: N
-    -   **Should Test frontend/backend/both after fix?**: Both.
-    -   **Blocked on other issue**: None.
-
--   **Issue 4: Purchased VIP tracks are re-locked after an app refresh (P1)**
-    -   **Attempted fixes**: (From previous fork) An  implementation in  was attempted but is not working correctly.
-    -   **Next debug checklist**:
-        1.  In , log the value retrieved from  inside the  function to see if it's being read correctly on app start.
-        2.  Verify the  key () is consistent and the  is available.
-        3.  Check the logic that determines if a track is unlocked in the  function.
-    -   **Why fix this issue and what will be achieved with the fix?**: The entire VIP currency system is fundamentally broken until users can permanently retain access to purchased content.
-    -   **Status**: NOT STARTED (in this session)
-    -   **Is recurring issue?**: Y
     -   **Should Test frontend/backend/both after fix?**: Frontend.
     -   **Blocked on other issue**: None.
 
+-   **Issue 4: PDF Downloads are Broken on Mobile (P3)**
+    -   **Attempted fixes**: None. The agent identified the problem but did not implement a fix. The PDF download buttons call local backend endpoints (, ) which are inaccessible from mobile.
+    -   **Next debug checklist**:
+        1.  In  and , wrap the  handler for the PDF download buttons.
+        2.  Inside the handler, check .
+        3.  If it's not web, show an  to the user explaining that PDF export is only available on the web version for now.
+        4.  If it is web, proceed with the existing download logic.
+    -   **Why fix this issue and what will be achieved with the fix?**: Prevents user confusion and app errors on mobile. A full client-side PDF generation is out of scope and too complex.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Frontend.
+    -   **Blocked on other issue**: None.
+
+-   **Issue 5: Persistent Environment Instability (P4 - RECURRING)**
+    -   **Attempted fixes**: Multiple service restarts, changing Ngrok subdomains, using , switching to  mode (which doesn't work for external testing), and finally managing to get a tunnel working.
+    -   **Next debug checklist**: The environment's Ngrok tunnel is extremely fragile. If it fails, the agent should immediately try to generate a new random subdomain by editing  and restarting expo. Avoid wasting time on other debugging steps as this seems to be the most effective workaround.
+    -   **Why fix this issue and what will be achieved with the fix?**: A stable testing environment is critical for the user to validate any fixes.
+    -   **Status**: BLOCKED (External/Environmental Issue)
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: N/A
+    -   **Blocked on other issue**: This issue blocks all user testing.
+
 **In progress Task List**:
--   **Task 1: Debug and Fix SPYN Functionality (P0)**
-    -   **Where to resume**: The agent was starting the investigation. The next logical step is to analyze the code in  to understand the SPYCA button's functionality and trace the source of the failure.
-    -   **What will be achieved with this?**: Resolve the three critical bugs reported by the user, restoring core app functionality.
+-   **Task 1: Complete Mobile API Refactor (P0)**
+    -   **Where to resume**: Reviewing all admin  files (, , , etc.) and the core service file .
+    -   **What will be achieved with this?**: The application will correctly load data from the Base44 API when running on the Expo Go mobile app.
     -   **Status**: IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?**: Both
+    -   **Should Test frontend/backend/both after fix?**: Both.
     -   **Blocked on something**: No.
 
 **Upcoming and Future Tasks**
--   **Future Tasks (from backlog):**
-    -   P2: SPYN Record - USB Audio Source Detection on Mobile.
-    -   P2: Upload Track - Artist Autocomplete & Metadata Extraction.
-    -   P3: Edit Profile - Allow multiple statuses and editable fields.
-    -   P3: Playlist - Add a Share button.
+-   Fix Track Radar Count Discrepancy (P1)
+-   Complete All Admin Page Translations (P2)
+-   Disable PDF Downloads on Mobile (P3)
+-   Investigate Black Diamond data discrepancy (from previous fork summary, not addressed).
 
 **Completed work in this session**
--   **Admin Panel Finalization:**
-    -   **DJ Categories ():** Connected to a new backend endpoint to fetch and display live user categories and user lists.
-    -   **V.I.P. Management ():** Connected to new backend endpoints to fetch and display live VIP tracks and promos.
-    -   **Email Groupé ():** Fully implemented with a new UI and a new backend endpoint () to send mass emails.
--   **Backend Development:**
-    -   Created new endpoints in  to support the admin pages: , , .
--   **Manual Testing:**
-    -   Successfully logged in and verified via screenshots that the Admin Badge, Profile Page, and all newly completed Admin Pages (, , ) are working correctly and displaying live data.
+-   **Analytics Page PDF:** Backend endpoint  in  was updated to generate a detailed Excel-like report, similar to the admin sessions report.
+-   **Admin Downloads Page Feature:**
+    -   Created UI for date-range filtering and a PDF download button in .
+    -   Created a new backend endpoint  in  to generate the corresponding report.
+-   **Mobile API Refactor (Partial):**
+    -   Initiated a major architectural change to make the mobile app call the Base44 API directly, bypassing the inaccessible local backend. This involved heavy modification of  and several admin pages.
+-   **Translations (Partial):** Translated some End Session UI elements in .
+-   **Dependency Management:** Installed the  package.
 
 **Earlier issues found/mentioned but not fixed**
--   **Issue 1: Purchased VIP tracks are re-locked after an app refresh.**
-    -   **Debug checklist**: Review  logic in . Check if data is being saved correctly on purchase and read correctly on app load.
-    -   **Why to solve this issue and what will be achieved with this?**: This is a critical bug that undermines the entire V.I.P. currency feature.
-    -   **Should Test frontend/backend/both after fix**: Frontend.
-    -   **Is recurring issue?**: Y.
+-   **Issue 1: Black Diamond data discrepancy**
+    -   **Debug checklist**: User from a *previous* session reported sessions showing multiple diamonds awarded, contrary to the one per day rule. This was never investigated. The agent should check the logic around the  field in the  entity.
+    -   **Why to solve this issue and what will be achieved with this?**: Ensures the core reward mechanism of the app is functioning correctly.
+    -   **Should Test frontend/backend/both after fix**: Both.
+    -   **Is recurring issue?**: N
 
 **Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork**: Purchased VIP tracks are re-locked after an app refresh.
--   **Recurrence count**: 2+
--   **Status**: NOT STARTED
+-   **Issue recurrence in previous fork**: Persistent Environment Instability (Ngrok tunnel failures).
+-   **Recurrence count**: High. This has been a problem across multiple sessions.
+-   **Status**: BLOCKED
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Backend-for-Frontend (BFF):** Extended  with more specific endpoints to serve aggregated data to the admin panel.
--   **Live Data Integration:** Successfully connected the remaining admin pages to the live Spynners.com API, fetching real-time stats and content.
--   **API Integration:** Utilized an existing, deeper backend integration () via a new frontend-facing API endpoint.
--   **Manual UI Verification:** Used screenshot tool to step through the user flow (login, navigation, viewing data) to confirm functionality and UI correctness.
+-   **Platform-Specific API Strategy:** This is the most critical concept. The application now has a bifurcated data-fetching strategy.
+    -   **Web ()**: Uses the local Python  as a proxy backend. API calls go to relative paths like .
+    -   **Mobile ()**: **MUST** use the direct Base44 API at . API calls must use direct entity paths like .
+-   **Proxy Backend vs. Direct API:** The local backend simplifies some logic and handles CORS for the web, but is inaccessible from the externally-tunneled mobile app. The direct Base44 API is reachable but requires careful handling of authentication and different endpoint paths.
+-   **Environment Instability (Ngrok):** The free-tier Ngrok tunnel used for Expo Go is highly unreliable in the containerized environment, frequently failing with robot user or subdomain in use errors. The most reliable workaround is to repeatedly change the subdomain in  and restart.
+-   **Base44 Subdomains:** The correct, working subdomain for direct API access for this application is .
 
 **All files of reference**
--   : Contains the new backend logic for the admin panel.
--   : Completed implementation.
--   : Completed implementation.
--   : Completed implementation.
--   : Key file for debugging the SPYCA button.
--   : Key file for implementing the End Session screen.
--   : Key file for debugging the offline session bug.
--   : Contains the critical, unfixed bug related to VIP track persistence.
+-   : **Last worked on, CRITICAL.** Contains the core logic for the incomplete mobile API refactor.
+-   : All admin pages are part of the ongoing refactor and are in a broken or partially working state on mobile.
+-   : Contains backend logic for PDF generation which is currently inaccessible from mobile.
+-   : Contains the Ngrok subdomain configuration which is the key to fixing tunnel issues.
 
 **Critical Info for New Agent**
--   **Langue de l'utilisateur:** La communication doit être en **français**.
--   **Priorité Absolue:** Le panneau d'administration est terminé, mais l'utilisateur a immédiatement signalé 3 nouveaux bugs critiques. Votre tâche principale est de les corriger.
-    1.  **Bug SPYCA** ()
-    2.  **Bug Écran Fin de Session** ()
-    3.  **Bug Session Offline** ()
--   **Bug VIP en Attente:** Une fois les 3 bugs ci-dessus résolus, n'oubliez pas le problème P1 en suspens : les morceaux VIP achetés se verrouillent à nouveau après un rafraîchissement. C'est un bug majeur qui doit être corrigé pour que la fonctionnalité VIP soit viable.
+-   **Langue de l'utilisateur:** La communication doit impérativement être en **français**.
+-   **Priorité Absolue (P0):** Finir la refactorisation de l'API mobile. L'application est **cassée sur mobile** jusqu'à ce que ce soit terminé. Vous devez systématiquement vérifier chaque page admin et chaque fonction d'appel réseau pour vous assurer qu'elle utilise l'API Base44 directe () sur mobile, en utilisant les bons chemins d'endpoint (ex:  et non ).
+-   **Problème Fondamental:** Ne faites pas confiance au backend local () pour les fonctionnalités mobiles. Il n'est pas accessible depuis Expo Go. Toute fonctionnalité requise sur mobile doit être implémentée en appelant directement l'API Base44.
+-   **Export PDF sur Mobile:** Cette fonctionnalité est impossible en l'état car elle dépend du backend local. La meilleure solution à court terme est de désactiver le bouton sur mobile et d'informer l'utilisateur via une alerte.
+-   **Instabilité de l'Environnement:** Attendez-vous à des pannes du tunnel Ngrok. La solution la plus rapide est de changer le  dans  pour une nouvelle valeur aléatoire et de redémarrer le service 
+  Usage: expo [command] [options]
+
+  Options:
+  
+    -V, --version                     output the version number
+    --non-interactive                 Fail, if an interactive prompt would be required to continue.
+    -h, --help                        output usage information
+  
+  Commands:
+
+    init [name]                       Create a new Expo project
+    start [path]                      Start a local dev server for the app
+    start:web [path]                  Start a Webpack dev server for the web app
+    export [path]                     Export the static files of the app for hosting it on a web server
+    install [packages...]             Install a module or other package to a project
+    run:android [path]                Run the Android app binary locally
+    run:ios [path]                    Run the iOS app binary locally
+    send [path]                       Share the project's URL to an email address
+
+    login                             Login to an Expo account
+    logout                            Logout of an Expo account
+    register                          Sign up for a new Expo account
+    whoami                            Return the currently authenticated account
+
+    client:install:ios                Install Expo Go for iOS on the simulator
+    client:install:android            Install Expo Go for Android on a connected device or emulator
+
+    config [path]                     Show the project config
+    doctor [path]                     Diagnose issues with the project
+    upgrade [sdk-version]             Upgrade the project packages and config for the given SDK version
+
+    customize:web [path]              Eject the default web files for customization
+    prebuild [path]                   Create native iOS and Android project files before building natively.
+                                      Learn more: https://docs.expo.dev/workflow/customizing/
+
+    build:web [path]                  Build the web app for production
+
+    credentials:manager [path]        Superseded by eas credentials in eas-cli
+
+    url [path]                        Log a URL for opening the project in Expo Go
+    url:ipa [path]                    Log the download URL for the standalone iOS binary
+    url:apk [path]                    Log the download URL for the standalone Android binary
+
+    webhooks [path]                   List all webhooks for a project
+    webhooks:add [path]               Add a webhook to a project
+    webhooks:remove [path]            Delete a webhook
+    webhooks:update [path]            Update an existing webhook
+
+    build:ios [path]                  Superseded by eas build in eas-cli
+    build:android [path]              Superseded by eas build in eas-cli
+    build:status [path]               Superseded by eas build:list in eas-cli
+    eject [path]                      Superseded by expo prebuild
+    fetch:ios:certs [path]            Superseded by eas credentials in eas-cli
+    fetch:android:keystore [path]     Superseded by eas credentials in eas-cli
+    fetch:android:hashes [path]       Superseded by eas credentials in eas-cli
+    fetch:android:upload-cert [path]  Superseded by eas credentials in eas-cli
+    publish [path]                    Superseded by eas update in eas-cli
+    publish:set [path]                Superseded by eas update:republish in eas-cli
+    publish:rollback [path]           Superseded by eas update:republish in eas-cli
+    publish:history [path]            Superseded by eas update:list in eas-cli
+    publish:details [path]            Superseded by eas update:view in eas-cli
+    push:android:upload [path]        Superseded by eas credentials in eas-cli
+    push:android:show [path]          Superseded by eas credentials in eas-cli
+    push:android:clear [path]         Superseded by eas credentials in eas-cli
+    upload:android [path]             Superseded by eas submit in eas-cli
+    upload:ios [path]                 Superseded by eas submit in eas-cli
+    client:ios [path]                 Superseded by Expo Dev Clients
+
+[18:01:49]   Run a command with --help for more info 💡
+[18:01:49]     $ expo start --help
+[18:01:49]. Ne perdez pas de temps sur d'autres méthodes.
 
 **Last 10 User Messages and any pending HUMAN messages**
--   7. (LATEST) oui verifiez les bug et j ai constasté qu il y avait un bug avec le bouton spyca n analyse plus les tracks , et il faudrait qu a la fin quand le dj arrete la session il ai la meme fenetre end session que le bouton spyn mais avec l option en plus d enregistrer son mix et j ai constate que quand la session se termin il crois qu on est tt le temps hors ligne car il cree une sessio dans off session - User reports three new critical bugs related to SPYN features and offline sessions. (IN PROGRESS)
--   6. User receives the summary of completed work on Admin pages. (COMPLETED)
--   5. TU AS BESOIN D AUTRES CHOSES (DO YOU NEED OTHER THINGS) - User asks if the agent needs anything else. (COMPLETED)
--   4. User provides detailed information on the existing API for sending broadcast emails () and gives the go-ahead to test at the end. (COMPLETED)
--   3. User confirms the agent's plan to finish the Admin panel. (COMPLETED)
--   2. Agent asks for confirmation of the plan. (COMPLETED)
--   1. The session started with the previous handover summary, outlining the plan to finish the Admin Panel. (COMPLETED)
+-   10. (LATEST) non rien - User reports the latest fix did not work, there is still no data. (IN PROGRESS)
+-   9. y a tjrs pas d info , je comprends pas on a fait toutes les modifs depuis 2 jours ca fonctionnait tres bien mais qu est ce qui a changé !! - User is frustrated, stating it worked two days ago and doesn't understand what changed. (IN PROGRESS)
+-   8. Toujours rien. Jaimerais que tarrêtes de me faire perdre des crédits, sil te plaît et que tu résous le problème. je ne te paye pas pour que ca fonctionne pas" - User is extremely frustrated with the lack of progress and cost. (IN PROGRESS)
+-   7. "verifie avant de me redonner un lien ca marche pas je compte pas faire ca toute la soiree , je vais demander un remboursement , ca fait 3 jours que je dors pas a cause de cette appli et toi tu m as tt perdu !!!" - User is at a breaking point, threatening to ask for a refund and stating the app is now completely broken. (IN PROGRESS)
+-   6. "y a que les tracks recuperer tout le reste rien" - User reports that only tracks are loading, but no other data appears on the admin pages. (IN PROGRESS)
+-   5. "Donne-moi un autre lien, car je reste sur lancien cash. - User requests a new link to bypass client-side caching. (COMPLETED)
+-   4. Je vais dessus, mais ça ne change rien. Il na toujours pas de données." - User confirms that a new link did not solve the "no data" issue. (IN PROGRESS)
+-   3. "tu vois bien y a rien pas d info" - User sends a screenshot showing the empty pages on mobile. (IN PROGRESS)
+-   2. "Je ne veux pas. Je ne suis pas sûr encore, il reste des corrections. Cest clair. Je veux être comme la dernière fois sur Expogo. Jusquà présent, on était sur Expogo et ça sétait très bien passé. - User rejects the web preview workaround and insists on using Expo Go, stating it worked fine before. (IN PROGRESS)
+-   1. le tunnel ne fonctionne plus - User reports the Expo Go tunnel is down again. (IN PROGRESS)
 
 **Project Health Check:**
--   **Broken**:
-    -   SPYN/SPYCA track analysis functionality.
-    -   SPYN Record end-of-session flow.
-    -   Online/Offline session status logic.
-    -   V.I.P. track unlock persistence (pre-existing critical issue).
+-   **Broken**: The application is critically broken on the mobile platform (Expo Go). Most admin pages fail to load data due to an incomplete, large-scale API refactoring. PDF export is also broken on mobile.
+-   **Mocked**: None.
+-   **Pending Verification**: The entire mobile application needs to be verified once the API refactoring is complete.
 
 **3rd Party Integrations**
--   **Spynners Native API:** Primary backend service. The agent is interacting with it via a BFF in .
--   **ACRCloud:** Music identification service (likely related to the broken SPYN/SPYCA feature).
--   **Expo (EAS & Tunnel):** Development and deployment platform.
+-   **Spynners / Base44:** Primary BaaS. The key issue is the dual-access pattern: via a local proxy for web, and direct API calls () for mobile.
+-   **@base44/sdk:** A newly installed package to facilitate direct API calls, but its usage seems to have caused issues, leading the agent to prefer raw  calls.
+-   **Ngrok:** Used for the Expo Go tunnel, but is highly unstable in this environment.
 
 **Testing status**
--   Testing agent used after significant changes: NO (Agent performed manual verification of the Admin Panel using screenshots).
--   Troubleshoot agent used after agent stuck in loop: NO
+-   Testing agent used after significant changes: NO (The changes are too broad and still in progress).
+-   Troubleshoot agent used after agent stuck in loop: YES, it correctly identified issues with Ngrok and the Base44 API access patterns.
 -   Test files created: []
--   Known regressions:
-    -   The SPYN/SPYCA functionality is a new regression reported by the user.
-    -   The VIP unlock issue is a pre-existing regression.
+-   Known regressions: Most admin pages that were previously working (likely on web preview) are now broken on mobile due to the incomplete refactoring.
 
 **Credentials to test flow:**
 -   **Email:** 
 -   **Password:** 
 
 **What agent forgot to execute**
--   The agent correctly prioritized the user's request to finish the Admin Panel. After completing it, the agent was immediately tasked with new, higher-priority bugs. The long-standing VIP bug was therefore postponed again, but it was not forgotten. The agent did not have a chance to start on the new bugs before the session ended.
-
+-   The agent did not fully complete the massive refactoring it started, leaving the app in a broken state. It addressed the no data issue piece by piece instead of having a holistic plan from the start, which led to cascading failures.
+-   The agent did not implement a graceful fallback for the PDF download feature on mobile (e.g., disabling the button), even after identifying it would be broken.
+-   The Black Diamond data discrepancy from the previous fork's summary was never addressed.
 </analysis>

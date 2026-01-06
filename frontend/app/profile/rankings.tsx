@@ -19,7 +19,7 @@ import AdminBadge, { isUserAdmin } from '../../src/components/AdminBadge';
 import axios from 'axios';
 
 // Backend URL
-const BACKEND_URL = 'https://agent-env-5bd6c1bc-7d9d-4962-8663-5852546af7fb-preview.preview.emergentagent.com';
+const BACKEND_URL = 'https://spynapp-1.preview.emergentagent.com';
 
 export default function RankingsScreen() {
   const router = useRouter();
