@@ -359,6 +359,19 @@ export const base44Auth = {
 
   async me(): Promise<User | null> {
     try {
+      // On mobile, we can't use /api/base44/auth/me - get user from storage
+      if (Platform.OS !== 'web') {
+        console.log('[Auth] Mobile: Getting user from storage');
+        const userStr = await AsyncStorage.getItem(USER_KEY);
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          console.log('[Auth] Mobile: Got user from storage:', user.email);
+          return user;
+        }
+        return null;
+      }
+      
+      // On web, use the proxy
       const response = await mobileApi.get('/api/base44/auth/me');
       return response.data;
     } catch (error: any) {
