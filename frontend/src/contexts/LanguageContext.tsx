@@ -16,6 +16,19 @@ export const LANGUAGES: { code: Language; name: string; flag: string }[] = [
 // Translations
 const translations: Record<Language, Record<string, string>> = {
   en: {
+    // Common
+    'common.error': 'Error',
+    'common.success': 'Success',
+    'common.loading': 'Loading...',
+    'common.cancel': 'Cancel',
+    'common.save': 'Save',
+    'common.delete': 'Delete',
+    'common.confirm': 'Confirm',
+    'common.congratulations': 'Congratulations!',
+    
+    // Admin
+    'admin.results': 'Results',
+    
     // Auth
     'login.title': 'Sign In',
     'login.email': 'Email',
