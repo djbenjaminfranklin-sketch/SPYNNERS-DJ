@@ -357,6 +357,7 @@ const translations: Record<Language, Record<string, string>> = {
     'spynRecord.venueNotRecognized': 'Venue not recognized as club/bar - No Black Diamond',
     'spynRecord.willEarnBlackDiamond': 'You will earn a Black Diamond! 💎',
     'spynRecord.confirmEnd': 'Confirm end of session',
+    'spynRecord.cantStartRecording': 'Unable to start recording',
     'menu.website': 'Website',
     
     // Actions
@@ -1110,6 +1111,7 @@ const translations: Record<Language, Record<string, string>> = {
     'spynRecord.venueNotRecognized': 'Lieu non reconnu comme club/bar - Pas de Black Diamond',
     'spynRecord.willEarnBlackDiamond': 'Vous allez gagner un Black Diamond ! 💎',
     'spynRecord.confirmEnd': 'Confirmer la fin de session',
+    'spynRecord.cantStartRecording': 'Impossible de démarrer l\'enregistrement',
     
     // Actions
     'action.download': 'Télécharger',
