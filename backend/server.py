@@ -3642,15 +3642,15 @@ async def upload_vip_track(
             "artwork_url": artwork_url,
             # VIP fields - matching Spynners Track entity schema
             "is_vip": True,  # This marks the track as VIP with padlock
-            "vip_requested": False,  # Already approved by admin
+            "vip_requested": True,  # Needs validation by admin
             "vip_preview_start": int(preview_start) if preview_start else 0,
             "vip_preview_end": int(preview_end) if preview_end else 30,
-            # Track approval status
-            "status": "approved",  # Auto-approve VIP tracks from admin
-            "approved": True,
+            # Track approval status - PENDING for admin validation
+            "status": "pending",  # Goes to admin validation queue
+            "approved": False,  # Not yet approved
         }
         
-        print(f"[Admin VIP Upload] Creating VIP track in database with is_vip=True")
+        print(f"[Admin VIP Upload] Creating VIP track in database with is_vip=True, status=pending")
         print(f"[Admin VIP Upload] Track data: {track_data}")
         
         # Use the base44 entities API to create the Track directly
