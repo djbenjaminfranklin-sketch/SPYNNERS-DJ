@@ -325,7 +325,11 @@ export default function PlaylistScreen() {
       {/* Playlist Detail View (not Modal to allow GlobalPlayer to be visible) */}
       {showDetailModal && (
         <View style={styles.detailOverlayView}>
-          <View style={styles.detailModalContent}>
+          <ScrollView 
+            style={styles.detailModalContent}
+            contentContainerStyle={styles.detailContentContainer}
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.detailModalHeader}>
               <TouchableOpacity onPress={() => setShowDetailModal(false)}>
                 <Ionicons name="close" size={28} color={Colors.text} />
@@ -379,7 +383,7 @@ export default function PlaylistScreen() {
             </TouchableOpacity>
 
             {/* Track List */}
-            <View style={styles.trackListContainer}>
+            <View style={styles.trackListSection}>
               <Text style={styles.trackListTitle}>{t('playlist.tracks')}</Text>
               
               {loadingTracks ? (
@@ -394,58 +398,55 @@ export default function PlaylistScreen() {
                   <Text style={styles.trackListEmptySubtext}>{t('playlist.addTracksHint')}</Text>
                 </View>
               ) : (
-                <ScrollView 
-                  style={styles.trackList} 
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={{ paddingBottom: 200 }}
-                >
-                  {playlistTracks.map((track, index) => {
-                    const trackId = track.id || track._id || '';
-                    const isCurrentTrack = currentTrack && (currentTrack.id || currentTrack._id) === trackId;
-                    const coverUrl = getCoverImageUrl(track);
-                    
-                    return (
-                      <TouchableOpacity 
-                        key={trackId} 
-                        style={[styles.trackItem, isCurrentTrack && styles.trackItemActive]}
-                        onPress={() => playSingleTrack(track)}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={styles.trackNumber}>{index + 1}</Text>
-                        
-                        <View style={styles.trackItemCover}>
-                          {coverUrl ? (
-                            <Image source={{ uri: coverUrl }} style={styles.trackItemCoverImage} />
-                          ) : (
-                            <View style={styles.trackItemCoverPlaceholder}>
-                              <Ionicons name="musical-notes" size={16} color={Colors.textMuted} />
-                            </View>
-                          )}
-                        </View>
-                        
-                        <View style={styles.trackItemInfo}>
-                          <Text style={[styles.trackItemTitle, isCurrentTrack && styles.trackItemTitleActive]} numberOfLines={1}>
-                            {track.title}
-                          </Text>
-                          <Text style={styles.trackItemArtist} numberOfLines={1}>
-                            {getArtistName(track)} • {track.bpm || '—'} BPM
-                          </Text>
-                        </View>
-                        
-                        {isCurrentTrack && isPlaying ? (
-                          <TouchableOpacity onPress={togglePlayPause}>
-                            <Ionicons name="pause-circle" size={32} color={Colors.primary} />
-                          </TouchableOpacity>
+                playlistTracks.map((track, index) => {
+                  const trackId = track.id || track._id || '';
+                  const isCurrentTrack = currentTrack && (currentTrack.id || currentTrack._id) === trackId;
+                  const coverUrl = getCoverImageUrl(track);
+                  
+                  return (
+                    <TouchableOpacity 
+                      key={trackId} 
+                      style={[styles.trackItem, isCurrentTrack && styles.trackItemActive]}
+                      onPress={() => playSingleTrack(track)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.trackNumber}>{index + 1}</Text>
+                      
+                      <View style={styles.trackItemCover}>
+                        {coverUrl ? (
+                          <Image source={{ uri: coverUrl }} style={styles.trackItemCoverImage} />
                         ) : (
-                          <Ionicons name="play-circle-outline" size={32} color={Colors.textMuted} />
+                          <View style={styles.trackItemCoverPlaceholder}>
+                            <Ionicons name="musical-notes" size={16} color={Colors.textMuted} />
+                          </View>
                         )}
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
+                      </View>
+                      
+                      <View style={styles.trackItemInfo}>
+                        <Text style={[styles.trackItemTitle, isCurrentTrack && styles.trackItemTitleActive]} numberOfLines={1}>
+                          {track.title}
+                        </Text>
+                        <Text style={styles.trackItemArtist} numberOfLines={1}>
+                          {getArtistName(track)} • {track.bpm || '—'} BPM
+                        </Text>
+                      </View>
+                      
+                      {isCurrentTrack && isPlaying ? (
+                        <TouchableOpacity onPress={togglePlayPause}>
+                          <Ionicons name="pause-circle" size={32} color={Colors.primary} />
+                        </TouchableOpacity>
+                      ) : (
+                        <Ionicons name="play-circle-outline" size={32} color={Colors.textMuted} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })
               )}
             </View>
-          </View>
+            
+            {/* Bottom padding for GlobalPlayer */}
+            <View style={{ height: 180 }} />
+          </ScrollView>
         </View>
       )}
     </View>
