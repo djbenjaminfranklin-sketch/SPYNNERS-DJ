@@ -313,6 +313,18 @@ frontend:
         agent: "testing"
         comment: "Ready to test dark theme (#0a0a0a background), primary cyan color (#5CB3CC), and text readability"
 
+  - task: "Internationalization (i18n) System"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/contexts/LanguageContext.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing i18n system with English default language, French translation, and language switching functionality. Includes login flow, navigation tabs, profile stats, and admin pages."
+
 metadata:
   created_by: "testing_agent"
   version: "1.0"
