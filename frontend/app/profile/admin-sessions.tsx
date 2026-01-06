@@ -654,6 +654,7 @@ const styles = StyleSheet.create({
 
   sessionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
   sessionText: { fontSize: 12, color: Colors.text },
+  downloadSessionBtn: { padding: 8, backgroundColor: '#E91E6320', borderRadius: 4 },
 
   statusBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#F4433620', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, alignSelf: 'flex-start' },
   statusBadgeValidated: { backgroundColor: '#4CAF5020' },
