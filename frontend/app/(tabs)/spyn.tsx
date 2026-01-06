@@ -817,6 +817,12 @@ export default function SpynScreen() {
       return;
     }
     
+    // IMPORTANT: Only send email if we're at a valid venue (club, bar, restaurant, etc.)
+    if (!location?.is_valid_venue) {
+      console.log(`[SPYN] 📧 Skipping email for ${track.title} - not at a valid venue (home or unknown location)`);
+      return;
+    }
+    
     if (!token) {
       console.log('[SPYN] No auth token, skipping email');
       return;
@@ -825,7 +831,7 @@ export default function SpynScreen() {
     try {
       const djName = user?.full_name || 'DJ';
       
-      console.log(`[SPYN] 📧 Sending email for: ${track.title}, producer: ${track.producer_id}, trackId: ${track.id}`);
+      console.log(`[SPYN] 📧 Sending email for: ${track.title} at venue: ${location?.venue}, producer: ${track.producer_id}, trackId: ${track.id}`);
       
       // Format expected by Spynners API
       const emailPayload = {
