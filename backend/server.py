@@ -3777,7 +3777,6 @@ async def get_admin_sessions(authorization: str = Header(None), limit: int = 100
             # Use Base44 entity API to get SessionMix data
             base44_url = "https://app.base44.com/api/apps/691a4d96d819355b52c063f3/entities/SessionMix"
             headers = {
-                "Authorization": authorization,
                 "Content-Type": "application/json"
             }
             
@@ -3797,10 +3796,20 @@ async def get_admin_sessions(authorization: str = Header(None), limit: int = 100
                     # Log first session structure to see available fields
                     if sessions and len(sessions) > 0:
                         print(f"[Admin Sessions] Sample session keys: {list(sessions[0].keys())}")
-                        print(f"[Admin Sessions] Sample session: {sessions[0]}")
                 elif response.status_code == 429:
-                    print(f"[Admin Sessions] Rate limit exceeded - waiting and using fallback")
-                    # Don't raise, just continue to fallback
+                    print(f"[Admin Sessions] Rate limit exceeded - waiting 2 seconds and retrying...")
+                    await asyncio.sleep(2)
+                    # Retry once
+                    response2 = await client.get(f"{base44_url}?limit={limit}", headers=headers)
+                    if response2.status_code == 200:
+                        data = response2.json()
+                        if isinstance(data, list):
+                            sessions = data
+                        elif isinstance(data, dict):
+                            sessions = data.get('items', data.get('data', []))
+                        print(f"[Admin Sessions] Retry successful - Got {len(sessions)} sessions")
+                    else:
+                        print(f"[Admin Sessions] Retry also failed: {response2.status_code}")
                 else:
                     print(f"[Admin Sessions] SessionMix API error: {response.status_code}")
                     
