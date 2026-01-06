@@ -3289,7 +3289,7 @@ async def get_admin_stats(authorization: str = Header(None)):
 
 
 @app.get("/api/admin/users")
-async def get_admin_users(authorization: str = Header(None), limit: int = 500):
+async def get_admin_users(authorization: str = Header(None), limit: int = 10000):
     """
     Get all users for admin panel with full details.
     """
