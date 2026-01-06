@@ -3548,6 +3548,142 @@ async def create_vip_promo(request: CreateVIPPromoRequest, authorization: str = 
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ==================== ADMIN UPLOAD VIP TRACK ====================
+
+@app.post("/api/admin/upload-vip-track")
+async def upload_vip_track(
+    title: str = Form(...),
+    artist: str = Form(None),
+    description: str = Form(None),
+    genre: str = Form(None),
+    bpm: str = Form(None),
+    is_vip: str = Form("true"),
+    vip_price: str = Form("2"),
+    vip_stock: str = Form("-1"),
+    preview_start: str = Form("0"),
+    preview_end: str = Form("30"),
+    audio: UploadFile = File(...),
+    image: UploadFile = File(None),
+    authorization: str = Header(None)
+):
+    """
+    Upload a new VIP track with audio and optional artwork.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin VIP Upload] Starting upload for: {title}")
+        print(f"[Admin VIP Upload] Artist: {artist}, Genre: {genre}, BPM: {bpm}")
+        print(f"[Admin VIP Upload] VIP Price: {vip_price}, Stock: {vip_stock}")
+        
+        # Read audio file
+        audio_content = await audio.read()
+        audio_filename = audio.filename or "track.mp3"
+        audio_content_type = audio.content_type or "audio/mpeg"
+        print(f"[Admin VIP Upload] Audio file: {audio_filename}, size: {len(audio_content)} bytes")
+        
+        # Read image file if provided
+        image_data = None
+        image_filename = None
+        if image and image.filename:
+            image_data = await image.read()
+            image_filename = image.filename or "artwork.jpg"
+            print(f"[Admin VIP Upload] Image file: {image_filename}, size: {len(image_data)} bytes")
+        
+        # First, upload the audio file to Spynners storage
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            # Upload audio file
+            print(f"[Admin VIP Upload] Uploading audio to Spynners storage...")
+            audio_files = {
+                'file': (audio_filename, audio_content, audio_content_type)
+            }
+            audio_upload_response = await client.post(
+                f"{SPYNNERS_API_URL}/files/upload",
+                files=audio_files,
+                headers={'Authorization': authorization}
+            )
+            
+            if audio_upload_response.status_code != 200:
+                print(f"[Admin VIP Upload] Audio upload failed: {audio_upload_response.text}")
+                raise HTTPException(status_code=500, detail="Failed to upload audio file")
+            
+            audio_result = audio_upload_response.json()
+            audio_url = audio_result.get('url') or audio_result.get('file_url')
+            print(f"[Admin VIP Upload] Audio uploaded: {audio_url}")
+            
+            # Upload image if provided
+            artwork_url = None
+            if image_data:
+                print(f"[Admin VIP Upload] Uploading artwork to Spynners storage...")
+                image_files = {
+                    'file': (image_filename, image_data, 'image/jpeg')
+                }
+                image_upload_response = await client.post(
+                    f"{SPYNNERS_API_URL}/files/upload",
+                    files=image_files,
+                    headers={'Authorization': authorization}
+                )
+                
+                if image_upload_response.status_code == 200:
+                    image_result = image_upload_response.json()
+                    artwork_url = image_result.get('url') or image_result.get('file_url')
+                    print(f"[Admin VIP Upload] Artwork uploaded: {artwork_url}")
+        
+        # Create the track in Spynners database
+        track_data = {
+            "title": title,
+            "artist_name": artist or "Unknown Artist",
+            "description": description or "",
+            "genre": genre or "Electronic",
+            "bpm": int(bpm) if bpm and bpm.isdigit() else 0,
+            "audio_url": audio_url,
+            "artwork_url": artwork_url,
+            "is_vip": True,
+            "vip_price": int(vip_price) if vip_price else 2,
+            "vip_stock": int(vip_stock) if vip_stock else -1,
+            "preview_start": int(preview_start) if preview_start else 0,
+            "preview_end": int(preview_end) if preview_end else 30,
+            "status": "approved",  # Auto-approve VIP tracks from admin
+        }
+        
+        print(f"[Admin VIP Upload] Creating track in database: {track_data}")
+        
+        result = await call_spynners_function("createVIPTrack", track_data, authorization)
+        
+        if result:
+            print(f"[Admin VIP Upload] ✅ Track created successfully: {result.get('id', 'unknown')}")
+            return {
+                "success": True,
+                "track": result,
+                "message": "Track V.I.P. uploadé avec succès!"
+            }
+        else:
+            # Fallback: Try to create via entity API
+            print(f"[Admin VIP Upload] Trying fallback entity creation...")
+            entity_result = await call_spynners_function("createEntity", {
+                "entity_type": "Track",
+                "data": track_data
+            }, authorization)
+            
+            if entity_result:
+                return {
+                    "success": True,
+                    "track": entity_result,
+                    "message": "Track V.I.P. uploadé avec succès!"
+                }
+            
+            return {"success": False, "message": "Failed to create track in database"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin VIP Upload] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ==================== ANALYTICS CSV EXPORT ====================
 
 class AnalyticsCSVRequest(BaseModel):
