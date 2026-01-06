@@ -18,7 +18,7 @@ const getBackendUrl = () => {
   }
   return Constants.expoConfig?.extra?.backendUrl || 
          process.env.EXPO_PUBLIC_BACKEND_URL || 
-         'https://dj-spyn-dashboard.preview.emergentagent.com';
+         'https://admin-dashboard-fix-32.preview.emergentagent.com';
 };
 
 // Storage key for auth token
