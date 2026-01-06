@@ -103,9 +103,16 @@ export default function AdminDiamonds() {
     loadUsers();
   };
 
+  const [sendAllCancelled, setSendAllCancelled] = useState(false);
+
   const sendDiamondsToAll = () => {
     setSendAllAmount('');
+    setSendAllCancelled(false);
     setShowSendAllModal(true);
+  };
+
+  const cancelSendAll = () => {
+    setSendAllCancelled(true);
   };
 
   const executeSendToAll = async () => {
@@ -125,12 +132,20 @@ export default function AdminDiamonds() {
           style: 'destructive',
           onPress: async () => {
             setSendingAll(true);
+            setSendAllCancelled(false);
             setSendAllProgress({ current: 0, total: users.length });
             
             let successCount = 0;
             let errorCount = 0;
+            let wasCancelled = false;
             
             for (let i = 0; i < users.length; i++) {
+              // Check if cancelled
+              if (sendAllCancelled) {
+                wasCancelled = true;
+                break;
+              }
+              
               const u = users[i];
               try {
                 await axios.post(`${BACKEND_URL}/api/base44/add-diamonds`, {
@@ -152,10 +167,17 @@ export default function AdminDiamonds() {
             setSendingAll(false);
             setShowSendAllModal(false);
             
-            Alert.alert(
-              '✅ Terminé',
-              `${amount} Black Diamond${amount > 1 ? 's' : ''} envoyé${amount > 1 ? 's' : ''} !\n\n✅ Succès: ${successCount}\n❌ Erreurs: ${errorCount}`
-            );
+            if (wasCancelled) {
+              Alert.alert(
+                '⏹️ Annulé',
+                `Envoi interrompu.\n\n✅ Envoyés: ${successCount}\n❌ Erreurs: ${errorCount}\n⏭️ Non traités: ${users.length - successCount - errorCount}`
+              );
+            } else {
+              Alert.alert(
+                '✅ Terminé',
+                `${amount} Black Diamond${amount > 1 ? 's' : ''} envoyé${amount > 1 ? 's' : ''} !\n\n✅ Succès: ${successCount}\n❌ Erreurs: ${errorCount}`
+              );
+            }
             
             loadUsers(); // Refresh the list
           }
