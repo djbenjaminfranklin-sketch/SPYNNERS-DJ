@@ -4094,45 +4094,109 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         elements.append(summary_table)
         elements.append(Spacer(1, 30))
         
-        # Sessions by DJ - table format like the web version
+        # Sessions by DJ - same format as Analytics PDF
+        session_counter = 1
+        
+        session_title_style = ParagraphStyle(
+            'SessionTitle',
+            parent=styles['Heading2'],
+            fontSize=14,
+            textColor=colors.HexColor('#333333'),
+            spaceBefore=15,
+            spaceAfter=8
+        )
+        
         for dj_name, dj_sessions in sorted(sessions_by_dj.items()):
             # DJ Header
-            dj_track_count = sum(s.get('tracks_count', 0) or s.get('tracks_detected', 0) or 0 for s in dj_sessions)
+            dj_track_count = sum(s.get('tracks_count', 0) or s.get('tracks_detected', 0) or len(s.get('tracks', [])) for s in dj_sessions)
             elements.append(Paragraph(f"🎧 {dj_name} ({len(dj_sessions)} sessions, {dj_track_count} tracks)", dj_header_style))
             
-            # Sessions table for this DJ
-            session_data = [['Date', 'Lieu', 'Statut', 'Tracks']]
+            # Each session for this DJ
             for session in sorted(dj_sessions, key=lambda x: x.get('started_at', '') or '', reverse=True):
+                # Session info
                 session_date = ''
-                if session.get('_parsed_date'):
-                    session_date = session['_parsed_date'].strftime('%d/%m/%Y %H:%M')
-                elif session.get('started_at'):
-                    session_date = session['started_at'][:16].replace('T', ' ')
+                start_time = 'N/A'
+                end_time = 'N/A'
                 
-                city = session.get('city') or session.get('location') or '-'
-                status = session.get('status', 'ended')
-                status_text = 'Terminée' if status == 'ended' else ('Active' if status == 'active' else status)
-                tracks = str(session.get('tracks_count', 0) or session.get('tracks_detected', 0) or 0)
+                if session.get('started_at'):
+                    try:
+                        dt = datetime.fromisoformat(session['started_at'].replace('Z', '+00:00'))
+                        session_date = dt.strftime('%d/%m/%Y')
+                        start_time = dt.strftime('%H:%M')
+                    except:
+                        session_date = session['started_at'][:10]
                 
-                session_data.append([session_date, city[:30], status_text, tracks])
-            
-            if len(session_data) > 1:
-                session_table = Table(session_data, colWidths=[5*cm, 8*cm, 3*cm, 2*cm])
-                session_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#00BCD4')),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                    ('ALIGN', (-1, 0), (-1, -1), 'CENTER'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 10),
-                    ('FONTSIZE', (0, 1), (-1, -1), 9),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-                    ('TOPPADDING', (0, 1), (-1, -1), 6),
-                    ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
-                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F5F5F5')]),
-                    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#DDDDDD')),
-                ]))
-                elements.append(session_table)
+                if session.get('ended_at'):
+                    try:
+                        dt_end = datetime.fromisoformat(session['ended_at'].replace('Z', '+00:00'))
+                        end_time = dt_end.strftime('%H:%M')
+                    except:
+                        pass
+                
+                city = session.get('city') or session.get('location') or 'N/A'
+                tracks = session.get('tracks', [])
+                track_count = session.get('tracks_count', 0) or len(tracks)
+                
+                # Session header like Analytics
+                session_header = f"SESSION {session_counter:03d} - {session_date} | {city} | {start_time} - {end_time} | {track_count} tracks"
+                elements.append(Paragraph(session_header, session_title_style))
+                
+                # Tracks table if we have track details
+                if tracks and len(tracks) > 0:
+                    table_data = [['#', 'Titre', 'Artiste', 'ISRC', 'ISWC', 'Heure']]
+                    
+                    for track_num, play in enumerate(sorted(tracks, key=lambda x: x.get('played_at', '') or ''), 1):
+                        track_title = play.get('track_title') or play.get('title') or 'N/A'
+                        artist = play.get('track_artist') or play.get('artist') or play.get('producer_name') or 'N/A'
+                        isrc = play.get('isrc') or play.get('isrc_code') or 'N/A'
+                        iswc = play.get('iswc') or play.get('iswc_code') or 'N/A'
+                        
+                        track_time = 'N/A'
+                        if play.get('played_at'):
+                            try:
+                                track_dt = datetime.fromisoformat(play['played_at'].replace('Z', '+00:00'))
+                                track_time = track_dt.strftime('%H:%M')
+                            except:
+                                pass
+                        
+                        # Truncate long text
+                        if len(track_title) > 35:
+                            track_title = track_title[:32] + '...'
+                        if len(artist) > 25:
+                            artist = artist[:22] + '...'
+                        
+                        table_data.append([str(track_num), track_title, artist, isrc, iswc, track_time])
+                    
+                    # Create tracks table
+                    tracks_table = Table(table_data, colWidths=[1*cm, 8*cm, 5*cm, 3.5*cm, 3.5*cm, 2*cm])
+                    tracks_table.setStyle(TableStyle([
+                        # Header row
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#9C27B0')),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                        ('FONTSIZE', (0, 0), (-1, 0), 9),
+                        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                        # Data rows
+                        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                        ('FONTSIZE', (0, 1), (-1, -1), 8),
+                        ('ALIGN', (0, 1), (0, -1), 'CENTER'),
+                        ('ALIGN', (-1, 1), (-1, -1), 'CENTER'),
+                        # Alternating row colors
+                        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
+                        # Grid
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
+                        # Padding
+                        ('TOPPADDING', (0, 0), (-1, -1), 5),
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                    ]))
+                    elements.append(tracks_table)
+                else:
+                    # No track details, just show session info
+                    info_text = f"📍 {city} | 🎵 {track_count} tracks détectées | ✅ Black Diamond attribué"
+                    elements.append(Paragraph(info_text, ParagraphStyle('Info', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#666666'))))
+                
+                elements.append(Spacer(1, 10))
+                session_counter += 1
             
             elements.append(Spacer(1, 20))
         
