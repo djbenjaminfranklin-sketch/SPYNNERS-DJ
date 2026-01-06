@@ -56,30 +56,44 @@ export default function ChatScreen() {
   }, []);
 
   const loadMembers = async () => {
-    console.log('[Chat] === VERSION 3.0 === Loading all members...');
+    console.log('[Chat] === VERSION 4.0 === Loading all members...');
     try {
       setLoading(true);
       
       const userId = user?.id || user?._id || '';
       console.log('[Chat] Current user ID:', userId);
       
-      // Fetch all users - use fetchAllUsersWithPagination which handles fallbacks
+      // Fetch all users - try multiple methods
       let allUsers: User[] = [];
       
+      // Method 1: Try direct User entity fetch (if authenticated)
       try {
-        // This method tries nativeGetAllUsers first, then falls back to extracting from tracks
-        allUsers = await base44Users.fetchAllUsersWithPagination('');
-        console.log('[Chat] Got users from fetchAllUsersWithPagination:', allUsers.length);
-      } catch (usersError) {
-        console.error('[Chat] fetchAllUsersWithPagination failed:', usersError);
-        
-        // Direct fallback: try base44Users.list
+        console.log('[Chat] Method 1: Trying direct User entity...');
+        allUsers = await base44Users.list({ limit: 500 });
+        console.log('[Chat] Method 1 got:', allUsers.length, 'users');
+      } catch (e1) {
+        console.log('[Chat] Method 1 failed');
+      }
+      
+      // Method 2: If no users, try fetchAllUsersFromTracks (extracts from public tracks)
+      if (allUsers.length === 0) {
         try {
-          allUsers = await base44Users.list({ limit: 500 });
-          console.log('[Chat] Got users from list:', allUsers.length);
-        } catch (listError) {
-          console.error('[Chat] base44Users.list also failed:', listError);
-          allUsers = [];
+          console.log('[Chat] Method 2: Extracting users from tracks...');
+          allUsers = await base44Users.fetchAllUsersFromTracks();
+          console.log('[Chat] Method 2 got:', allUsers.length, 'users');
+        } catch (e2) {
+          console.log('[Chat] Method 2 failed');
+        }
+      }
+      
+      // Method 3: If still no users, try pagination method
+      if (allUsers.length === 0) {
+        try {
+          console.log('[Chat] Method 3: Trying fetchAllUsersWithPagination...');
+          allUsers = await base44Users.fetchAllUsersWithPagination('');
+          console.log('[Chat] Method 3 got:', allUsers.length, 'users');
+        } catch (e3) {
+          console.log('[Chat] Method 3 failed');
         }
       }
       
