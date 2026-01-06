@@ -3947,35 +3947,12 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
                 filtered_sessions.append(session)
         
         print(f"[Admin Sessions PDF] Filtered to {len(filtered_sessions)} sessions")
-                        start = datetime.strptime(request.start_date, '%Y-%m-%d')
-                        if play_date.replace(tzinfo=None) < start:
-                            include = False
-                    if request.end_date:
-                        end = datetime.strptime(request.end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
-                        if play_date.replace(tzinfo=None) > end:
-                            include = False
-                    
-                    if include:
-                        play['_parsed_date'] = play_date
-                        filtered_plays.append(play)
-                except Exception as date_error:
-                    filtered_plays.append(play)
-            else:
-                filtered_plays.append(play)
         
-        print(f"[Admin Sessions PDF] Filtered to {len(filtered_plays)} plays")
-        
-        # Group by DJ and session (date)
-        sessions_by_dj = defaultdict(lambda: defaultdict(list))
-        for play in filtered_plays:
-            dj_name = play.get('dj_name') or play.get('user_name') or play.get('artist_name') or 'Unknown DJ'
-            play_date = play.get('_parsed_date')
-            if play_date:
-                session_date = play_date.strftime('%Y-%m-%d')
-            else:
-                session_date = play.get('played_at', '')[:10] if play.get('played_at') else 'Unknown'
-            
-            sessions_by_dj[dj_name][session_date].append(play)
+        # Group sessions by DJ
+        sessions_by_dj = defaultdict(list)
+        for session in filtered_sessions:
+            dj_name = session.get('dj_name') or session.get('user_name') or 'Unknown DJ'
+            sessions_by_dj[dj_name].append(session)
         
         print(f"[Admin Sessions PDF] Grouped into {len(sessions_by_dj)} DJs")
         
