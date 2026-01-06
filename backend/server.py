@@ -4512,16 +4512,20 @@ async def export_sessions_pdf(request: AnalyticsCSVRequest, authorization: str =
 # ==================== FILE UPLOADS ====================
 
 @app.get("/api/uploads/{filename}")
-async def serve_uploaded_file(filename: str):
-    """Serve uploaded audio/image files"""
+@app.head("/api/uploads/{filename}")
+async def serve_uploaded_file(filename: str, request: Request = None):
+    """Serve uploaded audio/image files with proper streaming support"""
     import os
-    from fastapi.responses import FileResponse
+    from fastapi.responses import FileResponse, Response
     
     uploads_dir = "/app/backend/uploads"
     file_path = os.path.join(uploads_dir, filename)
     
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
+    
+    # Get file size
+    file_size = os.path.getsize(file_path)
     
     # Determine content type
     ext = os.path.splitext(filename)[1].lower()
@@ -4539,13 +4543,24 @@ async def serve_uploaded_file(filename: str):
     }
     content_type = content_types.get(ext, 'application/octet-stream')
     
+    headers = {
+        "Accept-Ranges": "bytes",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "Content-Length, Content-Range",
+        "Content-Length": str(file_size),
+        "Content-Type": content_type,
+        "Cache-Control": "public, max-age=86400"
+    }
+    
+    # Handle HEAD request
+    if request and request.method == "HEAD":
+        return Response(headers=headers)
+    
     return FileResponse(
         file_path,
         media_type=content_type,
-        headers={
-            "Accept-Ranges": "bytes",
-            "Access-Control-Allow-Origin": "*"
-        }
+        headers=headers,
+        stat_result=os.stat(file_path)
     )
 
 # ==================== HEALTH CHECK ====================
