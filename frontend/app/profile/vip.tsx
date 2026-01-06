@@ -414,13 +414,6 @@ export default function VIPScreen() {
             <Text style={styles.diamondValue}>{userDiamonds} Black Diamonds</Text>
           </View>
         </View>
-        <TouchableOpacity 
-          style={styles.buyButton}
-          onPress={() => router.push('/profile/diamonds')}
-        >
-          <Ionicons name="add-circle" size={20} color="#fff" />
-          <Text style={styles.buyButtonText}>{t('vip.buyMore')}</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Info Banner */}
