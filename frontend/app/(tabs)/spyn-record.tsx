@@ -1362,7 +1362,7 @@ export default function SpynRecordScreen() {
       
     } catch (error) {
       console.error('[SPYN Record] Stop error:', error);
-      Alert.alert('Erreur', 'Erreur lors de l\'arrêt de l\'enregistrement');
+      Alert.alert(t('common.error'), t('spynRecord.stopError'));
     }
   };
 
