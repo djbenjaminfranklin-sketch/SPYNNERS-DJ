@@ -459,7 +459,42 @@ export default function AdminDashboard() {
         </ScrollView>
 
         {/* Content */}
-        {filteredTracks.length === 0 ? (
+        {activeTab === 'users' ? (
+          /* Users List */
+          allUsers.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="people" size={64} color="#00BCD4" />
+              <Text style={styles.emptyTitle}>Aucun utilisateur</Text>
+              <Text style={styles.emptyText}>Les utilisateurs apparaîtront ici.</Text>
+            </View>
+          ) : (
+            allUsers.map((u) => (
+              <View key={u.id} style={styles.userCard}>
+                {u.avatar_url ? (
+                  <Image source={{ uri: u.avatar_url }} style={styles.userAvatar} />
+                ) : (
+                  <View style={styles.userAvatarPlaceholder}>
+                    <Ionicons name="person" size={24} color={Colors.textMuted} />
+                  </View>
+                )}
+                <View style={styles.userInfo}>
+                  <Text style={styles.userName}>{u.full_name || u.artist_name || 'Sans nom'}</Text>
+                  <Text style={styles.userEmail}>{u.email}</Text>
+                  <Text style={styles.userType}>{u.user_type || u.role || 'user'}</Text>
+                </View>
+                <TouchableOpacity 
+                  style={styles.editUserBtn}
+                  onPress={() => {
+                    setSelectedUser(u);
+                    setShowUserModal(true);
+                  }}
+                >
+                  <Ionicons name="create-outline" size={22} color={Colors.primary} />
+                </TouchableOpacity>
+              </View>
+            ))
+          )
+        ) : filteredTracks.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="checkmark-circle" size={64} color="#00BCD4" />
             <Text style={styles.emptyTitle}>All caught up!</Text>
