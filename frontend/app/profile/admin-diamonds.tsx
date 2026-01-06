@@ -127,7 +127,7 @@ export default function AdminDiamonds() {
       }
     } catch (error) {
       console.error('[AdminDiamonds] Error:', error);
-      Alert.alert('Erreur', 'Impossible de charger les utilisateurs');
+      Alert.alert(t('common.error'), t('admin.loadUsersError'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -157,15 +157,15 @@ export default function AdminDiamonds() {
   const executeSendToAll = async () => {
     const amount = parseInt(sendAllAmount);
     if (!sendAllAmount || amount <= 0) {
-      Alert.alert('Erreur', 'Veuillez entrer un montant valide');
+      Alert.alert(t('common.error'), t('admin.enterValidAmount'));
       return;
     }
 
     Alert.alert(
-      'Confirmer',
-      `Êtes-vous sûr de vouloir envoyer ${amount} Black Diamond${amount > 1 ? 's' : ''} à ${users.length} utilisateurs ?`,
+      t('admin.confirm'),
+      t('admin.confirmSendAllDiamonds').replace('{amount}', amount.toString()).replace('{count}', users.length.toString()),
       [
-        { text: 'Annuler', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
           text: 'Confirmer',
           style: 'destructive',

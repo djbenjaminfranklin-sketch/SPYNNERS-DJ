@@ -319,7 +319,7 @@ export default function LiveRadarScreen() {
   // Send message to DJ
   const sendMessageToDJ = async (play: RadarPlay, message: string) => {
     if (!message.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer un message');
+      Alert.alert(t('common.error'), t('admin.enterMessage'));
       return;
     }
 
@@ -346,15 +346,15 @@ export default function LiveRadarScreen() {
       );
 
       if (response.data.success) {
-        Alert.alert('✅ Message envoyé !', `Votre message a été envoyé à ${play.dj_name}`);
+        Alert.alert('✅ ' + t('radar.messageSent'), t('radar.messageSentTo').replace('{name}', play.dj_name));
         setShowMessageModal(false);
         setCustomMessage('');
       } else {
-        throw new Error(response.data.message || 'Erreur');
+        throw new Error(response.data.message || t('common.error'));
       }
     } catch (error: any) {
       console.error('[Radar] Send message error:', error);
-      Alert.alert('Erreur', 'Impossible d\'envoyer le message. Réessayez plus tard.');
+      Alert.alert(t('common.error'), t('admin.sendError'));
     } finally {
       setSendingMessage(false);
     }

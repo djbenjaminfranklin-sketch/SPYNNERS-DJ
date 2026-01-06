@@ -132,7 +132,7 @@ export default function AdminVIP() {
       }
     } catch (error) {
       console.error('[AdminVIP] Audio pick error:', error);
-      Alert.alert('Erreur', 'Impossible de sélectionner le fichier audio');
+      Alert.alert(t('common.error'), t('admin.selectFileError'));
     }
   };
 
@@ -152,7 +152,7 @@ export default function AdminVIP() {
       }
     } catch (error) {
       console.error('[AdminVIP] Image pick error:', error);
-      Alert.alert('Erreur', 'Impossible de sélectionner l\'image');
+      Alert.alert(t('common.error'), t('admin.selectFileError'));
     }
   };
 
@@ -173,17 +173,17 @@ export default function AdminVIP() {
   const uploadVIPTrack = async () => {
     // Validation
     if (!trackTitle.trim()) {
-      Alert.alert('Erreur', 'Le titre est requis');
+      Alert.alert(t('common.error'), t('admin.titleRequired'));
       return;
     }
     if (!audioFile) {
-      Alert.alert('Erreur', 'Veuillez sélectionner un fichier audio');
+      Alert.alert(t('common.error'), t('admin.selectAudioFile'));
       return;
     }
 
     setUploading(true);
     setUploadProgress(0);
-    setUploadStatus('Préparation...');
+    setUploadStatus(t('admin.preparing'));
     
     try {
       // Create FormData for upload
