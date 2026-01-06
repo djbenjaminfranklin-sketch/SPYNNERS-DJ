@@ -397,6 +397,12 @@ export default function AdminDiamonds() {
                 <Text style={styles.progressText}>
                   {Math.round((sendAllProgress.current / sendAllProgress.total) * 100)}%
                 </Text>
+                <TouchableOpacity 
+                  style={[styles.cancelBtn, { marginTop: 20, width: '100%', backgroundColor: '#ff4444', borderColor: '#ff4444' }]} 
+                  onPress={cancelSendAll}
+                >
+                  <Text style={[styles.cancelBtnText, { color: '#fff', fontWeight: '600' }]}>⏹️ Annuler l'envoi</Text>
+                </TouchableOpacity>
               </View>
             ) : (
               <>
