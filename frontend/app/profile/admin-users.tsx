@@ -278,11 +278,18 @@ export default function AdminUsers() {
         style={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
       >
-        {filteredUsers.map((u) => (
+        {filteredUsers.map((u) => {
+          // Convert DiceBear SVG URLs to PNG for React Native compatibility
+          let avatarUrl = u.avatar_url;
+          if (avatarUrl && avatarUrl.includes('dicebear.com') && avatarUrl.includes('/svg?')) {
+            avatarUrl = avatarUrl.replace('/svg?', '/png?') + '&size=200';
+          }
+          
+          return (
           <View key={u.id} style={styles.userCard}>
             <View style={styles.userAvatar}>
-              {u.avatar_url ? (
-                <Image source={{ uri: u.avatar_url }} style={styles.avatarImage} />
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
               ) : (
                 <Text style={styles.avatarText}>{u.full_name?.charAt(0).toUpperCase() || 'U'}</Text>
               )}
