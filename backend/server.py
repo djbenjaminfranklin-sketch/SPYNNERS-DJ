@@ -3279,7 +3279,7 @@ async def get_admin_stats(authorization: str = Header(None)):
 @app.get("/api/admin/users")
 async def get_admin_users(authorization: str = Header(None), limit: int = 10000):
     """
-    Get all users for admin panel with full details.
+    Get all users for admin panel with full details including black_diamonds.
     """
     try:
         if not authorization:
@@ -3287,7 +3287,11 @@ async def get_admin_users(authorization: str = Header(None), limit: int = 10000)
         
         print(f"[Admin Users] Fetching users (limit: {limit})...")
         
-        result = await call_spynners_function("nativeGetAllUsers", {"limit": limit}, authorization)
+        # Request all fields including black_diamonds
+        result = await call_spynners_function("nativeGetAllUsers", {
+            "limit": limit,
+            "fields": ["id", "email", "full_name", "artist_name", "avatar_url", "user_type", "bio", "nationality", "black_diamonds", "role", "created_date"]
+        }, authorization)
         
         if result:
             # Handle different response formats
@@ -3295,6 +3299,16 @@ async def get_admin_users(authorization: str = Header(None), limit: int = 10000)
                 users = result.get('users', result.get('items', []))
             else:
                 users = result if isinstance(result, list) else []
+            
+            # Log first user to check if black_diamonds is included
+            if users and len(users) > 0:
+                first_user_fields = list(users[0].keys()) if isinstance(users[0], dict) else []
+                print(f"[Admin Users] First user fields: {first_user_fields}")
+                if 'black_diamonds' in first_user_fields:
+                    print(f"[Admin Users] black_diamonds found in response!")
+                else:
+                    print(f"[Admin Users] black_diamonds NOT in response - will need separate fetch")
+            
             print(f"[Admin Users] Got {len(users)} users")
             return {"success": True, "users": users, "total": len(users)}
         
