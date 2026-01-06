@@ -292,7 +292,12 @@ export default function AdminBroadcast() {
         );
         
         if (fallbackResponse.data?.success && fallbackResponse.data?.url) {
-          setAttachment(prev => prev ? { ...prev, url: fallbackResponse.data.url } : null);
+          // Make URL absolute for emails
+          let absoluteUrl = fallbackResponse.data.url;
+          if (absoluteUrl.startsWith('/')) {
+            absoluteUrl = `${BACKEND_URL}${absoluteUrl}`;
+          }
+          setAttachment(prev => prev ? { ...prev, url: absoluteUrl } : null);
           console.log('[AdminBroadcast] Fallback upload successful:', fallbackResponse.data.url);
           Alert.alert('Succès', 'Pièce jointe uploadée !');
           return;
