@@ -162,22 +162,33 @@ export default function AdminSessions() {
 
   const filteredSessions = getFilteredSessions();
 
-  // Export PDF of all validated sessions
-  const exportPDF = async () => {
+  // Export PDF - using a simpler approach that works on mobile
+  const exportPDF = async (singleSession?: Session) => {
     setExporting(true);
     try {
-      console.log('[AdminSessions] Exporting PDF...');
+      console.log('[AdminSessions] Exporting PDF...', singleSession ? `Session: ${singleSession.id}` : 'All sessions');
       
       const requestBody: any = {
-        all_users: true, // Flag to export all users
+        all_users: true,
       };
       
-      // Add date filters if set
-      if (dateFilter.startDate) {
-        requestBody.start_date = dateFilter.startDate;
-      }
-      if (dateFilter.endDate) {
-        requestBody.end_date = dateFilter.endDate;
+      // Add date filters if set (only for all sessions export)
+      if (!singleSession) {
+        if (dateFilter.startDate) {
+          requestBody.start_date = dateFilter.startDate;
+        }
+        if (dateFilter.endDate) {
+          requestBody.end_date = dateFilter.endDate;
+        }
+      } else {
+        // For single session, filter by that session's date
+        requestBody.session_id = singleSession.id;
+        requestBody.dj_name = singleSession.dj_name;
+        if (singleSession.started_at) {
+          const sessionDate = singleSession.started_at.split('T')[0];
+          requestBody.start_date = sessionDate;
+          requestBody.end_date = sessionDate;
+        }
       }
       
       const response = await axios.post(
@@ -188,45 +199,90 @@ export default function AdminSessions() {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          responseType: 'blob',
-          timeout: 120000, // 2 minutes timeout
+          responseType: 'arraybuffer',
+          timeout: 120000,
         }
       );
       
-      // Get the blob data
-      const blob = response.data;
+      // Convert arraybuffer to base64
+      const uint8Array = new Uint8Array(response.data);
+      let binary = '';
+      for (let i = 0; i < uint8Array.length; i++) {
+        binary += String.fromCharCode(uint8Array[i]);
+      }
+      const base64 = btoa(binary);
       
-      // Convert blob to base64 for mobile
-      const reader = new FileReader();
-      reader.onloadend = async () => {
+      // Generate filename
+      let filename = singleSession 
+        ? `session_${singleSession.dj_name.replace(/\s+/g, '_')}_${singleSession.started_at?.split('T')[0] || 'unknown'}.pdf`
+        : 'spynners_all_sessions';
+      
+      if (!singleSession) {
+        if (dateFilter.startDate) {
+          filename += `_from_${dateFilter.startDate}`;
+        }
+        if (dateFilter.endDate) {
+          filename += `_to_${dateFilter.endDate}`;
+        }
+        filename += '.pdf';
+      }
+      
+      // Use documentDirectory with proper encoding type check
+      if (FileSystem.documentDirectory) {
+        const fileUri = `${FileSystem.documentDirectory}${filename}`;
+        
         try {
-          const base64data = reader.result as string;
-          const base64 = base64data.split(',')[1];
-          
-          // Generate filename with date range
-          let filename = 'spynners_all_sessions';
-          if (dateFilter.startDate) {
-            filename += `_from_${dateFilter.startDate}`;
-          }
-          if (dateFilter.endDate) {
-            filename += `_to_${dateFilter.endDate}`;
-          }
-          filename += '.pdf';
-          
-          const fileUri = `${FileSystem.documentDirectory}${filename}`;
-          
           await FileSystem.writeAsStringAsync(fileUri, base64, {
-            encoding: FileSystem.EncodingType.Base64,
+            encoding: 'base64' as any,
           });
           
           // Share the file
-          if (await Sharing.isAvailableAsync()) {
+          const sharingAvailable = await Sharing.isAvailableAsync();
+          if (sharingAvailable) {
             await Sharing.shareAsync(fileUri, {
               mimeType: 'application/pdf',
               dialogTitle: 'Télécharger le rapport PDF',
             });
           } else {
-            Alert.alert('Succès', `PDF sauvegardé: ${filename}`);
+            Alert.alert('Succès ✅', `PDF sauvegardé: ${filename}`);
+          }
+        } catch (writeError) {
+          console.error('[AdminSessions] Write error:', writeError);
+          // Fallback: try to open in browser on web
+          if (Platform.OS === 'web') {
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            Alert.alert('Succès ✅', 'PDF téléchargé !');
+          } else {
+            throw writeError;
+          }
+        }
+      } else {
+        // Web fallback
+        if (Platform.OS === 'web') {
+          const blob = new Blob([response.data], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(url);
+          Alert.alert('Succès ✅', 'PDF téléchargé !');
+        }
+      }
+      
+    } catch (error: any) {
+      console.error('[AdminSessions] Export error:', error);
+      Alert.alert('Erreur', error?.response?.data?.detail || error?.message || 'Impossible d\'exporter le rapport');
+    } finally {
+      setExporting(false);
+    }
+  };
           }
         } catch (err) {
           console.error('[AdminSessions] Error saving PDF:', err);
