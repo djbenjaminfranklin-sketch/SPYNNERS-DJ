@@ -74,6 +74,15 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.loadingUsers': 'Loading users...',
     'admin.noUsers': 'No users',
     
+    // Playlist
+    'playlist.trackAdded': 'Track added to playlist!',
+    'playlist.cantAddTrack': 'Unable to add track to playlist',
+    'playlist.createdWithTrack': 'Playlist "{name}" created with track!',
+    'playlist.cantCreate': 'Unable to create playlist',
+    'playlist.addToPlaylist': 'Add to playlist',
+    'playlist.newPlaylist': 'New playlist...',
+    'playlist.noPlaylistsCreate': 'No playlist. Create one above!',
+    
     // Auth
     'login.title': 'Sign In',
     'login.email': 'Email',
@@ -826,6 +835,15 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.confirmDeleteUser': 'Êtes-vous sûr de vouloir supprimer',
     'admin.loadingUsers': 'Chargement des utilisateurs...',
     'admin.noUsers': 'Aucun utilisateur',
+    
+    // Playlist
+    'playlist.trackAdded': 'Track ajoutée à la playlist !',
+    'playlist.cantAddTrack': 'Impossible d\'ajouter la track à la playlist',
+    'playlist.createdWithTrack': 'Playlist "{name}" créée avec la track !',
+    'playlist.cantCreate': 'Impossible de créer la playlist',
+    'playlist.addToPlaylist': 'Ajouter à une playlist',
+    'playlist.newPlaylist': 'Nouvelle playlist...',
+    'playlist.noPlaylistsCreate': 'Aucune playlist. Créez-en une ci-dessus !',
     
     // Auth
     'login.title': 'Connexion',
