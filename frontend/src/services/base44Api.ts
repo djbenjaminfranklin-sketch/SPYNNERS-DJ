@@ -1598,7 +1598,7 @@ export const base44Profiles = {
       // Fetch user data first
       let userData: any = null;
       try {
-        const userResponse = await mobileApi.get(`/entities/User/${userId}`);
+        const userResponse = await mobileApi.get(`/api/base44/entities/User/${userId}`);
         userData = userResponse.data;
         console.log('[Profiles] User data fetched:', userData?.full_name || userData?.email);
       } catch (userError) {
@@ -1612,7 +1612,7 @@ export const base44Profiles = {
       
       try {
         console.log('[Profiles] Fetching all tracks to calculate stats...');
-        const tracksResponse = await mobileApi.get(`/entities/Track?limit=1000`);
+        const tracksResponse = await mobileApi.get(`/api/base44/entities/Track?limit=1000`);
         
         if (Array.isArray(tracksResponse.data)) {
           const allTracks = tracksResponse.data;
