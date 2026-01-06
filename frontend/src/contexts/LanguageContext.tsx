@@ -670,6 +670,9 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.selectCategory': 'Please select at least one category',
     'admin.selectRecipient': 'Please select a recipient',
     'admin.loadingUsers': 'Loading users...',
+    'admin.done': 'Done!',
+    'admin.vipUploadSuccess': 'V.I.P. track uploaded successfully!\n\nIt will appear in tracks to validate.',
+    'admin.clickToAddVip': 'Click "+ V.I.P. Track" to add your first track',
     
     // Radar
     'radar.messageSent': 'Message sent!',
@@ -1341,6 +1344,9 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.selectCategory': 'Veuillez sélectionner au moins une catégorie',
     'admin.selectRecipient': 'Veuillez sélectionner un destinataire',
     'admin.loadingUsers': 'Chargement des utilisateurs...',
+    'admin.done': 'Terminé !',
+    'admin.vipUploadSuccess': 'Track V.I.P. uploadé avec succès !\n\nIl apparaîtra dans les tracks à valider.',
+    'admin.clickToAddVip': 'Cliquez sur "+ Track V.I.P." pour ajouter votre premier track',
     
     // Radar
     'radar.messageSent': 'Message envoyé !',
