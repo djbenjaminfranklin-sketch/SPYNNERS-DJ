@@ -3124,16 +3124,27 @@ async def get_admin_stats(authorization: str = Header(None)):
         dashboard_data = await call_spynners_function("getAdminDashboardData", {}, authorization)
         
         if dashboard_data and isinstance(dashboard_data, dict):
-            print(f"[Admin Stats] Got dashboard data: {str(dashboard_data)[:500]}")
+            print(f"[Admin Stats] Got dashboard data from getAdminDashboardData")
+            
+            # getAdminDashboardData returns lists of tracks, not counts
+            # We need to count them
+            pending_list = dashboard_data.get('pendingTracks', [])
+            approved_list = dashboard_data.get('approvedTracks', [])
+            vip_list = dashboard_data.get('vipTracks', [])
+            
+            # Ensure we're working with lists
+            pending_count = len(pending_list) if isinstance(pending_list, list) else 0
+            approved_count = len(approved_list) if isinstance(approved_list, list) else 0
+            vip_count = len(vip_list) if isinstance(vip_list, list) else 0
             
             # Extract stats from the dashboard data
             stats = {
                 "total_users": dashboard_data.get('total_users', dashboard_data.get('totalUsers', 0)),
-                "total_tracks": dashboard_data.get('total_tracks', dashboard_data.get('totalTracks', 0)),
-                "pending_tracks": dashboard_data.get('pending_tracks', dashboard_data.get('pendingTracks', 0)),
-                "approved_tracks": dashboard_data.get('approved_tracks', dashboard_data.get('approvedTracks', 0)),
+                "total_tracks": pending_count + approved_count,
+                "pending_tracks": pending_count,
+                "approved_tracks": approved_count,
                 "rejected_tracks": dashboard_data.get('rejected_tracks', dashboard_data.get('rejectedTracks', 0)),
-                "vip_tracks": dashboard_data.get('vip_tracks', dashboard_data.get('vipTracks', 0)),
+                "vip_tracks": vip_count,
                 "total_downloads": dashboard_data.get('total_downloads', dashboard_data.get('totalDownloads', 0)),
                 "total_plays": dashboard_data.get('total_plays', dashboard_data.get('totalPlays', 0)),
                 "total_sessions": dashboard_data.get('total_sessions', dashboard_data.get('totalSessions', 0)),
@@ -3143,7 +3154,7 @@ async def get_admin_stats(authorization: str = Header(None)):
                 "vip_requests": dashboard_data.get('vip_requests', dashboard_data.get('vipRequests', 0)),
             }
             
-            print(f"[Admin Stats] Extracted stats: {stats}")
+            print(f"[Admin Stats] Extracted stats: pending={pending_count}, approved={approved_count}, vip={vip_count}")
             return {"success": True, "stats": stats, "source": "getAdminDashboardData"}
         
         print("[Admin Stats] getAdminDashboardData failed, falling back to manual counting...")
