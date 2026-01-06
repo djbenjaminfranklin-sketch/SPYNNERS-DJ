@@ -442,16 +442,16 @@ export default function SpynRecordScreen() {
             // On iOS, when a USB/Lightning audio interface is connected, 
             // the system automatically uses it as the input source
             setAudioSource('internal');
-            setAudioSourceName('Source audio (auto iOS)');
+            setAudioSourceName(t('spynRecord.audioSourceAuto'));
             console.log('[SPYN Record] iOS audio routing active - external devices will be used automatically if connected');
           } else {
             setAudioSource('internal');
-            setAudioSourceName('Microphone (permission requise)');
+            setAudioSourceName(t('spynRecord.permissionRequired'));
           }
         } catch (error) {
           console.log('[SPYN Record] Native audio detection error:', error);
           setAudioSource('internal');
-          setAudioSourceName('Source audio détectée automatiquement');
+          setAudioSourceName(t('spynRecord.audioSourceDetected'));
         }
       }
     } catch (error) {
@@ -1871,7 +1871,7 @@ export default function SpynRecordScreen() {
                   placeholderTextColor="#666"
                 />
 
-                <Text style={styles.startedAtText}>Démarré à {sessionStartTime}</Text>
+                <Text style={styles.startedAtText}>{t('spyn.startedAt')} {sessionStartTime}</Text>
                 <View style={styles.tracksCountRow}>
                   <Ionicons name="musical-notes" size={16} color="#888" />
                   <Text style={styles.tracksCountRowText}>
