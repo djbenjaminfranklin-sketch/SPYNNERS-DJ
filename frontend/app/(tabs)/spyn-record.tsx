@@ -1840,9 +1840,9 @@ export default function SpynRecordScreen() {
                 <Ionicons name="close" size={24} color="#888" />
               </TouchableOpacity>
 
-              <Text style={styles.endSessionTitle}>Fin de Session</Text>
+              <Text style={styles.endSessionTitle}>{t('spynRecord.endSession')}</Text>
               <Text style={styles.endSessionSubtitle}>
-                Confirmez la fin de votre enregistrement.
+                {t('spynRecord.confirmEndSession')}
               </Text>
 
               {/* Venue Info Card */}
@@ -1854,20 +1854,20 @@ export default function SpynRecordScreen() {
                   ]} />
                   <View style={styles.venueTextContainer}>
                     <Text style={styles.venueName}>
-                      {location?.venue || 'Lieu inconnu'}
+                      {location?.venue || t('spynRecord.unknownLocation')}
                     </Text>
                     <Text style={styles.venueCity}>
-                      {location?.city || 'Inconnu'} • {location?.is_valid_venue ? 'Club vérifié ✓' : 'Lieu non vérifié'}
+                      {location?.city || t('spynRecord.unknown')} • {location?.is_valid_venue ? t('spynRecord.clubVerified') : t('spynRecord.unverifiedVenue')}
                     </Text>
                   </View>
                 </View>
 
-                <Text style={styles.correctLabel}>Corriger le nom du lieu si besoin :</Text>
+                <Text style={styles.correctLabel}>{t('spynRecord.correctVenueName')}</Text>
                 <TextInput
                   style={styles.venueInput}
                   value={correctedVenue}
                   onChangeText={setCorrectedVenue}
-                  placeholder={location?.venue || 'Entrez le nom du lieu'}
+                  placeholder={location?.venue || t('spynRecord.enterVenueName')}
                   placeholderTextColor="#666"
                 />
 
@@ -1875,13 +1875,13 @@ export default function SpynRecordScreen() {
                 <View style={styles.tracksCountRow}>
                   <Ionicons name="musical-notes" size={16} color="#888" />
                   <Text style={styles.tracksCountRowText}>
-                    {identifiedTracks.length} track(s) identifié(s)
+                    {identifiedTracks.length} {t('spynRecord.tracksIdentifiedCount')}
                   </Text>
                 </View>
                 <View style={styles.durationRow}>
                   <Ionicons name="time" size={16} color="#888" />
                   <Text style={styles.durationRowText}>
-                    Durée: {formatDuration(recordingDuration)}
+                    {t('spynRecord.duration')}: {formatDuration(recordingDuration)}
                   </Text>
                 </View>
               </View>
@@ -1907,12 +1907,12 @@ export default function SpynRecordScreen() {
 
               {whoPlayed === 'another' && (
                 <View style={styles.otherDjContainer}>
-                  <Text style={styles.otherDjLabel}>Nom du DJ :</Text>
+                  <Text style={styles.otherDjLabel}>{t('spynRecord.djName')}</Text>
                   <TextInput
                     style={styles.otherDjInput}
                     value={otherDjName}
                     onChangeText={setOtherDjName}
-                    placeholder="Entrez le nom du DJ"
+                    placeholder={t('spynRecord.enterDjName')}
                     placeholderTextColor="#666"
                     autoCapitalize="words"
                   />
@@ -1921,7 +1921,7 @@ export default function SpynRecordScreen() {
 
               {/* Save Mix Option */}
               <View style={styles.saveMixSection}>
-                <Text style={styles.saveMixTitle}>💾 Sauvegarder le mix</Text>
+                <Text style={styles.saveMixTitle}>💾 {t('spynRecord.saveMix')}</Text>
                 <TouchableOpacity 
                   style={[styles.saveMixOption, saveMix && styles.saveMixOptionSelected]} 
                   onPress={() => setSaveMix(!saveMix)}
@@ -1930,11 +1930,11 @@ export default function SpynRecordScreen() {
                     {saveMix && <Ionicons name="checkmark" size={16} color="#fff" />}
                   </View>
                   <Text style={styles.saveMixText}>
-                    Télécharger l'enregistrement audio du mix
+                    {t('spynRecord.downloadMixAudio')}
                   </Text>
                 </TouchableOpacity>
                 <Text style={styles.saveMixHint}>
-                  Le fichier sera préparé pour le téléchargement après la fin de la session.
+                  {t('spynRecord.fileWillBePrepared')}
                 </Text>
               </View>
 
@@ -1943,7 +1943,7 @@ export default function SpynRecordScreen() {
                 <View style={styles.warningBox}>
                   <Ionicons name="warning" size={18} color="#FFB74D" />
                   <Text style={styles.warningText}>
-                    Aucun track identifié - Pas de Black Diamond
+                    {t('spynRecord.noTrackNoBlackDiamond')}
                   </Text>
                 </View>
               )}
@@ -1952,7 +1952,7 @@ export default function SpynRecordScreen() {
                 <View style={styles.warningBox}>
                   <Ionicons name="warning" size={18} color="#FFB74D" />
                   <Text style={styles.warningText}>
-                    Lieu non reconnu comme club/bar - Pas de Black Diamond
+                    {t('spynRecord.venueNotRecognized')}
                   </Text>
                 </View>
               )}
@@ -1961,14 +1961,14 @@ export default function SpynRecordScreen() {
                 <View style={styles.successBox}>
                   <Ionicons name="diamond" size={18} color={CYAN_COLOR} />
                   <Text style={styles.successBoxText}>
-                    Vous allez gagner un Black Diamond ! 💎
+                    {t('spynRecord.willEarnBlackDiamond')}
                   </Text>
                 </View>
               )}
 
               <TouchableOpacity style={styles.confirmEndButton} onPress={confirmEndSession}>
                 <Ionicons name="stop-circle" size={20} color="#fff" />
-                <Text style={styles.confirmEndButtonText}>Confirmer la fin de session</Text>
+                <Text style={styles.confirmEndButtonText}>{t('spynRecord.confirmEnd')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
