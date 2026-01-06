@@ -81,7 +81,7 @@
     },
     "extra": {
       "router": {},
-      "backendUrl": "https://admin-dashboard-646.preview.emergentagent.com",
+      "backendUrl": "https://agent-env-5bd6c1bc-7d9d-4962-8663-5852546af7fb-preview.preview.emergentagent.com",
       "base44AppId": "691a4d96d819355b52c063f3",
       "acrcloudHost": "identify-eu-west-1.acrcloud.com",
       "eas": {

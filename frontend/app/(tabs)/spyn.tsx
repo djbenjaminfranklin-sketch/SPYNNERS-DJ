@@ -34,7 +34,7 @@ const BUTTON_SIZE = Math.min(SCREEN_WIDTH * 0.45, 180);
 // Get backend URL - always use the full preview URL to ensure auth headers are transmitted
 const getBackendUrl = () => {
   // Always use the full preview domain for API calls
-  return 'https://admin-dashboard-646.preview.emergentagent.com';
+  return 'https://agent-env-5bd6c1bc-7d9d-4962-8663-5852546af7fb-preview.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

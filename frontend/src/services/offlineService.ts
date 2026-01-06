@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://admin-dashboard-646.preview.emergentagent.com';
+  return 'https://agent-env-5bd6c1bc-7d9d-4962-8663-5852546af7fb-preview.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

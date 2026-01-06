@@ -8,7 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
 // Backend URL - hardcoded for reliability in production builds
-const BACKEND_URL = 'https://admin-dashboard-646.preview.emergentagent.com';
+const BACKEND_URL = 'https://agent-env-5bd6c1bc-7d9d-4962-8663-5852546af7fb-preview.preview.emergentagent.com';
 
 console.log('[API] Using backend URL:', BACKEND_URL);
 
