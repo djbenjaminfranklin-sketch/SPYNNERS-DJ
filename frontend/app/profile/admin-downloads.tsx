@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import Constants from 'expo-constants';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as LegacyFileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
@@ -49,7 +49,6 @@ export default function AdminDownloads() {
   const [exporting, setExporting] = useState(false);
   const [showDateFilter, setShowDateFilter] = useState(false);
   
-  // Date filter state
   const [dateFilter, setDateFilter] = useState<DateFilter>({
     startDate: '',
     endDate: '',
@@ -75,7 +74,6 @@ export default function AdminDownloads() {
 
   const loadDownloads = async () => {
     try {
-      // Fetch real downloads data from backend
       const response = await axios.get(`${BACKEND_URL}/api/admin/downloads?limit=500`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -83,26 +81,25 @@ export default function AdminDownloads() {
       if (response.data?.success) {
         const downloadsData = response.data.downloads || [];
         
-        // Format download entries
         const formattedDownloads = downloadsData.map((d: any) => ({
           id: d.track_id || Math.random().toString(),
-          date: new Date().toISOString().split('T')[0],
-          dj_name: '-',
-          track_title: d.track_title || 'Unknown Track',
-          producer: d.producer || 'Unknown Producer',
-          genre: d.genre || 'Unknown',
+          date: d.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+          dj_name: d.dj_name || '-',
+          track_title: d.track_title || 'Titre inconnu',
+          producer: d.producer || 'Producteur inconnu',
+          genre: d.genre || 'Inconnu',
           download_count: d.download_count || 0,
         }));
         
         setDownloads(formattedDownloads);
         setStats({
           total: response.data.total_downloads || 0,
-          unique_djs: 0, // Would need separate API call
+          unique_djs: response.data.unique_djs || 0,
           tracks_downloaded: response.data.tracks_with_downloads || 0,
         });
       }
     } catch (error) {
-      console.error('[AdminDownloads] Error:', error);
+      console.error('[AdminDownloads] Erreur:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -114,11 +111,9 @@ export default function AdminDownloads() {
     loadDownloads();
   };
 
-  // Filter downloads by date
   const getFilteredDownloads = () => {
     let filtered = downloads;
     
-    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(d => 
@@ -128,7 +123,6 @@ export default function AdminDownloads() {
       );
     }
     
-    // Apply date filter
     if (dateFilter.startDate) {
       const startDate = new Date(dateFilter.startDate);
       startDate.setHours(0, 0, 0, 0);
@@ -146,23 +140,14 @@ export default function AdminDownloads() {
 
   const filteredDownloads = getFilteredDownloads();
 
-  // Export PDF
   const exportPDF = async () => {
     setExporting(true);
     try {
-      console.log('[AdminDownloads] Exporting PDF...');
+      console.log('[AdminDownloads] Export PDF...');
       
       const requestBody: any = {};
-      
-      // Add date filters if set
-      if (dateFilter.startDate) {
-        requestBody.start_date = dateFilter.startDate;
-      }
-      if (dateFilter.endDate) {
-        requestBody.end_date = dateFilter.endDate;
-      }
-      
-      console.log('[AdminDownloads] Request body:', JSON.stringify(requestBody));
+      if (dateFilter.startDate) requestBody.start_date = dateFilter.startDate;
+      if (dateFilter.endDate) requestBody.end_date = dateFilter.endDate;
       
       const response = await axios.post(
         `${BACKEND_URL}/api/admin/downloads/pdf`,
@@ -177,22 +162,14 @@ export default function AdminDownloads() {
         }
       );
       
-      console.log('[AdminDownloads] PDF received, size:', response.data.byteLength);
+      console.log('[AdminDownloads] PDF reçu, taille:', response.data.byteLength);
       
-      // Generate filename
-      let filename = 'spynners_downloads';
-      if (dateFilter.startDate) {
-        filename += `_${dateFilter.startDate}`;
-      }
-      if (dateFilter.endDate) {
-        filename += `_${dateFilter.endDate}`;
-      }
+      let filename = 'spynners_telechargements';
+      if (dateFilter.startDate) filename += `_${dateFilter.startDate}`;
+      if (dateFilter.endDate) filename += `_${dateFilter.endDate}`;
       filename += '.pdf';
       
-      // Platform-specific handling
       if (Platform.OS === 'web') {
-        // Web: Create blob and download link
-        console.log('[AdminDownloads] Web platform - creating download link');
         const blob = new Blob([response.data], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -204,10 +181,6 @@ export default function AdminDownloads() {
         URL.revokeObjectURL(url);
         Alert.alert('Succès ✅', 'PDF téléchargé !');
       } else {
-        // Mobile: Use FileSystem and Sharing
-        console.log('[AdminDownloads] Mobile platform - using FileSystem');
-        
-        // Convert arraybuffer to base64
         const uint8Array = new Uint8Array(response.data);
         let binary = '';
         const chunkSize = 8192;
@@ -217,16 +190,9 @@ export default function AdminDownloads() {
         }
         const base64 = btoa(binary);
         
-        const fileUri = `${FileSystem.cacheDirectory}${filename}`;
-        console.log('[AdminDownloads] Writing to:', fileUri);
+        const fileUri = `${LegacyFileSystem.cacheDirectory}${filename}`;
+        await LegacyFileSystem.writeAsStringAsync(fileUri, base64, 'base64');
         
-        await FileSystem.writeAsStringAsync(fileUri, base64, {
-          encoding: 'base64',
-        });
-        
-        console.log('[AdminDownloads] File written, sharing...');
-        
-        // Share the file
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(fileUri, {
             mimeType: 'application/pdf',
@@ -238,27 +204,24 @@ export default function AdminDownloads() {
       }
       
     } catch (error: any) {
-      console.error('[AdminDownloads] Export error:', error);
+      console.error('[AdminDownloads] Erreur export:', error);
       Alert.alert('Erreur', error?.response?.data?.detail || error?.message || 'Impossible d\'exporter le rapport');
     } finally {
       setExporting(false);
     }
   };
 
-  // Apply date filter
   const applyDateFilter = () => {
     setDateFilter(tempDateFilter);
     setShowDateFilter(false);
   };
 
-  // Clear date filter
   const clearDateFilter = () => {
     setTempDateFilter({ startDate: '', endDate: '' });
     setDateFilter({ startDate: '', endDate: '' });
     setShowDateFilter(false);
   };
 
-  // Format date for display
   const formatDateDisplay = (dateStr: string) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -297,7 +260,7 @@ export default function AdminDownloads() {
           <Ionicons name="download" size={24} color="#00BFA5" />
         </View>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Downloads</Text>
+          <Text style={styles.headerTitle}>Téléchargements</Text>
           <Text style={styles.headerSubtitle}>Historique des téléchargements</Text>
         </View>
       </View>
@@ -311,17 +274,17 @@ export default function AdminDownloads() {
           <View style={styles.statCard}>
             <Ionicons name="download" size={24} color="#00BFA5" />
             <Text style={styles.statNumber}>{stats.total}</Text>
-            <Text style={styles.statLabel}>Total downloads</Text>
+            <Text style={styles.statLabel}>Total téléchargements</Text>
           </View>
           <View style={styles.statCard}>
             <Ionicons name="people" size={24} color="#2196F3" />
             <Text style={styles.statNumber}>{stats.unique_djs}</Text>
-            <Text style={styles.statLabel}>Unique DJs</Text>
+            <Text style={styles.statLabel}>DJs uniques</Text>
           </View>
           <View style={styles.statCard}>
             <Ionicons name="musical-note" size={24} color="#FF9800" />
             <Text style={styles.statNumber}>{stats.tracks_downloaded}</Text>
-            <Text style={styles.statLabel}>Tracks downloaded</Text>
+            <Text style={styles.statLabel}>Tracks téléchargées</Text>
           </View>
         </View>
 
@@ -331,7 +294,10 @@ export default function AdminDownloads() {
           <View style={styles.filterRow}>
             <TouchableOpacity 
               style={styles.dateFilterBtn}
-              onPress={() => setShowDateFilter(true)}
+              onPress={() => {
+                setTempDateFilter(dateFilter);
+                setShowDateFilter(true);
+              }}
             >
               <Ionicons name="calendar" size={18} color="#00BFA5" />
               <Text style={styles.dateFilterBtnText}>
@@ -350,62 +316,52 @@ export default function AdminDownloads() {
           </View>
         </View>
 
-        {/* Search & Export */}
-        <View style={styles.actionRow}>
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color={Colors.textMuted} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Rechercher par DJ, track ou producer..."
-              placeholderTextColor={Colors.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-          
-          <TouchableOpacity 
-            style={[styles.exportBtn, exporting && styles.exportBtnDisabled]} 
-            onPress={exportPDF}
-            disabled={exporting}
-          >
-            {exporting ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <Ionicons name="document-text" size={18} color="#fff" />
-                <Text style={styles.exportBtnText}>
-                  Télécharger PDF ({filteredDownloads.length})
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+        {/* Search */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color={Colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Rechercher par DJ, track ou producteur..."
+            placeholderTextColor={Colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
         </View>
 
+        {/* Export PDF Button */}
+        <TouchableOpacity 
+          style={[styles.exportBtn, exporting && styles.exportBtnDisabled]} 
+          onPress={exportPDF}
+          disabled={exporting}
+        >
+          {exporting ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <>
+              <Ionicons name="document-text" size={18} color="#fff" />
+              <Text style={styles.exportBtnText}>
+                Télécharger PDF ({filteredDownloads.length} tracks)
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+
         {/* Download History */}
-        <Text style={styles.sectionTitle}>Download history ({stats.total})</Text>
+        <Text style={styles.sectionTitle}>Historique ({filteredDownloads.length})</Text>
         
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, { flex: 0.8 }]}>Date</Text>
-          <Text style={[styles.tableHeaderText, { flex: 1.2 }]}>DJ</Text>
           <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>Track</Text>
-          <Text style={[styles.tableHeaderText, { flex: 1.2 }]}>Producer</Text>
-          <Text style={[styles.tableHeaderText, { flex: 1 }]}>Genre</Text>
+          <Text style={[styles.tableHeaderText, { flex: 1.2 }]}>Producteur</Text>
+          <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>DL</Text>
         </View>
 
         {filteredDownloads.map((download) => (
           <View key={download.id} style={styles.downloadRow}>
-            <View style={{ flex: 0.8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Ionicons name="calendar-outline" size={12} color={Colors.textMuted} />
-              <Text style={styles.downloadText}>{download.date}</Text>
-            </View>
-            <Text style={[styles.downloadText, { flex: 1.2 }]}>{download.dj_name}</Text>
+            <Text style={[styles.downloadText, { flex: 0.8 }]}>{download.date}</Text>
             <Text style={[styles.downloadText, { flex: 1.5 }]} numberOfLines={1}>{download.track_title}</Text>
             <Text style={[styles.downloadText, { flex: 1.2 }]} numberOfLines={1}>{download.producer}</Text>
-            <View style={{ flex: 1 }}>
-              <View style={styles.genreTag}>
-                <Text style={styles.genreTagText} numberOfLines={1}>{download.genre}</Text>
-              </View>
-            </View>
+            <Text style={[styles.downloadText, { flex: 0.5, textAlign: 'center', fontWeight: 'bold', color: '#00BFA5' }]}>{download.download_count}</Text>
           </View>
         ))}
 
@@ -432,7 +388,7 @@ export default function AdminDownloads() {
               <Text style={styles.dateInputLabel}>Date de début</Text>
               <TextInput
                 style={styles.dateInput}
-                placeholder="YYYY-MM-DD"
+                placeholder="AAAA-MM-JJ"
                 placeholderTextColor={Colors.textMuted}
                 value={tempDateFilter.startDate}
                 onChangeText={(text) => setTempDateFilter(prev => ({ ...prev, startDate: text }))}
@@ -443,7 +399,7 @@ export default function AdminDownloads() {
               <Text style={styles.dateInputLabel}>Date de fin</Text>
               <TextInput
                 style={styles.dateInput}
-                placeholder="YYYY-MM-DD"
+                placeholder="AAAA-MM-JJ"
                 placeholderTextColor={Colors.textMuted}
                 value={tempDateFilter.endDate}
                 onChangeText={(text) => setTempDateFilter(prev => ({ ...prev, endDate: text }))}
@@ -548,17 +504,17 @@ const styles = StyleSheet.create({
   statNumber: { fontSize: 24, fontWeight: 'bold', color: Colors.text, marginTop: 8 },
   statLabel: { fontSize: 10, color: Colors.textMuted, marginTop: 4, textAlign: 'center' },
 
-  filterSection: { marginBottom: Spacing.md, backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.md, padding: Spacing.md },
+  filterSection: { marginBottom: Spacing.md, backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border },
   filterTitle: { fontSize: 14, fontWeight: '600', color: Colors.text, marginBottom: Spacing.sm },
   filterRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   dateFilterBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#00BFA520', paddingHorizontal: 16, paddingVertical: 12, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: '#00BFA550' },
   dateFilterBtnText: { fontSize: 13, color: '#00BFA5', fontWeight: '500' },
   clearFilterBtn: { padding: 8 },
 
-  actionRow: { marginBottom: Spacing.md },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.backgroundCard, paddingHorizontal: Spacing.md, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border, marginBottom: Spacing.sm },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.backgroundCard, paddingHorizontal: Spacing.md, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border, marginBottom: Spacing.md },
   searchInput: { flex: 1, paddingVertical: 12, paddingHorizontal: 10, fontSize: 14, color: Colors.text },
-  exportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#00BFA5', paddingHorizontal: 16, paddingVertical: 14, borderRadius: BorderRadius.md },
+  
+  exportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#00BFA5', paddingHorizontal: 16, paddingVertical: 14, borderRadius: BorderRadius.md, marginBottom: Spacing.md },
   exportBtnDisabled: { opacity: 0.6 },
   exportBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
 
@@ -570,11 +526,8 @@ const styles = StyleSheet.create({
   downloadRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
   downloadText: { fontSize: 12, color: Colors.text },
 
-  genreTag: { backgroundColor: '#00BFA520', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, alignSelf: 'flex-start' },
-  genreTagText: { fontSize: 10, color: '#00BFA5', fontWeight: '500' },
-
   // Modal styles
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', padding: Spacing.lg },
   modalContent: { backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.lg, padding: Spacing.lg, width: '100%', maxWidth: 400 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
   modalTitle: { fontSize: 18, fontWeight: '600', color: Colors.text },
