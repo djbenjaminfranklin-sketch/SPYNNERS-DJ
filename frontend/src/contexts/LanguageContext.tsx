@@ -723,6 +723,19 @@ const translations: Record<Language, Record<string, string>> = {
   },
   
   fr: {
+    // Common
+    'common.error': 'Erreur',
+    'common.success': 'Succès',
+    'common.loading': 'Chargement...',
+    'common.cancel': 'Annuler',
+    'common.save': 'Enregistrer',
+    'common.delete': 'Supprimer',
+    'common.confirm': 'Confirmer',
+    'common.congratulations': 'Félicitations !',
+    
+    // Admin
+    'admin.results': 'Résultats',
+    
     // Auth
     'login.title': 'Connexion',
     'login.email': 'Email',
