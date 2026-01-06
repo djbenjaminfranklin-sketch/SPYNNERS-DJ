@@ -864,4 +864,15 @@ const styles = StyleSheet.create({
   cancelBtnText: { fontSize: 14, color: Colors.textMuted },
   confirmRejectBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: BorderRadius.md, backgroundColor: '#F44336' },
   confirmRejectBtnText: { fontSize: 14, fontWeight: '600', color: '#fff' },
+
+  // User styles
+  userCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.md, padding: Spacing.sm, marginBottom: Spacing.sm, borderWidth: 1, borderColor: Colors.border },
+  userAvatar: { width: 50, height: 50, borderRadius: 25 },
+  userAvatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: Colors.backgroundInput, justifyContent: 'center', alignItems: 'center' },
+  userInfo: { flex: 1, marginLeft: Spacing.sm },
+  userName: { fontSize: 14, fontWeight: '600', color: Colors.text },
+  userEmail: { fontSize: 12, color: Colors.textSecondary },
+  userType: { fontSize: 10, color: Colors.primary, marginTop: 2, textTransform: 'capitalize' },
+  editUserBtn: { padding: 8 },
+  modalUserAvatar: { width: 100, height: 100, borderRadius: 50, alignSelf: 'center', marginBottom: Spacing.md },
 });
