@@ -267,7 +267,7 @@ export default function AdminDownloads() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        Alert.alert('Succès ✅', 'PDF téléchargé !');
+        Alert.alert(t('common.success') + ' ✅', t('admin.pdfDownloaded'));
       } else {
         const uint8Array = new Uint8Array(response.data);
         let binary = '';
@@ -289,13 +289,13 @@ export default function AdminDownloads() {
             dialogTitle: t('admin.downloadPdfDialog'),
           });
         } else {
-          Alert.alert('Succès ✅', `PDF sauvegardé: ${filename}`);
+          Alert.alert(t('common.success') + ' ✅', `${t('admin.pdfSaved')} ${filename}`);
         }
       }
       
     } catch (error: any) {
-      console.error('[AdminDownloads] Erreur export:', error);
-      Alert.alert('Erreur', error?.response?.data?.detail || error?.message || 'Impossible d\'exporter le rapport');
+      console.error('[AdminDownloads] Export error:', error);
+      Alert.alert(t('common.error'), error?.response?.data?.detail || error?.message || t('admin.exportError'));
     } finally {
       setExporting(false);
     }
@@ -322,7 +322,7 @@ export default function AdminDownloads() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <Ionicons name="lock-closed" size={64} color={Colors.textMuted} />
-        <Text style={styles.accessDeniedTitle}>Accès Refusé</Text>
+        <Text style={styles.accessDeniedTitle}>{t('admin.accessDenied')}</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.backButtonText}>{t('admin.back')}</Text>
         </TouchableOpacity>
@@ -334,7 +334,7 @@ export default function AdminDownloads() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#00BFA5" />
-        <Text style={styles.loadingText}>Chargement...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
