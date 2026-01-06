@@ -432,7 +432,8 @@ export default function AdminSessions() {
           <Text style={[styles.tableHeaderText, { flex: 1.3 }]}>Lieu</Text>
           <Text style={[styles.tableHeaderText, { flex: 1 }]}>Ville</Text>
           <Text style={[styles.tableHeaderText, { flex: 0.8 }]}>Date</Text>
-          <Text style={[styles.tableHeaderText, { flex: 0.5 }]}>Tracks</Text>
+          <Text style={[styles.tableHeaderText, { flex: 0.8 }]}>N° SACEM</Text>
+          <Text style={[styles.tableHeaderText, { flex: 0.4 }]}>Tracks</Text>
           <Text style={[styles.tableHeaderText, { flex: 0.4 }]}>PDF</Text>
         </View>
 
