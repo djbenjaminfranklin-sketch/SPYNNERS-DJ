@@ -183,6 +183,74 @@ export default function AdminBroadcast() {
     setShowEmailDetail(true);
   };
 
+  // Pick attachment file
+  const pickAttachment = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        copyToCacheDirectory: true,
+      });
+      
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const file = result.assets[0];
+        setAttachment({
+          name: file.name,
+          uri: file.uri,
+          type: file.mimeType || 'application/octet-stream',
+        });
+        
+        // Upload the file immediately
+        await uploadAttachment(file);
+      }
+    } catch (error) {
+      console.error('[AdminBroadcast] Pick attachment error:', error);
+      Alert.alert('Erreur', 'Impossible de sélectionner le fichier');
+    }
+  };
+
+  // Upload attachment to server
+  const uploadAttachment = async (file: DocumentPicker.DocumentPickerAsset) => {
+    setUploadingAttachment(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', {
+        uri: file.uri,
+        name: file.name,
+        type: file.mimeType || 'application/octet-stream',
+      } as any);
+      
+      const response = await axios.post(
+        `${BACKEND_URL}/api/admin/upload-attachment`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 60000,
+        }
+      );
+      
+      if (response.data?.success && response.data?.url) {
+        setAttachment(prev => prev ? { ...prev, url: response.data.url } : null);
+        console.log('[AdminBroadcast] Attachment uploaded:', response.data.url);
+      } else {
+        throw new Error(response.data?.error || 'Upload failed');
+      }
+    } catch (error: any) {
+      console.error('[AdminBroadcast] Upload error:', error);
+      Alert.alert('Erreur', 'Impossible de télécharger le fichier');
+      setAttachment(null);
+    } finally {
+      setUploadingAttachment(false);
+    }
+  };
+
+  // Remove attachment
+  const removeAttachment = () => {
+    setAttachment(null);
+  };
+
   const insertRecentTracks = () => {
     if (recentTracks.length === 0) {
       Alert.alert('Info', 'Aucune track récente disponible');
