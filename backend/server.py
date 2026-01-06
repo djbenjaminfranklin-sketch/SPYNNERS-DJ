@@ -3322,9 +3322,15 @@ async def get_admin_tracks(authorization: str = Header(None), status: str = None
             if dashboard_data and isinstance(dashboard_data, dict):
                 pending_list = dashboard_data.get('pendingTracks', [])
                 if isinstance(pending_list, list):
-                    # Mark these tracks as pending
+                    # Mark these tracks as pending and normalize ID
                     for track in pending_list:
                         track['status'] = 'pending'
+                        # Normalize ID: ensure 'id' field exists
+                        if not track.get('id') and track.get('_id'):
+                            track['id'] = track['_id']
+                        # Also set artist from producer_name if needed
+                        if not track.get('artist'):
+                            track['artist'] = track.get('producer_name') or 'Artiste inconnu'
                     all_tracks.extend(pending_list)
                     print(f"[Admin Tracks] Got {len(pending_list)} pending tracks from dashboard")
         except Exception as e:
