@@ -224,6 +224,8 @@ export default function VIPScreen() {
           purchased_at: new Date().toISOString(),
           amount: UNLOCK_COST,
           type: 'track_unlock',
+          promo_id: 'diamond_unlock',
+          price_paid: UNLOCK_COST,
         });
         console.log('[VIP] Purchase recorded');
       } catch (purchaseError) {
