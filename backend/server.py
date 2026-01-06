@@ -4099,7 +4099,7 @@ async def send_broadcast_email(request: BroadcastEmailRequest, authorization: st
                     print(f"[Admin Broadcast] Found {len(recipients)} recipients")
         
         # Send emails using the new sendEmail cloud function
-        for recipient in recipients[:100]:  # Limit to 100 for safety
+        for recipient in recipients[:10000]:  # Increased limit to 10000
             try:
                 # Build HTML body
                 html_body = f"""
