@@ -3946,6 +3946,9 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         # Filter by date range AND diamond_awarded = true (validated sessions only)
         # Also handle individual session export
         filtered_sessions = []
+        print(f"[Admin Sessions PDF] Filtering {len(sessions_data)} sessions...")
+        print(f"[Admin Sessions PDF] Filter params: session_id={request.session_id}, start_date={request.start_date}, end_date={request.end_date}")
+        
         for session in sessions_data:
             # Only include validated sessions (diamond_awarded = true)
             if session.get('diamond_awarded') != True:
@@ -3953,13 +3956,24 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
             
             # If session_id is specified, only include that specific session
             if request.session_id:
-                if session.get('id') == request.session_id:
+                session_id = session.get('id') or session.get('_id')
+                if session_id == request.session_id or str(session_id) == str(request.session_id):
+                    print(f"[Admin Sessions PDF] Found matching session_id: {session_id}")
                     session['_parsed_date'] = None
                     filtered_sessions.append(session)
                     break  # Found the session, stop looking
                 continue  # Skip this session, keep looking for the right one
             
+            # Date filtering for "all sessions" export
             session_date_str = session.get('started_at') or session.get('created_at') or session.get('timestamp')
+            
+            # If NO date filter is specified, include all validated sessions
+            if not request.start_date and not request.end_date:
+                session['_parsed_date'] = None
+                filtered_sessions.append(session)
+                continue
+            
+            # Date filter is specified - parse and compare
             if session_date_str:
                 try:
                     if 'T' in session_date_str:
@@ -3972,20 +3986,28 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
                         start = datetime.strptime(request.start_date, '%Y-%m-%d')
                         if session_date.replace(tzinfo=None) < start:
                             include = False
-                    if request.end_date:
+                            print(f"[Admin Sessions PDF] Session {session.get('id')} excluded: {session_date} < {start}")
+                    if request.end_date and include:
                         end = datetime.strptime(request.end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
                         if session_date.replace(tzinfo=None) > end:
                             include = False
+                            print(f"[Admin Sessions PDF] Session {session.get('id')} excluded: {session_date} > {end}")
                     
                     if include:
                         session['_parsed_date'] = session_date
                         filtered_sessions.append(session)
+                        print(f"[Admin Sessions PDF] Session {session.get('id')} included: {session_date}")
                 except Exception as date_error:
-                    filtered_sessions.append(session)
+                    print(f"[Admin Sessions PDF] Date parse error for session {session.get('id')}: {date_error}")
+                    # Include sessions with unparseable dates when no filter
+                    if not request.start_date and not request.end_date:
+                        filtered_sessions.append(session)
             else:
-                filtered_sessions.append(session)
+                # No date on session - only include if no date filter
+                if not request.start_date and not request.end_date:
+                    filtered_sessions.append(session)
         
-        print(f"[Admin Sessions PDF] Filtered to {len(filtered_sessions)} validated sessions (diamond_awarded=true)")
+        print(f"[Admin Sessions PDF] Filtered to {len(filtered_sessions)} validated sessions")
         
         # Now we need to get the actual track plays for each session
         # Get all track plays from Base44 entity TrackPlay
