@@ -314,10 +314,11 @@ export default function AdminCategories() {
       <View style={styles.actionsRow}>
         <TouchableOpacity style={styles.sendEmailBtn} onPress={sendGroupEmail}>
           <Ionicons name="send" size={16} color="#fff" />
-          <Text style={styles.actionBtnText}>Send Group Email</Text>
+          <Text style={styles.actionBtnText}>Email Groupé</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.autoAssignBtn} onPress={autoAssignCategories}>
-          <Text style={styles.actionBtnText}>Auto-Assign Categories</Text>
+        <TouchableOpacity style={[styles.sendEmailBtn, { backgroundColor: '#4CAF50' }]} onPress={openIndividualEmail}>
+          <Ionicons name="mail" size={16} color="#fff" />
+          <Text style={styles.actionBtnText}>Email Individuel</Text>
         </TouchableOpacity>
       </View>
 
