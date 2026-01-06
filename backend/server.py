@@ -4038,7 +4038,7 @@ class BroadcastEmailRequest(BaseModel):
 async def send_broadcast_email(request: BroadcastEmailRequest, authorization: str = Header(None)):
     """
     Send broadcast email to users.
-    Uses Base44 integrations Core.SendEmail via Spynners nativeSendEmail.
+    Uses Base44 integrations Core.SendEmail via direct API call.
     """
     try:
         if not authorization:
@@ -4051,23 +4051,21 @@ async def send_broadcast_email(request: BroadcastEmailRequest, authorization: st
         sent_count = 0
         errors = []
         
+        headers = {
+            "Content-Type": "application/json",
+            "X-Base44-App-Id": BASE44_APP_ID,
+            "Authorization": authorization
+        }
+        
         # Get list of recipients based on type
         recipients = []
         
-        if request.recipient_type == 'individual' and request.individual_email:
-            recipients = [request.individual_email]
-            
-        elif request.recipient_type == 'category' and (request.categories or request.category):
-            categories_to_use = request.categories or ([request.category] if request.category else [])
-            
-            # Get users matching the categories
-            headers = {
-                "Content-Type": "application/json",
-                "X-Base44-App-Id": BASE44_APP_ID,
-                "Authorization": authorization
-            }
-            
-            async with httpx.AsyncClient(timeout=60.0) as http_client:
+        async with httpx.AsyncClient(timeout=60.0) as http_client:
+            if request.recipient_type == 'individual' and request.individual_email:
+                recipients = [{"email": request.individual_email, "name": ""}]
+                
+            else:
+                # Get users from Base44
                 users_response = await http_client.get(
                     f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User",
                     params={"limit": 10000},
@@ -4079,77 +4077,80 @@ async def send_broadcast_email(request: BroadcastEmailRequest, authorization: st
                     if isinstance(users, dict):
                         users = users.get('items', users.get('users', []))
                     
-                    for u in users:
-                        user_type = (u.get('user_type', '') or '').lower()
-                        if user_type in [c.lower() for c in categories_to_use]:
-                            if u.get('email'):
-                                recipients.append(u.get('email'))
-                    
-                    print(f"[Admin Broadcast] Found {len(recipients)} users in categories {categories_to_use}")
-        else:
-            # All users
-            headers = {
-                "Content-Type": "application/json",
-                "X-Base44-App-Id": BASE44_APP_ID,
-                "Authorization": authorization
-            }
-            
-            async with httpx.AsyncClient(timeout=60.0) as http_client:
-                users_response = await http_client.get(
-                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User",
-                    params={"limit": 10000},
-                    headers=headers
-                )
-                
-                if users_response.status_code == 200:
-                    users = users_response.json()
-                    if isinstance(users, dict):
-                        users = users.get('items', users.get('users', []))
-                    
-                    for u in users:
-                        if u.get('email'):
-                            recipients.append(u.get('email'))
-                    
-                    print(f"[Admin Broadcast] Found {len(recipients)} total users")
-        
-        # Try to send via Spynners nativeSendEmail function
-        for recipient in recipients[:100]:  # Limit to 100 for safety
-            try:
-                result = await call_spynners_function("nativeSendEmail", {
-                    "to": recipient,
-                    "subject": request.subject,
-                    "html": request.message,
-                    "body": request.message,
-                }, authorization)
-                
-                if result and (result.get('success') or result.get('messageId')):
-                    sent_count += 1
-                    print(f"[Admin Broadcast] Sent to {recipient}")
-                else:
-                    # Fallback: try using sendEmail function
-                    result2 = await call_spynners_function("sendEmail", {
-                        "to": recipient,
-                        "subject": request.subject,
-                        "html": request.message,
-                    }, authorization)
-                    
-                    if result2 and (result2.get('success') or result2.get('messageId')):
-                        sent_count += 1
-                        print(f"[Admin Broadcast] Sent to {recipient} (via sendEmail)")
+                    if request.recipient_type == 'category' and (request.categories or request.category):
+                        categories_to_use = request.categories or ([request.category] if request.category else [])
+                        for u in users:
+                            user_type = (u.get('user_type', '') or '').lower()
+                            if user_type in [c.lower() for c in categories_to_use]:
+                                if u.get('email'):
+                                    recipients.append({
+                                        "email": u.get('email'),
+                                        "name": u.get('artist_name') or u.get('full_name') or ''
+                                    })
                     else:
-                        errors.append(f"{recipient}: Failed")
+                        # All users
+                        for u in users:
+                            if u.get('email'):
+                                recipients.append({
+                                    "email": u.get('email'),
+                                    "name": u.get('artist_name') or u.get('full_name') or ''
+                                })
+                    
+                    print(f"[Admin Broadcast] Found {len(recipients)} recipients")
+            
+            # Send emails using Base44 Core.SendEmail integration
+            for recipient in recipients[:100]:  # Limit to 100 for safety
+                try:
+                    # Build HTML body
+                    html_body = f"""
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <p style="margin: 0 0 20px 0; font-size: 16px;">Bonjour {recipient['name'] or 'there'},</p>
+  
+  <div style="margin: 0 0 20px 0;">
+    {request.message.replace(chr(10), '<br>')}
+  </div>
+  
+  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+    <p>SPYNNERS Team</p>
+  </div>
+</body>
+</html>"""
+                    
+                    # Call Base44 Core.SendEmail integration
+                    email_response = await http_client.post(
+                        f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/integrations/invoke",
+                        headers=headers,
+                        json={
+                            "integration": "Core",
+                            "method": "SendEmail",
+                            "params": {
+                                "from_name": "SPYNNERS Team",
+                                "to": recipient['email'],
+                                "subject": request.subject,
+                                "body": html_body
+                            }
+                        }
+                    )
+                    
+                    if email_response.status_code in [200, 201]:
+                        sent_count += 1
+                        print(f"[Admin Broadcast] Sent to {recipient['email']}")
+                    else:
+                        print(f"[Admin Broadcast] Failed {recipient['email']}: {email_response.status_code} - {email_response.text[:100]}")
+                        errors.append(f"{recipient['email']}: {email_response.status_code}")
                         
-            except Exception as e:
-                print(f"[Admin Broadcast] Error sending to {recipient}: {e}")
-                errors.append(f"{recipient}: {str(e)[:50]}")
+                except Exception as e:
+                    print(f"[Admin Broadcast] Error sending to {recipient['email']}: {e}")
+                    errors.append(f"{recipient['email']}: {str(e)[:50]}")
         
         # Save to BroadcastEmail entity for history
         try:
-            headers = {
-                "Content-Type": "application/json",
-                "X-Base44-App-Id": BASE44_APP_ID,
-                "Authorization": authorization
-            }
             async with httpx.AsyncClient(timeout=30.0) as http_client:
                 await http_client.post(
                     f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/BroadcastEmail",
@@ -4177,7 +4178,7 @@ async def send_broadcast_email(request: BroadcastEmailRequest, authorization: st
         else:
             return {
                 "success": False,
-                "message": "Aucun email envoyé - vérifiez la configuration email",
+                "message": "Aucun email envoyé - vérifiez la configuration email Base44",
                 "errors": errors[:5] if errors else None
             }
         
