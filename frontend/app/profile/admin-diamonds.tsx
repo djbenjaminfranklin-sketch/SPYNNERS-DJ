@@ -75,7 +75,40 @@ export default function AdminDiamonds() {
 
   const loadUsers = async () => {
     try {
-      // Use the admin endpoint that works correctly
+      console.log('[AdminDiamonds] Loading users, Platform:', Platform.OS);
+      
+      // On mobile, use Base44 API directly
+      if (Platform.OS !== 'web') {
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
+        
+        const response = await axios.get(`${BASE44_API_URL}/entities/User?limit=10000`, { headers });
+        const usersData = response.data || [];
+        
+        console.log('[AdminDiamonds] Got', usersData.length, 'users from Base44');
+        
+        const userList = usersData.map((u: any) => {
+          const userData = u.data || {};
+          return {
+            id: u.id || u._id,
+            full_name: u.full_name || userData.full_name || '',
+            artist_name: userData.artist_name || u.artist_name || '',
+            email: u.email || '',
+            avatar_url: userData.avatar_url || u.avatar_url || u.generated_avatar_url || '',
+            black_diamonds: userData.black_diamonds || u.black_diamonds || 0,
+          };
+        });
+        
+        setUsers(userList);
+        setFilteredUsers(userList);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      
+      // On web, use backend proxy
       const response = await axios.get(`${BACKEND_URL}/api/admin/users?limit=10000`, {
         headers: { Authorization: `Bearer ${token}` }
       });
