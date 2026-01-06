@@ -108,21 +108,23 @@ export default function AdminDashboard() {
       if (tracksResponse.data?.success && tracksResponse.data?.tracks) {
         setAllTracks(tracksResponse.data.tracks.map((track: any) => ({
           id: track.id || track._id,
-          title: track.title,
-          artist: track.artist_name || track.artist,
-          producer_name: track.producer_name || track.artist_name,
+          title: track.title || 'Sans titre',
+          artist: typeof track.artist_name === 'string' ? track.artist_name : 
+                  typeof track.artist === 'string' ? track.artist : 
+                  track.producer_name || 'Artiste inconnu',
+          producer_name: track.producer_name || track.artist_name || 'Producteur inconnu',
           genre: track.genre || 'Unknown',
-          label: track.label,
+          label: track.label || '',
           bpm: track.bpm,
-          key: track.key,
-          description: track.description,
+          key: track.key || '',
+          description: track.description || '',
           is_vip: track.is_vip || false,
           audio_url: track.audio_url,
           artwork_url: track.artwork_url,
-          uploaded_by: track.uploaded_by || track.user_id,
-          uploaded_at: track.created_at,
+          uploaded_by: track.uploaded_by || track.user_id || '',
+          uploaded_at: track.created_at || '',
           status: track.status || 'approved',
-          rejection_reason: track.rejection_reason,
+          rejection_reason: track.rejection_reason || '',
         })));
       }
     } catch (error) {
