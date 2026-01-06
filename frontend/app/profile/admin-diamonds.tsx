@@ -41,9 +41,13 @@ export default function AdminDiamonds() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSendModal, setShowSendModal] = useState(false);
+  const [showSendAllModal, setShowSendAllModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
   const [diamondAmount, setDiamondAmount] = useState('');
+  const [sendAllAmount, setSendAllAmount] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendingAll, setSendingAll] = useState(false);
+  const [sendAllProgress, setSendAllProgress] = useState({ current: 0, total: 0 });
 
   const isAdmin = isUserAdmin(user);
 
