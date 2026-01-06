@@ -3983,13 +3983,12 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         print(f"[Admin Sessions PDF] Filtered to {len(filtered_sessions)} validated sessions (diamond_awarded=true)")
         
         # Now we need to get the actual track plays for each session
-        # Get all live track plays from Base44 entity
+        # Get all track plays from Base44 entity TrackPlay
         all_plays = []
         try:
-            # First try Base44 entity API directly
-            base44_plays_url = "https://app.base44.com/api/apps/691a4d96d819355b52c063f3/entities/LiveTrackPlay"
+            # Use Base44 entity API to get TrackPlay data
+            base44_plays_url = "https://app.base44.com/api/apps/691a4d96d819355b52c063f3/entities/TrackPlay"
             headers = {
-                "Authorization": authorization,
                 "Content-Type": "application/json"
             }
             
@@ -4005,18 +4004,23 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
                         all_plays = data
                     elif isinstance(data, dict):
                         all_plays = data.get('items', data.get('data', []))
-                    print(f"[Admin Sessions PDF] Got {len(all_plays)} track plays from LiveTrackPlay entity")
+                    print(f"[Admin Sessions PDF] Got {len(all_plays)} track plays from TrackPlay entity")
                     if all_plays and len(all_plays) > 0:
                         print(f"[Admin Sessions PDF] Sample track keys: {list(all_plays[0].keys())}")
+                        print(f"[Admin Sessions PDF] Sample track: {all_plays[0]}")
+                elif response.status_code == 429:
+                    print(f"[Admin Sessions PDF] Rate limit - waiting and retrying...")
+                    await asyncio.sleep(2)
+                    response2 = await client.get(f"{base44_plays_url}?limit=10000", headers=headers)
+                    if response2.status_code == 200:
+                        data = response2.json()
+                        if isinstance(data, list):
+                            all_plays = data
+                        elif isinstance(data, dict):
+                            all_plays = data.get('items', data.get('data', []))
+                        print(f"[Admin Sessions PDF] Retry got {len(all_plays)} track plays")
                 else:
-                    print(f"[Admin Sessions PDF] LiveTrackPlay API error: {response.status_code}")
-                    # Fallback to function
-                    result = await call_spynners_function("getLiveTrackPlays", {"limit": 10000}, authorization)
-                    if isinstance(result, dict):
-                        all_plays = result.get('recentPlays', []) or result.get('plays', []) or []
-                    elif isinstance(result, list):
-                        all_plays = result
-                    print(f"[Admin Sessions PDF] Fallback got {len(all_plays)} track plays")
+                    print(f"[Admin Sessions PDF] TrackPlay API error: {response.status_code}")
         except Exception as e:
             print(f"[Admin Sessions PDF] Error getting track plays: {e}")
         
