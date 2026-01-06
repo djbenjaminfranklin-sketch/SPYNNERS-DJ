@@ -381,19 +381,58 @@ export default function AdminBroadcast() {
               </View>
             )}
 
-            {/* Individual Email */}
+            {/* Individual Email with Autocomplete */}
             {recipientType === 'individual' && (
               <View style={styles.individualSection}>
-                <Text style={styles.inputLabel}>Adresse email</Text>
+                <Text style={styles.inputLabel}>Rechercher un utilisateur</Text>
                 <TextInput
                   style={styles.emailInput}
-                  placeholder="example@email.com"
+                  placeholder="Tapez un email ou un nom..."
                   placeholderTextColor={Colors.textMuted}
                   value={individualEmail}
-                  onChangeText={setIndividualEmail}
+                  onChangeText={(text) => {
+                    setIndividualEmail(text);
+                    setSelectedRecipient(null);
+                  }}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
+                
+                {/* Autocomplete suggestions */}
+                {emailSuggestions.length > 0 && !selectedRecipient && (
+                  <View style={styles.suggestionsContainer}>
+                    {emailSuggestions.map((u) => (
+                      <TouchableOpacity key={u.id} style={styles.suggestionItem} onPress={() => selectRecipient(u)}>
+                        {u.avatar_url ? (
+                          <Image source={{ uri: u.avatar_url }} style={styles.suggestionAvatar} />
+                        ) : (
+                          <View style={[styles.suggestionAvatar, { backgroundColor: Colors.primary + '20', justifyContent: 'center', alignItems: 'center' }]}>
+                            <Text style={{ color: Colors.primary, fontWeight: 'bold', fontSize: 12 }}>
+                              {u.full_name?.charAt(0).toUpperCase() || 'U'}
+                            </Text>
+                          </View>
+                        )}
+                        <View style={styles.suggestionInfo}>
+                          <Text style={styles.suggestionName}>{u.artist_name || u.full_name}</Text>
+                          <Text style={styles.suggestionEmail}>{u.email}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                {/* Selected recipient badge */}
+                {selectedRecipient && (
+                  <View style={styles.selectedRecipientBadge}>
+                    <Ionicons name="checkmark-circle" size={18} color="#4CAF50" />
+                    <Text style={styles.selectedRecipientText}>
+                      {selectedRecipient.artist_name || selectedRecipient.full_name} ({selectedRecipient.email})
+                    </Text>
+                    <TouchableOpacity onPress={clearRecipient}>
+                      <Ionicons name="close-circle" size={20} color={Colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             )}
 
