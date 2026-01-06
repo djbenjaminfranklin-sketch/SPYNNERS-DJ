@@ -4160,6 +4160,25 @@ async def send_broadcast_email(request: BroadcastEmailRequest, authorization: st
         # Send emails using the new sendEmail cloud function
         for recipient in recipients[:10000]:  # Increased limit to 10000
             try:
+                # Build attachment HTML if present
+                attachment_html = ""
+                if request.attachment_url and request.attachment_name:
+                    # Check if it's an image
+                    is_image = request.attachment_url.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp'))
+                    if is_image:
+                        attachment_html = f'''
+  <div style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 8px;">
+    <img src="{request.attachment_url}" alt="{request.attachment_name}" style="max-width: 100%; height: auto; border-radius: 4px;">
+  </div>'''
+                    else:
+                        attachment_html = f'''
+  <div style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 8px;">
+    <p style="margin: 0 0 10px 0; font-weight: bold;">📎 Pièce jointe</p>
+    <a href="{request.attachment_url}" style="color: #4CAF50; text-decoration: none; font-weight: 500;" target="_blank">
+      ⬇️ Télécharger: {request.attachment_name}
+    </a>
+  </div>'''
+                
                 # Build HTML body
                 html_body = f"""
 <!DOCTYPE html>
@@ -4174,7 +4193,7 @@ async def send_broadcast_email(request: BroadcastEmailRequest, authorization: st
   <div style="margin: 0 0 20px 0;">
     {request.message.replace(chr(10), '<br>')}
   </div>
-  
+  {attachment_html}
   <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
     <p>SPYNNERS Team</p>
   </div>
