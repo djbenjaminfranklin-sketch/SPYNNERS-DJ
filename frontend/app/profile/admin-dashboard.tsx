@@ -208,11 +208,47 @@ export default function AdminDashboard() {
   };
 
   const cleanDuplicates = async () => {
-    Alert.alert('Clean Duplicates', 'Recherche et nettoyage des doublons en cours...');
+    try {
+      setProcessing(true);
+      Alert.alert('Clean Duplicates', 'Recherche des doublons en cours...');
+      
+      const response = await api.post('/api/admin/clean-duplicates', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data?.success) {
+        Alert.alert('✅ Clean Duplicates', response.data.message || 'Nettoyage terminé avec succès');
+      } else {
+        Alert.alert('Clean Duplicates', response.data?.message || 'Nettoyage terminé');
+      }
+    } catch (error: any) {
+      console.error('[Admin] Clean Duplicates error:', error);
+      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors du nettoyage');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const fixMissingBPM = async () => {
-    Alert.alert('Fix Missing BPM', 'Analyse et correction des BPM manquants...');
+    try {
+      setProcessing(true);
+      Alert.alert('Fix Missing BPM', 'Analyse des BPM en cours...');
+      
+      const response = await api.post('/api/admin/fix-bpm', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data?.success) {
+        Alert.alert('✅ Fix Missing BPM', response.data.message || 'Correction terminée avec succès');
+      } else {
+        Alert.alert('Fix Missing BPM', response.data?.message || 'Correction terminée');
+      }
+    } catch (error: any) {
+      console.error('[Admin] Fix BPM error:', error);
+      Alert.alert('Erreur', error.response?.data?.detail || 'Erreur lors de la correction');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   // Approve a track
