@@ -1764,6 +1764,173 @@ export default function SpynRecordScreen() {
           </Text>
         </View>
       )}
+
+      {/* ==================== END SESSION MODAL ==================== */}
+      <Modal 
+        visible={showEndSessionModal} 
+        transparent 
+        animationType="fade" 
+        onRequestClose={() => setShowEndSessionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalScrollContent}>
+            <View style={styles.endSessionModalContent}>
+              <TouchableOpacity 
+                style={styles.modalCloseButton} 
+                onPress={() => setShowEndSessionModal(false)}
+              >
+                <Ionicons name="close" size={24} color="#888" />
+              </TouchableOpacity>
+
+              <Text style={styles.endSessionTitle}>Fin de Session</Text>
+              <Text style={styles.endSessionSubtitle}>
+                Confirmez la fin de votre enregistrement.
+              </Text>
+
+              {/* Venue Info Card */}
+              <View style={styles.venueCard}>
+                <View style={styles.venueHeader}>
+                  <View style={[
+                    styles.venueDot, 
+                    { backgroundColor: location?.is_valid_venue ? GREEN_COLOR : '#888' }
+                  ]} />
+                  <View style={styles.venueTextContainer}>
+                    <Text style={styles.venueName}>
+                      {location?.venue || 'Lieu inconnu'}
+                    </Text>
+                    <Text style={styles.venueCity}>
+                      {location?.city || 'Inconnu'} • {location?.is_valid_venue ? 'Club vérifié ✓' : 'Lieu non vérifié'}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={styles.correctLabel}>Corriger le nom du lieu si besoin :</Text>
+                <TextInput
+                  style={styles.venueInput}
+                  value={correctedVenue}
+                  onChangeText={setCorrectedVenue}
+                  placeholder={location?.venue || 'Entrez le nom du lieu'}
+                  placeholderTextColor="#666"
+                />
+
+                <Text style={styles.startedAtText}>Démarré à {sessionStartTime}</Text>
+                <View style={styles.tracksCountRow}>
+                  <Ionicons name="musical-notes" size={16} color="#888" />
+                  <Text style={styles.tracksCountRowText}>
+                    {identifiedTracks.length} track(s) identifié(s)
+                  </Text>
+                </View>
+                <View style={styles.durationRow}>
+                  <Ionicons name="time" size={16} color="#888" />
+                  <Text style={styles.durationRowText}>
+                    Durée: {formatDuration(recordingDuration)}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Who Played Selection */}
+              <Text style={styles.whoPlayedTitle}>Qui a joué cette session ?</Text>
+              
+              <TouchableOpacity 
+                style={[styles.radioOption, whoPlayed === 'me' && styles.radioOptionSelected]} 
+                onPress={() => setWhoPlayed('me')}
+              >
+                <View style={[styles.radioCircle, whoPlayed === 'me' && styles.radioCircleSelected]} />
+                <Text style={styles.radioText}>C'était moi</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.radioOption, whoPlayed === 'another' && styles.radioOptionSelected]} 
+                onPress={() => setWhoPlayed('another')}
+              >
+                <View style={[styles.radioCircle, whoPlayed === 'another' && styles.radioCircleSelected]} />
+                <Text style={styles.radioText}>Un autre DJ</Text>
+              </TouchableOpacity>
+
+              {whoPlayed === 'another' && (
+                <View style={styles.otherDjContainer}>
+                  <Text style={styles.otherDjLabel}>Nom du DJ :</Text>
+                  <TextInput
+                    style={styles.otherDjInput}
+                    value={otherDjName}
+                    onChangeText={setOtherDjName}
+                    placeholder="Entrez le nom du DJ"
+                    placeholderTextColor="#666"
+                    autoCapitalize="words"
+                  />
+                </View>
+              )}
+
+              {/* Save Mix Option */}
+              <View style={styles.saveMixSection}>
+                <Text style={styles.saveMixTitle}>💾 Sauvegarder le mix</Text>
+                <TouchableOpacity 
+                  style={[styles.saveMixOption, saveMix && styles.saveMixOptionSelected]} 
+                  onPress={() => setSaveMix(!saveMix)}
+                >
+                  <View style={[styles.checkboxCircle, saveMix && styles.checkboxCircleSelected]}>
+                    {saveMix && <Ionicons name="checkmark" size={16} color="#fff" />}
+                  </View>
+                  <Text style={styles.saveMixText}>
+                    Télécharger l'enregistrement audio du mix
+                  </Text>
+                </TouchableOpacity>
+                <Text style={styles.saveMixHint}>
+                  Le fichier sera préparé pour le téléchargement après la fin de la session.
+                </Text>
+              </View>
+
+              {/* Warning/Success Messages */}
+              {identifiedTracks.length === 0 && (
+                <View style={styles.warningBox}>
+                  <Ionicons name="warning" size={18} color="#FFB74D" />
+                  <Text style={styles.warningText}>
+                    Aucun track identifié - Pas de Black Diamond
+                  </Text>
+                </View>
+              )}
+
+              {identifiedTracks.length > 0 && !location?.is_valid_venue && (
+                <View style={styles.warningBox}>
+                  <Ionicons name="warning" size={18} color="#FFB74D" />
+                  <Text style={styles.warningText}>
+                    Lieu non reconnu comme club/bar - Pas de Black Diamond
+                  </Text>
+                </View>
+              )}
+
+              {identifiedTracks.length > 0 && location?.is_valid_venue && (
+                <View style={styles.successBox}>
+                  <Ionicons name="diamond" size={18} color={CYAN_COLOR} />
+                  <Text style={styles.successBoxText}>
+                    Vous allez gagner un Black Diamond ! 💎
+                  </Text>
+                </View>
+              )}
+
+              <TouchableOpacity style={styles.confirmEndButton} onPress={confirmEndSession}>
+                <Ionicons name="stop-circle" size={20} color="#fff" />
+                <Text style={styles.confirmEndButtonText}>Confirmer la fin de session</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* ==================== BLACK DIAMOND MODAL ==================== */}
+      <Modal visible={showDiamondModal} transparent animationType="fade">
+        <View style={styles.diamondModalOverlay}>
+          <View style={styles.diamondModalContent}>
+            <Animated.View style={{ transform: [{ rotateY: diamondRotate.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}>
+              <View style={styles.diamondIcon}>
+                <Ionicons name="diamond" size={80} color="#1a1a2e" />
+              </View>
+            </Animated.View>
+            <Text style={styles.diamondTitle}>Félicitations !</Text>
+            <Text style={styles.diamondSubtitle}>Vous avez gagné un Black Diamond 💎</Text>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
