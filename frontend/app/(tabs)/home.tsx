@@ -640,6 +640,17 @@ export default function HomeScreen() {
               </View>
             )}
           </TouchableOpacity>
+          
+          {/* Language Selector */}
+          <TouchableOpacity 
+            style={styles.langButton}
+            onPress={() => {
+              const nextLang = language === 'en' ? 'fr' : 'en';
+              setLanguage(nextLang as Language);
+            }}
+          >
+            <Text style={styles.langText}>{currentLang.flag} {currentLang.code.toUpperCase()}</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
