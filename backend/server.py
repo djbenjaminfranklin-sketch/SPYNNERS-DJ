@@ -3619,7 +3619,7 @@ async def get_admin_tracks(authorization: str = Header(None), status: str = None
             all_tracks = [t for t in all_tracks if t.get('status', '').lower() == status.lower()]
         
         # Transform relative URLs to full URLs for audio_url
-        backend_base_url = os.environ.get('BACKEND_URL', 'https://admin-dashboard-646.preview.emergentagent.com')
+        backend_base_url = os.environ.get('BACKEND_URL', 'https://dj-session-tracker.preview.emergentagent.com')
         for track in all_tracks:
             audio_url = track.get('audio_url')
             if audio_url and audio_url.startswith('/api/'):
@@ -5114,7 +5114,7 @@ async def upload_vip_track(
                 
                 # Create full URL for the file - use the preview URL for the backend
                 # This will be accessible from the app
-                backend_base_url = os.environ.get('BACKEND_URL', 'https://admin-dashboard-646.preview.emergentagent.com')
+                backend_base_url = os.environ.get('BACKEND_URL', 'https://dj-session-tracker.preview.emergentagent.com')
                 audio_url = f"{backend_base_url}/api/uploads/{unique_filename}"
                 print(f"[Admin VIP Upload] Audio saved locally: {audio_url}")
             

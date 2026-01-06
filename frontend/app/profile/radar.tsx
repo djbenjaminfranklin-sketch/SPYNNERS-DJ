@@ -34,7 +34,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MAP_WIDTH = SCREEN_WIDTH - 32;
 const MAP_HEIGHT = MAP_WIDTH * 0.5; // Aspect ratio for world map
 
-const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://admin-dashboard-646.preview.emergentagent.com';
+const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || 'https://dj-session-tracker.preview.emergentagent.com';
 
 // City coordinates (latitude, longitude) for map positioning
 const CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
