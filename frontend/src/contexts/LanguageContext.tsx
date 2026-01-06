@@ -1006,6 +1006,10 @@ const translations: Record<Language, Record<string, string>> = {
     'analytics.today': 'Aujourd\'hui',
     'analytics.thisWeek': 'Cette semaine',
     'analytics.topTracks': 'Top Tracks',
+    'analytics.genreDistribution': 'Distribution par Genre',
+    'analytics.basedOnRated': 'Basé sur vos tracks notés',
+    'analytics.invalidDateFormat': 'Format de date invalide. Utilisez AAAA-MM-JJ',
+    'analytics.savePdfError': 'Impossible de sauvegarder le fichier PDF',
     
     // Radar
     'radar.title': 'Track Radar',
