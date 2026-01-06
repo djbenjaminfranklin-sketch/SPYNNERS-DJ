@@ -3827,8 +3827,8 @@ async def get_admin_sessions(authorization: str = Header(None), limit: int = 100
                 "started_at": s.get('started_at') or s.get('created_at') or '',
                 "ended_at": s.get('ended_at') or '',
                 "status": s.get('status') or 'ended',
-                "tracks_detected": s.get('tracks_detected') or s.get('track_count') or 0,
-                "diamonds_earned": s.get('diamonds_earned') or 0,
+                "tracks_detected": s.get('tracks_count') or s.get('tracks_detected') or s.get('track_count') or 0,
+                "diamonds_earned": s.get('diamond_awarded', False),
             })
         
         # Calculate stats
