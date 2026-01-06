@@ -4234,6 +4234,7 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
                         session_date = session['started_at'][:16]
                 
                 city = session.get('city') or 'N/A'
+                venue = session.get('venue') or ''
                 tracks = session.get('tracks', [])
                 
                 # Session header
@@ -4245,7 +4246,13 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
                     spaceBefore=10,
                     spaceAfter=5
                 )
-                elements.append(Paragraph(f"SESSION {session_num} - {dj_name} | {city} | {session_date}", session_header_style))
+                
+                # Format location string
+                location_str = f"{venue}" if venue else ""
+                if city:
+                    location_str = f"{venue}, {city}" if venue else city
+                
+                elements.append(Paragraph(f"SESSION {session_num} - {dj_name} | {location_str} | {session_date}", session_header_style))
                 
                 if tracks and len(tracks) > 0:
                     # Tracks table with all details
