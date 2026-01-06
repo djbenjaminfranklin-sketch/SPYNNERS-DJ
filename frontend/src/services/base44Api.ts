@@ -1578,7 +1578,7 @@ export const base44Notifications2 = {
 
 export const base44Profiles = {
   /**
-   * Get a single user's public profile by ID
+   * Get a single user's public profile by ID with real stats
    */
   async getProfile(userId: string): Promise<PublicProfile | null> {
     try {
@@ -1591,6 +1591,27 @@ export const base44Profiles = {
           const user = response.data;
           const userData = user.data || {};
           console.log('[Profiles] Profile fetched from User entity');
+          
+          // Fetch user's tracks for stats
+          let tracksCount = 0;
+          let totalPlays = 0;
+          let totalDownloads = 0;
+          
+          try {
+            const tracksResponse = await mobileApi.get(`/entities/Track?limit=1000`);
+            if (Array.isArray(tracksResponse.data)) {
+              const myTracks = tracksResponse.data.filter((t: any) => 
+                t.producer_id === userId || t.created_by_id === userId || t.uploaded_by === userId
+              );
+              tracksCount = myTracks.length;
+              totalPlays = myTracks.reduce((sum: number, t: any) => sum + (t.play_count || t.plays_count || 0), 0);
+              totalDownloads = myTracks.reduce((sum: number, t: any) => sum + (t.download_count || t.downloads_count || 0), 0);
+              console.log('[Profiles] Stats calculated:', { tracksCount, totalPlays, totalDownloads });
+            }
+          } catch (statsError) {
+            console.log('[Profiles] Could not fetch stats:', statsError);
+          }
+          
           return {
             id: user.id || user._id,
             email: user.email,
@@ -1604,9 +1625,13 @@ export const base44Profiles = {
             soundcloud_url: userData.soundcloud || user.soundcloud,
             beatport_url: userData.beatport_url || user.beatport_url,
             black_diamonds: userData.black_diamonds || user.black_diamonds || 0,
-            tracks_count: 0,
-            plays_count: 0,
-            downloads_count: 0,
+            sacem_number: userData.sacem_number || user.sacem_number,
+            stats: {
+              tracks_count: tracksCount,
+              total_plays: totalPlays,
+              total_downloads: totalDownloads,
+              followers_count: 0,
+            },
           };
         }
         return null;
