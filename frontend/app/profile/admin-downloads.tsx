@@ -76,29 +76,91 @@ export default function AdminDownloads() {
 
   const loadDownloads = async () => {
     try {
-      const response = await axios.get(`${BACKEND_URL}/api/admin/downloads?limit=500`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      console.log('[AdminDownloads] Loading downloads...');
       
-      if (response.data?.success) {
-        const downloadsData = response.data.downloads || [];
+      // Try using Base44 function directly (works on mobile)
+      let tracksData: any[] = [];
+      
+      try {
+        // Use nativeGetTracks via Base44 SDK
+        const result = await invokeBase44Function('nativeGetTracks', { limit: 500 });
+        console.log('[AdminDownloads] Got tracks via Base44:', result);
         
-        const formattedDownloads = downloadsData.map((d: any) => ({
-          id: d.track_id || Math.random().toString(),
-          date: d.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
-          dj_name: d.dj_name || '-',
-          track_title: d.track_title || 'Titre inconnu',
-          producer: d.producer || 'Producteur inconnu',
-          genre: d.genre || 'Inconnu',
-          download_count: d.download_count || 0,
-        }));
+        if (result?.tracks) {
+          tracksData = result.tracks;
+        } else if (Array.isArray(result)) {
+          tracksData = result;
+        }
+      } catch (base44Error) {
+        console.error('[AdminDownloads] Base44 error, trying backend:', base44Error);
         
-        setDownloads(formattedDownloads);
+        // Fallback to backend if Base44 fails
+        try {
+          const response = await axios.get(`${BACKEND_URL}/api/admin/downloads?limit=500`, {
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 15000,
+          });
+          
+          if (response.data?.success && response.data?.downloads) {
+            const downloadsData = response.data.downloads || [];
+            const formattedDownloads = downloadsData.map((d: any) => ({
+              id: d.track_id || Math.random().toString(),
+              date: d.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+              dj_name: d.dj_name || '-',
+              track_title: d.track_title || 'Titre inconnu',
+              producer: d.producer || 'Producteur inconnu',
+              genre: d.genre || 'Inconnu',
+              download_count: d.download_count || 0,
+            }));
+            
+            setDownloads(formattedDownloads);
+            setStats({
+              total: response.data.total_downloads || 0,
+              unique_djs: response.data.unique_djs || 0,
+              tracks_downloaded: response.data.tracks_with_downloads || 0,
+            });
+            setLoading(false);
+            setRefreshing(false);
+            return;
+          }
+        } catch (backendError) {
+          console.error('[AdminDownloads] Backend also failed:', backendError);
+        }
+      }
+      
+      // Process tracks data from Base44
+      if (tracksData.length > 0) {
+        let totalDownloads = 0;
+        const tracksWithDownloads: Download[] = [];
+        
+        for (const track of tracksData) {
+          const downloadCount = track.download_count || 0;
+          if (downloadCount > 0) {
+            totalDownloads += downloadCount;
+            tracksWithDownloads.push({
+              id: track.id || track._id || Math.random().toString(),
+              date: (track.created_at || track.uploaded_at || '')?.split('T')[0] || new Date().toISOString().split('T')[0],
+              dj_name: track.uploaded_by_name || '-',
+              track_title: track.title || 'Titre inconnu',
+              producer: track.producer_name || track.artist_name || 'Producteur inconnu',
+              genre: track.genre || 'Inconnu',
+              download_count: downloadCount,
+            });
+          }
+        }
+        
+        console.log('[AdminDownloads] Processed:', tracksWithDownloads.length, 'tracks with downloads');
+        
+        setDownloads(tracksWithDownloads);
         setStats({
-          total: response.data.total_downloads || 0,
-          unique_djs: response.data.unique_djs || 0,
-          tracks_downloaded: response.data.tracks_with_downloads || 0,
+          total: totalDownloads,
+          unique_djs: 0,
+          tracks_downloaded: tracksWithDownloads.length,
         });
+      } else {
+        console.log('[AdminDownloads] No tracks data found');
+        setDownloads([]);
+        setStats({ total: 0, unique_djs: 0, tracks_downloaded: 0 });
       }
     } catch (error) {
       console.error('[AdminDownloads] Erreur:', error);
