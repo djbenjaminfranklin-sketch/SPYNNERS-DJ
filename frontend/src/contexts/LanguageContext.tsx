@@ -641,6 +641,7 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.noSessionsToSync': 'No sessions to sync',
     'admin.processed': 'processed',
     'admin.noSpynnersTrack': 'No Spynners track identified',
+    'admin.apply': 'Apply',
   },
   
   fr: {
