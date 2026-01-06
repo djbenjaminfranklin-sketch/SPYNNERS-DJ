@@ -88,11 +88,11 @@ export default function GlobalPlayer() {
     try {
       const trackId = currentTrack.id || currentTrack._id;
       await base44Playlists.addTrack(playlistId, trackId);
-      Alert.alert('✅ Succès', 'Track ajoutée à la playlist !');
+      Alert.alert('✅ ' + t('common.success'), t('playlist.trackAdded'));
       setShowPlaylistModal(false);
     } catch (error) {
       console.error('[GlobalPlayer] Error adding to playlist:', error);
-      Alert.alert('Erreur', 'Impossible d\'ajouter la track à la playlist');
+      Alert.alert(t('common.error'), t('playlist.cantAddTrack'));
     }
   };
   
@@ -109,13 +109,13 @@ export default function GlobalPlayer() {
         is_public: false,
       });
       if (newPlaylist) {
-        Alert.alert('✅ Succès', `Playlist "${newPlaylistName}" créée avec la track !`);
+        Alert.alert('✅ ' + t('common.success'), t('playlist.createdWithTrack').replace('{name}', newPlaylistName));
         setNewPlaylistName('');
         setShowPlaylistModal(false);
       }
     } catch (error) {
       console.error('[GlobalPlayer] Error creating playlist:', error);
-      Alert.alert('Erreur', 'Impossible de créer la playlist');
+      Alert.alert(t('common.error'), t('playlist.cantCreate'));
     } finally {
       setCreatingPlaylist(false);
     }
