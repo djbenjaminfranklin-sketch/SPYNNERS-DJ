@@ -3323,7 +3323,7 @@ async def get_admin_users(authorization: str = Header(None), limit: int = 10000)
 async def generate_missing_avatars(authorization: str = Header(None)):
     """
     Generate missing avatars for users.
-    Calls the generateMissingAvatars Spynners function.
+    Uses the avatar generation function or creates placeholder avatars.
     """
     try:
         if not authorization:
@@ -3331,21 +3331,62 @@ async def generate_missing_avatars(authorization: str = Header(None)):
         
         print("[Admin] Generating missing avatars...")
         
-        # Call the Spynners function
-        result = await call_spynners_function("generateMissingAvatars", {}, authorization)
+        # First, get all users to find those without avatars
+        users_result = await call_spynners_function("nativeGetAllUsers", {"limit": 10000}, authorization)
         
-        if result:
-            print(f"[Admin] Generate avatars result: {result}")
+        if not users_result:
+            return {"success": True, "message": "Aucun utilisateur trouvé", "generated": 0}
+        
+        users = users_result.get('users', []) if isinstance(users_result, dict) else users_result
+        
+        # Find users without avatars
+        users_without_avatar = [u for u in users if not u.get('avatar_url')]
+        
+        if not users_without_avatar:
             return {
                 "success": True,
-                "message": f"Avatars générés pour {result.get('generated', 0)} utilisateurs.",
-                "data": result
+                "message": "Tous les utilisateurs ont déjà un avatar",
+                "generated": 0,
+                "total_users": len(users)
             }
-        else:
-            return {
-                "success": True,
-                "message": "Génération des avatars lancée"
-            }
+        
+        print(f"[Admin] Found {len(users_without_avatar)} users without avatar")
+        
+        generated_count = 0
+        
+        # Try to generate avatars using DiceBear API or similar
+        for user in users_without_avatar[:50]:  # Limit to 50 at a time
+            try:
+                user_id = user.get('id') or user.get('_id')
+                user_name = user.get('full_name') or user.get('artist_name') or user.get('email', 'user')
+                
+                # Generate avatar URL using DiceBear (free avatar service)
+                # Using initials style
+                avatar_url = f"https://api.dicebear.com/7.x/initials/svg?seed={user_name}&backgroundColor=00BCD4"
+                
+                # Update user with avatar
+                base44_url = f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{user_id}"
+                headers = {
+                    "Authorization": authorization,
+                    "X-Base44-App-Id": BASE44_APP_ID,
+                    "Content-Type": "application/json"
+                }
+                
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    response = await client.put(base44_url, json={"avatar_url": avatar_url}, headers=headers)
+                    if response.status_code == 200:
+                        generated_count += 1
+                        print(f"[Admin] Generated avatar for: {user_name}")
+            except Exception as e:
+                print(f"[Admin] Error generating avatar for user: {e}")
+                continue
+        
+        return {
+            "success": True,
+            "message": f"Avatars générés pour {generated_count} utilisateurs sur {len(users_without_avatar)} sans avatar",
+            "generated": generated_count,
+            "total_without_avatar": len(users_without_avatar)
+        }
         
     except Exception as e:
         print(f"[Admin] Generate avatars error: {e}")
