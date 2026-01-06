@@ -3841,8 +3841,10 @@ async def upload_vip_track(
                 with open(file_path, 'wb') as f:
                     f.write(audio_content)
                 
-                # Create URL for the file (will be served by our backend)
-                audio_url = f"/api/uploads/{unique_filename}"
+                # Create full URL for the file - use the preview URL for the backend
+                # This will be accessible from the app
+                backend_base_url = os.environ.get('BACKEND_URL', 'https://dj-spyn-dashboard.preview.emergentagent.com')
+                audio_url = f"{backend_base_url}/api/uploads/{unique_filename}"
                 print(f"[Admin VIP Upload] Audio saved locally: {audio_url}")
             
             # Upload image if provided
