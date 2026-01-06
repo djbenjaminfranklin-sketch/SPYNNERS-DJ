@@ -24,7 +24,7 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import Constants from 'expo-constants';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-import { base44Notifications } from '../../src/services/base44Api';
+import { base44Notifications, mobileApi } from '../../src/services/base44Api';
 import { useLocalSearchParams } from 'expo-router';
 import offlineService from '../../src/services/offlineService';
 
