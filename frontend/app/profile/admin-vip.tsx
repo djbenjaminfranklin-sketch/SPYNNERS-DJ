@@ -274,19 +274,19 @@ export default function AdminVIP() {
       
       clearInterval(progressInterval);
       setUploadProgress(100);
-      setUploadStatus('Terminé !');
+      setUploadStatus(t('admin.done'));
 
       if (response.data?.success) {
-        Alert.alert('Succès ✅', 'Track V.I.P. uploadé avec succès!\n\nIl apparaîtra dans les tracks à valider.');
+        Alert.alert(t('common.success') + ' ✅', t('admin.vipUploadSuccess'));
         setShowUploadModal(false);
         resetForm();
         loadData();
       } else {
-        Alert.alert('Erreur', response.data?.message || 'Échec de l\'upload');
+        Alert.alert(t('common.error'), response.data?.message || t('admin.uploadFailed'));
       }
     } catch (error: any) {
       console.error('[AdminVIP] Upload error:', error);
-      Alert.alert('Erreur', error?.response?.data?.detail || 'Échec de l\'upload du track');
+      Alert.alert(t('common.error'), error?.response?.data?.detail || t('admin.uploadFailed'));
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -298,9 +298,9 @@ export default function AdminVIP() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <Ionicons name="lock-closed" size={64} color={Colors.textMuted} />
-        <Text style={styles.accessDeniedTitle}>Accès Refusé</Text>
+        <Text style={styles.accessDeniedTitle}>{t('admin.accessDenied')}</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Retour</Text>
+          <Text style={styles.backButtonText}>{t('admin.back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -310,7 +310,7 @@ export default function AdminVIP() {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#E040FB" />
-        <Text style={styles.loadingText}>Chargement...</Text>
+        <Text style={styles.loadingText}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -353,7 +353,7 @@ export default function AdminVIP() {
           <View style={styles.statCard}>
             <Ionicons name="download" size={24} color="#4CAF50" />
             <Text style={styles.statValue}>{vipTracks.reduce((sum, t) => sum + (t.download_count || 0), 0)}</Text>
-            <Text style={styles.statLabel}>Téléchargements</Text>
+            <Text style={styles.statLabel}>{t('analytics.downloads')}</Text>
           </View>
         </View>
 
@@ -361,8 +361,8 @@ export default function AdminVIP() {
         {vipTracks.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="diamond-outline" size={64} color={Colors.textMuted} />
-            <Text style={styles.emptyTitle}>Aucun track V.I.P.</Text>
-            <Text style={styles.emptySubtitle}>Cliquez sur "+ Track V.I.P." pour ajouter votre premier track</Text>
+            <Text style={styles.emptyTitle}>{t('admin.noVipTracks')}</Text>
+            <Text style={styles.emptySubtitle}>{t('admin.clickToAddVip')}</Text>
           </View>
         ) : (
           <View style={styles.trackGrid}>
