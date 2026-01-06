@@ -321,9 +321,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "All backend API endpoints tested successfully"
+    - "Internationalization (i18n) System Testing"
+    - "Language Switching Functionality"
+    - "English Default Language Verification"
+    - "French Language Translation Testing"
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
