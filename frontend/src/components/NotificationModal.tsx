@@ -293,16 +293,16 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    justifyContent: 'flex-end',
+    padding: 0,
   },
   container: {
     backgroundColor: Colors.background,
-    borderRadius: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     width: '100%',
-    maxHeight: '80%',
-    overflow: 'hidden',
+    minHeight: 500,
+    maxHeight: '85%',
   },
   header: {
     flexDirection: 'row',
@@ -350,6 +350,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
+    minHeight: 350,
   },
   loadingContainer: {
     padding: 40,
