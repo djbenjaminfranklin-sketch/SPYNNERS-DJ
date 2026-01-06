@@ -68,12 +68,26 @@ export default function AdminDiamonds() {
 
   const loadUsers = async () => {
     try {
-      const response = await base44Users.list({ limit: 10000 });
-      const userList = Array.isArray(response) ? response : (response?.items || []);
-      setUsers(userList);
-      setFilteredUsers(userList);
+      // Use the admin endpoint that works correctly
+      const response = await axios.get(`${BACKEND_URL}/api/admin/users?limit=10000`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data?.success && response.data?.users) {
+        const userList = response.data.users.map((u: any) => ({
+          id: u.id || u._id,
+          full_name: u.full_name || '',
+          artist_name: u.artist_name || '',
+          email: u.email || '',
+          avatar_url: u.avatar_url || '',
+          black_diamonds: u.black_diamonds || 0,
+        }));
+        setUsers(userList);
+        setFilteredUsers(userList);
+      }
     } catch (error) {
       console.error('[AdminDiamonds] Error:', error);
+      Alert.alert('Erreur', 'Impossible de charger les utilisateurs');
     } finally {
       setLoading(false);
       setRefreshing(false);
