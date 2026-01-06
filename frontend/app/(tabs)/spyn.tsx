@@ -178,10 +178,29 @@ export default function SpynScreen() {
   // Initialize offline mode
   const initOfflineMode = async () => {
     try {
-      // Check network status immediately
-      const isOnline = await offlineService.checkNetworkStatus();
-      console.log('[SPYN] Initial network check:', isOnline ? 'ONLINE' : 'OFFLINE');
-      setIsOffline(!isOnline);
+      // On web, use navigator.onLine as the primary source of truth
+      // NetInfo often reports false negatives on web
+      const isActuallyOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+      
+      console.log('[SPYN] Initial network check - navigator.onLine:', isActuallyOnline);
+      
+      // Force online if navigator says we're online
+      setIsOffline(!isActuallyOnline);
+      
+      // Listen for online/offline events on web
+      if (typeof window !== 'undefined') {
+        const handleOnline = () => {
+          console.log('[SPYN] 🌐 Browser reports ONLINE');
+          setIsOffline(false);
+        };
+        const handleOffline = () => {
+          console.log('[SPYN] 📴 Browser reports OFFLINE');
+          setIsOffline(true);
+        };
+        
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+      }
       
       // Get pending sync count
       const pendingCount = await offlineService.getPendingCount();
@@ -196,6 +215,8 @@ export default function SpynScreen() {
       
     } catch (error) {
       console.error('[SPYN] Offline init error:', error);
+      // Default to online on error
+      setIsOffline(false);
     }
   };
 
