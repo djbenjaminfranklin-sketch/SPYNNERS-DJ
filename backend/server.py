@@ -4564,6 +4564,244 @@ async def get_admin_downloads(authorization: str = Header(None), limit: int = 50
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class AdminDownloadsPDFRequest(BaseModel):
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+
+
+@app.post("/api/admin/downloads/pdf")
+async def export_admin_downloads_pdf(request: AdminDownloadsPDFRequest, authorization: str = Header(None)):
+    """
+    Export download history as PDF report (Admin only).
+    """
+    import io
+    from fastapi.responses import Response
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin Downloads PDF] Generating PDF report...")
+        print(f"[Admin Downloads PDF] Date range: {request.start_date} to {request.end_date}")
+        
+        # Get tracks with download info
+        result = await call_spynners_function("nativeGetTracks", {"limit": 1000}, authorization)
+        
+        downloads = []
+        total_downloads = 0
+        
+        if result:
+            if isinstance(result, dict):
+                tracks = result.get('tracks', result.get('items', []))
+            else:
+                tracks = result if isinstance(result, list) else []
+            
+            for track in tracks:
+                download_count = track.get('download_count', 0) or 0
+                total_downloads += download_count
+                
+                if download_count > 0:
+                    # Get track date
+                    track_date = track.get('created_at') or track.get('uploaded_at') or ''
+                    
+                    # Filter by date if specified
+                    include = True
+                    if track_date and (request.start_date or request.end_date):
+                        try:
+                            if 'T' in track_date:
+                                track_dt = datetime.fromisoformat(track_date.replace('Z', '+00:00'))
+                            else:
+                                track_dt = datetime.strptime(track_date, '%Y-%m-%d')
+                            
+                            if request.start_date:
+                                start = datetime.strptime(request.start_date, '%Y-%m-%d')
+                                if track_dt.replace(tzinfo=None) < start:
+                                    include = False
+                            if request.end_date:
+                                end = datetime.strptime(request.end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+                                if track_dt.replace(tzinfo=None) > end:
+                                    include = False
+                        except:
+                            pass
+                    
+                    if include:
+                        downloads.append({
+                            "track_id": track.get('id') or track.get('_id'),
+                            "track_title": track.get('title') or 'Unknown',
+                            "producer": track.get('artist_name') or track.get('producer_name') or 'Unknown',
+                            "genre": track.get('genre') or '-',
+                            "download_count": download_count,
+                            "created_at": track_date[:10] if track_date else '-',
+                        })
+        
+        print(f"[Admin Downloads PDF] {len(downloads)} tracks with downloads")
+        
+        # Create PDF
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=landscape(A4),
+            rightMargin=1.5*cm,
+            leftMargin=1.5*cm,
+            topMargin=1.5*cm,
+            bottomMargin=1.5*cm
+        )
+        
+        elements = []
+        styles = getSampleStyleSheet()
+        
+        # Custom styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            spaceAfter=20,
+            alignment=TA_CENTER,
+            textColor=colors.HexColor('#00BFA5')
+        )
+        
+        subtitle_style = ParagraphStyle(
+            'CustomSubtitle',
+            parent=styles['Normal'],
+            fontSize=12,
+            alignment=TA_CENTER,
+            textColor=colors.HexColor('#666666'),
+            spaceAfter=30
+        )
+        
+        # Title
+        elements.append(Paragraph("SPYNNERS - RAPPORT TÉLÉCHARGEMENTS", title_style))
+        
+        # Date range
+        if request.start_date and request.end_date:
+            date_range_text = f"Période: {request.start_date} au {request.end_date}"
+        elif request.start_date:
+            date_range_text = f"Depuis: {request.start_date}"
+        elif request.end_date:
+            date_range_text = f"Jusqu'au: {request.end_date}"
+        else:
+            date_range_text = "Toutes les périodes"
+        
+        elements.append(Paragraph(f"{date_range_text} | Généré le: {datetime.utcnow().strftime('%d/%m/%Y %H:%M')}", subtitle_style))
+        
+        # Summary stats
+        total_filtered_downloads = sum(d['download_count'] for d in downloads)
+        summary_data = [
+            ['Tracks Téléchargées', 'Total Téléchargements'],
+            [str(len(downloads)), str(total_filtered_downloads)]
+        ]
+        
+        summary_table = Table(summary_data, colWidths=[8*cm, 8*cm])
+        summary_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#00BFA5')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('FONTSIZE', (0, 1), (-1, -1), 14),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('TOPPADDING', (0, 1), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 10),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F5F5F5')),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#DDDDDD')),
+        ]))
+        elements.append(summary_table)
+        elements.append(Spacer(1, 30))
+        
+        # Downloads table
+        if downloads:
+            downloads_sorted = sorted(downloads, key=lambda x: x['download_count'], reverse=True)
+            
+            table_data = [['#', 'Titre', 'Producteur', 'Genre', 'Date Upload', 'Downloads']]
+            
+            for idx, dl in enumerate(downloads_sorted, 1):
+                title = dl['track_title'][:40] + '...' if len(dl['track_title']) > 40 else dl['track_title']
+                producer = dl['producer'][:25] + '...' if len(dl['producer']) > 25 else dl['producer']
+                genre = dl['genre'][:15] + '...' if len(dl['genre']) > 15 else dl['genre']
+                
+                table_data.append([
+                    str(idx),
+                    title,
+                    producer,
+                    genre,
+                    dl['created_at'],
+                    str(dl['download_count'])
+                ])
+            
+            downloads_table = Table(table_data, colWidths=[1*cm, 8*cm, 5*cm, 3*cm, 2.5*cm, 2*cm])
+            downloads_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#00BFA5')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('ALIGN', (0, 1), (0, -1), 'CENTER'),
+                ('ALIGN', (-1, 1), (-1, -1), 'CENTER'),
+                ('ALIGN', (-2, 1), (-2, -1), 'CENTER'),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ]))
+            elements.append(downloads_table)
+        else:
+            no_data_style = ParagraphStyle(
+                'NoData',
+                parent=styles['Normal'],
+                fontSize=14,
+                alignment=TA_CENTER,
+                textColor=colors.HexColor('#999999')
+            )
+            elements.append(Paragraph("Aucun téléchargement trouvé pour cette période", no_data_style))
+        
+        # Footer
+        elements.append(Spacer(1, 30))
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=colors.HexColor('#999999'),
+            alignment=TA_CENTER
+        )
+        elements.append(Paragraph("Rapport généré par SPYNNERS - www.spynners.com", footer_style))
+        
+        # Build PDF
+        doc.build(elements)
+        
+        pdf_content = buffer.getvalue()
+        buffer.close()
+        
+        filename = f"spynners_downloads_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.pdf"
+        
+        print(f"[Admin Downloads PDF] PDF generated: {len(pdf_content)} bytes")
+        
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Downloads PDF] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to generate PDF: {str(e)}")
+
+
 # ==================== ADMIN BROADCAST EMAIL ====================
 
 class BroadcastEmailRequest(BaseModel):
