@@ -80,18 +80,41 @@ export default function AdminBroadcast() {
     }
   }, [isAdmin]);
 
+  // Update email suggestions when typing
+  useEffect(() => {
+    if (individualEmail.trim().length >= 2 && !selectedRecipient) {
+      const query = individualEmail.toLowerCase();
+      const suggestions = allUsers.filter(u => 
+        u.email?.toLowerCase().includes(query) ||
+        u.full_name?.toLowerCase().includes(query) ||
+        u.artist_name?.toLowerCase().includes(query)
+      ).slice(0, 8);
+      setEmailSuggestions(suggestions);
+    } else {
+      setEmailSuggestions([]);
+    }
+  }, [individualEmail, allUsers, selectedRecipient]);
+
   const loadData = async () => {
     try {
       // Fetch stats - use higher limit to get accurate user count
       const [usersRes, tracksRes, historyRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/api/admin/users?limit=10000`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { total: 0 } })),
+        axios.get(`${BACKEND_URL}/api/admin/users?limit=10000`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { total: 0, users: [] } })),
         axios.get(`${BACKEND_URL}/api/admin/tracks?limit=10`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { tracks: [] } })),
         axios.get(`${BACKEND_URL}/api/admin/broadcast/history?limit=20`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { broadcasts: [] } })),
       ]);
       
-      // Get user count from total field or array length
-      const userTotal = usersRes.data?.total || usersRes.data?.users?.length || 0;
+      // Get user count and store users for autocomplete
+      const users = usersRes.data?.users || [];
+      const userTotal = usersRes.data?.total || users.length || 0;
       setUserCount(userTotal);
+      setAllUsers(users.map((u: any) => ({
+        id: u.id,
+        email: u.email,
+        full_name: u.full_name,
+        artist_name: u.artist_name,
+        avatar_url: u.avatar_url || u.generated_avatar_url,
+      })));
       setRecentTracks(tracksRes.data?.tracks || []);
       setBroadcastHistory(historyRes.data?.broadcasts || []);
       
@@ -107,6 +130,36 @@ export default function AdminBroadcast() {
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
+  };
+
+  // Toggle category selection (cumulative)
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(c => c !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+  };
+
+  // Select recipient from suggestions
+  const selectRecipient = (u: UserItem) => {
+    setSelectedRecipient(u);
+    setIndividualEmail(u.email);
+    setEmailSuggestions([]);
+  };
+
+  // Clear selected recipient
+  const clearRecipient = () => {
+    setSelectedRecipient(null);
+    setIndividualEmail('');
+  };
+
+  // View email detail
+  const viewEmailDetail = (email: BroadcastHistory) => {
+    setSelectedEmail(email);
+    setShowEmailDetail(true);
   };
 
   const insertRecentTracks = () => {
