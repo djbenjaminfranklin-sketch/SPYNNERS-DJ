@@ -3033,12 +3033,13 @@ async def get_user_diamonds(authorization: str = Header(None)):
 class AdminAddDiamondsRequest(BaseModel):
     user_id: str
     amount: int
+    email: Optional[str] = None  # Can also use email
 
 @app.post("/api/base44/add-diamonds")
 async def admin_add_diamonds(request: AdminAddDiamondsRequest, authorization: str = Header(None)):
     """
     Admin endpoint to add black diamonds to any user.
-    Uses Spynners adminAddDiamonds function for reliable updates.
+    Uses Spynners giveBlackDiamonds function.
     """
     try:
         if not authorization:
@@ -3046,90 +3047,40 @@ async def admin_add_diamonds(request: AdminAddDiamondsRequest, authorization: st
         
         print(f"[Admin Diamonds] Adding {request.amount} diamonds to user {request.user_id}")
         
-        # Method 1: Try adminAddDiamonds Spynners function first
-        try:
-            body = {
-                "userId": request.user_id,
-                "amount": request.amount
-            }
-            result = await call_spynners_function("adminAddDiamonds", body, authorization)
-            if result and result.get('success'):
-                print(f"[Admin Diamonds] Success via adminAddDiamonds: {result}")
-                return {
-                    "success": True,
-                    "user_id": request.user_id,
-                    "previous_balance": result.get('previousBalance', 0),
-                    "new_balance": result.get('newBalance', request.amount),
-                    "amount_added": request.amount
-                }
-        except Exception as e:
-            print(f"[Admin Diamonds] adminAddDiamonds failed, trying direct API: {e}")
+        # Use giveBlackDiamonds Spynners function
+        body = {
+            "userId": request.user_id,
+            "amount": request.amount
+        }
         
-        # Method 2: Direct Base44 API update
-        try:
-            headers = {
-                "Content-Type": "application/json",
-                "X-Base44-App-Id": BASE44_APP_ID,
-                "Authorization": authorization
-            }
-            
-            async with httpx.AsyncClient(timeout=30.0) as http_client:
-                # Get user by ID to get current balance
-                user_response = await http_client.get(
-                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{request.user_id}",
-                    headers=headers
-                )
+        # Also add email if available
+        if request.email:
+            body["email"] = request.email
+        
+        print(f"[Admin Diamonds] Calling giveBlackDiamonds with: {body}")
+        
+        result = await call_spynners_function("giveBlackDiamonds", body, authorization)
+        
+        print(f"[Admin Diamonds] Result: {result}")
+        
+        if result:
+            # Check for success in various response formats
+            if result.get('success') or result.get('newBalance') is not None or result.get('new_balance') is not None:
+                new_balance = result.get('newBalance') or result.get('new_balance') or request.amount
+                prev_balance = result.get('previousBalance') or result.get('previous_balance') or 0
                 
-                if user_response.status_code == 200:
-                    user_data = user_response.json()
-                    current_diamonds = user_data.get('black_diamonds', 0) or user_data.get('data', {}).get('black_diamonds', 0) or 0
-                    new_balance = current_diamonds + request.amount
-                    
-                    print(f"[Admin Diamonds] Current: {current_diamonds}, New: {new_balance}")
-                    
-                    # Update user diamonds via entity update
-                    update_response = await http_client.put(
-                        f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User/{request.user_id}",
-                        headers=headers,
-                        json={"black_diamonds": new_balance}
-                    )
-                    
-                    if update_response.status_code in [200, 201]:
-                        print(f"[Admin Diamonds] Success via direct API")
-                        return {
-                            "success": True,
-                            "user_id": request.user_id,
-                            "previous_balance": current_diamonds,
-                            "new_balance": new_balance,
-                            "amount_added": request.amount
-                        }
-                    else:
-                        print(f"[Admin Diamonds] Direct API update failed: {update_response.status_code} - {update_response.text[:200]}")
-                else:
-                    print(f"[Admin Diamonds] User fetch failed: {user_response.status_code} - {user_response.text[:200]}")
-        except Exception as e2:
-            print(f"[Admin Diamonds] Direct API failed: {e2}")
-        
-        # Method 3: Try Spynners nativeAdminUpdateUser function
-        try:
-            body = {
-                "userId": request.user_id,
-                "updates": {"black_diamonds": request.amount}  # Will be added to current
-            }
-            result = await call_spynners_function("nativeAdminUpdateUser", body, authorization)
-            if result:
-                print(f"[Admin Diamonds] Success via nativeAdminUpdateUser: {result}")
                 return {
                     "success": True,
                     "user_id": request.user_id,
-                    "new_balance": result.get('black_diamonds', request.amount),
+                    "previous_balance": prev_balance,
+                    "new_balance": new_balance,
                     "amount_added": request.amount
                 }
-        except Exception as e3:
-            print(f"[Admin Diamonds] nativeAdminUpdateUser also failed: {e3}")
+            elif result.get('error'):
+                raise HTTPException(status_code=400, detail=result.get('error'))
         
-        # All methods failed
-        raise HTTPException(status_code=500, detail="Impossible de mettre à jour les diamonds. Toutes les méthodes ont échoué.")
+        # If we got here, something unexpected happened
+        raise HTTPException(status_code=500, detail="Réponse inattendue du serveur")
             
     except HTTPException:
         raise
