@@ -257,7 +257,7 @@ export default function AdminSessions() {
         console.log('[AdminSessions] Writing to:', fileUri);
         
         await FileSystem.writeAsStringAsync(fileUri, base64, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: 'base64',
         });
         
         console.log('[AdminSessions] File written, sharing...');
