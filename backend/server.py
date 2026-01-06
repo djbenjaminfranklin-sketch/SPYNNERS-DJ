@@ -3818,21 +3818,25 @@ async def get_admin_sessions(authorization: str = Header(None), limit: int = 100
             except Exception as e2:
                 print(f"[Admin Sessions] Fallback also failed: {e2}")
         
-        # Format sessions for frontend
+        # Format sessions for frontend - ONLY sessions with diamond_awarded = true (validated)
         formatted_sessions = []
         for s in sessions:
-            formatted_sessions.append({
-                "id": s.get('id') or s.get('_id') or str(uuid.uuid4()),
-                "dj_id": s.get('dj_id') or s.get('user_id') or '',
-                "dj_name": s.get('dj_name') or s.get('user_name') or 'Unknown DJ',
-                "city": s.get('city') or s.get('location') or '',
-                "venue": s.get('venue') or '',
-                "started_at": s.get('started_at') or s.get('created_at') or '',
-                "ended_at": s.get('ended_at') or '',
-                "status": s.get('status') or 'ended',
-                "tracks_detected": s.get('tracks_count') or s.get('tracks_detected') or s.get('track_count') or 0,
-                "diamonds_earned": s.get('diamond_awarded', False),
-            })
+            # Only include validated sessions (diamond awarded)
+            if s.get('diamond_awarded') == True:
+                formatted_sessions.append({
+                    "id": s.get('id') or s.get('_id') or str(uuid.uuid4()),
+                    "dj_id": s.get('dj_id') or s.get('user_id') or '',
+                    "dj_name": s.get('dj_name') or s.get('user_name') or 'Unknown DJ',
+                    "city": s.get('city') or s.get('location') or '',
+                    "venue": s.get('venue') or '',
+                    "started_at": s.get('started_at') or s.get('created_at') or '',
+                    "ended_at": s.get('ended_at') or '',
+                    "status": 'validated',  # If diamond awarded, it's validated
+                    "tracks_detected": s.get('tracks_count') or s.get('tracks_detected') or s.get('track_count') or 0,
+                    "diamonds_earned": True,
+                })
+        
+        print(f"[Admin Sessions] Filtered to {len(formatted_sessions)} validated sessions (diamond_awarded=true)")
         
         # Calculate stats
         unique_djs = set(s['dj_name'] for s in formatted_sessions)
