@@ -303,7 +303,7 @@ export default function AdminSessions() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        Alert.alert('Succès ✅', 'PDF téléchargé !');
+        Alert.alert(t('admin.success') + ' ✅', t('admin.pdfDownloaded'));
       } else {
         // Mobile: Use FileSystem and Sharing
         console.log('[AdminSessions] Mobile platform - using FileSystem');
@@ -331,16 +331,16 @@ export default function AdminSessions() {
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(fileUri, {
             mimeType: 'application/pdf',
-            dialogTitle: 'Télécharger le rapport PDF',
+            dialogTitle: t('admin.downloadPdfDialog'),
           });
         } else {
-          Alert.alert('Succès ✅', `PDF sauvegardé: ${filename}`);
+          Alert.alert(t('admin.success') + ' ✅', `${t('admin.pdfSaved')} ${filename}`);
         }
       }
       
     } catch (error: any) {
       console.error('[AdminSessions] Export error:', error);
-      Alert.alert('Erreur', error?.response?.data?.detail || error?.message || 'Impossible d\'exporter le rapport');
+      Alert.alert(t('admin.error'), error?.response?.data?.detail || error?.message || t('admin.exportError'));
     } finally {
       setExporting(false);
     }
@@ -372,7 +372,7 @@ export default function AdminSessions() {
         <Ionicons name="lock-closed" size={64} color={Colors.textMuted} />
         <Text style={styles.accessDeniedTitle}>Accès Refusé</Text>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Retour</Text>
+          <Text style={styles.backButtonText}>{t('admin.back')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -462,7 +462,7 @@ export default function AdminSessions() {
             <Ionicons name="search" size={20} color={Colors.textMuted} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Rechercher par DJ ou ville..."
+              placeholder={t('admin.searchPlaceholder')}
               placeholderTextColor={Colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -480,7 +480,7 @@ export default function AdminSessions() {
               <>
                 <Ionicons name="document-text" size={18} color="#fff" />
                 <Text style={styles.exportBtnText}>
-                  Télécharger PDF ({filteredSessions.length} sessions)
+                  {t('admin.downloadPdf')} ({filteredSessions.length} sessions)
                 </Text>
               </>
             )}
@@ -562,7 +562,7 @@ export default function AdminSessions() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filtrer par date</Text>
+              <Text style={styles.modalTitle}>{t('admin.filterByDate')}</Text>
               <TouchableOpacity onPress={() => setShowDateFilter(false)}>
                 <Ionicons name="close" size={24} color={Colors.text} />
               </TouchableOpacity>
@@ -592,7 +592,7 @@ export default function AdminSessions() {
 
             {/* Quick presets */}
             <View style={styles.presetsContainer}>
-              <Text style={styles.presetsTitle}>Raccourcis</Text>
+              <Text style={styles.presetsTitle}>{t('admin.shortcuts')}</Text>
               <View style={styles.presetsRow}>
                 <TouchableOpacity 
                   style={styles.presetBtn}
@@ -608,7 +608,7 @@ export default function AdminSessions() {
                     setShowDateFilter(false); // Close modal
                   }}
                 >
-                  <Text style={styles.presetBtnText}>7 derniers jours</Text>
+                  <Text style={styles.presetBtnText}>{t('admin.last7days')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.presetBtn}
@@ -624,7 +624,7 @@ export default function AdminSessions() {
                     setShowDateFilter(false); // Close modal
                   }}
                 >
-                  <Text style={styles.presetBtnText}>30 derniers jours</Text>
+                  <Text style={styles.presetBtnText}>{t('admin.last30days')}</Text>
                 </TouchableOpacity>
               </View>
               <View style={styles.presetsRow}>
@@ -642,7 +642,7 @@ export default function AdminSessions() {
                     setShowDateFilter(false); // Close modal
                   }}
                 >
-                  <Text style={styles.presetBtnText}>Ce mois</Text>
+                  <Text style={styles.presetBtnText}>{t('admin.thisMonth')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.presetBtn}
@@ -658,7 +658,7 @@ export default function AdminSessions() {
                     setShowDateFilter(false); // Close modal
                   }}
                 >
-                  <Text style={styles.presetBtnText}>3 derniers mois</Text>
+                  <Text style={styles.presetBtnText}>{t('admin.last3months')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -668,7 +668,7 @@ export default function AdminSessions() {
                 <Text style={styles.clearBtnText}>Effacer</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.applyBtn} onPress={applyDateFilter}>
-                <Text style={styles.applyBtnText}>Appliquer</Text>
+                <Text style={styles.applyBtnText}>{t('admin.apply')}</Text>
               </TouchableOpacity>
             </View>
           </View>
