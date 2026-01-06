@@ -196,13 +196,23 @@ export default function AdminSessions() {
     if (dateFilter.startDate) {
       const startDate = new Date(dateFilter.startDate);
       startDate.setHours(0, 0, 0, 0);
-      filtered = filtered.filter(s => new Date(s.started_at) >= startDate);
+      console.log('[AdminSessions] Filtering from:', startDate.toISOString());
+      filtered = filtered.filter(s => {
+        const sessionDate = new Date(s.started_at);
+        return sessionDate >= startDate;
+      });
+      console.log('[AdminSessions] After start filter:', filtered.length, 'sessions');
     }
     
     if (dateFilter.endDate) {
       const endDate = new Date(dateFilter.endDate);
       endDate.setHours(23, 59, 59, 999);
-      filtered = filtered.filter(s => new Date(s.started_at) <= endDate);
+      console.log('[AdminSessions] Filtering to:', endDate.toISOString());
+      filtered = filtered.filter(s => {
+        const sessionDate = new Date(s.started_at);
+        return sessionDate <= endDate;
+      });
+      console.log('[AdminSessions] After end filter:', filtered.length, 'sessions');
     }
     
     return filtered;
