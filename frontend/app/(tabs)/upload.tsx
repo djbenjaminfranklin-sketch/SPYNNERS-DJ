@@ -960,4 +960,53 @@ const styles = StyleSheet.create({
   submitButtonDisabled: { opacity: 0.7 },
   submitButtonText: { color: '#fff', fontSize: 17, fontWeight: '600' },
   uploadingContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  
+  // Multi-genre styles
+  selectedGenresContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  genreTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary + '30',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 6,
+  },
+  genreTagText: {
+    color: Colors.primary,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  dropdownItemDisabled: {
+    opacity: 0.5,
+  },
+  dropdownItemTextDisabled: {
+    color: Colors.textMuted,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  checkboxSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  closeDropdownButton: {
+    padding: 12,
+    alignItems: 'center',
+    backgroundColor: Colors.backgroundCard,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  closeDropdownText: {
+    color: Colors.primary,
+    fontWeight: '600',
+    fontSize: 14,
+  },
 });
