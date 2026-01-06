@@ -286,7 +286,7 @@ export default function AdminUsers() {
           }
           
           return (
-          <View key={u.id} style={styles.userCard}>
+            <View key={u.id} style={styles.userCard}>
             <View style={styles.userAvatar}>
               {avatarUrl ? (
                 <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
