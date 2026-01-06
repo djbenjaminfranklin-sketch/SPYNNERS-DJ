@@ -612,6 +612,11 @@ export default function SpynRecordScreen() {
       setIsPaused(false);
       startTimeRef.current = Date.now();
       setIdentifiedTracks([]);
+      identifiedTracksRef.current = [];
+      
+      // Reset sent emails tracker for new session
+      sentEmailsRef.current.clear();
+      console.log('[SPYN Record] Reset sent emails tracker for new session');
       
       // Set session start time for display
       const now = new Date();
