@@ -3365,6 +3365,16 @@ async def get_admin_tracks(authorization: str = Header(None), status: str = None
         if status:
             all_tracks = [t for t in all_tracks if t.get('status', '').lower() == status.lower()]
         
+        # Transform relative URLs to full URLs for audio_url
+        backend_base_url = os.environ.get('BACKEND_URL', 'https://dj-spyn-dashboard.preview.emergentagent.com')
+        for track in all_tracks:
+            audio_url = track.get('audio_url')
+            if audio_url and audio_url.startswith('/api/'):
+                track['audio_url'] = f"{backend_base_url}{audio_url}"
+            artwork_url = track.get('artwork_url')
+            if artwork_url and artwork_url.startswith('/api/'):
+                track['artwork_url'] = f"{backend_base_url}{artwork_url}"
+        
         print(f"[Admin Tracks] Returning {len(all_tracks)} total tracks")
         return {"success": True, "tracks": all_tracks, "total": len(all_tracks)}
         
