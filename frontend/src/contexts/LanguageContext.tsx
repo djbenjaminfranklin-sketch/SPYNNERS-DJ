@@ -373,6 +373,10 @@ const translations: Record<Language, Record<string, string>> = {
     'analytics.today': 'Today',
     'analytics.thisWeek': 'This Week',
     'analytics.topTracks': 'Top Tracks',
+    'analytics.genreDistribution': 'Genre Distribution',
+    'analytics.basedOnRated': 'Based on your rated tracks',
+    'analytics.invalidDateFormat': 'Invalid date format. Use YYYY-MM-DD',
+    'analytics.savePdfError': 'Unable to save PDF file',
     
     // Radar
     'radar.title': 'Track Radar',
