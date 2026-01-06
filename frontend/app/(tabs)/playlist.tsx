@@ -394,7 +394,11 @@ export default function PlaylistScreen() {
                   <Text style={styles.trackListEmptySubtext}>{t('playlist.addTracksHint')}</Text>
                 </View>
               ) : (
-                <ScrollView style={styles.trackList} showsVerticalScrollIndicator={false}>
+                <ScrollView 
+                  style={styles.trackList} 
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: 200 }}
+                >
                   {playlistTracks.map((track, index) => {
                     const trackId = track.id || track._id || '';
                     const isCurrentTrack = currentTrack && (currentTrack.id || currentTrack._id) === trackId;
