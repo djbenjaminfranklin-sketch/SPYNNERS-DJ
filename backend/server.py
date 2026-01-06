@@ -3798,6 +3798,9 @@ async def get_admin_sessions(authorization: str = Header(None), limit: int = 100
                     if sessions and len(sessions) > 0:
                         print(f"[Admin Sessions] Sample session keys: {list(sessions[0].keys())}")
                         print(f"[Admin Sessions] Sample session: {sessions[0]}")
+                elif response.status_code == 429:
+                    print(f"[Admin Sessions] Rate limit exceeded - returning cached or empty")
+                    raise HTTPException(status_code=429, detail="Rate limit exceeded. Please wait a moment and try again.")
                 else:
                     print(f"[Admin Sessions] SessionMix API error: {response.status_code}")
                     
