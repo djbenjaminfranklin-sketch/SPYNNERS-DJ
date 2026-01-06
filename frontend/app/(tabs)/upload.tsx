@@ -259,8 +259,8 @@ export default function UploadScreen() {
       Alert.alert('Error', 'Please enter the artist name');
       return;
     }
-    if (!genre) {
-      Alert.alert('Error', 'Please select a genre');
+    if (genres.length === 0) {
+      Alert.alert('Error', 'Veuillez sélectionner au moins un genre');
       return;
     }
     if (!audioFile) {
