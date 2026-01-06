@@ -154,24 +154,6 @@ export default function AdminCategories() {
   };
 
   if (!isAdmin) {
-        Alert.alert('✅ Succès', `Email envoyé à ${selectedRecipient.email}`);
-        setShowEmailModal(false);
-      } else {
-        Alert.alert('Erreur', response.data?.error || 'Impossible d\'envoyer l\'email');
-      }
-    } catch (error: any) {
-      console.error('[AdminCategories] Send email error:', error);
-      Alert.alert('Erreur', error.response?.data?.detail || 'Impossible d\'envoyer l\'email');
-    } finally {
-      setSendingEmail(false);
-    }
-  };
-
-  const autoAssignCategories = () => {
-    Alert.alert('Auto-Assign', 'Attribution automatique des catégories en cours...');
-  };
-
-  if (!isAdmin) {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <Ionicons name="lock-closed" size={64} color={Colors.textMuted} />
