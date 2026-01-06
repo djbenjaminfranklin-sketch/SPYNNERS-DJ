@@ -222,17 +222,24 @@ export default function AdminDiamonds() {
         style={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFD700" />}
       >
-        {filteredUsers.map((u) => (
+        {filteredUsers.map((u) => {
+          // Convert DiceBear SVG URLs to PNG for React Native compatibility
+          let avatarUrl = u.avatar_url;
+          if (avatarUrl && avatarUrl.includes('dicebear.com') && avatarUrl.includes('/svg?')) {
+            avatarUrl = avatarUrl.replace('/svg?', '/png?') + '&size=200';
+          }
+          
+          return (
           <TouchableOpacity key={u.id} style={styles.userCard} onPress={() => openSendModal(u)}>
             <View style={styles.userAvatar}>
-              {u.avatar_url ? (
-                <Image source={{ uri: u.avatar_url }} style={styles.avatarImage} />
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
               ) : (
-                <Text style={styles.avatarText}>{u.full_name?.charAt(0).toUpperCase() || 'U'}</Text>
+                <Text style={styles.avatarText}>{u.full_name?.charAt(0).toUpperCase() || u.artist_name?.charAt(0).toUpperCase() || 'U'}</Text>
               )}
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>{u.artist_name || u.full_name}</Text>
+              <Text style={styles.userName}>{u.artist_name || u.full_name || 'Sans nom'}</Text>
               <Text style={styles.userEmail}>{u.email}</Text>
             </View>
             <View style={styles.diamondBadge}>
