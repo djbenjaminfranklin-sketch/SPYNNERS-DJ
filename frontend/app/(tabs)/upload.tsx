@@ -286,7 +286,8 @@ export default function UploadScreen() {
         artist_name: artistName.trim(),
         label_name: labelName.trim() || undefined,
         collaborators: collaborators ? collaborators.split(',').map(c => c.trim()) : [],
-        genre,
+        genre: genres.join(', '), // Join multiple genres with comma
+        genres: genres, // Also store as array for better querying
         bpm: bpm ? parseInt(bpm) : undefined,
         key: trackKey || undefined,
         energy_level: energyLevel || undefined,
