@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the SPYNNERS backend API endpoints for health check, authentication, tracks, chat, places, and SPYN notification functionality"
+user_problem_statement: "Test the SPYNNERS application with a focus on the internationalization (i18n) system. The app should display all text in English by default and allow language switching to French."
 
 backend:
   - task: "Health Check API"
