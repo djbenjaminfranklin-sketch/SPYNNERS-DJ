@@ -617,13 +617,27 @@ const styles = StyleSheet.create({
 
   categorySection: { marginBottom: Spacing.lg },
   categoryRow: { flexDirection: 'row', gap: Spacing.xs },
-  categoryChip: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: Colors.backgroundCard, borderRadius: 20, borderWidth: 1, borderColor: Colors.border },
+  categoryChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, backgroundColor: Colors.backgroundCard, borderRadius: 20, borderWidth: 1.5, borderColor: Colors.border },
   categoryChipActive: { backgroundColor: '#4CAF50', borderColor: '#4CAF50' },
-  categoryChipText: { fontSize: 12, color: Colors.textMuted },
+  categoryChipText: { fontSize: 13, color: Colors.textMuted },
   categoryChipTextActive: { color: '#fff', fontWeight: '600' },
+  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  selectedCategoriesText: { fontSize: 12, color: '#4CAF50', marginTop: Spacing.sm, fontWeight: '500' },
 
   individualSection: { marginBottom: Spacing.lg },
   emailInput: { backgroundColor: Colors.backgroundInput, borderRadius: BorderRadius.md, padding: Spacing.md, fontSize: 14, color: Colors.text, borderWidth: 1, borderColor: Colors.border },
+  
+  // Autocomplete suggestions
+  suggestionsContainer: { backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.border, marginTop: 4, maxHeight: 200 },
+  suggestionItem: { flexDirection: 'row', alignItems: 'center', padding: Spacing.sm, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  suggestionAvatar: { width: 36, height: 36, borderRadius: 18 },
+  suggestionInfo: { flex: 1, marginLeft: Spacing.sm },
+  suggestionName: { fontSize: 13, fontWeight: '600', color: Colors.text },
+  suggestionEmail: { fontSize: 11, color: Colors.textMuted },
+  
+  // Selected recipient
+  selectedRecipientBadge: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#4CAF5015', paddingHorizontal: 12, paddingVertical: 10, borderRadius: BorderRadius.md, marginTop: Spacing.sm, borderWidth: 1, borderColor: '#4CAF5030' },
+  selectedRecipientText: { flex: 1, fontSize: 13, color: Colors.text },
 
   composeSection: { backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.md, padding: Spacing.md, borderWidth: 1, borderColor: Colors.border },
   composeTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: Spacing.md },
@@ -651,4 +665,18 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', padding: 40 },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: Spacing.md },
   emptyText: { fontSize: 13, color: Colors.textMuted, marginTop: 4 },
+  
+  // Email Detail Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' },
+  emailDetailModal: { backgroundColor: Colors.backgroundCard, borderRadius: BorderRadius.lg, padding: Spacing.lg, width: '90%', maxHeight: '80%' },
+  emailDetailHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: Spacing.lg },
+  emailDetailTitle: { flex: 1, fontSize: 18, fontWeight: 'bold', color: Colors.text },
+  emailDetailContent: { flex: 1 },
+  emailDetailLabel: { fontSize: 11, fontWeight: '600', color: Colors.textMuted, marginTop: Spacing.md, textTransform: 'uppercase' },
+  emailDetailSubject: { fontSize: 16, fontWeight: '600', color: Colors.text, marginTop: 4 },
+  emailDetailInfo: { fontSize: 14, color: Colors.textSecondary, marginTop: 4 },
+  emailDetailMessageContainer: { backgroundColor: Colors.backgroundInput, borderRadius: BorderRadius.md, padding: Spacing.md, marginTop: Spacing.sm },
+  emailDetailMessage: { fontSize: 13, color: Colors.text, lineHeight: 20 },
+  closeDetailBtn: { backgroundColor: Colors.border, paddingVertical: 12, borderRadius: BorderRadius.md, alignItems: 'center', marginTop: Spacing.lg },
+  closeDetailBtnText: { fontSize: 14, fontWeight: '600', color: Colors.text },
 });
