@@ -159,6 +159,68 @@ export default function AdminCategories() {
     loadUsers();
   };
 
+  // Open edit modal for a user
+  const openEditModal = (u: any) => {
+    setSelectedUser(u);
+    // Initialize with current categories (from user_types array or user_type string)
+    const currentCategories: string[] = [];
+    if (u.user_types && Array.isArray(u.user_types)) {
+      currentCategories.push(...u.user_types);
+    }
+    if (u.user_type && !currentCategories.includes(u.user_type)) {
+      currentCategories.push(u.user_type);
+    }
+    setUserCategories(currentCategories);
+    setShowEditModal(true);
+  };
+
+  // Toggle a category for the selected user
+  const toggleCategory = (categoryId: string) => {
+    setUserCategories(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(c => c !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+  };
+
+  // Save user categories
+  const saveUserCategories = async () => {
+    if (!selectedUser) return;
+    
+    setSaving(true);
+    try {
+      // Determine the main user_type (first category or 'both' if multiple)
+      let mainType = userCategories[0] || '';
+      if (userCategories.includes('dj') && userCategories.includes('producer')) {
+        mainType = 'both';
+      }
+
+      const response = await axios.put(
+        `${BACKEND_URL}/api/admin/users/${selectedUser.id}`,
+        {
+          user_type: mainType,
+          user_types: userCategories
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data?.success) {
+        Alert.alert('✅ Succès', `Catégories mises à jour pour ${selectedUser.artist_name || selectedUser.full_name}`);
+        setShowEditModal(false);
+        loadUsers(); // Refresh the list
+      } else {
+        Alert.alert('Erreur', response.data?.error || 'Impossible de sauvegarder');
+      }
+    } catch (error: any) {
+      console.error('[AdminCategories] Save error:', error);
+      Alert.alert('Erreur', error.response?.data?.detail || 'Impossible de sauvegarder');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <View style={[styles.container, styles.centerContent]}>
