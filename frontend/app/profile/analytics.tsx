@@ -315,7 +315,7 @@ export default function AnalyticsScreen() {
             const fileUri = `${LegacyFileSystem.documentDirectory}${filename}`;
             
             await LegacyFileSystem.writeAsStringAsync(fileUri, base64Content, {
-              encoding: LegacyFileSystem.EncodingType.Base64,
+              encoding: 'base64',
             });
 
             // Check if sharing is available
