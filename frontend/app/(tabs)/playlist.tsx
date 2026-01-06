@@ -107,21 +107,39 @@ export default function PlaylistScreen() {
       setLoadingTracks(true);
       const trackIds = playlist.track_ids || playlist.tracks || [];
       
-      console.log('[Playlist] Loading tracks for playlist:', playlist.name, '- Track IDs:', trackIds.length);
+      console.log('[Playlist] ========== LOADING PLAYLIST TRACKS ==========');
+      console.log('[Playlist] Playlist name:', playlist.name);
+      console.log('[Playlist] Playlist ID:', playlist.id || playlist._id);
+      console.log('[Playlist] Track IDs in playlist:', JSON.stringify(trackIds));
+      console.log('[Playlist] Track IDs count:', trackIds.length);
       
       if (trackIds.length === 0) {
+        console.log('[Playlist] No track IDs found in playlist!');
         setPlaylistTracks([]);
         return;
       }
       
       // Fetch all tracks and filter by IDs in the playlist
-      const allTracks = await base44Tracks.list({ limit: 200 });
+      const allTracks = await base44Tracks.list({ limit: 500 });
+      console.log('[Playlist] Total tracks fetched:', allTracks.length);
+      
+      // Log first few track IDs from database for comparison
+      if (allTracks.length > 0) {
+        const sampleIds = allTracks.slice(0, 5).map((t: Track) => t.id || t._id);
+        console.log('[Playlist] Sample track IDs from DB:', JSON.stringify(sampleIds));
+      }
+      
       const filteredTracks = allTracks.filter((track: Track) => {
         const trackId = track.id || track._id || '';
-        return trackIds.includes(trackId);
+        const isInPlaylist = trackIds.includes(trackId);
+        if (isInPlaylist) {
+          console.log('[Playlist] ✓ Found track:', track.title, 'ID:', trackId);
+        }
+        return isInPlaylist;
       });
       
-      console.log('[Playlist] Loaded tracks:', filteredTracks.length);
+      console.log('[Playlist] Filtered tracks count:', filteredTracks.length);
+      console.log('[Playlist] ========================================');
       setPlaylistTracks(filteredTracks);
     } catch (error) {
       console.error('[Playlist] Error loading playlist tracks:', error);
