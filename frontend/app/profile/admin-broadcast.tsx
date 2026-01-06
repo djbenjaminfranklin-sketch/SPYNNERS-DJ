@@ -219,14 +219,27 @@ export default function AdminBroadcast() {
   const uploadAttachment = async (file: DocumentPicker.DocumentPickerAsset) => {
     setUploadingAttachment(true);
     try {
-      console.log('[AdminBroadcast] Starting upload for:', file.name);
+      console.log('[AdminBroadcast] Starting upload for:', file.name, 'uri:', file.uri);
       
+      // For web, we need to handle the file differently
       const formData = new FormData();
-      formData.append('file', {
-        uri: file.uri,
-        name: file.name,
-        type: file.mimeType || 'application/octet-stream',
-      } as any);
+      
+      // Check if we're on web and have a file object
+      if (typeof window !== 'undefined' && file.file) {
+        // Web: Use the actual File object
+        formData.append('file', file.file);
+        console.log('[AdminBroadcast] Using web File object');
+      } else {
+        // Mobile: Use the URI approach
+        formData.append('file', {
+          uri: file.uri,
+          name: file.name,
+          type: file.mimeType || 'application/octet-stream',
+        } as any);
+        console.log('[AdminBroadcast] Using mobile URI approach');
+      }
+      
+      console.log('[AdminBroadcast] Sending to:', `${BACKEND_URL}/api/admin/upload-attachment-local`);
       
       const response = await axios.post(
         `${BACKEND_URL}/api/admin/upload-attachment-local`,
@@ -239,6 +252,8 @@ export default function AdminBroadcast() {
           timeout: 60000,
         }
       );
+      
+      console.log('[AdminBroadcast] Upload response:', response.data);
       
       if (response.data?.success && response.data?.url) {
         // Make URL absolute for emails
@@ -253,8 +268,9 @@ export default function AdminBroadcast() {
         throw new Error(response.data?.error || 'Upload failed');
       }
     } catch (error: any) {
-      console.error('[AdminBroadcast] Upload error:', error?.response?.data || error);
-      Alert.alert('Erreur', 'Impossible de télécharger le fichier. Vérifiez votre connexion.');
+      console.error('[AdminBroadcast] Upload error:', error);
+      console.error('[AdminBroadcast] Error details:', error?.response?.data || error?.message);
+      Alert.alert('Erreur', `Échec du téléversement: ${error?.response?.data?.detail || error?.message || 'Erreur inconnue'}`);
       setAttachment(null);
     } finally {
       setUploadingAttachment(false);
