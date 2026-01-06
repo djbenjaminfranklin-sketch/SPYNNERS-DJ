@@ -114,15 +114,156 @@ export default function AdminDownloads() {
     loadDownloads();
   };
 
-  const selectDate = () => {
-    Alert.alert('Sélectionner une date', 'Fonctionnalité de sélection de date');
+  // Filter downloads by date
+  const getFilteredDownloads = () => {
+    let filtered = downloads;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(d => 
+        d.dj_name.toLowerCase().includes(query) ||
+        d.track_title.toLowerCase().includes(query) ||
+        d.producer.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply date filter
+    if (dateFilter.startDate) {
+      const startDate = new Date(dateFilter.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(d => new Date(d.date) >= startDate);
+    }
+    
+    if (dateFilter.endDate) {
+      const endDate = new Date(dateFilter.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(d => new Date(d.date) <= endDate);
+    }
+    
+    return filtered;
   };
 
-  const filteredDownloads = downloads.filter(d => 
-    d.dj_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    d.track_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    d.producer.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredDownloads = getFilteredDownloads();
+
+  // Export PDF
+  const exportPDF = async () => {
+    setExporting(true);
+    try {
+      console.log('[AdminDownloads] Exporting PDF...');
+      
+      const requestBody: any = {};
+      
+      // Add date filters if set
+      if (dateFilter.startDate) {
+        requestBody.start_date = dateFilter.startDate;
+      }
+      if (dateFilter.endDate) {
+        requestBody.end_date = dateFilter.endDate;
+      }
+      
+      console.log('[AdminDownloads] Request body:', JSON.stringify(requestBody));
+      
+      const response = await axios.post(
+        `${BACKEND_URL}/api/admin/downloads/pdf`,
+        requestBody,
+        {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          responseType: 'arraybuffer',
+          timeout: 120000,
+        }
+      );
+      
+      console.log('[AdminDownloads] PDF received, size:', response.data.byteLength);
+      
+      // Generate filename
+      let filename = 'spynners_downloads';
+      if (dateFilter.startDate) {
+        filename += `_${dateFilter.startDate}`;
+      }
+      if (dateFilter.endDate) {
+        filename += `_${dateFilter.endDate}`;
+      }
+      filename += '.pdf';
+      
+      // Platform-specific handling
+      if (Platform.OS === 'web') {
+        // Web: Create blob and download link
+        console.log('[AdminDownloads] Web platform - creating download link');
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        Alert.alert('Succès ✅', 'PDF téléchargé !');
+      } else {
+        // Mobile: Use FileSystem and Sharing
+        console.log('[AdminDownloads] Mobile platform - using FileSystem');
+        
+        // Convert arraybuffer to base64
+        const uint8Array = new Uint8Array(response.data);
+        let binary = '';
+        const chunkSize = 8192;
+        for (let i = 0; i < uint8Array.length; i += chunkSize) {
+          const chunk = uint8Array.subarray(i, i + chunkSize);
+          binary += String.fromCharCode.apply(null, Array.from(chunk));
+        }
+        const base64 = btoa(binary);
+        
+        const fileUri = `${FileSystem.cacheDirectory}${filename}`;
+        console.log('[AdminDownloads] Writing to:', fileUri);
+        
+        await FileSystem.writeAsStringAsync(fileUri, base64, {
+          encoding: 'base64',
+        });
+        
+        console.log('[AdminDownloads] File written, sharing...');
+        
+        // Share the file
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'application/pdf',
+            dialogTitle: 'Télécharger le rapport PDF',
+          });
+        } else {
+          Alert.alert('Succès ✅', `PDF sauvegardé: ${filename}`);
+        }
+      }
+      
+    } catch (error: any) {
+      console.error('[AdminDownloads] Export error:', error);
+      Alert.alert('Erreur', error?.response?.data?.detail || error?.message || 'Impossible d\'exporter le rapport');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Apply date filter
+  const applyDateFilter = () => {
+    setDateFilter(tempDateFilter);
+    setShowDateFilter(false);
+  };
+
+  // Clear date filter
+  const clearDateFilter = () => {
+    setTempDateFilter({ startDate: '', endDate: '' });
+    setDateFilter({ startDate: '', endDate: '' });
+    setShowDateFilter(false);
+  };
+
+  // Format date for display
+  const formatDateDisplay = (dateStr: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
 
   if (!isAdmin) {
     return (
