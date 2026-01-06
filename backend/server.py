@@ -4172,31 +4172,6 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         
         # Build PDF
         doc.build(elements)
-                        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                        ('FONTSIZE', (0, 1), (-1, -1), 8),
-                        ('ALIGN', (0, 1), (0, -1), 'CENTER'),
-                        ('ALIGN', (-1, 1), (-1, -1), 'CENTER'),
-                        # Alternating row colors
-                        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
-                        # Grid
-                        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
-                        # Padding
-                        ('TOPPADDING', (0, 0), (-1, -1), 5),
-                        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
-                    ]))
-                    elements.append(tracks_table)
-                else:
-                    # No track details, just show session info
-                    info_text = f"📍 {city} | 🎵 {track_count} tracks détectées | ✅ Black Diamond attribué"
-                    elements.append(Paragraph(info_text, ParagraphStyle('Info', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#666666'))))
-                
-                elements.append(Spacer(1, 10))
-                session_counter += 1
-            
-            elements.append(Spacer(1, 20))
-        
-        # Build PDF
-        doc.build(elements)
         
         pdf_content = buffer.getvalue()
         buffer.close()
