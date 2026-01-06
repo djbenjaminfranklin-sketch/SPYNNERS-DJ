@@ -7,6 +7,7 @@ import { createClient } from '@base44/sdk';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 // Base44 App ID for SPYNNERS
 const BASE44_APP_ID = '691a4d96d819355b52c063f3';
