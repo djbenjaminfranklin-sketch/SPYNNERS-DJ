@@ -1070,46 +1070,67 @@ export default function SpynRecordScreen() {
     }
   };
 
-  // Stop recording, analyze, and save to offline session
-  const stopRecording = async () => {
+  // Handle stop button press - show End Session Modal
+  const handleStopButtonPress = async () => {
+    console.log('[SPYN Record] Stop button pressed - showing End Session Modal');
+    
+    // Stop timers but don't process yet
+    if (durationIntervalRef.current) clearInterval(durationIntervalRef.current);
+    if (analysisIntervalRef.current) clearInterval(analysisIntervalRef.current);
+    if (waveformIntervalRef.current) clearInterval(waveformIntervalRef.current);
+    
+    // Stop the actual recording and get the file
+    let fileUri = '';
+    
     try {
-      console.log('[SPYN Record] Stopping recording...');
-      setCurrentAnalysis('Arrêt en cours...');
-      
-      // Stop timers
-      if (durationIntervalRef.current) clearInterval(durationIntervalRef.current);
-      if (analysisIntervalRef.current) clearInterval(analysisIntervalRef.current);
-      if (waveformIntervalRef.current) clearInterval(waveformIntervalRef.current);
-      
-      // Update refs
-      isRecordingRef.current = false;
-      
-      let fileUri = '';
-      let audioBase64ForAnalysis = '';
-      
       if (Platform.OS === 'web') {
         fileUri = await stopWebRecording();
-        console.log('[SPYN Record] Web recording stopped, URL:', fileUri);
-        
-        // Get audio for analysis from web chunks
-        if (audioChunksRef.current.length > 0) {
-          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          audioBase64ForAnalysis = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              const result = reader.result as string;
-              resolve(result.split(',')[1] || '');
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
-        }
       } else {
         fileUri = await stopNativeRecording();
-        console.log('[SPYN Record] Native recording stopped, URI:', fileUri);
-        
-        // Read the final file for analysis using LegacyFileSystem (more compatible with iOS)
-        if (fileUri) {
+      }
+      console.log('[SPYN Record] Recording file saved:', fileUri);
+    } catch (error) {
+      console.error('[SPYN Record] Error stopping recording:', error);
+    }
+    
+    // Update refs
+    isRecordingRef.current = false;
+    setIsRecording(false);
+    setIsPaused(false);
+    
+    // Store the file URI for later processing
+    setSessionFileUri(fileUri);
+    
+    // Show the End Session Modal
+    setShowEndSessionModal(true);
+  };
+
+  // Confirm end session and process
+  const confirmEndSession = async () => {
+    try {
+      console.log('[SPYN Record] Processing end session...');
+      setShowEndSessionModal(false);
+      setCurrentAnalysis('Analyse en cours...');
+      
+      let audioBase64ForAnalysis = '';
+      const fileUri = sessionFileUri;
+      
+      // Read audio for analysis
+      if (fileUri) {
+        if (Platform.OS === 'web') {
+          if (audioChunksRef.current.length > 0) {
+            const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+            audioBase64ForAnalysis = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const result = reader.result as string;
+                resolve(result.split(',')[1] || '');
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          }
+        } else {
           try {
             console.log('[SPYN Record] Reading final file with LegacyFileSystem...');
             audioBase64ForAnalysis = await LegacyFileSystem.readAsStringAsync(fileUri, {
@@ -1118,15 +1139,12 @@ export default function SpynRecordScreen() {
             console.log('[SPYN Record] ✅ Audio read for analysis, length:', audioBase64ForAnalysis.length);
           } catch (readError: any) {
             console.error('[SPYN Record] ❌ Error reading audio:', readError?.message || readError);
-            // Try with file:// prefix if not already present
             if (!fileUri.startsWith('file://')) {
               try {
                 const fileUriWithPrefix = `file://${fileUri}`;
-                console.log('[SPYN Record] Retrying with file:// prefix:', fileUriWithPrefix);
                 audioBase64ForAnalysis = await LegacyFileSystem.readAsStringAsync(fileUriWithPrefix, {
                   encoding: LegacyFileSystem.EncodingType.Base64,
                 });
-                console.log('[SPYN Record] ✅ Audio read with prefix, length:', audioBase64ForAnalysis.length);
               } catch (prefixError) {
                 console.error('[SPYN Record] ❌ Read with prefix also failed:', prefixError);
               }
@@ -1135,15 +1153,11 @@ export default function SpynRecordScreen() {
         }
       }
       
-      setIsRecording(false);
-      setIsPaused(false);
-      
       // Analyze the recording
       setCurrentAnalysis('Analyse de la session...');
       const detectedTracks: IdentifiedTrack[] = [];
       const detectedTitles = new Set<string>();
       
-      // Use the main audio file that was read after stopping
       if (audioBase64ForAnalysis && audioBase64ForAnalysis.length > 0) {
         console.log('[SPYN Record] Analyzing audio, length:', audioBase64ForAnalysis.length);
         
@@ -1176,9 +1190,7 @@ export default function SpynRecordScreen() {
               setIdentifiedTracks(prev => [...prev, newTrack]);
               setCurrentAnalysis(`✅ ${response.data.title}`);
               
-              // Send email
               sendEmailForTrack(newTrack);
-              
               console.log('[SPYN Record] ✅ Track identified:', newTrack.title);
             }
           } else {
@@ -1188,25 +1200,59 @@ export default function SpynRecordScreen() {
           console.error('[SPYN Record] Analysis error:', analysisError?.message || analysisError);
           setCurrentAnalysis('Erreur d\'analyse');
         }
-      } else {
-        console.log('[SPYN Record] No audio data to analyze');
-        setCurrentAnalysis('Pas d\'audio à analyser');
       }
       
-      setCurrentAnalysis(detectedTracks.length > 0 
-        ? `${detectedTracks.length} track(s) identifié(s)` 
-        : 'Aucun track détecté');
-      
-      
-      // Create offline session with the recording
-      setCurrentAnalysis('Création de la session...');
       const allTracks = [...identifiedTracks, ...detectedTracks];
       
+      // Award Black Diamond if valid venue
+      const isValidVenue = location?.is_valid_venue === true;
+      const canEarnDiamond = allTracks.length > 0 && isValidVenue && !isOffline;
+      
+      if (canEarnDiamond) {
+        console.log('[SPYN Record] Valid venue detected, awarding Black Diamond...');
+        try {
+          const awardResponse = await axios.post(
+            `${BACKEND_URL}/api/award-diamond`,
+            { 
+              user_id: user?.id,
+              type: 'black',
+              reason: 'spyn_record_session',
+              venue: correctedVenue || location?.venue,
+              venue_type: location?.venue_type,
+            },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          
+          if (awardResponse.data.success && !awardResponse.data.already_awarded) {
+            console.log('[SPYN Record] Black Diamond awarded!');
+            setShowDiamondModal(true);
+            
+            Animated.loop(
+              Animated.timing(diamondRotate, {
+                toValue: 1,
+                duration: 2000,
+                easing: Easing.linear,
+                useNativeDriver: true,
+              })
+            ).start();
+
+            setTimeout(() => {
+              setShowDiamondModal(false);
+              diamondRotate.setValue(0);
+            }, 3000);
+          }
+        } catch (e) {
+          console.log('[SPYN Record] Could not award diamond:', e);
+        }
+      }
+      
+      // Save session
+      setCurrentAnalysis('Sauvegarde de la session...');
       try {
         const sessionData = {
           id: `session_${Date.now()}`,
           userId: user?.id || 'unknown',
-          djName: user?.full_name || 'DJ',
+          djName: whoPlayed === 'another' ? otherDjName : (user?.full_name || 'DJ'),
           duration: recordingDuration,
           recordedAt: new Date().toISOString(),
           tracks: allTracks.map(t => ({
@@ -1219,36 +1265,37 @@ export default function SpynRecordScreen() {
           })),
           audioUri: fileUri,
           status: 'pending_sync' as const,
+          venue: correctedVenue || location?.venue,
+          city: location?.city,
+          country: location?.country,
         };
         
-        // Save to offline service
         await offlineService.saveOfflineSession(sessionData);
-        console.log('[SPYN Record] Session saved to offline storage');
+        console.log('[SPYN Record] Session saved');
         
-        // Show success message
-        const tracksCount = allTracks.length;
-        Alert.alert(
-          '🎉 Session enregistrée !',
-          `Durée: ${formatDuration(recordingDuration)}\nTracks identifiés: ${tracksCount}\n\nLa session a été sauvegardée et sera synchronisée.`,
-          [
-            {
-              text: 'Voir les sessions',
-              onPress: () => router.push('/'),
-            },
-            {
-              text: 'OK',
-              style: 'default',
-            },
-          ]
-        );
+        // Save the mix if requested
+        if (saveMix && fileUri) {
+          setCurrentAnalysis('Préparation du mix pour sauvegarde...');
+          await saveRecording(fileUri);
+        }
         
+        // Reset state
         setCurrentAnalysis('');
-        
-        // Reset state for next recording
         setIdentifiedTracks([]);
         identifiedTracksRef.current = [];
         recordingSegmentsRef.current = [];
         setRecordingDuration(0);
+        setSessionFileUri('');
+        setWhoPlayed(null);
+        setOtherDjName('');
+        setSaveMix(true);
+        
+        // Show completion alert
+        Alert.alert(
+          '🎉 Session terminée !',
+          `Durée: ${formatDuration(recordingDuration)}\nTracks identifiés: ${allTracks.length}${saveMix ? '\n\n📁 Le mix a été préparé pour la sauvegarde.' : ''}`,
+          [{ text: 'OK' }]
+        );
         
       } catch (saveError) {
         console.error('[SPYN Record] Error saving session:', saveError);
@@ -1259,6 +1306,11 @@ export default function SpynRecordScreen() {
       console.error('[SPYN Record] Stop error:', error);
       Alert.alert('Erreur', 'Erreur lors de l\'arrêt de l\'enregistrement');
     }
+  };
+
+  // Legacy stopRecording function - now redirects to handleStopButtonPress
+  const stopRecording = () => {
+    handleStopButtonPress();
   };
 
   const stopWebRecording = async (): Promise<string> => {
