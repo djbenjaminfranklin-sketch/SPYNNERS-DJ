@@ -3930,9 +3930,21 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
             except Exception as e2:
                 print(f"[Admin Sessions PDF] Fallback also failed: {e2}")
         
-        # Filter by date range
+        # Filter by date range AND diamond_awarded = true (validated sessions only)
+        # Also handle individual session export
         filtered_sessions = []
         for session in sessions_data:
+            # Only include validated sessions (diamond_awarded = true)
+            if session.get('diamond_awarded') != True:
+                continue
+            
+            # If session_id is specified, only include that session
+            if request.session_id:
+                if session.get('id') == request.session_id:
+                    session['_parsed_date'] = None
+                    filtered_sessions.append(session)
+                continue
+            
             session_date_str = session.get('started_at') or session.get('created_at') or session.get('timestamp')
             if session_date_str:
                 try:
@@ -3959,7 +3971,7 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
             else:
                 filtered_sessions.append(session)
         
-        print(f"[Admin Sessions PDF] Filtered to {len(filtered_sessions)} sessions")
+        print(f"[Admin Sessions PDF] Filtered to {len(filtered_sessions)} validated sessions (diamond_awarded=true)")
         
         # Group sessions by DJ
         sessions_by_dj = defaultdict(list)
