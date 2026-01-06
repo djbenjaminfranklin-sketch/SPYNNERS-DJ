@@ -296,53 +296,18 @@ export default function SpynRecordScreen() {
     }
   };
 
-  // Initialize offline service
+  // Initialize offline service - SIMPLIFIED
   const initOfflineService = async () => {
+    // ALWAYS start in ONLINE mode - we'll only go offline if API calls fail
+    console.log('[SPYN Record] Init: Starting in ONLINE mode by default');
+    setIsOffline(false);
+    
     try {
-      // On web, use navigator.onLine as the primary source of truth
-      // NetInfo often reports false negatives on web
-      const isActuallyOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-      
-      console.log('[SPYN Record] Init offline service - navigator.onLine:', isActuallyOnline);
-      
-      // Force online if navigator says we're online
-      setIsOffline(!isActuallyOnline);
-      
-      // Listen for online/offline events on web
-      if (typeof window !== 'undefined') {
-        const handleOnline = () => {
-          console.log('[SPYN Record] 🌐 Browser reports ONLINE');
-          setIsOffline(false);
-        };
-        const handleOffline = () => {
-          console.log('[SPYN Record] 📴 Browser reports OFFLINE');
-          setIsOffline(true);
-        };
-        
-        window.addEventListener('online', handleOnline);
-        window.addEventListener('offline', handleOffline);
-        
-        // Return cleanup function
-        return () => {
-          window.removeEventListener('online', handleOnline);
-          window.removeEventListener('offline', handleOffline);
-        };
-      }
-      
-      // For native, also check with offlineService but trust navigator.onLine more
-      const isOnline = await offlineService.checkNetworkStatus();
-      // Only set offline if BOTH say we're offline
-      if (!isOnline && !isActuallyOnline) {
-        setIsOffline(true);
-      }
-      
-      // Check for pending sessions
-      await checkPendingSessions();
-      
+      // Check for pending sessions silently
+      const pendingCount = await offlineService.getPendingCount();
+      setPendingSyncCount(pendingCount);
     } catch (error) {
-      console.error('[SPYN Record] Offline service init error:', error);
-      // Default to online on error
-      setIsOffline(false);
+      console.log('[SPYN Record] Could not check pending sessions:', error);
     }
   };
 
