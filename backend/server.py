@@ -4094,6 +4094,51 @@ async def get_broadcast_history(authorization: str = Header(None), limit: int = 
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Individual email endpoint
+class IndividualEmailRequest(BaseModel):
+    to: str
+    subject: str
+    body: str
+    user_id: Optional[str] = None
+
+@app.post("/api/admin/send-email")
+async def send_individual_email(request: IndividualEmailRequest, authorization: str = Header(None)):
+    """
+    Send individual email to a specific user.
+    Uses Base44 sendBroadcastEmail with individualEmail parameter.
+    """
+    try:
+        if not authorization:
+            raise HTTPException(status_code=401, detail="Authorization required")
+        
+        print(f"[Admin Email] Sending email to: {request.to}")
+        print(f"[Admin Email] Subject: {request.subject}")
+        
+        # Call Base44 sendBroadcastEmail function with individualEmail
+        result = await call_spynners_function("sendBroadcastEmail", {
+            "subject": request.subject,
+            "message": request.body,
+            "recipientType": "individual",
+            "individualEmail": request.to,
+        }, authorization)
+        
+        if result:
+            print(f"[Admin Email] Email sent successfully: {result}")
+            return {
+                "success": True,
+                "message": f"Email envoyé à {request.to}",
+                "details": result
+            }
+        
+        return {"success": False, "message": "Impossible d'envoyer l'email"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Admin Email] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ==================== ADMIN VIP PROMOS ====================
 
 @app.get("/api/admin/vip-promos")
