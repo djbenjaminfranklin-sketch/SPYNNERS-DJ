@@ -21,8 +21,10 @@ import * as Sharing from 'expo-sharing';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { isUserAdmin } from '../../src/components/AdminBadge';
+import { invokeBase44Function } from '../../src/api/base44Client';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const BASE44_API_URL = 'https://app.base44.com/api/apps/691a4d96d819355b52c063f3';
 
 type Download = {
   id: string;
