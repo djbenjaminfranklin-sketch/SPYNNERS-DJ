@@ -596,10 +596,13 @@ export default function AdminSessions() {
                   onPress={() => {
                     const today = new Date();
                     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    setTempDateFilter({
+                    const newFilter = {
                       startDate: weekAgo.toISOString().split('T')[0],
                       endDate: today.toISOString().split('T')[0],
-                    });
+                    };
+                    setTempDateFilter(newFilter);
+                    setDateFilter(newFilter); // Apply immediately
+                    setShowDateFilter(false); // Close modal
                   }}
                 >
                   <Text style={styles.presetBtnText}>7 derniers jours</Text>
