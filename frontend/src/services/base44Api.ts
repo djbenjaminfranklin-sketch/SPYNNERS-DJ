@@ -1598,35 +1598,27 @@ export const base44Profiles = {
           let totalDownloads = 0;
           
           try {
-            // Use the native /api/tracks/my endpoint which correctly filters by producer
-            const tracksResponse = await axios.post(
-              `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/nativeGetMyTracks`,
-              { limit: 500, offset: 0, status: 'approved' },
-              { headers: { 'Content-Type': 'application/json' } }
-            );
+            // CRITICAL FIX: Fetch ALL tracks and filter locally by created_by_id
+            console.log('[Profiles] Fetching all tracks to filter for userId:', userId);
+            const tracksResponse = await mobileApi.get(`/entities/Track?limit=500`);
             
-            if (tracksResponse.data?.tracks && Array.isArray(tracksResponse.data.tracks)) {
-              const myTracks = tracksResponse.data.tracks.filter((t: any) => 
-                t.producer_id === userId
-              );
+            if (Array.isArray(tracksResponse.data)) {
+              // Filter tracks that belong to this user using multiple possible ID fields
+              const myTracks = tracksResponse.data.filter((t: any) => {
+                const createdById = t.created_by_id || '';
+                const producerId = t.producer_id || '';
+                const uploadedBy = t.uploaded_by || '';
+                
+                return createdById === userId || producerId === userId || uploadedBy === userId;
+              });
+              
               tracksCount = myTracks.length;
               totalPlays = myTracks.reduce((sum: number, t: any) => sum + (t.play_count || 0), 0);
               totalDownloads = myTracks.reduce((sum: number, t: any) => sum + (t.download_count || 0), 0);
-              console.log('[Profiles] Stats from native API:', { tracksCount, totalPlays, totalDownloads });
+              console.log('[Profiles] Stats calculated from', tracksResponse.data.length, 'total tracks:', { tracksCount, totalPlays, totalDownloads });
             }
-          } catch (nativeError) {
-            console.log('[Profiles] Native API failed, trying direct entity:', nativeError);
-            // Fallback to direct entity fetch
-            try {
-              const tracksResponse = await mobileApi.get(`/entities/Track?limit=1000&producer_id=${userId}`);
-              if (Array.isArray(tracksResponse.data)) {
-                tracksCount = tracksResponse.data.length;
-                totalPlays = tracksResponse.data.reduce((sum: number, t: any) => sum + (t.play_count || 0), 0);
-                totalDownloads = tracksResponse.data.reduce((sum: number, t: any) => sum + (t.download_count || 0), 0);
-              }
-            } catch (e) {
-              console.log('[Profiles] Fallback also failed');
-            }
+          } catch (tracksError) {
+            console.log('[Profiles] Error fetching tracks for stats:', tracksError);
           }
           
           return {
