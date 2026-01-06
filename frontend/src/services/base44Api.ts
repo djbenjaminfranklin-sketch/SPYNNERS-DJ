@@ -537,14 +537,29 @@ export const base44Tracks = {
     return this.list({ is_vip: true });
   },
 
-  async get(trackId: string): Promise<Track | null> {
+  async getById(trackId: string): Promise<Track | null> {
     try {
+      console.log('[Tracks] Getting track by ID:', trackId);
+      
+      // On mobile, use direct Base44 API
+      if (Platform.OS !== 'web') {
+        const response = await mobileApi.get(`/entities/Track/${trackId}`);
+        console.log('[Tracks] Mobile - Got track:', response.data?.title);
+        return response.data;
+      }
+      
+      // On web, use backend proxy
       const response = await mobileApi.get(`/api/base44/entities/Track/${trackId}`);
+      console.log('[Tracks] Web - Got track:', response.data?.title);
       return response.data;
     } catch (error) {
-      console.error('[Tracks] Error getting track:', error);
+      console.error('[Tracks] Error getting track by ID:', trackId, error);
       return null;
     }
+  },
+
+  async get(trackId: string): Promise<Track | null> {
+    return this.getById(trackId);
   },
 
   async create(track: Partial<Track>): Promise<Track | null> {
