@@ -167,7 +167,7 @@ export default function AdminDashboard() {
       setProcessing(true);
       Alert.alert('Sync ACRCloud', 'Synchronisation en cours...');
       
-      const response = await api.post('/api/admin/sync-acrcloud', {}, {
+      const response = await axios.post(`${BACKEND_URL}/api/admin/sync-acrcloud`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
