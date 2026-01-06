@@ -654,22 +654,39 @@ export const base44Users = {
   async list(filters?: { user_type?: string; search?: string; limit?: number }): Promise<User[]> {
     try {
       console.log('[Users] Listing users with filters:', filters);
-      const params = new URLSearchParams();
-      params.append('limit', String(filters?.limit || 500));
-      if (filters?.user_type) params.append('user_type', filters.user_type);
-      if (filters?.search) params.append('search', filters.search);
+      
+      // Fetch all users with pagination to get more than 500
+      const allUsers: User[] = [];
+      let offset = 0;
+      const pageSize = 200;
+      const maxUsers = filters?.limit || 2000; // Default to 2000 max
+      
+      while (allUsers.length < maxUsers) {
+        const params = new URLSearchParams();
+        params.append('limit', String(pageSize));
+        params.append('offset', String(offset));
+        if (filters?.user_type) params.append('user_type', filters.user_type);
+        if (filters?.search) params.append('search', filters.search);
 
-      // Try fetching from User entity directly with correct API path
-      const response = await mobileApi.get(`/api/base44/entities/User?${params.toString()}`);
-      console.log('[Users] User entity response:', response.data?.length || 0, 'users');
+        const response = await mobileApi.get(`/api/base44/entities/User?${params.toString()}`);
+        
+        const data = response.data;
+        let users: User[] = [];
+        if (Array.isArray(data)) users = data;
+        else if (data?.items) users = data.items;
+        
+        console.log('[Users] Fetched', users.length, 'users at offset', offset);
+        
+        if (users.length === 0) break; // No more users
+        
+        allUsers.push(...users);
+        offset += pageSize;
+        
+        if (users.length < pageSize) break; // Last page
+      }
       
-      const data = response.data;
-      if (Array.isArray(data) && data.length > 0) return data;
-      if (data?.items && data.items.length > 0) return data.items;
-      
-      // If no users found, fallback to extracting from tracks
-      console.log('[Users] No users from entity, trying tracks fallback...');
-      return await this.fetchAllUsersFromTracks();
+      console.log('[Users] Total users fetched:', allUsers.length);
+      return allUsers;
     } catch (error) {
       console.error('[Users] Error listing users, falling back to tracks:', error);
       // Fallback: extract users from tracks
