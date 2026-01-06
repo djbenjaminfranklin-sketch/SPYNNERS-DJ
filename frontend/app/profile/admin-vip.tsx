@@ -55,6 +55,8 @@ export default function AdminVIP() {
   // Upload VIP Track Modal state
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState('');
   
   // Form fields for new VIP track
   const [trackTitle, setTrackTitle] = useState('');
