@@ -4028,7 +4028,8 @@ class BroadcastEmailRequest(BaseModel):
     subject: str
     message: str
     recipient_type: str = "all"  # all, category, individual
-    category: Optional[str] = None
+    categories: Optional[List[str]] = None  # Multiple categories
+    category: Optional[str] = None  # Single category (legacy)
     individual_email: Optional[str] = None
     genre_filter: Optional[str] = None
     include_tracks: Optional[bool] = False
@@ -4037,7 +4038,7 @@ class BroadcastEmailRequest(BaseModel):
 async def send_broadcast_email(request: BroadcastEmailRequest, authorization: str = Header(None)):
     """
     Send broadcast email to users.
-    Uses Base44 sendBroadcastEmail cloud function.
+    Uses Base44 integrations Core.SendEmail.
     """
     try:
         if not authorization:
@@ -4045,29 +4046,148 @@ async def send_broadcast_email(request: BroadcastEmailRequest, authorization: st
         
         print(f"[Admin Broadcast] Sending email to: {request.recipient_type}")
         print(f"[Admin Broadcast] Subject: {request.subject}")
+        print(f"[Admin Broadcast] Categories: {request.categories}")
         
-        # Call Base44 sendBroadcastEmail function
-        result = await call_spynners_function("sendBroadcastEmail", {
-            "subject": request.subject,
-            "message": request.message,
-            "recipientType": request.recipient_type,
-            "category": request.category,
-            "individualEmail": request.individual_email,
-            "genreFilter": request.genre_filter,
-            "includeTracks": request.include_tracks,
-        }, authorization)
+        headers = {
+            "Content-Type": "application/json",
+            "X-Base44-App-Id": BASE44_APP_ID,
+            "Authorization": authorization
+        }
         
-        if result:
-            sent_count = result.get('sentCount', 0) if isinstance(result, dict) else 0
-            print(f"[Admin Broadcast] Email sent successfully to {sent_count} recipients")
+        sent_count = 0
+        errors = []
+        
+        async with httpx.AsyncClient(timeout=60.0) as http_client:
+            if request.recipient_type == 'individual' and request.individual_email:
+                # Send to individual
+                try:
+                    response = await http_client.post(
+                        f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/integrations/Core/SendEmail",
+                        headers=headers,
+                        json={
+                            "to": request.individual_email,
+                            "subject": request.subject,
+                            "html": request.message,
+                        }
+                    )
+                    if response.status_code in [200, 201]:
+                        sent_count = 1
+                        print(f"[Admin Broadcast] Email sent to {request.individual_email}")
+                    else:
+                        print(f"[Admin Broadcast] Failed to send to {request.individual_email}: {response.text[:200]}")
+                        errors.append(f"Failed to send to {request.individual_email}")
+                except Exception as e:
+                    print(f"[Admin Broadcast] Error sending to {request.individual_email}: {e}")
+                    errors.append(str(e))
+                    
+            elif request.recipient_type == 'category' and (request.categories or request.category):
+                # Send to users in selected categories
+                categories_to_use = request.categories or ([request.category] if request.category else [])
+                
+                # Get users matching the categories
+                users_response = await http_client.get(
+                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User",
+                    params={"limit": 10000},
+                    headers=headers
+                )
+                
+                if users_response.status_code == 200:
+                    users = users_response.json()
+                    if isinstance(users, dict):
+                        users = users.get('items', users.get('users', []))
+                    
+                    # Filter users by category
+                    target_users = []
+                    for u in users:
+                        user_type = (u.get('user_type', '') or '').lower()
+                        if user_type in [c.lower() for c in categories_to_use]:
+                            target_users.append(u)
+                    
+                    print(f"[Admin Broadcast] Found {len(target_users)} users in categories {categories_to_use}")
+                    
+                    # Send emails to each user (batch)
+                    for u in target_users[:100]:  # Limit to 100 for safety
+                        email = u.get('email')
+                        if email:
+                            try:
+                                await http_client.post(
+                                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/integrations/Core/SendEmail",
+                                    headers=headers,
+                                    json={
+                                        "to": email,
+                                        "subject": request.subject,
+                                        "html": request.message,
+                                    }
+                                )
+                                sent_count += 1
+                            except Exception as e:
+                                errors.append(f"{email}: {str(e)}")
+                                
+            else:
+                # Send to all users
+                users_response = await http_client.get(
+                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/User",
+                    params={"limit": 10000},
+                    headers=headers
+                )
+                
+                if users_response.status_code == 200:
+                    users = users_response.json()
+                    if isinstance(users, dict):
+                        users = users.get('items', users.get('users', []))
+                    
+                    print(f"[Admin Broadcast] Sending to {len(users)} users")
+                    
+                    # Send emails to each user (batch)
+                    for u in users[:100]:  # Limit to 100 for safety
+                        email = u.get('email')
+                        if email:
+                            try:
+                                await http_client.post(
+                                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/integrations/Core/SendEmail",
+                                    headers=headers,
+                                    json={
+                                        "to": email,
+                                        "subject": request.subject,
+                                        "html": request.message,
+                                    }
+                                )
+                                sent_count += 1
+                            except Exception as e:
+                                errors.append(f"{email}: {str(e)}")
+        
+        # Save to BroadcastEmail entity for history
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as http_client:
+                await http_client.post(
+                    f"{BASE44_API_URL}/apps/{BASE44_APP_ID}/entities/BroadcastEmail",
+                    headers=headers,
+                    json={
+                        "subject": request.subject,
+                        "message": request.message,
+                        "recipient_type": request.recipient_type,
+                        "category": ','.join(request.categories) if request.categories else request.category,
+                        "recipient_count": sent_count,
+                        "sent_at": datetime.now().isoformat()
+                    }
+                )
+                print(f"[Admin Broadcast] Saved to history")
+        except Exception as e:
+            print(f"[Admin Broadcast] Failed to save history: {e}")
+        
+        if sent_count > 0:
             return {
                 "success": True,
-                "message": f"Email sent to {sent_count} recipients",
+                "message": f"Email envoyé à {sent_count} destinataire(s)",
                 "sent_count": sent_count,
-                "details": result
+                "errors": errors[:5] if errors else None  # Return first 5 errors
             }
-        
-        return {"success": False, "message": "Failed to send email"}
+        else:
+            return {
+                "success": False,
+                "message": "Aucun email envoyé",
+                "errors": errors[:5] if errors else None
+            }
         
     except HTTPException:
         raise
