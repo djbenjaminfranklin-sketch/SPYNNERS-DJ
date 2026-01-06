@@ -1030,6 +1030,10 @@ export default function SpynRecordScreen() {
             setCurrentAnalysis('Aucun track détecté');
             console.log('[SPYN Record] No track detected in audio sample');
           }
+        } catch (apiError: any) {
+          // API call failed - this could mean we're truly offline
+          console.error('[SPYN Record] API call failed:', apiError?.message);
+          setCurrentAnalysis('Erreur de connexion');
         }
       } else {
         setCurrentAnalysis('Pas d\'audio à analyser');
