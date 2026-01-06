@@ -4142,7 +4142,7 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         elements.append(Paragraph("📊 SESSIONS VALIDÉES", dj_header_style))
         elements.append(Spacer(1, 10))
         
-        session_table_data = [['#', 'DJ', 'Ville', 'Pays', 'Date', 'Début', 'Fin', 'Tracks', '💎']]
+        session_table_data = [['#', 'DJ', 'Lieu', 'Ville', 'Pays', 'Date', 'Début', 'Fin', 'Tracks', '💎']]
         
         # Add all sessions as rows
         row_num = 1
@@ -4168,18 +4168,21 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
                     except:
                         pass
                 
+                venue = session.get('venue') or ''
                 city = session.get('city') or ''
                 country = session.get('country') or ''
                 tracks_count = str(session.get('tracks_count', 0) or len(session.get('tracks', [])) or 0)
                 diamond = '✓' if session.get('diamond_awarded') else ''
                 
                 # Truncate long names
-                dj_display = dj_name[:25] + '...' if len(dj_name) > 25 else dj_name
-                city_display = city[:20] + '...' if len(city) > 20 else city
+                dj_display = dj_name[:20] + '...' if len(dj_name) > 20 else dj_name
+                venue_display = venue[:20] + '...' if len(venue) > 20 else venue
+                city_display = city[:15] + '...' if len(city) > 15 else city
                 
                 session_table_data.append([
                     str(row_num),
                     dj_display,
+                    venue_display,
                     city_display,
                     country,
                     session_date,
@@ -4191,7 +4194,7 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
                 row_num += 1
         
         # Create the sessions table
-        sessions_table = Table(session_table_data, colWidths=[1*cm, 5*cm, 4*cm, 3*cm, 2.5*cm, 1.5*cm, 1.5*cm, 1.5*cm, 1*cm])
+        sessions_table = Table(session_table_data, colWidths=[0.8*cm, 4*cm, 4*cm, 3*cm, 2*cm, 2.2*cm, 1.3*cm, 1.3*cm, 1.2*cm, 0.8*cm])
         sessions_table.setStyle(TableStyle([
             # Header row
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#9C27B0')),
