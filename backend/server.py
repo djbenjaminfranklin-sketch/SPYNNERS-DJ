@@ -4650,12 +4650,19 @@ async def export_admin_downloads_pdf(request: AdminDownloadsPDFRequest, authoriz
                                 start = datetime.strptime(request.start_date, '%Y-%m-%d')
                                 if track_dt.replace(tzinfo=None) < start:
                                     include = False
-                            if request.end_date:
+                                    print(f"[Admin Downloads PDF] Track excluded (before start): {track.get('title')} - {track_dt.date()} < {start.date()}")
+                            if request.end_date and include:
                                 end = datetime.strptime(request.end_date, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
                                 if track_dt.replace(tzinfo=None) > end:
                                     include = False
-                        except:
+                                    print(f"[Admin Downloads PDF] Track excluded (after end): {track.get('title')} - {track_dt.date()} > {end.date()}")
+                        except Exception as e:
+                            print(f"[Admin Downloads PDF] Date parse error for track {track.get('title')}: {e}")
                             pass
+                    elif not track_date and (request.start_date or request.end_date):
+                        # No date on track but filter is set - exclude
+                        include = False
+                        print(f"[Admin Downloads PDF] Track excluded (no date): {track.get('title')}")
                     
                     if include:
                         downloads.append({
