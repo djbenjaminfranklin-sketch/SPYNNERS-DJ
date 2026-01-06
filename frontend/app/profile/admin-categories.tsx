@@ -350,13 +350,7 @@ export default function AdminCategories() {
         </Text>
         {filteredUsers.slice(0, 100).map((u) => (
           <TouchableOpacity key={u.id} style={styles.userCard} onPress={() => openEditModal(u)}>
-            {u.avatar_url ? (
-              <Image source={{ uri: getDisplayAvatarUrl(u.avatar_url) }} style={styles.userAvatarImg} />
-            ) : (
-              <View style={styles.userAvatar}>
-                <Text style={styles.avatarText}>{u.full_name?.charAt(0).toUpperCase() || 'U'}</Text>
-              </View>
-            )}
+            <UserAvatar url={u.avatar_url} name={u.full_name} size={44} />
             <View style={styles.userInfo}>
               <View style={styles.userNameRow}>
                 <Text style={styles.userName}>{u.artist_name || u.full_name}</Text>
