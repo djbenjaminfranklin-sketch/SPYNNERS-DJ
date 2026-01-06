@@ -1047,6 +1047,17 @@ const translations: Record<Language, Record<string, string>> = {
     'offline.syncNow': 'Synchroniser',
     'offline.delete': 'Supprimer',
     'offline.tracks': 'tracks',
+    'offline.recording': 'En cours...',
+    'offline.syncing': 'Synchronisation...',
+    'offline.spynnersTracks': 'track(s) Spynners identifié(s)',
+    'offline.couldNotSync': 'enregistrement(s) non synchronisé(s)',
+    'offline.retry': 'Réessayer',
+    'offline.deleted': 'Supprimé',
+    'offline.sessionDeleted': 'La session a été supprimée.',
+    'offline.offlineTitle': 'Hors ligne',
+    'offline.mustBeOnline': 'Vous devez être connecté à Internet pour synchroniser.',
+    'offline.info': 'Info',
+    'offline.failures': 'échec(s)',
     
     // Tracks Management
     'tracks.manageYourTracks': 'Gérer vos Tracks',
