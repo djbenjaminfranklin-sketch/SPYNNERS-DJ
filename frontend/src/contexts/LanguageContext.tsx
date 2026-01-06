@@ -28,6 +28,8 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Admin
     'admin.results': 'Results',
+    'admin.previousBalance': 'Previous balance',
+    'admin.newBalance': 'New balance',
     
     // Auth
     'login.title': 'Sign In',
@@ -735,6 +737,8 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Admin
     'admin.results': 'Résultats',
+    'admin.previousBalance': 'Ancien solde',
+    'admin.newBalance': 'Nouveau solde',
     
     // Auth
     'login.title': 'Connexion',
