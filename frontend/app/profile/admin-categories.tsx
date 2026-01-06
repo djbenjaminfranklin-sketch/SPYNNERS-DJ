@@ -25,14 +25,11 @@ import AdminBadge from '../../src/components/AdminBadge';
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 const CATEGORIES = [
-  { id: 'dj_star', name: 'DJ Star', icon: 'star', color: '#FFD700', count: 0 },
-  { id: 'dj_resident', name: 'DJ Resident', icon: 'home', color: '#1a237e', count: 0 },
-  { id: 'dj_guest', name: 'DJ Guest', icon: 'globe', color: '#9C27B0', count: 0 },
-  { id: 'producer_star', name: 'Producer Star', icon: 'star', color: '#FF9800', count: 0 },
-  { id: 'producer', name: 'Producer', icon: 'musical-note', color: '#4CAF50', count: 0 },
-  { id: 'music_lover', name: 'Music Lover', icon: 'people', color: '#E91E63', count: 0 },
   { id: 'dj', name: 'DJ', icon: 'headset', color: '#2196F3', count: 0 },
-  { id: 'dj_producer', name: 'DJ/Producer', icon: 'disc', color: '#00BCD4', count: 0 },
+  { id: 'producer', name: 'Producer', icon: 'musical-note', color: '#4CAF50', count: 0 },
+  { id: 'both', name: 'DJ & Producer', icon: 'disc', color: '#00BCD4', count: 0 },
+  { id: 'music_lover', name: 'Music Lover', icon: 'people', color: '#E91E63', count: 0 },
+  { id: 'label', name: 'Label', icon: 'business', color: '#FF9800', count: 0 },
 ];
 
 type UserItem = {
