@@ -567,20 +567,23 @@ export default function AdminVIP() {
               </View>
 
               {/* Upload Button */}
-              <TouchableOpacity
-                style={[styles.uploadBtn, uploading && styles.uploadBtnDisabled]}
-                onPress={uploadVIPTrack}
-                disabled={uploading}
-              >
-                {uploading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <>
-                    <Ionicons name="cloud-upload" size={20} color="#fff" />
-                    <Text style={styles.uploadBtnText}>Uploader le Track V.I.P.</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+              {uploading ? (
+                <View style={styles.uploadProgressContainer}>
+                  <Text style={styles.uploadStatusText}>{uploadStatus}</Text>
+                  <View style={styles.progressBarContainer}>
+                    <View style={[styles.progressBar, { width: `${uploadProgress}%` }]} />
+                  </View>
+                  <Text style={styles.progressText}>{uploadProgress}%</Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.uploadBtn}
+                  onPress={uploadVIPTrack}
+                >
+                  <Ionicons name="cloud-upload" size={20} color="#fff" />
+                  <Text style={styles.uploadBtnText}>Uploader le Track V.I.P.</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </ScrollView>
         </View>
