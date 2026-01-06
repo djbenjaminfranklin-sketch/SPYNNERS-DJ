@@ -6,12 +6,9 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Alert,
   TextInput,
   ActivityIndicator,
   Image,
-  Modal,
-  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
