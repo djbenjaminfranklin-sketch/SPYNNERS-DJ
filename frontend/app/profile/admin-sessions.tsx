@@ -468,7 +468,7 @@ export default function AdminSessions() {
           
           <TouchableOpacity 
             style={[styles.exportBtn, exporting && styles.exportBtnDisabled]} 
-            onPress={exportPDF}
+            onPress={() => exportPDF()}
             disabled={exporting}
           >
             {exporting ? (
