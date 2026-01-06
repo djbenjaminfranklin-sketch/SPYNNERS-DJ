@@ -313,7 +313,7 @@ export default function AdminCategories() {
         <Ionicons name="search" size={20} color={Colors.textMuted} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search..."
+          placeholder="Rechercher..."
           placeholderTextColor={Colors.textMuted}
           value={searchQuery}
           onChangeText={setSearchQuery}
