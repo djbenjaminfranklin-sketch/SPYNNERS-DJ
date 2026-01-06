@@ -332,6 +332,10 @@ export default function AdminDashboard() {
             <Ionicons name="cloud-upload" size={18} color="#fff" />
             <Text style={styles.actionBtnText}>Sync ACRCloud</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#9C27B0' }]} onPress={debugACRCloud} disabled={processing}>
+            <Ionicons name="bug" size={18} color="#fff" />
+            <Text style={styles.actionBtnText}>Debug ACRCloud</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#FF5722' }]} onPress={cleanDuplicates}>
             <Ionicons name="warning" size={18} color="#fff" />
             <Text style={styles.actionBtnText}>Clean Duplicates</Text>
