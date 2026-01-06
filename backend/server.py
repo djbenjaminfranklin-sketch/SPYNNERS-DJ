@@ -4658,11 +4658,7 @@ async def export_admin_downloads_pdf(request: AdminDownloadsPDFRequest, authoriz
         downloads = []
         total_downloads = 0
         
-        if result:
-            if isinstance(result, dict):
-                tracks = result.get('tracks', result.get('items', []))
-            else:
-                tracks = result if isinstance(result, list) else []
+        if tracks:
             
             for track in tracks:
                 download_count = track.get('download_count', 0) or 0
