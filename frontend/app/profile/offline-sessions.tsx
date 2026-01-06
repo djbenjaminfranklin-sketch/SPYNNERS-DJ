@@ -93,26 +93,26 @@ export default function OfflineSessionsScreen() {
       
       if (identifiedTracks.length > 0) {
         Alert.alert(
-          '🎵 Synchronisation réussie !',
-          `${identifiedTracks.length} track(s) Spynners identifié(s) :\n\n${identifiedTracks.map(t => `• ${t.title}`).join('\n')}`,
+          '🎵 ' + t('admin.syncSuccess') + '!',
+          `${identifiedTracks.length} ${t('offline.spynnersTracks')}:\n\n${identifiedTracks.map(t => `• ${t.title}`).join('\n')}`,
           [{ text: 'OK' }]
         );
       } else if (synced > 0) {
         Alert.alert(
-          '✅ Synchronisation terminée',
-          `${synced} enregistrement(s) traité(s).\nAucun track Spynners identifié.`,
+          '✅ ' + t('admin.syncSuccess'),
+          `${synced} ${t('admin.processed')}.\n${t('admin.noSpynnersTrack')}.`,
           [{ text: 'OK' }]
         );
       } else if (failed > 0) {
         Alert.alert(
-          '❌ Erreur',
-          `${failed} enregistrement(s) n'ont pas pu être synchronisés.`,
-          [{ text: 'Réessayer', onPress: () => syncSession(session) }, { text: 'OK' }]
+          '❌ ' + t('common.error'),
+          `${failed} ${t('offline.couldNotSync')}.`,
+          [{ text: t('offline.retry'), onPress: () => syncSession(session) }, { text: 'OK' }]
         );
       }
     } catch (error) {
       console.error('Sync error:', error);
-      Alert.alert('Erreur', 'La synchronisation a échoué. Réessayez.');
+      Alert.alert(t('common.error'), t('admin.syncError'));
     } finally {
       setSyncingSessionId(null);
     }
@@ -131,25 +131,25 @@ export default function OfflineSessionsScreen() {
         const allSessions = await offlineService.getOfflineSessions();
         allSessions.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
         setSessions(allSessions);
-        Alert.alert('✅ Supprimé', 'La session a été supprimée.');
+        Alert.alert('✅ ' + t('offline.deleted'), t('offline.sessionDeleted'));
       } else {
-        Alert.alert('Erreur', 'Session non trouvée.');
+        Alert.alert(t('common.error'), t('admin.sessionNotFound'));
       }
     } catch (error) {
       console.error('[OfflineSessions] Delete error:', error);
-      Alert.alert('Erreur', 'Impossible de supprimer la session.');
+      Alert.alert(t('common.error'), t('admin.deleteError'));
     }
   };
 
   const syncAllSessions = async () => {
     if (!isOnline) {
-      Alert.alert('Hors ligne', 'Vous devez être connecté à Internet pour synchroniser.');
+      Alert.alert(t('offline.offlineTitle'), t('offline.mustBeOnline'));
       return;
     }
 
     const pendingSessions = sessions.filter(s => s.status === 'pending_sync');
     if (pendingSessions.length === 0) {
-      Alert.alert('Info', 'Aucune session à synchroniser.');
+      Alert.alert(t('offline.info'), t('admin.noSessionsToSync'));
       return;
     }
 
@@ -163,13 +163,13 @@ export default function OfflineSessionsScreen() {
       const identifiedTracks = results.filter(r => r.success && r.is_spynners_track);
       
       Alert.alert(
-        '🔄 Synchronisation terminée',
-        `${synced} enregistrement(s) traité(s)\n${identifiedTracks.length} track(s) Spynners identifié(s)${failed > 0 ? `\n${failed} échec(s)` : ''}`,
+        '🔄 ' + t('admin.syncSuccess'),
+        `${synced} ${t('admin.processed')}\n${identifiedTracks.length} ${t('offline.spynnersTracks')}${failed > 0 ? `\n${failed} ${t('offline.failures')}` : ''}`,
         [{ text: 'OK' }]
       );
     } catch (error) {
       console.error('Sync all error:', error);
-      Alert.alert('Erreur', 'La synchronisation a échoué.');
+      Alert.alert(t('common.error'), t('admin.syncError'));
     } finally {
       setSyncingSessionId(null);
     }
@@ -195,15 +195,15 @@ export default function OfflineSessionsScreen() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'recording':
-        return 'En cours...';
+        return t('offline.recording');
       case 'pending_sync':
-        return 'En attente';
+        return t('offline.pendingSync');
       case 'syncing':
-        return 'Synchronisation...';
+        return t('offline.syncing');
       case 'synced':
-        return 'Synchronisé';
+        return t('offline.synced');
       case 'error':
-        return 'Erreur';
+        return t('common.error');
       default:
         return status;
     }
@@ -231,7 +231,7 @@ export default function OfflineSessionsScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={CYAN_COLOR} />
-          <Text style={styles.loadingText}>Chargement...</Text>
+          <Text style={styles.loadingText}>{t('common.loading')}</Text>
         </View>
       </SafeAreaView>
     );
