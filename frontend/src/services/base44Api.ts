@@ -1629,7 +1629,7 @@ export const base44Profiles = {
           }
           
           // CRITICAL: Filter tracks where user is the REAL PRODUCER
-          // Filter by producer_id AND verify the artist name contains user's name
+          // Filter ONLY by title containing "Benjamin Franklin"
           const myTracks = allTracks.filter((t: any) => {
             const producerId = String(t.producer_id || '').trim();
             const targetId = String(userId).trim();
@@ -1639,15 +1639,12 @@ export const base44Profiles = {
               return false;
             }
             
-            // Second check: artist name or title must contain "Benjamin Franklin"
+            // Second check: TITLE must contain "Benjamin Franklin"
+            // (artist_name/producer_name can be wrong in database)
             const title = String(t.title || '').toLowerCase();
-            const artistName = String(t.artist_name || t.producer_name || '').toLowerCase();
             const searchName = 'benjamin franklin';
             
-            const hasNameInTitle = title.includes(searchName);
-            const hasNameInArtist = artistName.includes(searchName);
-            
-            const isMyProduction = hasNameInTitle || hasNameInArtist;
+            const isMyProduction = title.includes(searchName);
             
             if (isMyProduction) {
               console.log('[Profiles] ✓ My production:', t.title);
