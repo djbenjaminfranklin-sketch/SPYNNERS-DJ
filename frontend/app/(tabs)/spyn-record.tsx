@@ -941,35 +941,10 @@ export default function SpynRecordScreen() {
       
       // Send for analysis if we have audio
       if (audioBase64 && audioBase64.length > 0) {
-        // Check real online status using navigator.onLine
-        const isCurrentlyOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-        console.log('[SPYN Record] Sending to backend, isOffline state:', isOffline, ', navigator.onLine:', isCurrentlyOnline);
+        console.log('[SPYN Record] Sending audio for analysis, length:', audioBase64.length);
         
-        if (!isCurrentlyOnline) {
-          console.log('[SPYN Record] TRULY Offline - saving audio locally for later sync');
-          setCurrentAnalysis('📴 Mode hors-ligne - Enregistrement local');
-          
-          // Save to offline storage for later sync
-          try {
-            // Use the offline service to save the recording
-            await offlineService.saveOfflineRecording({
-              audioBase64: audioBase64,
-              timestamp: new Date().toISOString(),
-              userId: user?.id || 'unknown',
-              djName: user?.full_name || 'DJ',
-            });
-            
-            // Update pending count
-            const pendingCount = await offlineService.getPendingCount();
-            setPendingSyncCount(pendingCount);
-            
-            setCurrentAnalysis('📴 Audio enregistré localement');
-            console.log('[SPYN Record] Audio saved to offline session');
-          } catch (offlineError) {
-            console.error('[SPYN Record] Offline save error:', offlineError);
-            setCurrentAnalysis('⚠️ Erreur sauvegarde locale');
-          }
-        } else {
+        // ALWAYS try to send to backend first - only go offline if it fails
+        try {
           // Online mode - send to backend
           console.log('[SPYN Record] Sending audio to backend for recognition...');
           
