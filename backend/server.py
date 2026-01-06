@@ -4513,10 +4513,10 @@ async def export_sessions_pdf(request: AnalyticsCSVRequest, authorization: str =
 
 @app.get("/api/uploads/{filename}")
 @app.head("/api/uploads/{filename}")
-async def serve_uploaded_file(filename: str, request: Request = None):
-    """Serve uploaded audio/image files with proper streaming support"""
+async def serve_uploaded_file(filename: str, request: Request):
+    """Serve uploaded audio/image files with proper streaming support for iOS"""
     import os
-    from fastapi.responses import FileResponse, Response
+    from fastapi.responses import FileResponse, Response, StreamingResponse
     
     uploads_dir = "/app/backend/uploads"
     file_path = os.path.join(uploads_dir, filename)
@@ -4543,24 +4543,67 @@ async def serve_uploaded_file(filename: str, request: Request = None):
     }
     content_type = content_types.get(ext, 'application/octet-stream')
     
-    headers = {
-        "Accept-Ranges": "bytes",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Expose-Headers": "Content-Length, Content-Range",
-        "Content-Length": str(file_size),
-        "Content-Type": content_type,
-        "Cache-Control": "public, max-age=86400"
-    }
-    
     # Handle HEAD request
-    if request and request.method == "HEAD":
-        return Response(headers=headers)
+    if request.method == "HEAD":
+        return Response(
+            headers={
+                "Accept-Ranges": "bytes",
+                "Content-Length": str(file_size),
+                "Content-Type": content_type,
+                "Access-Control-Allow-Origin": "*",
+            }
+        )
     
+    # Handle Range requests (required for iOS streaming)
+    range_header = request.headers.get("range")
+    
+    if range_header:
+        # Parse range header
+        range_match = range_header.replace("bytes=", "").split("-")
+        start = int(range_match[0]) if range_match[0] else 0
+        end = int(range_match[1]) if range_match[1] else file_size - 1
+        
+        # Ensure valid range
+        start = max(0, start)
+        end = min(end, file_size - 1)
+        content_length = end - start + 1
+        
+        # Create streaming response for range request
+        def iter_file():
+            with open(file_path, 'rb') as f:
+                f.seek(start)
+                remaining = content_length
+                while remaining > 0:
+                    chunk_size = min(8192, remaining)
+                    data = f.read(chunk_size)
+                    if not data:
+                        break
+                    remaining -= len(data)
+                    yield data
+        
+        return StreamingResponse(
+            iter_file(),
+            status_code=206,
+            media_type=content_type,
+            headers={
+                "Accept-Ranges": "bytes",
+                "Content-Range": f"bytes {start}-{end}/{file_size}",
+                "Content-Length": str(content_length),
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges",
+            }
+        )
+    
+    # No range header - return full file
     return FileResponse(
         file_path,
         media_type=content_type,
-        headers=headers,
-        stat_result=os.stat(file_path)
+        headers={
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(file_size),
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Expose-Headers": "Content-Length, Content-Range, Accept-Ranges",
+        }
     )
 
 # ==================== HEALTH CHECK ====================
