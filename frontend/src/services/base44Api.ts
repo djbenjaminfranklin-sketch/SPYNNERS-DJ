@@ -655,41 +655,76 @@ export const base44Users = {
     try {
       console.log('[Users] Listing users with filters:', filters);
       
-      // Fetch all users with pagination to get more than 500
+      // Try to fetch as many users as possible in one request
+      // Base44 might have a max limit, so we try different approaches
       const allUsers: User[] = [];
-      let offset = 0;
-      const pageSize = 200;
-      const maxUsers = filters?.limit || 2000; // Default to 2000 max
       
-      while (allUsers.length < maxUsers) {
+      // First attempt: Try to get all users with high limit
+      try {
         const params = new URLSearchParams();
-        params.append('limit', String(pageSize));
-        params.append('offset', String(offset));
+        params.append('limit', '1000'); // Try max limit
         if (filters?.user_type) params.append('user_type', filters.user_type);
         if (filters?.search) params.append('search', filters.search);
 
         const response = await mobileApi.get(`/api/base44/entities/User?${params.toString()}`);
-        
         const data = response.data;
-        let users: User[] = [];
-        if (Array.isArray(data)) users = data;
-        else if (data?.items) users = data.items;
         
-        console.log('[Users] Fetched', users.length, 'users at offset', offset);
+        if (Array.isArray(data) && data.length > 0) {
+          console.log('[Users] Got', data.length, 'users with limit 1000');
+          allUsers.push(...data);
+        } else if (data?.items && data.items.length > 0) {
+          console.log('[Users] Got', data.items.length, 'users from items');
+          allUsers.push(...data.items);
+        }
+      } catch (e) {
+        console.log('[Users] High limit request failed:', e);
+      }
+      
+      // If we got some users but less than expected, try pagination with skip
+      if (allUsers.length > 0 && allUsers.length < 800) {
+        let skip = allUsers.length;
+        let attempts = 0;
+        const maxAttempts = 10;
         
-        if (users.length === 0) break; // No more users
-        
-        allUsers.push(...users);
-        offset += pageSize;
-        
-        if (users.length < pageSize) break; // Last page
+        while (attempts < maxAttempts) {
+          try {
+            const params = new URLSearchParams();
+            params.append('limit', '200');
+            params.append('skip', String(skip));
+            if (filters?.user_type) params.append('user_type', filters.user_type);
+            if (filters?.search) params.append('search', filters.search);
+            
+            const response = await mobileApi.get(`/api/base44/entities/User?${params.toString()}`);
+            const data = response.data;
+            let users: User[] = [];
+            
+            if (Array.isArray(data)) users = data;
+            else if (data?.items) users = data.items;
+            
+            console.log('[Users] Pagination skip', skip, 'got', users.length, 'users');
+            
+            if (users.length === 0) break;
+            
+            // Check for duplicates before adding
+            const existingIds = new Set(allUsers.map(u => u.id || u._id));
+            const newUsers = users.filter(u => !existingIds.has(u.id || u._id));
+            
+            if (newUsers.length === 0) break;
+            
+            allUsers.push(...newUsers);
+            skip += users.length;
+            attempts++;
+          } catch (e) {
+            console.log('[Users] Pagination failed at skip', skip);
+            break;
+          }
+        }
       }
       
       console.log('[Users] Total users fetched:', allUsers.length);
       return allUsers;
     } catch (error) {
       console.error('[Users] Error listing users, falling back to tracks:', error);
-      // Fallback: extract users from tracks
       return await this.fetchAllUsersFromTracks();
     }
   },
