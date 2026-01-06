@@ -68,7 +68,7 @@ export default function AdminUsers() {
   const loadUsers = async () => {
     try {
       // Use new backend endpoint for real user data
-      const response = await axios.get(`${BACKEND_URL}/api/admin/users?limit=1000`, {
+      const response = await axios.get(`${BACKEND_URL}/api/admin/users?limit=10000`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
