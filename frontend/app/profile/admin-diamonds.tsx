@@ -132,24 +132,46 @@ export default function AdminDiamonds() {
     
     setSending(true);
     try {
+      console.log(`[AdminDiamonds] Sending ${diamondAmount} diamonds to user ${selectedUser.id}`);
+      
       // Send diamonds to user via API with token
       const response = await axios.post(`${BACKEND_URL}/api/base44/add-diamonds`, {
         user_id: selectedUser.id,
         amount: parseInt(diamondAmount),
       }, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 30000  // 30 second timeout
       });
       
+      console.log('[AdminDiamonds] Response:', response.data);
+      
       if (response.data?.success) {
-        Alert.alert('✅ Succès', `${diamondAmount} Black Diamonds envoyés à ${selectedUser?.full_name || selectedUser?.artist_name}!`);
+        const prevBalance = response.data?.previous_balance || 0;
+        const newBalance = response.data?.new_balance || parseInt(diamondAmount);
+        Alert.alert(
+          '✅ Succès', 
+          `${diamondAmount} Black Diamonds envoyés à ${selectedUser?.full_name || selectedUser?.artist_name}!\n\nAncien solde: ${prevBalance}\nNouveau solde: ${newBalance}`
+        );
         setShowSendModal(false);
         loadUsers(); // Refresh the list
       } else {
-        Alert.alert('Erreur', response.data?.error || 'Impossible d\'envoyer les diamonds.');
+        Alert.alert('Erreur', response.data?.error || response.data?.message || 'Impossible d\'envoyer les diamonds.');
       }
     } catch (error: any) {
       console.error('[AdminDiamonds] Send error:', error);
-      Alert.alert('Erreur', error.response?.data?.detail || 'Impossible d\'envoyer les diamonds.');
+      console.error('[AdminDiamonds] Error response:', error.response?.data);
+      
+      // More detailed error message
+      let errorMsg = 'Impossible d\'envoyer les diamonds.';
+      if (error.response?.data?.detail) {
+        errorMsg = error.response.data.detail;
+      } else if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      
+      Alert.alert('Erreur', errorMsg);
     } finally {
       setSending(false);
     }
