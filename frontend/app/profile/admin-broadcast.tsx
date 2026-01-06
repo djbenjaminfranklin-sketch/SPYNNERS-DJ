@@ -116,7 +116,18 @@ export default function AdminBroadcast() {
         avatar_url: u.avatar_url || u.generated_avatar_url,
       })));
       setRecentTracks(tracksRes.data?.tracks || []);
-      setBroadcastHistory(historyRes.data?.broadcasts || []);
+      // Map broadcast history with correct field names
+      const mappedHistory = (historyRes.data?.broadcasts || []).map((b: any) => ({
+        id: b.id,
+        subject: b.subject,
+        message: b.message,
+        recipient_type: b.recipient_type,
+        recipient_count: b.recipient_count || 0,
+        sent_at: b.sent_at || b.created_date,
+        sent_by: b.sent_by,
+        category: b.category || (b.categories?.length > 0 ? b.categories.join(', ') : null),
+      }));
+      setBroadcastHistory(mappedHistory);
       
       console.log('[AdminBroadcast] Loaded - Users:', userTotal, 'Tracks:', tracksRes.data?.tracks?.length || 0);
     } catch (error) {
