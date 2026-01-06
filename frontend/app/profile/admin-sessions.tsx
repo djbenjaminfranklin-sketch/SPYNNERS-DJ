@@ -214,7 +214,7 @@ export default function AdminSessions() {
       
       // Generate filename
       let filename = singleSession 
-        ? `session_${singleSession.dj_name.replace(/\s+/g, '_')}_${singleSession.started_at?.split('T')[0] || 'unknown'}.pdf`
+        ? `session_${(singleSession.dj_name || 'unknown').replace(/\s+/g, '_')}_${singleSession.started_at?.split('T')[0] || 'unknown'}.pdf`
         : 'spynners_all_sessions';
       
       if (!singleSession) {
