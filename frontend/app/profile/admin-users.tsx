@@ -328,7 +328,8 @@ export default function AdminUsers() {
               </TouchableOpacity>
             </View>
           </View>
-        ))}
+          );
+        })}
         <View style={{ height: 40 }} />
       </ScrollView>
 
