@@ -613,9 +613,12 @@ const styles = StyleSheet.create({
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   detailLabel: { fontSize: 12, color: Colors.textMuted },
   detailValue: { fontSize: 12, color: Colors.text, fontWeight: '500' },
+  noAudioValue: { color: '#F44336' },
   
   // Play button
   playBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, paddingVertical: 12, borderRadius: BorderRadius.md, marginTop: Spacing.md },
+  noAudioBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#666', paddingVertical: 12, borderRadius: BorderRadius.md, marginTop: Spacing.md },
+  modalImagePlaceholder: { justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.backgroundInput },
   
   modalActions: { flexDirection: 'row', gap: Spacing.md, marginTop: Spacing.lg },
   approveBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#4CAF50', paddingVertical: 12, borderRadius: BorderRadius.md },
