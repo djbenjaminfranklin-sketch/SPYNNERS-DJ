@@ -31,6 +31,12 @@ type Download = {
   track_title: string;
   producer: string;
   genre: string;
+  download_count?: number;
+};
+
+type DateFilter = {
+  startDate: string;
+  endDate: string;
 };
 
 export default function AdminDownloads() {
@@ -40,6 +46,19 @@ export default function AdminDownloads() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  
+  // Date filter state
+  const [dateFilter, setDateFilter] = useState<DateFilter>({
+    startDate: '',
+    endDate: '',
+  });
+  const [tempDateFilter, setTempDateFilter] = useState<DateFilter>({
+    startDate: '',
+    endDate: '',
+  });
+
   const [stats, setStats] = useState({
     total: 0,
     unique_djs: 0,
