@@ -104,18 +104,62 @@ export default function AdminDiamonds() {
   };
 
   const sendDiamondsToAll = () => {
+    setSendAllAmount('');
+    setShowSendAllModal(true);
+  };
+
+  const executeSendToAll = async () => {
+    const amount = parseInt(sendAllAmount);
+    if (!sendAllAmount || amount <= 0) {
+      Alert.alert('Erreur', 'Veuillez entrer un montant valide');
+      return;
+    }
+
     Alert.alert(
-      'Envoyer à tous',
-      'Combien de Black Diamonds voulez-vous envoyer à tous les utilisateurs?',
+      'Confirmer',
+      `Êtes-vous sûr de vouloir envoyer ${amount} Black Diamond${amount > 1 ? 's' : ''} à ${users.length} utilisateurs ?`,
       [
         { text: 'Annuler', style: 'cancel' },
-        { 
-          text: 'Envoyer 10 💎', 
+        {
+          text: 'Confirmer',
+          style: 'destructive',
           onPress: async () => {
-            // TODO: Implement bulk send via API
-            Alert.alert('Info', 'Cette fonctionnalité nécessite un endpoint API spécifique.');
+            setSendingAll(true);
+            setSendAllProgress({ current: 0, total: users.length });
+            
+            let successCount = 0;
+            let errorCount = 0;
+            
+            for (let i = 0; i < users.length; i++) {
+              const u = users[i];
+              try {
+                await axios.post(`${BACKEND_URL}/api/base44/add-diamonds`, {
+                  user_id: u.id,
+                  email: u.email,
+                  amount: amount,
+                }, {
+                  headers: { Authorization: `Bearer ${token}` },
+                  timeout: 10000
+                });
+                successCount++;
+              } catch (error) {
+                console.error(`[SendAll] Error for ${u.email}:`, error);
+                errorCount++;
+              }
+              setSendAllProgress({ current: i + 1, total: users.length });
+            }
+            
+            setSendingAll(false);
+            setShowSendAllModal(false);
+            
+            Alert.alert(
+              '✅ Terminé',
+              `${amount} Black Diamond${amount > 1 ? 's' : ''} envoyé${amount > 1 ? 's' : ''} !\n\n✅ Succès: ${successCount}\n❌ Erreurs: ${errorCount}`
+            );
+            
+            loadUsers(); // Refresh the list
           }
-        },
+        }
       ]
     );
   };
