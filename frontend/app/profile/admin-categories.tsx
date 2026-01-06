@@ -165,22 +165,7 @@ export default function AdminCategories() {
     if (activeFilter !== 'all') {
       filtered = filtered.filter(u => {
         const userType = (u.user_type || '').toLowerCase().trim();
-        const filterId = activeFilter.toLowerCase();
-        
-        if (userType === filterId) return true;
-        if (userType.replace(/[\s_-]/g, '') === filterId.replace(/[\s_-]/g, '')) return true;
-        
-        // Handle special cases
-        if (filterId === 'dj' && userType === 'dj') return true;
-        if (filterId === 'dj_star' && (userType === 'dj_star' || userType === 'djstar' || userType === 'dj star')) return true;
-        if (filterId === 'dj_resident' && (userType === 'dj_resident' || userType === 'djresident' || userType === 'dj resident')) return true;
-        if (filterId === 'dj_guest' && (userType.includes('guest') || userType === 'dj_guest' || userType === 'djguest')) return true;
-        if (filterId === 'dj_producer' && (userType === 'dj_producer' || userType === 'djproducer' || userType === 'dj/producer')) return true;
-        if (filterId === 'producer' && userType === 'producer') return true;
-        if (filterId === 'producer_star' && (userType === 'producer_star' || userType === 'producerstar' || userType === 'producer star')) return true;
-        if (filterId === 'music_lover' && (userType === 'music_lover' || userType === 'musiclover' || userType === 'music lover' || userType === 'fan')) return true;
-        
-        return false;
+        return userType === activeFilter.toLowerCase();
       });
     }
     
