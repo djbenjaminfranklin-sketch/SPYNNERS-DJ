@@ -3045,17 +3045,20 @@ async def admin_add_diamonds(request: AdminAddDiamondsRequest, authorization: st
         if not authorization:
             raise HTTPException(status_code=401, detail="Authorization required")
         
-        print(f"[Admin Diamonds] Adding {request.amount} diamonds to user {request.user_id}")
+        print(f"[Admin Diamonds] Adding {request.amount} diamonds to user {request.user_id} (email: {request.email})")
         
         # Use giveBlackDiamonds Spynners function
+        # Try different parameter combinations that the function might expect
         body = {
             "userId": request.user_id,
+            "user_id": request.user_id,  # Alternative param name
             "amount": request.amount
         }
         
-        # Also add email if available
+        # Add email if available - this is required by giveBlackDiamonds
         if request.email:
             body["email"] = request.email
+            body["userEmail"] = request.email  # Alternative param name
         
         print(f"[Admin Diamonds] Calling giveBlackDiamonds with: {body}")
         
