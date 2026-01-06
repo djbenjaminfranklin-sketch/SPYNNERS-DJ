@@ -964,19 +964,41 @@ export default function SpynRecordScreen() {
           if (response.data.success && response.data.title) {
             const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
             
-            // Check if this EXACT track (by title) was already identified in this session
-            // We use the ref to get the latest state
-            const isDuplicate = identifiedTracksRef.current.some(
-              t => t.title.toLowerCase() === response.data.title.toLowerCase()
-            );
+            // IMPROVED DEDUPLICATION: Normalize title for comparison
+            // Remove extra spaces, special characters, and convert to lowercase
+            const normalizeTitle = (title: string) => {
+              return title
+                .toLowerCase()
+                .replace(/[^\w\s]/g, '') // Remove special characters
+                .replace(/\s+/g, ' ')    // Normalize spaces
+                .trim();
+            };
             
-            console.log('[SPYN Record] Checking duplicate:', response.data.title, 'Already identified:', identifiedTracksRef.current.map(t => t.title), 'isDuplicate:', isDuplicate);
+            const normalizedNewTitle = normalizeTitle(response.data.title);
+            const normalizedNewArtist = response.data.artist ? normalizeTitle(response.data.artist) : '';
+            
+            // Check if this track (by normalized title AND artist) was already identified
+            const isDuplicate = identifiedTracksRef.current.some(t => {
+              const existingTitle = normalizeTitle(t.title);
+              const existingArtist = normalizeTitle(t.artist || '');
+              
+              // Match if title is the same, or if both title and artist match closely
+              return existingTitle === normalizedNewTitle || 
+                     (existingTitle.includes(normalizedNewTitle) || normalizedNewTitle.includes(existingTitle));
+            });
+            
+            console.log('[SPYN Record] Dedup check:', {
+              newTitle: response.data.title,
+              normalizedNewTitle,
+              existingTracks: identifiedTracksRef.current.map(t => t.title),
+              isDuplicate
+            });
             
             if (!isDuplicate) {
               const newTrack: IdentifiedTrack = {
-                id: `${Date.now()}`,
+                id: `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 title: response.data.title,
-                artist: response.data.artist,
+                artist: response.data.artist || 'Unknown Artist',
                 timestamp: formatDuration(elapsedTime),
                 elapsedTime,
                 coverImage: response.data.cover_image,
@@ -987,15 +1009,21 @@ export default function SpynRecordScreen() {
               // Update ref FIRST to prevent race conditions
               identifiedTracksRef.current = [...identifiedTracksRef.current, newTrack];
               
-              setIdentifiedTracks(prev => [...prev, newTrack]);
+              // Force UI update with functional setState
+              setIdentifiedTracks(prevTracks => {
+                const updatedTracks = [...prevTracks, newTrack];
+                console.log('[SPYN Record] UI State updated, total tracks:', updatedTracks.length);
+                return updatedTracks;
+              });
+              
               setCurrentAnalysis(`✅ ${response.data.title}`);
               
-              console.log('[SPYN Record] ✅ NEW Track identified:', newTrack);
+              console.log('[SPYN Record] ✅ NEW Track identified:', newTrack.title, '- Total:', identifiedTracksRef.current.length);
               
               // Send email immediately to the producer
               sendEmailForTrack(newTrack);
             } else {
-              setCurrentAnalysis(`⏭️ ${response.data.title} (déjà identifié)`);
+              setCurrentAnalysis(`⏭️ Déjà identifié`);
               console.log('[SPYN Record] Track already identified, skipping:', response.data.title);
             }
           } else {
