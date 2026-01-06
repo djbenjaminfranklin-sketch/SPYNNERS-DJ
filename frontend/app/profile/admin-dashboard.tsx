@@ -347,17 +347,45 @@ export default function AdminDashboard() {
               setSelectedTrack(track);
               setShowDetailModal(true);
             }}>
-              {track.artwork_url ? (
-                <Image source={{ uri: track.artwork_url }} style={styles.trackImage} />
-              ) : (
-                <View style={styles.trackImagePlaceholder}>
-                  <Ionicons name="musical-note" size={24} color={Colors.textMuted} />
-                </View>
-              )}
+              {/* Artwork with play button overlay */}
+              <View style={styles.trackImageContainer}>
+                {track.artwork_url ? (
+                  <Image source={{ uri: track.artwork_url }} style={styles.trackImage} />
+                ) : (
+                  <View style={styles.trackImagePlaceholder}>
+                    <Ionicons name="musical-note" size={24} color={Colors.textMuted} />
+                  </View>
+                )}
+                {/* Play button overlay */}
+                {track.audio_url ? (
+                  <TouchableOpacity 
+                    style={styles.playOverlay} 
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handlePlayTrack(track);
+                    }}
+                  >
+                    <Ionicons 
+                      name={currentTrack?.id === track.id && globalIsPlaying ? "pause" : "play"} 
+                      size={20} 
+                      color="#fff" 
+                    />
+                  </TouchableOpacity>
+                ) : (
+                  <View style={[styles.playOverlay, styles.noAudioOverlay]}>
+                    <Ionicons name="volume-mute" size={16} color="#fff" />
+                  </View>
+                )}
+              </View>
               <View style={styles.trackInfo}>
                 <Text style={styles.trackTitle} numberOfLines={1}>{track.title}</Text>
                 <Text style={styles.trackArtist}>{track.artist}</Text>
-                <Text style={styles.trackGenre}>{track.genre}</Text>
+                <View style={styles.trackMeta}>
+                  <Text style={styles.trackGenre}>{track.genre}</Text>
+                  {!track.audio_url && (
+                    <Text style={styles.noAudioText}>Pas d'audio</Text>
+                  )}
+                </View>
               </View>
               <View style={[styles.statusBadge, track.status === 'approved' && styles.statusApproved]}>
                 <Text style={styles.statusText}>{track.status}</Text>
