@@ -4024,12 +4024,12 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         
         # Summary stats
         total_djs = len(sessions_by_dj)
-        total_sessions = sum(len(sessions) for sessions in sessions_by_dj.values())
-        total_tracks = len(filtered_plays)
+        total_sessions_count = len(filtered_sessions)
+        total_tracks = sum(s.get('tracks_detected', 0) or s.get('track_count', 0) or 0 for s in filtered_sessions)
         
         summary_data = [
             ['DJs Uniques', 'Sessions Totales', 'Tracks Détectées'],
-            [str(total_djs), str(total_sessions), str(total_tracks)]
+            [str(total_djs), str(total_sessions_count), str(total_tracks)]
         ]
         
         summary_table = Table(summary_data, colWidths=[6*cm, 6*cm, 6*cm])
@@ -4050,47 +4050,45 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         elements.append(summary_table)
         elements.append(Spacer(1, 30))
         
-        # Sessions by DJ
+        # Sessions by DJ - table format like the web version
         for dj_name, dj_sessions in sorted(sessions_by_dj.items()):
             # DJ Header
-            dj_track_count = sum(len(tracks) for tracks in dj_sessions.values())
+            dj_track_count = sum(s.get('tracks_detected', 0) or s.get('track_count', 0) or 0 for s in dj_sessions)
             elements.append(Paragraph(f"🎧 {dj_name} ({len(dj_sessions)} sessions, {dj_track_count} tracks)", dj_header_style))
             
-            # Sessions for this DJ
-            for session_date, tracks in sorted(dj_sessions.items(), reverse=True):
-                elements.append(Paragraph(f"📅 Session du {session_date} ({len(tracks)} tracks)", session_header_style))
+            # Sessions table for this DJ
+            session_data = [['Date', 'Lieu', 'Statut', 'Tracks']]
+            for session in sorted(dj_sessions, key=lambda x: x.get('started_at', '') or '', reverse=True):
+                session_date = ''
+                if session.get('_parsed_date'):
+                    session_date = session['_parsed_date'].strftime('%d/%m/%Y %H:%M')
+                elif session.get('started_at'):
+                    session_date = session['started_at'][:16].replace('T', ' ')
                 
-                # Tracks table
-                track_data = [['#', 'Track', 'Artiste', 'Heure', 'Lieu']]
-                for idx, track in enumerate(tracks[:20], 1):  # Limit to 20 tracks per session
-                    track_title = track.get('track_title') or track.get('title') or 'Unknown'
-                    artist = track.get('artist_name') or track.get('artist') or '-'
-                    time_str = ''
-                    if track.get('_parsed_date'):
-                        time_str = track['_parsed_date'].strftime('%H:%M')
-                    location = track.get('city') or track.get('location') or '-'
-                    
-                    track_data.append([str(idx), track_title[:40], artist[:25], time_str, location[:20]])
+                city = session.get('city') or session.get('location') or '-'
+                status = session.get('status', 'ended')
+                status_text = 'Terminée' if status == 'ended' else ('Active' if status == 'active' else status)
+                tracks = str(session.get('tracks_detected', 0) or session.get('track_count', 0) or 0)
                 
-                if len(track_data) > 1:
-                    track_table = Table(track_data, colWidths=[1*cm, 9*cm, 6*cm, 2*cm, 4*cm])
-                    track_table.setStyle(TableStyle([
-                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#FF9800')),
-                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                        ('ALIGN', (0, 0), (0, -1), 'CENTER'),
-                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                        ('FONTSIZE', (0, 0), (-1, 0), 9),
-                        ('FONTSIZE', (0, 1), (-1, -1), 8),
-                        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-                        ('TOPPADDING', (0, 1), (-1, -1), 4),
-                        ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
-                        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#FAFAFA')]),
-                        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#EEEEEE')),
-                    ]))
-                    elements.append(track_table)
-                
-                elements.append(Spacer(1, 10))
+                session_data.append([session_date, city[:30], status_text, tracks])
+            
+            if len(session_data) > 1:
+                session_table = Table(session_data, colWidths=[5*cm, 8*cm, 3*cm, 2*cm])
+                session_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#00BCD4')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('ALIGN', (-1, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 10),
+                    ('FONTSIZE', (0, 1), (-1, -1), 9),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                    ('TOPPADDING', (0, 1), (-1, -1), 6),
+                    ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F5F5F5')]),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#DDDDDD')),
+                ]))
+                elements.append(session_table)
             
             elements.append(Spacer(1, 20))
         
@@ -4100,7 +4098,7 @@ async def export_admin_sessions_pdf(request: AdminSessionsPDFRequest, authorizat
         pdf_content = buffer.getvalue()
         buffer.close()
         
-        print(f"[Admin Sessions PDF] PDF generated: {len(pdf_content)} bytes, {total_djs} DJs, {total_sessions} sessions")
+        print(f"[Admin Sessions PDF] PDF generated: {len(pdf_content)} bytes, {total_djs} DJs, {total_sessions_count} sessions")
         
         # Generate filename
         filename = f"spynners_all_sessions"
