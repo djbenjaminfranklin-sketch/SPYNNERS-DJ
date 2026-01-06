@@ -1062,6 +1062,12 @@ export default function SpynRecordScreen() {
       return;
     }
     
+    // IMPORTANT: Only send email if we're at a valid venue (club, bar, restaurant, etc.)
+    if (!location?.is_valid_venue) {
+      console.log(`[SPYN Record] 📧 Skipping email for ${track.title} - not at a valid venue (home or unknown location)`);
+      return;
+    }
+    
     // Need either producerId or spynnersTrackId to send email
     if (!track.spynnersTrackId && !track.producerId) {
       console.log(`[SPYN Record] Skipping email for ${track.title} - no track ID or producer ID`);
@@ -1079,7 +1085,7 @@ export default function SpynRecordScreen() {
     try {
       const djName = user?.full_name || 'DJ';
       
-      console.log(`[SPYN Record] 📧 Sending email for: ${track.title}, trackId: ${track.spynnersTrackId}, producerId: ${track.producerId}`);
+      console.log(`[SPYN Record] 📧 Sending email for: ${track.title} at venue: ${location?.venue}, trackId: ${track.spynnersTrackId}, producerId: ${track.producerId}`);
       
       // Format expected by Spynners API
       const emailPayload = {
@@ -1091,6 +1097,7 @@ export default function SpynRecordScreen() {
         djAvatar: user?.avatar || '',
         playedAt: new Date().toISOString(),
         trackArtworkUrl: track.coverImage || '',
+        venue: location?.venue || 'Unknown Venue',
       };
       
       console.log('[SPYN Record] Email payload:', JSON.stringify(emailPayload));
