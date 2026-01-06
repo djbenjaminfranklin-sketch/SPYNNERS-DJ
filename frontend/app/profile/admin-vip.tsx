@@ -666,4 +666,11 @@ const styles = StyleSheet.create({
   uploadBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#E040FB', borderRadius: BorderRadius.md, padding: 16, marginTop: Spacing.xl },
   uploadBtnDisabled: { opacity: 0.6 },
   uploadBtnText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  
+  // Progress bar styles
+  uploadProgressContainer: { marginTop: Spacing.xl, padding: 16, backgroundColor: '#E040FB15', borderRadius: BorderRadius.md, borderWidth: 1, borderColor: '#E040FB40' },
+  uploadStatusText: { color: '#E040FB', fontSize: 14, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
+  progressBarContainer: { height: 8, backgroundColor: '#E040FB30', borderRadius: 4, overflow: 'hidden' },
+  progressBar: { height: '100%', backgroundColor: '#E040FB', borderRadius: 4 },
+  progressText: { color: '#E040FB', fontSize: 12, textAlign: 'center', marginTop: 8 },
 });
