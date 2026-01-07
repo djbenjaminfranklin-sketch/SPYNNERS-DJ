@@ -718,28 +718,20 @@ export default function SpynScreen() {
       return;
     }
     
-    // ONLINE MODE: Send to ACRCloud
+    // ONLINE MODE: Send to ACRCloud via Base44
     try {
-      console.log('[SPYN] Sending audio to ACRCloud...');
+      console.log('[SPYN] Sending audio to ACRCloud via Base44...');
       
-      const response = await axios.post(
-        `${BACKEND_URL}/api/recognize-audio`,
-        {
-          audio_base64: audioBase64,
-          location: location,
-          dj_id: user?.id,
-          dj_name: user?.full_name,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          timeout: 30000,
-        }
-      );
+      const response = await base44Spyn.recognizeAudio({
+        audio_data: audioBase64,
+        sample_rate: 44100,
+        channels: 1,
+        location: location,
+        dj_id: user?.id,
+        dj_name: user?.full_name,
+      });
 
-      console.log('[SPYN] ACRCloud Response:', JSON.stringify(response.data, null, 2));
+      console.log('[SPYN] ACRCloud Response:', JSON.stringify(response, null, 2));
 
       // ONLY show tracks that are found in Spynners database
       if (response.data.success && response.data.title && response.data.spynners_track_id) {
