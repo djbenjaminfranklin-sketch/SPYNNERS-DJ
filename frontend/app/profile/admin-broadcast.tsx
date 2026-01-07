@@ -190,58 +190,11 @@ export default function AdminBroadcast() {
       return;
     }
 
-    const recipientText = recipientType === 'all' 
-      ? t('broadcast.allUsers')
-      : recipientType === 'category' 
-        ? `${t('broadcast.categories')}: ${selectedCategories.map(c => CATEGORIES.find(cat => cat.id === c)?.name || c).join(', ')}`
-        : selectedRecipient?.email || individualEmail;
-
+    // Without backend, show info message
     Alert.alert(
-      t('broadcast.confirmSend'),
-      `${t('broadcast.sendEmailTo')} ${recipientText}?`,
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { 
-          text: t('admin.send'), 
-          onPress: async () => {
-            setSending(true);
-            try {
-              const response = await axios.post(
-                `${BACKEND_URL}/api/admin/broadcast`,
-                {
-                  subject: subject.trim(),
-                  message: message.trim(),
-                  recipient_type: recipientType,
-                  categories: recipientType === 'category' ? selectedCategories : null,
-                  individual_email: recipientType === 'individual' ? (selectedRecipient?.email || individualEmail.trim()) : null,
-                  include_tracks: message.includes('TRACKS RÉCENTES') || message.includes('RECENT TRACKS'),
-                  attachment_url: attachment?.url || null,
-                  attachment_name: attachment?.name || null,
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-
-              if (response.data?.success) {
-                Alert.alert(t('common.success') + ' ✅', `${t('broadcast.emailSentTo')} ${response.data.sent_count || t('broadcast.all')} ${t('broadcast.recipients')}!`);
-                setSubject('');
-                setMessage('');
-                setIndividualEmail('');
-                setSelectedRecipient(null);
-                setSelectedCategories([]);
-                setAttachment(null);
-                loadData(); // Refresh history
-              } else {
-                Alert.alert(t('common.error'), response.data?.message || t('broadcast.sendFailed'));
-              }
-            } catch (error: any) {
-              console.error('[AdminBroadcast] Send error:', error);
-              Alert.alert(t('common.error'), error?.response?.data?.detail || t('broadcast.sendFailed'));
-            } finally {
-              setSending(false);
-            }
-          }
-        },
-      ]
+      t('common.info') || 'Information',
+      t('broadcast.notAvailableOffline') || "L'envoi d'emails groupés nécessite un serveur. Utilisez Base44 Console ou un service email externe pour les broadcasts.",
+      [{ text: 'OK' }]
     );
   };
 
