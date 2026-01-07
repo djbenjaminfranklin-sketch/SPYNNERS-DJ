@@ -277,31 +277,16 @@ export default function AnalyticsScreen() {
   const handleExportCSV = async () => {
     try {
       setExportingCSV(true);
-      const userId = user?.id || user?._id || '';
+      console.log('[Analytics] Generating CSV locally...', { startDate: csvStartDate, endDate: csvEndDate });
+
+      // Generate CSV locally from topTracks data
+      const csvHeaders = 'Track Title,Genre,Plays,Downloads,Likes,Rating,Status\n';
+      const csvRows = topTracks.map(track => 
+        `"${track.title || ''}","${track.genre || ''}",${track.plays || 0},${track.downloads || 0},${track.likes || 0},${track.rating || 0},"${track.status || ''}"`
+      ).join('\n');
       
-      console.log('[Analytics] Exporting CSV via Base44 function...', { startDate: csvStartDate, endDate: csvEndDate });
-
-      const response = await fetch(
-        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/exportSessionsCSV`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_id: userId,
-            start_date: csvStartDate || null,
-            end_date: csvEndDate || null,
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Export failed');
-      }
-
-      const csvContent = data.csv_content;
-      const filename = data.filename || `spynners_sessions_${new Date().toISOString().slice(0, 10)}.csv`;
+      const csvContent = csvHeaders + csvRows;
+      const filename = `spynners_analytics_${new Date().toISOString().slice(0, 10)}.csv`;
 
       // Handle download based on platform
       if (Platform.OS === 'web') {
