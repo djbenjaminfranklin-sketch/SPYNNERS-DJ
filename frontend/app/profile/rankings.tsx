@@ -25,6 +25,7 @@ const BACKEND_URL = 'https://spyndevs.preview.emergentagent.com';
 export default function RankingsScreen() {
   const router = useRouter();
   const { t, language } = useLanguage();
+  const { playTrack, currentTrack, isPlaying, togglePlayPause } = usePlayer();
   const [activeTab, setActiveTab] = useState('plays');
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [tracks, setTracks] = useState<Track[]>([]);
