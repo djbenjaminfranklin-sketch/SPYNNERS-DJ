@@ -265,12 +265,71 @@ export default function AnalyticsScreen() {
   };
 
   const handleExportCSV = async () => {
-    // PDF export requires backend which is not available in production
-    Alert.alert(
-      t('common.info') || 'Information',
-      t('analytics.pdfNotAvailable') || "L'export PDF nécessite un serveur. Cette fonctionnalité sera disponible dans une prochaine mise à jour.",
-      [{ text: 'OK', onPress: () => setShowDatePicker(false) }]
-    );
+    try {
+      setExportingCSV(true);
+      const userId = user?.id || user?._id || '';
+      
+      console.log('[Analytics] Exporting CSV via Base44 function...', { startDate: csvStartDate, endDate: csvEndDate });
+
+      const response = await fetch(
+        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/exportSessionsCSV`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userId,
+            start_date: csvStartDate || null,
+            end_date: csvEndDate || null,
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Export failed');
+      }
+
+      const csvContent = data.csv_content;
+      const filename = data.filename || `spynners_sessions_${new Date().toISOString().slice(0, 10)}.csv`;
+
+      // Handle download based on platform
+      if (Platform.OS === 'web') {
+        // Web: Create blob and download
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        Alert.alert(t('common.success'), t('csv.success'));
+      } else {
+        // Mobile: Save to file and share
+        const fileUri = `${LegacyFileSystem.documentDirectory}${filename}`;
+        await LegacyFileSystem.writeAsStringAsync(fileUri, csvContent);
+
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (isAvailable) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'text/csv',
+            dialogTitle: 'Exporter le rapport CSV',
+          });
+        } else {
+          Alert.alert(t('common.success'), `Fichier enregistré: ${fileUri}`);
+        }
+      }
+
+      setShowDatePicker(false);
+    } catch (error: any) {
+      console.error('[Analytics] CSV export error:', error);
+      Alert.alert(t('common.error'), error.message || t('csv.error'));
+    } finally {
+      setExportingCSV(false);
+    }
   };
 
   const openDatePickerModal = () => {
