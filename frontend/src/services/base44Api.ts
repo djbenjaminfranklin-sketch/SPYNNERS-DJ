@@ -1259,19 +1259,31 @@ export const base44Files = {
             mimeType: actualMimeType,
           });
           
-          console.log('[Files] Upload result:', JSON.stringify(result));
+          console.log('[Files] Upload result (full):', JSON.stringify(result, null, 2));
+          console.log('[Files] Result keys:', result ? Object.keys(result) : 'null');
           
-          if (result && result.file_url) {
-            return { file_url: result.file_url, success: true, ...result };
-          } else if (result && result.url) {
-            return { file_url: result.url, success: true, ...result };
+          // Try to find file URL in various possible response formats
+          const fileUrl = result?.file_url || result?.fileUrl || result?.url || 
+                         result?.data?.file_url || result?.data?.url ||
+                         result?.result?.file_url || result?.result?.url;
+          
+          if (fileUrl) {
+            console.log('[Files] Found file URL:', fileUrl);
+            return { file_url: fileUrl, success: true, ...result };
           } else {
-            console.log('[Files] Result has no file_url:', result);
+            console.log('[Files] No file URL found in result:', result);
+            // If upload succeeded but no URL, construct one
+            if (result?.success || result?.filename || result?.file_id) {
+              const constructedUrl = `https://base44.app/api/apps/691a4d96d819355b52c063f3/files/public/691a4d96d819355b52c063f3/${result.filename || result.file_id || fileName}`;
+              console.log('[Files] Constructed URL:', constructedUrl);
+              return { file_url: constructedUrl, success: true, ...result };
+            }
             throw new Error('No file URL in response');
           }
         } catch (invokeError: any) {
           console.error('[Files] SDK invoke error:', invokeError);
-          console.error('[Files] Error details:', invokeError.message, invokeError.response?.data);
+          console.error('[Files] Error message:', invokeError.message);
+          console.error('[Files] Error response:', invokeError.response?.data);
           throw invokeError;
         }
       } else {
