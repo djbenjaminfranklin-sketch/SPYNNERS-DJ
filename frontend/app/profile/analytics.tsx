@@ -127,31 +127,16 @@ export default function AnalyticsScreen() {
       const allTracks = await base44Tracks.list({ limit: 500 });
       console.log('[Analytics] Total tracks loaded:', allTracks.length);
       
-      // Filter to get ONLY user's tracks - convert to string for comparison
+      // Filter to get ONLY user's tracks - use ONLY producer_id (not created_by_id which is admin)
       const myTracks = allTracks.filter((track: any) => {
         const trackProducerId = String(track.producer_id || '').trim();
-        const trackCreatedById = String(track.created_by_id || '').trim();
-        const trackUploadedBy = String(track.uploaded_by || '').trim();
-        const trackOwnerId = String((track as any).owner_id || '').trim();
-        
-        const isOwner = trackProducerId === userId || 
-               trackCreatedById === userId ||
-               trackUploadedBy === userId ||
-               trackOwnerId === userId;
+        // ONLY match by producer_id - this is the actual owner of the track
+        const isOwner = trackProducerId === userId && trackProducerId !== '';
         return isOwner;
       });
       
-      console.log('[Analytics] My tracks count:', myTracks.length);
+      console.log('[Analytics] My tracks count (by producer_id only):', myTracks.length);
       console.log('[Analytics] User ID being checked:', userId);
-      if (myTracks.length === 0 && allTracks.length > 0) {
-        // Debug: show first track's IDs
-        const sampleTrack = allTracks[0];
-        console.log('[Analytics] Sample track IDs:', {
-          producer_id: sampleTrack.producer_id,
-          created_by_id: sampleTrack.created_by_id,
-          uploaded_by: sampleTrack.uploaded_by
-        });
-      }
 
       // Calculate detailed stats
       let totalPlays = 0;
