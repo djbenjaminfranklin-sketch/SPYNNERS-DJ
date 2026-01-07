@@ -1915,6 +1915,93 @@ export const base44Notifications2 = {
   },
 };
 
+// ==================== PUSH NOTIFICATIONS SERVICE ====================
+
+export const base44PushNotifications = {
+  /**
+   * Register a push token for the current user
+   * This allows the user to receive push notifications on their device
+   */
+  async registerPushToken(userId: string, pushToken: string): Promise<boolean> {
+    try {
+      console.log('[PushNotifications] Registering push token for user:', userId);
+      console.log('[PushNotifications] Token:', pushToken.substring(0, 50) + '...');
+      
+      // Call the Base44 function to save the push token
+      const response = await mobileApi.post('/api/base44/functions/invoke/registerPushToken', {
+        user_id: userId,
+        push_token: pushToken,
+      });
+      
+      console.log('[PushNotifications] Token registered successfully:', response.data);
+      return true;
+    } catch (error: any) {
+      console.error('[PushNotifications] Error registering push token:', error?.message || error);
+      
+      // Fallback: Try to update the User entity directly
+      try {
+        console.log('[PushNotifications] Trying direct entity update...');
+        await mobileApi.put(`/api/base44/entities/User/${userId}`, {
+          push_token: pushToken,
+        });
+        console.log('[PushNotifications] Direct update successful');
+        return true;
+      } catch (fallbackError) {
+        console.error('[PushNotifications] Fallback also failed:', fallbackError);
+        return false;
+      }
+    }
+  },
+
+  /**
+   * Send a push notification to a specific user
+   * Called when sending a message to trigger notification on recipient's device
+   */
+  async sendPushNotification(params: {
+    recipientUserId: string;
+    senderName: string;
+    messageContent: string;
+    messageId?: string;
+  }): Promise<boolean> {
+    try {
+      console.log('[PushNotifications] Sending push notification to user:', params.recipientUserId);
+      
+      // Call the Base44 function to send the push notification
+      const response = await mobileApi.post('/api/base44/functions/invoke/sendPushNotification', {
+        recipient_user_id: params.recipientUserId,
+        sender_name: params.senderName,
+        message_content: params.messageContent,
+        message_id: params.messageId || '',
+      });
+      
+      console.log('[PushNotifications] Notification sent:', response.data);
+      return true;
+    } catch (error: any) {
+      console.error('[PushNotifications] Error sending notification:', error?.message || error);
+      return false;
+    }
+  },
+
+  /**
+   * Remove push token (on logout)
+   */
+  async removePushToken(userId: string): Promise<boolean> {
+    try {
+      console.log('[PushNotifications] Removing push token for user:', userId);
+      
+      await mobileApi.put(`/api/base44/entities/User/${userId}`, {
+        push_token: null,
+      });
+      
+      console.log('[PushNotifications] Token removed');
+      return true;
+    } catch (error) {
+      console.error('[PushNotifications] Error removing token:', error);
+      return false;
+    }
+  },
+};
+
 // ==================== PUBLIC PROFILES SERVICE ====================
 
 export const base44Profiles = {
