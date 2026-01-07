@@ -769,6 +769,15 @@ export const base44Tracks = {
 export const base44Users = {
   async list(filters?: { user_type?: string; search?: string; limit?: number }): Promise<User[]> {
     try {
+      // Generate cache key based on filters
+      const cacheKey = `users_${JSON.stringify(filters || {})}`;
+      
+      // Check cache first
+      const cachedUsers = getFromCache<User[]>(cacheKey);
+      if (cachedUsers) {
+        return cachedUsers;
+      }
+      
       console.log('[Users] Listing users with filters:', filters);
       
       // Use the admin users endpoint which can fetch all users (up to 10000)
@@ -778,12 +787,15 @@ export const base44Users = {
         
         if (Array.isArray(data) && data.length > 0) {
           console.log('[Users] Got', data.length, 'users from admin endpoint');
+          setCache(cacheKey, data, CACHE_DURATIONS.users);
           return data;
         } else if (data?.items && data.items.length > 0) {
           console.log('[Users] Got', data.items.length, 'users from items');
+          setCache(cacheKey, data.items, CACHE_DURATIONS.users);
           return data.items;
         } else if (data?.users && data.users.length > 0) {
           console.log('[Users] Got', data.users.length, 'users from users');
+          setCache(cacheKey, data.users, CACHE_DURATIONS.users);
           return data.users;
         }
       } catch (adminError) {
@@ -801,9 +813,13 @@ export const base44Users = {
       
       if (Array.isArray(data) && data.length > 0) {
         console.log('[Users] Got', data.length, 'users from entity API');
+        setCache(cacheKey, data, CACHE_DURATIONS.users);
         return data;
       }
-      if (data?.items && data.items.length > 0) return data.items;
+      if (data?.items && data.items.length > 0) {
+        setCache(cacheKey, data.items, CACHE_DURATIONS.users);
+        return data.items;
+      }
       
       // Last fallback: extract from tracks
       console.log('[Users] No users from APIs, trying tracks fallback...');
@@ -817,6 +833,15 @@ export const base44Users = {
   // Native function to get all users with pagination (for chat/members list)
   async nativeGetAllUsers(params?: { search?: string; limit?: number; offset?: number }): Promise<User[]> {
     try {
+      // Generate cache key
+      const cacheKey = `users_native_${JSON.stringify(params || {})}`;
+      
+      // Check cache first (shorter duration for search results)
+      const cachedUsers = getFromCache<User[]>(cacheKey);
+      if (cachedUsers && !params?.search) {
+        return cachedUsers;
+      }
+      
       console.log('[Users] Fetching all users via nativeGetAllUsers:', params);
       
       // Try direct Base44 entity API first (more reliable on mobile)
