@@ -984,8 +984,8 @@ export default function SpynRecordScreen() {
                 .trim();
             };
             
-            const normalizedNewTitle = normalizeTitle(response.data.title);
-            const normalizedNewArtist = response.data.artist ? normalizeTitle(response.data.artist) : '';
+            const normalizedNewTitle = normalizeTitle(response.title);
+            const normalizedNewArtist = response.artist ? normalizeTitle(response.artist) : '';
             
             // Check if this track (by normalized title AND artist) was already identified
             const isDuplicate = identifiedTracksRef.current.some(t => {
@@ -998,7 +998,7 @@ export default function SpynRecordScreen() {
             });
             
             console.log('[SPYN Record] Dedup check:', {
-              newTitle: response.data.title,
+              newTitle: response.title,
               normalizedNewTitle,
               existingTracks: identifiedTracksRef.current.map(t => t.title),
               isDuplicate
@@ -1007,13 +1007,13 @@ export default function SpynRecordScreen() {
             if (!isDuplicate) {
               const newTrack: IdentifiedTrack = {
                 id: `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                title: response.data.title,
-                artist: response.data.artist || 'Unknown Artist',
+                title: response.title,
+                artist: response.artist || 'Unknown Artist',
                 timestamp: formatDuration(elapsedTime),
                 elapsedTime,
-                coverImage: response.data.cover_image,
-                spynnersTrackId: response.data.spynners_track_id,
-                producerId: response.data.producer_id,
+                coverImage: response.cover_image,
+                spynnersTrackId: response.spynners_track_id,
+                producerId: response.producer_id,
               };
               
               // Update ref FIRST to prevent race conditions
@@ -1026,7 +1026,7 @@ export default function SpynRecordScreen() {
                 return updatedTracks;
               });
               
-              setCurrentAnalysis(`✅ ${response.data.title}`);
+              setCurrentAnalysis(`✅ ${response.title}`);
               
               console.log('[SPYN Record] ✅ NEW Track identified:', newTrack.title, '- Total:', identifiedTracksRef.current.length);
               
@@ -1034,7 +1034,7 @@ export default function SpynRecordScreen() {
               sendEmailForTrack(newTrack);
             } else {
               setCurrentAnalysis(`⏭️ Déjà identifié`);
-              console.log('[SPYN Record] Track already identified, skipping:', response.data.title);
+              console.log('[SPYN Record] Track already identified, skipping:', response.title);
             }
           } else {
             setCurrentAnalysis('Aucun track détecté');
