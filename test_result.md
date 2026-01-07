@@ -420,22 +420,16 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Push Notifications Registration"
-    - "Track Upload with Audio"
+    - "SPYN Detection Page - Base44 Migration"
+    - "SPYN Record Page - Base44 Migration"
+    - "Admin Diamonds Page - No Crash"
+    - "Admin Broadcast/Email Page - No Crash"
+    - "Rankings Page - Music Player Works"
+    - "Track Radar - Correct Track Count Filter"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
-  - agent: "testing"
-    message: "Completed comprehensive backend API testing. All 7 endpoints tested successfully: Health Check, Local Signup, Local Login, Get Tracks, Chat Messages, Send Message, and Nearby Places. All APIs are working correctly with proper JSON responses. ACRCloud is configured, Google Places API returns mock data (expected when no API key). Backend is fully functional."
-  - agent: "testing"
-    message: "SPYN Notify Producer API testing completed successfully. Endpoint POST /api/notify-producer accepts JSON payload correctly, returns proper JSON response with success field. Gracefully handles Base44 service unavailability (404 error) without crashing. Returns success: false with message 'Notification service unavailable' and status_code: 404, which is expected behavior when Base44 cloud function is not accessible. All backend APIs are now tested and working correctly."
-  - agent: "testing"
-    message: "BLACK DIAMONDS FIX TESTING COMPLETED SUCCESSFULLY. Tested the specific fix requested: Login API POST /api/base44/auth/login with credentials djbenjaminfranklin@gmail.com/Elsamila1979 successfully returns user.data.black_diamonds = 48 (not 0 as before). The fix is working correctly. User object contains full data structure with proper black diamonds value. All backend testing is complete - 9 total tests passed, 0 failed."
-  - agent: "testing"
-    message: "🎉 INTERNATIONALIZATION (i18n) SYSTEM TESTING COMPLETED SUCCESSFULLY! Comprehensive testing performed on mobile dimensions (390x844) covering all requested areas: ✅ Login flow displays perfect English text ('Sign In', 'Email', 'Password') ✅ Navigation tabs show correct English labels ('Home', 'My Uploads', 'Chat', 'Profile') ✅ Profile stats display proper English labels ('Uploads', 'Plays', 'Downloads') ✅ Language switcher works flawlessly - successfully switched from English to French and verified French text ('Profil', 'Accueil', 'Mes Uploads'), then switched back to English ✅ Admin pages are accessible and display English labels ('Dashboard', 'Users', 'Downloads', 'Sessions', 'Diamonds') ✅ No untranslated keys or hardcoded French text found. The i18n system is working perfectly with proper English defaults and seamless language switching functionality. All requirements from the review request have been met."
   - agent: "main"
-    message: "BUILD 20 FIXES - User reported 6 bugs in TestFlight build 19. I fixed: 1) Track Radar showing 172 tracks instead of 26 - added status='approved' filter 2) Admin Diamonds crash - migrated to Base44 direct API 3) Admin Broadcast/Email crash - already uses Base44 4) Rankings no play - migrated to Base44 direct API with client-side sorting 5) Push notifications - implemented token registration in AuthContext 6) Upload audio - needs verification. All pages now use Base44 API directly instead of BACKEND_URL which is inaccessible in production builds. PLEASE TEST: Login as djbenjaminfranklin@gmail.com / Elsamila1979, navigate to each problem page and verify no crashes."
-  - agent: "testing"
-    message: "🎉 BUILD 20 FIXES TESTING COMPLETED SUCCESSFULLY! Comprehensive mobile testing (390x844) performed on all 4 critical pages reported as problematic in TestFlight build 19: ✅ ADMIN DIAMONDS PAGE (/profile/admin-diamonds) - LOADS WITHOUT CRASH! Page displays properly with loading state, no error messages detected. The Base44 API migration fix is working correctly. ✅ ADMIN BROADCAST/EMAIL PAGE (/profile/admin-broadcast) - LOADS WITHOUT CRASH! Page displays properly with loading state, no error messages detected. Base44 integration working correctly. ✅ RANKINGS PAGE (/profile/rankings) - LOADS SUCCESSFULLY! Page displays 'Most Played', 'Top Downloads', 'New Releases' tabs correctly. Shows 'No tracks found' message which is expected behavior when no approved tracks exist. No crashes detected. ✅ TRACK RADAR PAGE (/profile/radar) - LOADS SUCCESSFULLY! Page displays Live Radar interface with world map, stats showing '0 Live', '0 Recent', '0 My Tracks' which indicates the 172 tracks issue has been resolved by the status='approved' filter. All 4 pages that previously crashed in TestFlight build 19 are now working correctly. The Base44 API migration and filtering fixes have resolved all reported issues. Ready for new iOS build creation."
+    message: "BUILD 21 - Migration SPYN vers Base44. Modifié spyn.tsx et spyn-record.tsx pour utiliser base44Spyn.recognizeAudio(), base44Spyn.getNearbyPlaces(), et base44Spyn.awardDiamond() au lieu de BACKEND_URL. Ajouté le service base44Spyn dans base44Api.ts. TESTER: 1) SPYN Detection démarre sans erreur 2) SPYN Record démarre sans erreur 3) Admin pages ne crashent pas 4) Rankings affiche les tracks"
