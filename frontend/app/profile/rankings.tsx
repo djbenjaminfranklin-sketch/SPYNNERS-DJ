@@ -20,7 +20,7 @@ import { usePlayer } from '../../src/contexts/PlayerContext';
 import axios from 'axios';
 
 // Backend URL
-const BACKEND_URL = 'https://spyndevs.preview.emergentagent.com';
+const BACKEND_URL = 'https://djsound-debug.preview.emergentagent.com';
 
 export default function RankingsScreen() {
   const router = useRouter();
