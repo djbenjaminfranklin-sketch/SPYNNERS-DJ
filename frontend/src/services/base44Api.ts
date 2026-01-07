@@ -1647,12 +1647,12 @@ export const base44VIP = {
         // Direct Base44 API call on mobile
         const url = `/entities/VIPPurchase?user_id=${userId}`;
         console.log('[VIP listMyPurchases] Mobile - calling Base44 directly:', url);
-        response = await backendApi.get(url);
+        response = await mobileApi.get(url);
       } else {
         // Via backend proxy on web
         const url = `/api/base44/entities/VIPPurchase?user_id=${userId}`;
         console.log('[VIP listMyPurchases] Web - calling via backend:', url);
-        response = await backendApi.get(url);
+        response = await mobileApi.get(url);
       }
       
       console.log('[VIP listMyPurchases] Response status:', response.status);
