@@ -136,12 +136,16 @@ export default function AdminCategories() {
         
         const userList = usersData.map((u: any) => {
           const userData = u.data || {};
+          // Try multiple fields for avatar URL
+          const avatarUrl = userData.avatar_url || u.avatar_url || u.generated_avatar_url || 
+                           userData.profile_image || u.profile_image ||
+                           (userData.avatar ? `https://base44.app/api/apps/${BASE44_APP_ID}/files/public/${BASE44_APP_ID}/${userData.avatar}` : null);
           return {
             id: u.id || u._id,
             full_name: u.full_name || userData.full_name || u.name,
             artist_name: userData.artist_name || u.artist_name,
             email: u.email,
-            avatar_url: userData.avatar_url || u.avatar_url || u.generated_avatar_url,
+            avatar_url: avatarUrl,
             user_type: userData.user_type || u.user_type,
             user_types: userData.user_types || u.user_types || [],
             nationality: userData.nationality || u.nationality,
