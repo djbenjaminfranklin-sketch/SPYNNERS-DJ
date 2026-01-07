@@ -31,6 +31,76 @@ console.log('[API] Using API URL:', API_BASE_URL);
 const AUTH_TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user';
 
+// ============================================
+// CACHING SYSTEM - Reduce API calls
+// ============================================
+interface CacheItem<T> {
+  data: T;
+  timestamp: number;
+  expiresIn: number; // milliseconds
+}
+
+const memoryCache: Record<string, CacheItem<any>> = {};
+
+// Cache durations (in milliseconds)
+const CACHE_DURATIONS = {
+  tracks: 5 * 60 * 1000,      // 5 minutes for tracks
+  users: 10 * 60 * 1000,      // 10 minutes for users
+  userProfile: 15 * 60 * 1000, // 15 minutes for user profile
+  short: 1 * 60 * 1000,       // 1 minute for frequently changing data
+};
+
+// Get from cache
+function getFromCache<T>(key: string): T | null {
+  const item = memoryCache[key];
+  if (!item) return null;
+  
+  const now = Date.now();
+  if (now - item.timestamp > item.expiresIn) {
+    // Cache expired
+    delete memoryCache[key];
+    console.log('[Cache] Expired:', key);
+    return null;
+  }
+  
+  console.log('[Cache] HIT:', key);
+  return item.data;
+}
+
+// Set cache
+function setCache<T>(key: string, data: T, expiresIn: number): void {
+  memoryCache[key] = {
+    data,
+    timestamp: Date.now(),
+    expiresIn,
+  };
+  console.log('[Cache] SET:', key, 'expires in', expiresIn / 1000, 'seconds');
+}
+
+// Clear specific cache
+function clearCache(keyPattern?: string): void {
+  if (keyPattern) {
+    Object.keys(memoryCache).forEach(key => {
+      if (key.includes(keyPattern)) {
+        delete memoryCache[key];
+      }
+    });
+    console.log('[Cache] Cleared pattern:', keyPattern);
+  } else {
+    Object.keys(memoryCache).forEach(key => delete memoryCache[key]);
+    console.log('[Cache] Cleared all');
+  }
+}
+
+// Export cache utilities
+export const cacheUtils = {
+  get: getFromCache,
+  set: setCache,
+  clear: clearCache,
+  durations: CACHE_DURATIONS,
+};
+// ============================================
+
 // Create axios instance
 const createApi = (): AxiosInstance => {
   const instance = axios.create({
