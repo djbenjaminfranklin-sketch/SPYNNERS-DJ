@@ -1129,10 +1129,10 @@ export const base44Files = {
       
       // Call Base44 function with authentication
       if (base64Data) {
-        // Correct Base44 function URL format
-        const functionUrl = 'https://spynners.base44.app/invoke/uploadTrackFile';
+        // Use the public function with CORS support
+        const functionUrl = 'https://spynners.base44.app/invoke/publicUploadTrack';
         
-        console.log('[Files] Calling Base44 function:', functionUrl);
+        console.log('[Files] Calling Base44 public function:', functionUrl);
         
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
