@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.spynners.live",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "associatedDomains": [
         "applinks:spynners.com",
         "webcredentials:spynners.com"
