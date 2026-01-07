@@ -731,6 +731,46 @@ export const base44Users = {
   async nativeGetAllUsers(params?: { search?: string; limit?: number; offset?: number }): Promise<User[]> {
     try {
       console.log('[Users] Fetching all users via nativeGetAllUsers:', params);
+      
+      // Try direct Base44 entity API first (more reliable on mobile)
+      try {
+        const BASE44_APP_ID = '691a4d96d819355b52c063f3';
+        const queryParams = new URLSearchParams();
+        queryParams.append('limit', String(params?.limit || 1000));
+        if (params?.offset) queryParams.append('offset', String(params.offset));
+        
+        // Direct fetch to Base44 API
+        const directUrl = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}/entities/User?${queryParams.toString()}`;
+        console.log('[Users] Trying direct Base44 URL:', directUrl);
+        
+        const directResponse = await fetch(directUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (directResponse.ok) {
+          const directData = await directResponse.json();
+          console.log('[Users] Direct Base44 response length:', Array.isArray(directData) ? directData.length : 'not array');
+          
+          if (Array.isArray(directData) && directData.length > 0) {
+            // Filter by search if provided
+            if (params?.search && params.search.length > 0) {
+              const searchLower = params.search.toLowerCase();
+              return directData.filter((u: any) => {
+                const name = (u.full_name || u.artist_name || u.email || '').toLowerCase();
+                return name.includes(searchLower);
+              });
+            }
+            return directData;
+          }
+        }
+      } catch (directError) {
+        console.log('[Users] Direct Base44 fetch failed:', directError);
+      }
+      
+      // Fallback: Try via mobileApi
       const response = await mobileApi.post('/api/base44/functions/invoke/nativeGetAllUsers', {
         search: params?.search || '',
         limit: params?.limit || 100,
@@ -745,10 +785,14 @@ export const base44Users = {
       if (data?.users) return data.users;
       if (data?.items) return data.items;
       if (data?.data) return data.data;
-      return [];
+      
+      // Last fallback: extract from tracks
+      console.log('[Users] No users from API, trying tracks fallback...');
+      return await this.fetchAllUsersFromTracks();
     } catch (error) {
       console.error('[Users] Error in nativeGetAllUsers:', error);
-      return [];
+      // Final fallback
+      return await this.fetchAllUsersFromTracks();
     }
   },
 
