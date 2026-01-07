@@ -215,21 +215,14 @@ export default function AdminDiamonds() {
     try {
       console.log(`[AdminDiamonds] Sending ${diamondAmount} diamonds to user ${selectedUser.id} (${selectedUser.email})`);
       
-      // Send diamonds to user via API with token - include email as required by giveBlackDiamonds
-      const response = await axios.post(`${BACKEND_URL}/api/base44/add-diamonds`, {
-        user_id: selectedUser.id,
-        email: selectedUser.email,  // Required by giveBlackDiamonds
-        amount: parseInt(diamondAmount),
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 30000  // 30 second timeout
-      });
+      // Use Base44 function to add diamonds
+      const result = await base44Admin.addDiamonds(selectedUser.email, parseInt(diamondAmount));
       
-      console.log('[AdminDiamonds] Response:', response.data);
+      console.log('[AdminDiamonds] Response:', result);
       
-      if (response.data?.success) {
-        const prevBalance = response.data?.previous_balance || 0;
-        const newBalance = response.data?.new_balance || parseInt(diamondAmount);
+      if (result?.success) {
+        const prevBalance = result?.previous_balance || 0;
+        const newBalance = result?.new_balance || parseInt(diamondAmount);
         Alert.alert(
           '✅ ' + t('common.success'), 
           `${diamondAmount} Black Diamonds ${t('admin.sent').toLowerCase()} ${selectedUser?.full_name || selectedUser?.artist_name}!\n\n${t('admin.previousBalance')}: ${prevBalance}\n${t('admin.newBalance')}: ${newBalance}`
@@ -237,11 +230,10 @@ export default function AdminDiamonds() {
         setShowSendModal(false);
         loadUsers(); // Refresh the list
       } else {
-        Alert.alert(t('common.error'), response.data?.error || response.data?.message || t('admin.sendDiamondsError'));
+        Alert.alert(t('common.error'), result?.error || result?.message || t('admin.sendDiamondsError'));
       }
     } catch (error: any) {
       console.error('[AdminDiamonds] Send error:', error);
-      console.error('[AdminDiamonds] Error response:', error.response?.data);
       
       // More detailed error message
       let errorMsg = t('admin.sendDiamondsError');
