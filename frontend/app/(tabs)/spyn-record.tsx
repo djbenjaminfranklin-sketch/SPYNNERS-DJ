@@ -1224,33 +1224,33 @@ export default function SpynRecordScreen() {
         console.log('[SPYN Record] Analyzing audio, length:', audioBase64ForAnalysis.length);
         
         try {
-          const response = await axios.post(`${BACKEND_URL}/api/recognize-audio`, {
-            audio_base64: audioBase64ForAnalysis,
-          }, {
-            timeout: 60000,
+          const response = await base44Spyn.recognizeAudio({
+            audio_data: audioBase64ForAnalysis,
+            sample_rate: 44100,
+            channels: 2,
           });
           
-          console.log('[SPYN Record] Analysis response:', response.data);
+          console.log('[SPYN Record] Analysis response:', response);
           
-          if (response.data.success && response.data.title) {
-            const trackKey = response.data.title.toLowerCase();
+          if (response.success && response.title) {
+            const trackKey = response.title.toLowerCase();
             if (!detectedTitles.has(trackKey)) {
               detectedTitles.add(trackKey);
               
               const newTrack: IdentifiedTrack = {
                 id: `${Date.now()}`,
-                title: response.data.title,
-                artist: response.data.artist || 'Unknown Artist',
+                title: response.title,
+                artist: response.artist || 'Unknown Artist',
                 timestamp: formatDuration(recordingDuration),
                 elapsedTime: recordingDuration,
-                coverImage: response.data.cover_image,
-                spynnersTrackId: response.data.spynners_track_id,
-                producerId: response.data.producer_id,
+                coverImage: response.cover_image,
+                spynnersTrackId: response.spynners_track_id,
+                producerId: response.producer_id,
               };
               
               detectedTracks.push(newTrack);
               setIdentifiedTracks(prev => [...prev, newTrack]);
-              setCurrentAnalysis(`✅ ${response.data.title}`);
+              setCurrentAnalysis(`✅ ${response.title}`);
               
               sendEmailForTrack(newTrack);
               console.log('[SPYN Record] ✅ Track identified:', newTrack.title);
@@ -1273,19 +1273,16 @@ export default function SpynRecordScreen() {
       if (canEarnDiamond) {
         console.log('[SPYN Record] Valid venue detected, awarding Black Diamond...');
         try {
-          const awardResponse = await axios.post(
-            `${BACKEND_URL}/api/award-diamond`,
-            { 
-              user_id: user?.id,
-              type: 'black',
-              reason: 'spyn_record_session',
-              venue: correctedVenue || location?.venue,
-              venue_type: location?.venue_type,
-            },
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
+          const awardResponse = await base44Spyn.awardDiamond({
+            producer_email: user?.email || '',
+            track_title: allTracks[0]?.title || 'Session SPYN Record',
+            dj_name: user?.full_name || 'DJ',
+            venue: correctedVenue || location?.venue || '',
+            city: location?.city || '',
+            country: location?.country || '',
+          });
           
-          if (awardResponse.data.success && !awardResponse.data.already_awarded) {
+          if (awardResponse.success && !awardResponse.already_awarded) {
             console.log('[SPYN Record] Black Diamond awarded!');
             setShowDiamondModal(true);
             
