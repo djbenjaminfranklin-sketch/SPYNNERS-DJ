@@ -209,17 +209,37 @@ export default function ChatScreen() {
     try {
       const userId = user?.id || user?._id || '';
       const userName = user?.full_name || user?.email || 'User';
+      const messageContent = newMessage.trim();
       
       const message = await base44Messages.send({
         sender_id: userId,
         sender_name: userName,
         receiver_id: selectedMember.id,
-        content: newMessage.trim(),
+        content: messageContent,
       });
       
       if (message) {
         setMessages(prev => [...prev, message]);
         setNewMessage('');
+        
+        // Send push notification to recipient
+        console.log('[Chat] Sending push notification to:', selectedMember.id);
+        base44PushNotifications.sendPushNotification({
+          recipientUserId: selectedMember.id,
+          senderName: userName,
+          messageContent: messageContent.length > 50 
+            ? messageContent.substring(0, 50) + '...' 
+            : messageContent,
+          messageId: message.id || message._id || '',
+        }).then(success => {
+          if (success) {
+            console.log('[Chat] Push notification sent successfully');
+          } else {
+            console.log('[Chat] Push notification failed (recipient may not have notifications enabled)');
+          }
+        }).catch(err => {
+          console.log('[Chat] Push notification error:', err);
+        });
       }
     } catch (error) {
       console.error('[Chat] Error sending message:', error);
