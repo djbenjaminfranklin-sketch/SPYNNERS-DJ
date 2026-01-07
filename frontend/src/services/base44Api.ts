@@ -1086,18 +1086,16 @@ export const base44Playlists = {
 export const base44Files = {
   async upload(fileUri: string, fileName: string, mimeType?: string, authToken?: string): Promise<any> {
     try {
-      console.log('[Files] Starting upload:', { fileName, fileUri: fileUri.substring(0, 100) });
+      console.log('[Files] Starting upload with Base44 SDK:', { fileName, fileUri: fileUri.substring(0, 100) });
       
       // Determine mime type from file name if not provided
       const actualMimeType = mimeType || getMimeType(fileName);
-      
-      const BASE44_APP_ID = '691a4d96d819355b52c063f3';
       
       // Get auth token from storage if not provided
       let token = authToken;
       if (!token) {
         try {
-          token = await AsyncStorage.getItem(TOKEN_KEY) || '';
+          token = await AsyncStorage.getItem(AUTH_TOKEN_KEY) || '';
         } catch (e) {
           console.log('[Files] Could not get token from storage');
         }
@@ -1128,57 +1126,31 @@ export const base44Files = {
         throw new Error('Failed to read file');
       }
       
-      // Call Base44 function with authentication
+      // Use Base44 SDK to call the function
       if (base64Data) {
-        // Use the public function with CORS support
-        const functionUrl = 'https://spynners.base44.app/invoke/publicUploadTrack';
+        console.log('[Files] Creating Base44 client...');
         
-        console.log('[Files] Calling Base44 public function:', functionUrl);
-        
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        };
-        
-        // Add authentication token
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        const response = await fetch(functionUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            file: base64Data,
-            filename: fileName,
-            mimeType: actualMimeType,
-          }),
+        const base44 = createClient({
+          appId: 'spynners',
+          token: token || undefined,
         });
         
-        console.log('[Files] Response status:', response.status);
+        console.log('[Files] Invoking publicUploadTrack function...');
         
-        if (response.ok) {
-          const result = await response.json();
-          console.log('[Files] Upload success:', result);
-          
-          if (result.success && result.file_url) {
-            return { file_url: result.file_url, ...result };
-          } else if (result.file_url) {
-            return { file_url: result.file_url, success: true };
-          } else if (result.url) {
-            return { file_url: result.url, success: true, ...result };
-          } else {
-            const BASE44_APP_ID = '691a4d96d819355b52c063f3';
-            const fileUrl = `https://base44.app/api/apps/${BASE44_APP_ID}/files/public/${BASE44_APP_ID}/${result.filename || fileName}`;
-            return { file_url: fileUrl, success: true, ...result };
-          }
-        } else if (response.status === 401) {
-          console.log('[Files] Authentication failed - need valid token');
-          throw new Error('Authentication required. Please log in again.');
+        const result = await base44.functions.invoke('publicUploadTrack', {
+          file: base64Data,
+          filename: fileName,
+          mimeType: actualMimeType,
+        });
+        
+        console.log('[Files] Upload result:', result);
+        
+        if (result && result.file_url) {
+          return { file_url: result.file_url, success: true, ...result };
+        } else if (result && result.url) {
+          return { file_url: result.url, success: true, ...result };
         } else {
-          const errorText = await response.text();
-          console.error('[Files] Upload failed:', response.status, errorText);
-          throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+          throw new Error('No file URL in response');
         }
       } else {
         throw new Error('No file data to upload');
