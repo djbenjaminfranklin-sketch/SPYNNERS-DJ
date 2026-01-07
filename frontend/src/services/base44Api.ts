@@ -1085,7 +1085,7 @@ export const base44Playlists = {
 export const base44Files = {
   async upload(fileUri: string, fileName: string, mimeType?: string): Promise<any> {
     try {
-      console.log('[Files] Starting upload:', { fileName, fileUri: fileUri.substring(0, 50) });
+      console.log('[Files] Starting upload:', { fileName, fileUri: fileUri.substring(0, 100) });
       
       // Determine mime type from file name if not provided
       const actualMimeType = mimeType || getMimeType(fileName);
@@ -1095,7 +1095,7 @@ export const base44Files = {
       // Convert file to base64 for Base44 function
       let base64Data = '';
       try {
-        // For React Native, we need to read the file as base64
+        console.log('[Files] Converting file to base64...');
         const response = await fetch(fileUri);
         const blob = await response.blob();
         
@@ -1113,87 +1113,53 @@ export const base44Files = {
         
         console.log('[Files] File converted to base64, length:', base64Data.length);
       } catch (readError) {
-        console.log('[Files] Could not convert to base64:', readError);
+        console.error('[Files] Could not convert to base64:', readError);
+        throw new Error('Failed to read file');
       }
       
-      // Method 1: Use Base44 function uploadTrackFile with JSON body
+      // Call Base44 function uploadTrackFile with JSON body
       if (base64Data) {
-        try {
-          const functionUrl = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}/functions/invoke/uploadTrackFile`;
-          console.log('[Files] Uploading via Base44 function (JSON):', functionUrl);
-          
-          const response = await fetch(functionUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              file: base64Data,
-              filename: fileName,
-              mimeType: actualMimeType,
-            }),
-          });
-          
-          if (response.ok) {
-            const result = await response.json();
-            console.log('[Files] Base44 function upload success:', result);
-            
-            if (result.success && result.file_url) {
-              return { file_url: result.file_url, ...result };
-            }
-          } else {
-            const errorText = await response.text();
-            console.log('[Files] Base44 function failed:', response.status, errorText);
-          }
-        } catch (functionError) {
-          console.log('[Files] Base44 function upload error:', functionError);
-        }
-      }
-      
-      // Method 2: Try FormData upload to Base44 function
-      try {
-        const formData = new FormData();
-        formData.append('file', {
-          uri: fileUri,
-          name: fileName,
-          type: actualMimeType,
-        } as any);
-
         const functionUrl = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}/functions/invoke/uploadTrackFile`;
-        console.log('[Files] Trying FormData upload:', functionUrl);
+        console.log('[Files] Calling Base44 function:', functionUrl);
+        console.log('[Files] Payload size:', base64Data.length, 'bytes');
         
         const response = await fetch(functionUrl, {
           method: 'POST',
-          body: formData,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({
+            file: base64Data,
+            filename: fileName,
+            mimeType: actualMimeType,
+          }),
         });
+        
+        console.log('[Files] Response status:', response.status);
         
         if (response.ok) {
           const result = await response.json();
-          console.log('[Files] FormData upload success:', result);
+          console.log('[Files] Upload success:', result);
           
           if (result.success && result.file_url) {
             return { file_url: result.file_url, ...result };
+          } else if (result.file_url) {
+            return { file_url: result.file_url, success: true };
+          } else {
+            // Try to construct URL from result
+            const fileUrl = result.url || result.fileUrl || 
+              `https://base44.app/api/apps/${BASE44_APP_ID}/files/public/${BASE44_APP_ID}/${result.filename || fileName}`;
+            return { file_url: fileUrl, success: true, ...result };
           }
+        } else {
+          const errorText = await response.text();
+          console.error('[Files] Upload failed:', response.status, errorText);
+          throw new Error(`Upload failed: ${response.status} - ${errorText}`);
         }
-      } catch (formError) {
-        console.log('[Files] FormData upload failed:', formError);
+      } else {
+        throw new Error('No file data to upload');
       }
-      
-      // Method 3: Fallback - Try via backend proxy
-      const formData = new FormData();
-      formData.append('file', {
-        uri: fileUri,
-        name: fileName,
-        type: actualMimeType,
-      } as any);
-
-      const response = await mobileApi.post('/api/tracks/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      console.log('[Files] Backend upload response:', response.data);
-      return response.data;
     } catch (error) {
       console.error('[Files] Error uploading file:', error);
       throw error;
