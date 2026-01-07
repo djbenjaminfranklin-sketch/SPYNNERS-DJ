@@ -388,12 +388,18 @@ export default function RankingsScreen() {
           tracks.map((track, index) => {
             const rank = index + 1;
             const coverUrl = getCoverImageUrl(track);
+            const playing = isTrackPlaying(track);
             
             return (
-              <View key={track.id || track._id} style={[
-                styles.rankCard,
-                rank <= 3 && styles.rankCardTop3,
-              ]}>
+              <TouchableOpacity 
+                key={track.id || track._id} 
+                style={[
+                  styles.rankCard,
+                  rank <= 3 && styles.rankCardTop3,
+                ]}
+                onPress={() => handlePlayTrack(track)}
+                activeOpacity={0.7}
+              >
                 {renderMedal(rank)}
                 
                 <View style={styles.trackCover}>
@@ -404,10 +410,20 @@ export default function RankingsScreen() {
                       <Ionicons name="musical-notes" size={20} color={Colors.textMuted} />
                     </View>
                   )}
+                  {/* Play button overlay */}
+                  <View style={[styles.playOverlay, playing && styles.playOverlayActive]}>
+                    <Ionicons 
+                      name={playing ? "pause" : "play"} 
+                      size={16} 
+                      color="#fff" 
+                    />
+                  </View>
                 </View>
                 
                 <View style={styles.trackInfo}>
-                  <Text style={styles.trackTitle} numberOfLines={1}>{track.title}</Text>
+                  <Text style={[styles.trackTitle, playing && styles.trackTitlePlaying]} numberOfLines={1}>
+                    {track.title}
+                  </Text>
                   <Text style={styles.trackArtist} numberOfLines={1}>{getArtistName(track)}</Text>
                   <Text style={styles.trackGenre}>{track.genre}</Text>
                 </View>
@@ -419,7 +435,7 @@ export default function RankingsScreen() {
                     <Ionicons name="diamond" size={14} color="#FFD700" />
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
             );
           })
         )}
