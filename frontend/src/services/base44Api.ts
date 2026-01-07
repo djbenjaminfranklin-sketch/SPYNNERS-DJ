@@ -1238,6 +1238,8 @@ export const base44Files = {
       
       // Use Base44 SDK to call the function
       if (base64Data) {
+        console.log('[Files] Token available:', token ? 'YES (length: ' + token.length + ')' : 'NO');
+        console.log('[Files] Token preview:', token ? token.substring(0, 50) + '...' : 'none');
         console.log('[Files] Creating Base44 client...');
         
         // Use full app ID instead of slug
@@ -1246,8 +1248,9 @@ export const base44Files = {
           token: token || undefined,
         });
         
-        console.log('[Files] Base44 client created, invoking function...');
+        console.log('[Files] Base44 client created');
         console.log('[Files] Payload: filename=', fileName, 'mimeType=', actualMimeType, 'base64Length=', base64Data.length);
+        console.log('[Files] Calling functions.invoke now...');
         
         try {
           const result = await base44.functions.invoke('publicUploadTrack', {
