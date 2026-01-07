@@ -1083,20 +1083,57 @@ export const base44Playlists = {
 // ==================== FILES SERVICE ====================
 
 export const base44Files = {
-  async upload(fileUri: string, fileName: string, mimeType: string): Promise<any> {
+  async upload(fileUri: string, fileName: string, mimeType?: string): Promise<any> {
     try {
+      console.log('[Files] Starting upload:', { fileName, fileUri: fileUri.substring(0, 50) });
+      
+      // Determine mime type from file name if not provided
+      const actualMimeType = mimeType || getMimeType(fileName);
+      
+      // For mobile: Upload directly to Base44 storage
+      const BASE44_APP_ID = '691a4d96d819355b52c063f3';
+      const uploadUrl = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}/storage/upload`;
+      
       const formData = new FormData();
       formData.append('file', {
         uri: fileUri,
         name: fileName,
-        type: mimeType,
+        type: actualMimeType,
       } as any);
 
+      console.log('[Files] Uploading to Base44:', uploadUrl);
+      
+      // Try direct Base44 upload first
+      try {
+        const directResponse = await fetch(uploadUrl, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+        
+        if (directResponse.ok) {
+          const result = await directResponse.json();
+          console.log('[Files] Direct Base44 upload success:', result);
+          
+          // Construct full URL
+          const fileUrl = result.file_url || result.url || 
+            `https://base44.app/api/apps/${BASE44_APP_ID}/files/public/${BASE44_APP_ID}/${result.filename || result.file_id || fileName}`;
+          
+          return { file_url: fileUrl, ...result };
+        }
+      } catch (directError) {
+        console.log('[Files] Direct upload failed, trying backend:', directError);
+      }
+      
+      // Fallback: Try via backend proxy
       const response = await mobileApi.post('/api/tracks/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      console.log('[Files] Backend upload response:', response.data);
       return response.data;
     } catch (error) {
       console.error('[Files] Error uploading file:', error);
@@ -1105,9 +1142,29 @@ export const base44Files = {
   },
 
   getUrl(fileId: string): string {
-    return `https://api.base44.com/v1/apps/691a4d96d819355b52c063f3/storage/files/${fileId}`;
+    const BASE44_APP_ID = '691a4d96d819355b52c063f3';
+    return `https://base44.app/api/apps/${BASE44_APP_ID}/files/public/${BASE44_APP_ID}/${fileId}`;
   },
 };
+
+// Helper function to get MIME type from filename
+function getMimeType(fileName: string): string {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  const mimeTypes: Record<string, string> = {
+    'mp3': 'audio/mpeg',
+    'wav': 'audio/wav',
+    'flac': 'audio/flac',
+    'aac': 'audio/aac',
+    'm4a': 'audio/mp4',
+    'ogg': 'audio/ogg',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+  };
+  return mimeTypes[ext] || 'application/octet-stream';
+}
 
 // ==================== ADMIN SERVICE ====================
 
