@@ -265,97 +265,12 @@ export default function AnalyticsScreen() {
   };
 
   const handleExportCSV = async () => {
-    try {
-      // Validate dates
-      if (csvStartDate && !validateDateFormat(csvStartDate)) {
-        Alert.alert(t('common.error'), t('analytics.invalidDateFormat'));
-        return;
-      }
-      if (csvEndDate && !validateDateFormat(csvEndDate)) {
-        Alert.alert(t('common.error'), t('analytics.invalidDateFormat'));
-        return;
-      }
-
-      setExportingCSV(true);
-      console.log('[Analytics] Exporting PDF...', { startDate: csvStartDate, endDate: csvEndDate });
-
-      const apiUrl = `${BACKEND_URL}/api/analytics/sessions/pdf`;
-      
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          start_date: csvStartDate || null,
-          end_date: csvEndDate || null,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erreur serveur: ${response.status} - ${errorText}`);
-      }
-
-      // Get PDF as blob
-      const pdfBlob = await response.blob();
-      console.log('[Analytics] PDF received, size:', pdfBlob.size);
-
-      // Handle download based on platform
-      if (Platform.OS === 'web') {
-        // Web: Create blob URL and download
-        const url = URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `spynners_sessions_${new Date().toISOString().slice(0, 10)}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        Alert.alert(t('common.success'), t('csv.success'));
-      } else {
-        // Mobile: Convert blob to base64 and save
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          try {
-            const base64data = reader.result as string;
-            const base64Content = base64data.split(',')[1];
-            
-            const filename = `spynners_sessions_${new Date().toISOString().slice(0, 10)}.pdf`;
-            const fileUri = `${LegacyFileSystem.documentDirectory}${filename}`;
-            
-            await LegacyFileSystem.writeAsStringAsync(fileUri, base64Content, {
-              encoding: 'base64',
-            });
-
-            // Check if sharing is available
-            const isAvailable = await Sharing.isAvailableAsync();
-            if (isAvailable) {
-              await Sharing.shareAsync(fileUri, {
-                mimeType: 'application/pdf',
-                dialogTitle: 'Exporter le rapport PDF',
-                UTI: 'com.adobe.pdf',
-              });
-            } else {
-              Alert.alert('Succès', `Le fichier a été enregistré dans: ${fileUri}`);
-            }
-          } catch (saveError: any) {
-            console.error('[Analytics] Save error:', saveError);
-            Alert.alert(t('common.error'), t('analytics.savePdfError'));
-          }
-        };
-        reader.readAsDataURL(pdfBlob);
-      }
-
-      setShowDatePicker(false);
-    } catch (error: any) {
-      console.error('[Analytics] PDF export error:', error);
-      Alert.alert(t('common.error'), error.message || t('csv.error'));
-    } finally {
-      setExportingCSV(false);
-    }
+    // PDF export requires backend which is not available in production
+    Alert.alert(
+      t('common.info') || 'Information',
+      t('analytics.pdfNotAvailable') || "L'export PDF nécessite un serveur. Cette fonctionnalité sera disponible dans une prochaine mise à jour.",
+      [{ text: 'OK', onPress: () => setShowDatePicker(false) }]
+    );
   };
 
   const openDatePickerModal = () => {
