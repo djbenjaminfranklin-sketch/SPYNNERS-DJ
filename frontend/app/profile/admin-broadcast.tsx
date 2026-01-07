@@ -102,6 +102,31 @@ export default function AdminBroadcast() {
         base44Tracks.list({ limit: 10 }).catch(() => []),
       ]);
       
+      // Get broadcast history from Base44 function
+      let historyData: BroadcastHistory[] = [];
+      try {
+        const historyRes = await fetch(`https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/getBroadcastHistory`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ limit: 20 })
+        });
+        const historyJson = await historyRes.json();
+        if (historyJson.success && historyJson.broadcasts) {
+          historyData = historyJson.broadcasts.map((b: any) => ({
+            id: b.id || b._id,
+            subject: b.subject,
+            message: b.message,
+            recipient_type: b.recipient_type,
+            recipient_count: b.recipient_count || 0,
+            sent_at: b.sent_at || b.created_date,
+            sent_by: b.sent_by,
+            category: b.categories?.join(', ') || null,
+          }));
+        }
+      } catch (e) {
+        console.log('[AdminBroadcast] Could not load history:', e);
+      }
+      
       // Get user count and store users for autocomplete
       setUserCount(users.length);
       setAllUsers(users.map((u: any) => ({
@@ -112,10 +137,9 @@ export default function AdminBroadcast() {
         avatar_url: u.avatar_url || u.data?.avatar_url || u.generated_avatar_url,
       })));
       setRecentTracks(tracks.slice(0, 10));
-      // Broadcast history not available without backend - show empty
-      setBroadcastHistory([]);
+      setBroadcastHistory(historyData);
       
-      console.log('[AdminBroadcast] Loaded - Users:', users.length, 'Tracks:', tracks.length);
+      console.log('[AdminBroadcast] Loaded - Users:', users.length, 'Tracks:', tracks.length, 'History:', historyData.length);
     } catch (error) {
       console.error('[AdminBroadcast] Error:', error);
     } finally {
