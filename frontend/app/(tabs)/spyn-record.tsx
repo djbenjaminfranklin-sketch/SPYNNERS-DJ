@@ -55,7 +55,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return 'https://app-revival-50.preview.emergentagent.com';
+  return 'https://spyndevs.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 

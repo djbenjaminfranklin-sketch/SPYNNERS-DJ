@@ -11,7 +11,7 @@ import { Platform } from 'react-native';
 // Backend URL for web proxy
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || 
   process.env.EXPO_PUBLIC_BACKEND_URL || 
-  'https://app-revival-50.preview.emergentagent.com';
+  'https://spyndevs.preview.emergentagent.com';
 
 // Direct Base44 API URL for mobile - MUST use app subdomain
 const BASE44_APP_ID = '691a4d96d819355b52c063f3';
@@ -422,7 +422,7 @@ export const base44Auth = {
       // IMPORTANT: Always use backend URL for this endpoint (not Base44 direct)
       const backendUrl = Constants.expoConfig?.extra?.backendUrl || 
         process.env.EXPO_PUBLIC_BACKEND_URL || 
-        'https://app-revival-50.preview.emergentagent.com';
+        'https://spyndevs.preview.emergentagent.com';
       
       const token = await AsyncStorage.getItem('auth_token');
       

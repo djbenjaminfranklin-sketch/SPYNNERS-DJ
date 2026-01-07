@@ -81,7 +81,7 @@
     },
     "extra": {
       "router": {},
-      "backendUrl": "https://app-revival-50.preview.emergentagent.com",
+      "backendUrl": "https://spyndevs.preview.emergentagent.com",
       "base44AppId": "691a4d96d819355b52c063f3",
       "acrcloudHost": "identify-eu-west-1.acrcloud.com",
       "eas": {
