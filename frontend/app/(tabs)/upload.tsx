@@ -280,10 +280,47 @@ export default function UploadScreen() {
     setUploadProgress(0);
 
     try {
-      // Prepare track data
+      let audioUrl = '';
+      let artworkUrl = coverImage || '';
+      
+      // Step 1: Upload audio file to Base44
+      setUploadProgress(10);
+      console.log('[Upload] Uploading audio file:', audioFile.name);
+      
+      try {
+        const audioUploadResult = await base44Files.upload(audioFile.uri, audioFile.name);
+        audioUrl = audioUploadResult.file_url || audioUploadResult.url || '';
+        console.log('[Upload] Audio uploaded, URL:', audioUrl);
+      } catch (audioError) {
+        console.error('[Upload] Audio upload error:', audioError);
+        Alert.alert('Error', 'Failed to upload audio file. Please try again.');
+        setUploading(false);
+        return;
+      }
+      
+      setUploadProgress(50);
+      
+      // Step 2: Upload cover image if provided (and not already a URL)
+      if (coverImage && !coverImage.startsWith('http')) {
+        try {
+          console.log('[Upload] Uploading cover image...');
+          const coverUploadResult = await base44Files.upload(coverImage, `cover_${Date.now()}.jpg`);
+          artworkUrl = coverUploadResult.file_url || coverUploadResult.url || coverImage;
+          console.log('[Upload] Cover uploaded, URL:', artworkUrl);
+        } catch (coverError) {
+          console.error('[Upload] Cover upload error:', coverError);
+          // Continue without cover, not critical
+        }
+      }
+      
+      setUploadProgress(70);
+
+      // Step 3: Prepare track data with audio URL
       const trackData: Track = {
         title: title.trim(),
         artist_name: artistName.trim(),
+        producer_name: artistName.trim(),
+        producer_id: uploadForUser?.id || user?.id,
         label_name: labelName.trim() || undefined,
         collaborators: collaborators ? collaborators.split(',').map(c => c.trim()) : [],
         genre: genres.join(', '), // Join multiple genres with comma
@@ -296,7 +333,10 @@ export default function UploadScreen() {
         isrc_code: isrcCode.trim() || undefined,
         iswc_code: iswcCode.trim() || undefined,
         description: description.trim() || undefined,
-        cover_image: coverImage || undefined,
+        // IMPORTANT: Save audio and artwork URLs
+        audio_url: audioUrl,
+        artwork_url: artworkUrl,
+        cover_image: artworkUrl,
         is_unreleased: isUnreleased,
         is_vip: isVipRequest,
         rights_confirmed: rightsConfirmed,
@@ -309,12 +349,19 @@ export default function UploadScreen() {
         play_count: 0,
       };
 
-      setUploadProgress(30);
+      console.log('[Upload] Creating track with data:', { 
+        title: trackData.title, 
+        audio_url: trackData.audio_url,
+        artwork_url: trackData.artwork_url 
+      });
 
-      // Upload to Base44
+      setUploadProgress(90);
+
+      // Step 4: Create track in Base44
       const result = await base44Tracks.create(trackData);
       
       setUploadProgress(100);
+      console.log('[Upload] Track created successfully:', result);
 
       Alert.alert(
         '✅ Track Uploaded!',
