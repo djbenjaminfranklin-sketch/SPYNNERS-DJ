@@ -1323,6 +1323,33 @@ function getMimeType(fileName: string): string {
 // ==================== ADMIN SERVICE ====================
 
 export const base44Admin = {
+  /**
+   * Add Black Diamonds to a user
+   * Calls the Base44 giveBlackDiamonds cloud function
+   */
+  async addDiamonds(email: string, amount: number): Promise<any> {
+    try {
+      console.log('[Admin] Adding', amount, 'diamonds to user:', email);
+      
+      // Call the Base44 function directly
+      const response = await fetch(
+        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/giveBlackDiamonds`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, amount }),
+        }
+      );
+      
+      const data = await response.json();
+      console.log('[Admin] addDiamonds response:', data);
+      return data;
+    } catch (error) {
+      console.error('[Admin] Error adding diamonds:', error);
+      throw error;
+    }
+  },
+
   async getPendingTracks(): Promise<Track[]> {
     try {
       const response = await mobileApi.get('/api/base44/entities/Track?status=pending');
