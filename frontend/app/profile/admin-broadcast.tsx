@@ -214,11 +214,61 @@ export default function AdminBroadcast() {
       return;
     }
 
-    // Without backend, show info message
+    const recipientText = recipientType === 'all' 
+      ? t('broadcast.allUsers')
+      : recipientType === 'category' 
+        ? `${t('broadcast.categories')}: ${selectedCategories.map(c => CATEGORIES.find(cat => cat.id === c)?.name || c).join(', ')}`
+        : selectedRecipient?.email || individualEmail;
+
     Alert.alert(
-      t('common.info') || 'Information',
-      t('broadcast.notAvailableOffline') || "L'envoi d'emails groupés nécessite un serveur. Utilisez Base44 Console ou un service email externe pour les broadcasts.",
-      [{ text: 'OK' }]
+      t('broadcast.confirmSend'),
+      `${t('broadcast.sendEmailTo')} ${recipientText}?`,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { 
+          text: t('admin.send'), 
+          onPress: async () => {
+            setSending(true);
+            try {
+              // Call Base44 function directly
+              const response = await fetch(
+                `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/sendBroadcastEmail`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    subject: subject.trim(),
+                    message: message.trim(),
+                    recipient_type: recipientType,
+                    categories: recipientType === 'category' ? selectedCategories : null,
+                    individual_email: recipientType === 'individual' ? (selectedRecipient?.email || individualEmail.trim()) : null,
+                    sent_by: user?.id || user?._id,
+                  })
+                }
+              );
+
+              const data = await response.json();
+
+              if (data?.success) {
+                Alert.alert(t('common.success') + ' ✅', `${t('broadcast.emailSentTo')} ${data.sent_count || t('broadcast.all')} ${t('broadcast.recipients')}!`);
+                setSubject('');
+                setMessage('');
+                setIndividualEmail('');
+                setSelectedRecipient(null);
+                setSelectedCategories([]);
+                loadData(); // Refresh history
+              } else {
+                Alert.alert(t('common.error'), data?.error || t('broadcast.sendFailed'));
+              }
+            } catch (error: any) {
+              console.error('[AdminBroadcast] Send error:', error);
+              Alert.alert(t('common.error'), error?.message || t('broadcast.sendFailed'));
+            } finally {
+              setSending(false);
+            }
+          }
+        },
+      ]
     );
   };
 
