@@ -159,14 +159,8 @@ export default function AdminDiamonds() {
               
               const u = users[i];
               try {
-                await axios.post(`${BACKEND_URL}/api/base44/add-diamonds`, {
-                  user_id: u.id,
-                  email: u.email,
-                  amount: amount,
-                }, {
-                  headers: { Authorization: `Bearer ${token}` },
-                  timeout: 10000
-                });
+                // Use Base44 function directly
+                await base44Admin.addDiamonds(u.email, amount);
                 successCount++;
               } catch (error) {
                 console.error(`[SendAll] Error for ${u.email}:`, error);
