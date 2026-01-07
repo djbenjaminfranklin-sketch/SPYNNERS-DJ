@@ -1092,7 +1092,65 @@ export const base44Files = {
       
       const BASE44_APP_ID = '691a4d96d819355b52c063f3';
       
-      // Method 1: Use Base44 function uploadTrackFile
+      // Convert file to base64 for Base44 function
+      let base64Data = '';
+      try {
+        // For React Native, we need to read the file as base64
+        const response = await fetch(fileUri);
+        const blob = await response.blob();
+        
+        base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            // Remove data URL prefix if present
+            const base64 = result.includes(',') ? result.split(',')[1] : result;
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        
+        console.log('[Files] File converted to base64, length:', base64Data.length);
+      } catch (readError) {
+        console.log('[Files] Could not convert to base64:', readError);
+      }
+      
+      // Method 1: Use Base44 function uploadTrackFile with JSON body
+      if (base64Data) {
+        try {
+          const functionUrl = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}/functions/invoke/uploadTrackFile`;
+          console.log('[Files] Uploading via Base44 function (JSON):', functionUrl);
+          
+          const response = await fetch(functionUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              file: base64Data,
+              filename: fileName,
+              mimeType: actualMimeType,
+            }),
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            console.log('[Files] Base44 function upload success:', result);
+            
+            if (result.success && result.file_url) {
+              return { file_url: result.file_url, ...result };
+            }
+          } else {
+            const errorText = await response.text();
+            console.log('[Files] Base44 function failed:', response.status, errorText);
+          }
+        } catch (functionError) {
+          console.log('[Files] Base44 function upload error:', functionError);
+        }
+      }
+      
+      // Method 2: Try FormData upload to Base44 function
       try {
         const formData = new FormData();
         formData.append('file', {
@@ -1102,7 +1160,7 @@ export const base44Files = {
         } as any);
 
         const functionUrl = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}/functions/invoke/uploadTrackFile`;
-        console.log('[Files] Uploading via Base44 function:', functionUrl);
+        console.log('[Files] Trying FormData upload:', functionUrl);
         
         const response = await fetch(functionUrl, {
           method: 'POST',
@@ -1111,49 +1169,14 @@ export const base44Files = {
         
         if (response.ok) {
           const result = await response.json();
-          console.log('[Files] Base44 function upload success:', result);
+          console.log('[Files] FormData upload success:', result);
           
           if (result.success && result.file_url) {
             return { file_url: result.file_url, ...result };
           }
-        } else {
-          console.log('[Files] Base44 function failed, status:', response.status);
         }
-      } catch (functionError) {
-        console.log('[Files] Base44 function upload error:', functionError);
-      }
-      
-      // Method 2: Fallback - Try direct storage upload
-      try {
-        const formData = new FormData();
-        formData.append('file', {
-          uri: fileUri,
-          name: fileName,
-          type: actualMimeType,
-        } as any);
-
-        const uploadUrl = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}/storage/upload`;
-        console.log('[Files] Trying direct storage upload:', uploadUrl);
-        
-        const directResponse = await fetch(uploadUrl, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Accept': 'application/json',
-          },
-        });
-        
-        if (directResponse.ok) {
-          const result = await directResponse.json();
-          console.log('[Files] Direct storage upload success:', result);
-          
-          const fileUrl = result.file_url || result.url || 
-            `https://base44.app/api/apps/${BASE44_APP_ID}/files/public/${BASE44_APP_ID}/${result.filename || result.file_id || fileName}`;
-          
-          return { file_url: fileUrl, ...result };
-        }
-      } catch (directError) {
-        console.log('[Files] Direct storage upload failed:', directError);
+      } catch (formError) {
+        console.log('[Files] FormData upload failed:', formError);
       }
       
       // Method 3: Fallback - Try via backend proxy
