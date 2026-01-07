@@ -1197,10 +1197,12 @@ export const base44Playlists = {
 export const base44Files = {
   async upload(fileUri: string, fileName: string, mimeType?: string, authToken?: string): Promise<any> {
     try {
-      console.log('[Files] Starting upload with Base44 SDK:', { fileName, fileUri: fileUri.substring(0, 100) });
+      console.log('[Files] Starting upload:', { fileName, fileUri: fileUri.substring(0, 100) });
       
       // Determine mime type from file name if not provided
       const actualMimeType = mimeType || getMimeType(fileName);
+      
+      const BASE44_APP_ID = '691a4d96d819355b52c063f3';
       
       // Get auth token from storage if not provided
       let token = authToken;
@@ -1212,60 +1214,86 @@ export const base44Files = {
         }
       }
       
-      // Convert file to base64 for Base44 function
-      let base64Data = '';
+      // Method 1: Use FormData with direct Base44 storage API
+      console.log('[Files] Uploading via FormData to Base44 storage...');
+      
+      const formData = new FormData();
+      formData.append('file', {
+        uri: fileUri,
+        name: fileName,
+        type: actualMimeType,
+      } as any);
+
+      // Try Base44 storage endpoint
+      const storageUrl = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}/storage/upload`;
+      console.log('[Files] Storage URL:', storageUrl);
+      
       try {
-        console.log('[Files] Converting file to base64...');
-        const response = await fetch(fileUri);
-        const blob = await response.blob();
-        
-        base64Data = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const result = reader.result as string;
-            // Remove data URL prefix if present
-            const base64 = result.includes(',') ? result.split(',')[1] : result;
-            resolve(base64);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
+        const response = await fetch(storageUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+          },
+          body: formData,
         });
         
-        console.log('[Files] File converted to base64, length:', base64Data.length);
-      } catch (readError) {
-        console.error('[Files] Could not convert to base64:', readError);
-        throw new Error('Failed to read file');
+        console.log('[Files] Storage response status:', response.status);
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('[Files] Storage upload success:', result);
+          
+          const fileUrl = result.file_url || result.url || 
+            `https://base44.app/api/apps/${BASE44_APP_ID}/files/public/${BASE44_APP_ID}/${result.filename || result.file_id || fileName}`;
+          
+          return { file_url: fileUrl, success: true, ...result };
+        }
+        
+        const errorText = await response.text();
+        console.log('[Files] Storage upload failed:', response.status, errorText);
+      } catch (storageError) {
+        console.log('[Files] Storage endpoint error:', storageError);
       }
       
-      // Use Base44 SDK to call the function
-      if (base64Data) {
-        console.log('[Files] Creating Base44 client...');
+      // Method 2: Try alternative storage endpoint
+      const altStorageUrl = `https://api.base44.app/v1/apps/${BASE44_APP_ID}/storage/files`;
+      console.log('[Files] Trying alternative storage URL:', altStorageUrl);
+      
+      try {
+        const formData2 = new FormData();
+        formData2.append('file', {
+          uri: fileUri,
+          name: fileName,
+          type: actualMimeType,
+        } as any);
         
-        const base44 = createClient({
-          appId: 'spynners',
-          token: token || undefined,
+        const response = await fetch(altStorageUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+          },
+          body: formData2,
         });
         
-        console.log('[Files] Invoking publicUploadTrack function...');
+        console.log('[Files] Alt storage response status:', response.status);
         
-        const result = await base44.functions.invoke('publicUploadTrack', {
-          file: base64Data,
-          filename: fileName,
-          mimeType: actualMimeType,
-        });
-        
-        console.log('[Files] Upload result:', result);
-        
-        if (result && result.file_url) {
-          return { file_url: result.file_url, success: true, ...result };
-        } else if (result && result.url) {
-          return { file_url: result.url, success: true, ...result };
-        } else {
-          throw new Error('No file URL in response');
+        if (response.ok) {
+          const result = await response.json();
+          console.log('[Files] Alt storage upload success:', result);
+          
+          const fileUrl = result.file_url || result.url || 
+            `https://base44.app/api/apps/${BASE44_APP_ID}/files/public/${BASE44_APP_ID}/${result.filename || fileName}`;
+          
+          return { file_url: fileUrl, success: true, ...result };
         }
-      } else {
-        throw new Error('No file data to upload');
+      } catch (altError) {
+        console.log('[Files] Alt storage failed:', altError);
       }
+      
+      // Method 3: For now, return a placeholder and let user know to use web upload
+      console.log('[Files] All upload methods failed - suggesting web upload');
+      throw new Error('Mobile upload temporarily unavailable. Please upload via the website.');
+      
     } catch (error) {
       console.error('[Files] Error uploading file:', error);
       throw error;
