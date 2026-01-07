@@ -734,28 +734,28 @@ export default function SpynScreen() {
       console.log('[SPYN] ACRCloud Response:', JSON.stringify(response, null, 2));
 
       // ONLY show tracks that are found in Spynners database
-      if (response.data.success && response.data.title && response.data.spynners_track_id) {
-        const trackKey = `${response.data.title}-${response.data.artist}`.toLowerCase();
+      if (response.success && response.title && response.spynners_track_id) {
+        const trackKey = `${response.title}-${response.artist}`.toLowerCase();
         
         // Check if we already identified this track
         if (!identifiedTracksRef.current.includes(trackKey)) {
           console.log('[SPYN] ✅ SPYNNERS track identified:', trackKey);
-          console.log('[SPYN] Cover image URL:', response.data.cover_image);
-          console.log('[SPYN] Producer email:', response.data.producer_email);
+          console.log('[SPYN] Cover image URL:', response.cover_image);
+          console.log('[SPYN] Producer email:', response.producer_email);
           
           identifiedTracksRef.current.push(trackKey);
           
           const trackResult: TrackResult = {
             success: true,
-            title: response.data.title,
-            artist: response.data.artist,
-            album: response.data.album,
-            genre: response.data.genre,
-            cover_image: response.data.cover_image,
-            score: response.data.score,
+            title: response.title,
+            artist: response.artist,
+            album: response.album,
+            genre: response.genre,
+            cover_image: response.cover_image,
+            score: response.score,
             time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-            id: response.data.spynners_track_id,
-            producer_id: response.data.producer_id,
+            id: response.spynners_track_id,
+            producer_id: response.producer_id,
           };
 
           setCurrentTrack(trackResult);
@@ -766,14 +766,14 @@ export default function SpynScreen() {
             try {
               await base44SessionTracks.saveSessionTrack({
                 session_mix_id: session.id,
-                track_id: response.data.spynners_track_id,
-                track_title: response.data.title,
-                track_artist: response.data.artist,
-                track_album: response.data.album,
-                track_genre: response.data.genre,
-                track_cover: response.data.cover_image,
-                producer_id: response.data.producer_id,
-                producer_email: response.data.producer_email,
+                track_id: response.spynners_track_id,
+                track_title: response.title,
+                track_artist: response.artist,
+                track_album: response.album,
+                track_genre: response.genre,
+                track_cover: response.cover_image,
+                producer_id: response.producer_id,
+                producer_email: response.producer_email,
                 played_at: new Date().toISOString(),
                 dj_id: user?.id || '',
                 dj_name: user?.full_name || 'DJ',
@@ -792,9 +792,9 @@ export default function SpynScreen() {
         } else {
           console.log('[SPYN] Track already identified:', trackKey);
         }
-      } else if (response.data.success && response.data.title) {
+      } else if (response.success && response.title) {
         // Track identified by ACRCloud but NOT in Spynners
-        console.log('[SPYN] ⚠️ Track NOT in Spynners:', response.data.title, 'by', response.data.artist);
+        console.log('[SPYN] ⚠️ Track NOT in Spynners:', response.title, 'by', response.artist);
       } else {
         console.log('[SPYN] No track identified in this cycle');
       }
