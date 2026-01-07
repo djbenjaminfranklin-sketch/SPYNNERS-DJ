@@ -127,68 +127,42 @@ export default function RankingsScreen() {
       setLoading(true);
       console.log('[Rankings] Loading tracks for:', activeTab, selectedGenre);
       
-      // Get auth token
-      const token = await base44Auth.getStoredToken();
-      if (!token) {
-        console.log('[Rankings] No auth token, using base44Tracks.list()');
-        // Fallback to standard method
-        const result = await base44Tracks.list({ limit: 50 });
-        setTracks(result || []);
-        return;
+      // Use Base44 API directly - works on both web and mobile
+      let allTracks = await base44Tracks.list({ limit: 200 });
+      console.log('[Rankings] Got', allTracks.length, 'tracks from Base44');
+      
+      // Filter by genre if selected
+      if (selectedGenre !== 'all') {
+        allTracks = allTracks.filter((t: Track) => t.genre === selectedGenre);
+        console.log('[Rankings] After genre filter:', allTracks.length);
       }
       
-      // Determine sort field based on tab
-      let sortBy = 'download_count';
+      // Filter only approved tracks
+      allTracks = allTracks.filter((t: Track) => t.status === 'approved');
+      console.log('[Rankings] After status filter:', allTracks.length);
+      
+      // Sort based on active tab
       switch (activeTab) {
         case 'plays':
-          sortBy = 'play_count';
+          allTracks.sort((a: Track, b: Track) => (b.play_count || 0) - (a.play_count || 0));
           break;
         case 'downloads':
-          sortBy = 'download_count';
+          allTracks.sort((a: Track, b: Track) => (b.download_count || 0) - (a.download_count || 0));
           break;
         case 'recent':
-          sortBy = 'created_date';
+          allTracks.sort((a: Track, b: Track) => {
+            const dateA = new Date(a.created_date || 0).getTime();
+            const dateB = new Date(b.created_date || 0).getTime();
+            return dateB - dateA;
+          });
           break;
       }
       
-      // Call new rankings API endpoint
-      const response = await axios.post(
-        `${BACKEND_URL}/api/tracks/rankings`,
-        {
-          sort_by: sortBy,
-          genre: selectedGenre !== 'all' ? selectedGenre : null,
-          limit: 50,
-          offset: 0,
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      
-      if (response.data?.tracks) {
-        console.log('[Rankings] Got', response.data.tracks.length, 'tracks from native API');
-        setTracks(response.data.tracks);
-      } else if (Array.isArray(response.data)) {
-        console.log('[Rankings] Got', response.data.length, 'tracks from native API');
-        setTracks(response.data);
-      } else {
-        console.log('[Rankings] Unexpected response format:', response.data);
-        // Fallback to base44Tracks
-        const result = await base44Tracks.list({ limit: 50 });
-        setTracks(result || []);
-      }
+      // Limit to 50 tracks
+      setTracks(allTracks.slice(0, 50));
     } catch (error) {
       console.error('[Rankings] Error loading tracks:', error);
-      // Fallback to standard method on error
-      try {
-        const result = await base44Tracks.list({ limit: 50 });
-        setTracks(result || []);
-      } catch (e) {
-        setTracks([]);
-      }
+      setTracks([]);
     } finally {
       setLoading(false);
     }
