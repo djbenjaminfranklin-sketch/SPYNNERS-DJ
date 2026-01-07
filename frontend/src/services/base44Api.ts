@@ -1117,46 +1117,60 @@ export const base44Files = {
         throw new Error('Failed to read file');
       }
       
-      // Call Base44 function uploadTrackFile with JSON body
+      // Call Base44 function using correct URL format
       if (base64Data) {
-        const functionUrl = `https://spynners.base44.app/api/apps/${BASE44_APP_ID}/functions/invoke/uploadTrackFile`;
-        console.log('[Files] Calling Base44 function:', functionUrl);
-        console.log('[Files] Payload size:', base64Data.length, 'bytes');
+        // Try different URL formats for Base44 functions
+        const functionUrls = [
+          `https://spynners.base44.app/api/apps/${BASE44_APP_ID}/functions/uploadTrackFile`,
+          `https://api.base44.app/v1/apps/${BASE44_APP_ID}/functions/invoke/uploadTrackFile`,
+          `https://base44.app/api/apps/${BASE44_APP_ID}/functions/invoke/uploadTrackFile`,
+        ];
         
-        const response = await fetch(functionUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({
-            file: base64Data,
-            filename: fileName,
-            mimeType: actualMimeType,
-          }),
-        });
-        
-        console.log('[Files] Response status:', response.status);
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log('[Files] Upload success:', result);
-          
-          if (result.success && result.file_url) {
-            return { file_url: result.file_url, ...result };
-          } else if (result.file_url) {
-            return { file_url: result.file_url, success: true };
-          } else {
-            // Try to construct URL from result
-            const fileUrl = result.url || result.fileUrl || 
-              `https://base44.app/api/apps/${BASE44_APP_ID}/files/public/${BASE44_APP_ID}/${result.filename || fileName}`;
-            return { file_url: fileUrl, success: true, ...result };
+        for (const functionUrl of functionUrls) {
+          try {
+            console.log('[Files] Trying Base44 function URL:', functionUrl);
+            
+            const response = await fetch(functionUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: JSON.stringify({
+                file: base64Data,
+                filename: fileName,
+                mimeType: actualMimeType,
+              }),
+            });
+            
+            console.log('[Files] Response status:', response.status);
+            
+            if (response.ok) {
+              const result = await response.json();
+              console.log('[Files] Upload success:', result);
+              
+              if (result.success && result.file_url) {
+                return { file_url: result.file_url, ...result };
+              } else if (result.file_url) {
+                return { file_url: result.file_url, success: true };
+              } else if (result.url) {
+                return { file_url: result.url, success: true, ...result };
+              } else {
+                // Try to construct URL from result
+                const fileUrl = `https://base44.app/api/apps/${BASE44_APP_ID}/files/public/${BASE44_APP_ID}/${result.filename || fileName}`;
+                return { file_url: fileUrl, success: true, ...result };
+              }
+            } else if (response.status !== 404 && response.status !== 405) {
+              // If it's not a routing error, log and continue
+              const errorText = await response.text();
+              console.log('[Files] Function call failed:', response.status, errorText);
+            }
+          } catch (urlError) {
+            console.log('[Files] URL failed:', functionUrl, urlError);
           }
-        } else {
-          const errorText = await response.text();
-          console.error('[Files] Upload failed:', response.status, errorText);
-          throw new Error(`Upload failed: ${response.status} - ${errorText}`);
         }
+        
+        throw new Error('All Base44 function URLs failed');
       } else {
         throw new Error('No file data to upload');
       }
