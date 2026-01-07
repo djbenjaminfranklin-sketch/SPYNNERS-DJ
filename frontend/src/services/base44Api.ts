@@ -7,6 +7,7 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import { createClient } from '@base44/sdk';
 
 // Backend URL for web proxy
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || 
