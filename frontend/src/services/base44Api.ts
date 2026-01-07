@@ -530,6 +530,15 @@ export const base44Tracks = {
     is_vip?: boolean;
   }): Promise<Track[]> {
     try {
+      // Generate cache key based on filters
+      const cacheKey = `tracks_${JSON.stringify(filters || {})}`;
+      
+      // Check cache first
+      const cachedTracks = getFromCache<Track[]>(cacheKey);
+      if (cachedTracks) {
+        return cachedTracks;
+      }
+      
       console.log('[Tracks] Fetching tracks with filters:', filters);
       
       // On mobile, use Base44 entities directly
@@ -550,6 +559,8 @@ export const base44Tracks = {
         
         if (Array.isArray(data)) {
           console.log('[Tracks] Got', data.length, 'tracks from Base44');
+          // Cache the result
+          setCache(cacheKey, data, CACHE_DURATIONS.tracks);
           return data;
         }
         return [];
@@ -565,10 +576,12 @@ export const base44Tracks = {
         
         if (nativeResponse.data?.success && nativeResponse.data?.tracks) {
           console.log('[Tracks] Native API returned:', nativeResponse.data.tracks.length, 'tracks');
+          setCache(cacheKey, nativeResponse.data.tracks, CACHE_DURATIONS.tracks);
           return nativeResponse.data.tracks;
         }
         if (Array.isArray(nativeResponse.data)) {
           console.log('[Tracks] Native API returned array:', nativeResponse.data.length, 'tracks');
+          setCache(cacheKey, nativeResponse.data, CACHE_DURATIONS.tracks);
           return nativeResponse.data;
         }
       } catch (nativeError) {
