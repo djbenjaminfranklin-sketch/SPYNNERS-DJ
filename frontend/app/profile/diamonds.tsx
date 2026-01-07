@@ -43,14 +43,18 @@ export default function BlackDiamondsScreen() {
   }, []);
 
   const fetchDiamondBalance = async () => {
-  try {
-    setFetchingBalance(true);
-    // Backend endpoint is not available in this build; keep UI stable.
-    setBalance(0);
-  } finally {
-    setFetchingBalance(false);
-  }
-};
+    try {
+      setFetchingBalance(true);
+      // Get balance from user context (stored in Base44 user entity)
+      const userBalance = user?.black_diamonds || user?.data?.black_diamonds || 0;
+      setBalance(userBalance);
+    } catch (error) {
+      console.log('[Diamonds] Error fetching balance:', error);
+      setBalance(0);
+    } finally {
+      setFetchingBalance(false);
+    }
+  };
   const handlePurchase = async () => {
     if (!selectedPack) {
       Alert.alert(
