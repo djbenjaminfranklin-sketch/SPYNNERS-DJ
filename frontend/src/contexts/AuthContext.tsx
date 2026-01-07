@@ -42,7 +42,107 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     loadStoredAuth();
+    
+    // Set up notification listeners
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log('[AuthContext] Notification received:', notification.request.content.title);
+    });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('[AuthContext] Notification tapped:', response.notification.request.content.data);
+    });
+
+    return () => {
+      if (notificationListener.current) {
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      }
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+    };
   }, []);
+
+  // Register push notifications when user changes
+  useEffect(() => {
+    if (user) {
+      const userId = user.id || user._id || '';
+      if (userId) {
+        registerForPushNotifications(userId);
+      }
+    }
+  }, [user]);
+
+  // Register for push notifications
+  const registerForPushNotifications = async (userId: string) => {
+    try {
+      console.log('[AuthContext] Registering push notifications for user:', userId);
+      
+      // Check if running on a real device (required for push)
+      if (!Device.isDevice) {
+        console.log('[AuthContext] Push notifications require a physical device');
+        return;
+      }
+
+      // Get existing permissions
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      
+      // Request permissions if not already granted
+      if (existingStatus !== 'granted') {
+        console.log('[AuthContext] Requesting notification permissions...');
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      
+      if (finalStatus !== 'granted') {
+        console.log('[AuthContext] Notification permission denied');
+        return;
+      }
+
+      // Get project ID for token registration
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId || 
+                       Constants.easConfig?.projectId ||
+                       'ca33b30d-63f4-4a7e-a33a-9dee12dab85c'; // SPYNNERS project ID
+      
+      console.log('[AuthContext] Getting push token with projectId:', projectId);
+      
+      const tokenResponse = await Notifications.getExpoPushTokenAsync({ projectId });
+      const pushToken = tokenResponse.data;
+      
+      console.log('[AuthContext] Got push token:', pushToken.substring(0, 50) + '...');
+      setExpoPushToken(pushToken);
+      
+      // Register the token with Base44
+      const success = await base44PushNotifications.registerPushToken(userId, pushToken);
+      if (success) {
+        console.log('[AuthContext] Push token registered with backend');
+      }
+
+      // Configure Android notification channels
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('messages', {
+          name: 'Messages',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#9C27B0',
+          sound: 'default',
+          enableVibrate: true,
+          enableLights: true,
+        });
+        
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'Default',
+          importance: Notifications.AndroidImportance.HIGH,
+          sound: 'default',
+        });
+        
+        console.log('[AuthContext] Android notification channels configured');
+      }
+      
+    } catch (error) {
+      console.error('[AuthContext] Error registering push notifications:', error);
+    }
+  };
 
   // Fetch complete user data from Base44 Users collection
   const fetchCompleteUserData = async (basicUser: User): Promise<User> => {
