@@ -42,6 +42,7 @@ type BroadcastHistory = {
 export default function AdminBroadcast() {
   const router = useRouter();
   const { user, token } = useAuth();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
