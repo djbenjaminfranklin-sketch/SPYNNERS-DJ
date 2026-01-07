@@ -16,6 +16,7 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { base44Tracks, Track, base44Auth } from '../../src/services/base44Api';
 import AdminBadge, { isUserAdmin } from '../../src/components/AdminBadge';
+import { usePlayer } from '../../src/contexts/PlayerContext';
 import axios from 'axios';
 
 // Backend URL
