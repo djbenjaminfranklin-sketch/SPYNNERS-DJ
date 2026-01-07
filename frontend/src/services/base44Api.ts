@@ -1138,9 +1138,9 @@ export const base44Files = {
           token: token || undefined,
         });
         
-        console.log('[Files] Invoking publicUploadTrack function...');
+        console.log('[Files] Invoking uploadTrackFile function...');
         
-        const result = await base44.functions.invoke('publicUploadTrack', {
+        const result = await base44.functions.invoke('uploadTrackFile', {
           file: base64Data,
           filename: fileName,
           mimeType: actualMimeType,
