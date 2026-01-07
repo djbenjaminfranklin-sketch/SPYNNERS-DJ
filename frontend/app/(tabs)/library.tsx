@@ -46,14 +46,16 @@ export default function LibraryScreen() {
       // Get ALL tracks with higher limit to make sure we get all user's tracks
       const allTracks = await base44Tracks.list({ limit: 500 });
       
-      // Filter by producer_id ONLY - show ALL statuses (pending, approved, rejected)
+      // Filter by producer_id and EXCLUDE rejected tracks
       const myTracks = allTracks.filter((track: Track) => {
         const producerId = String(track.producer_id || '').trim();
         const isMyTrack = producerId === userId;
-        return isMyTrack;
+        const status = String(track.status || '').toLowerCase();
+        const isRejected = status === 'rejected' || status === 'declined';
+        return isMyTrack && !isRejected;
       });
       
-      console.log('[Library] My uploads (all statuses):', myTracks.length);
+      console.log('[Library] My uploads (excluding rejected):', myTracks.length);
       setTracks(myTracks);
     } catch (e) {
       console.error('[Library] fetch error', e);
