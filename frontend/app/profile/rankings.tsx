@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
   rankNumber: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
   
   // Track Cover
-  trackCover: { width: 50, height: 50, borderRadius: 8, overflow: 'hidden' },
+  trackCover: { width: 50, height: 50, borderRadius: 8, overflow: 'hidden', position: 'relative' },
   coverImage: { width: '100%', height: '100%' },
   coverPlaceholder: { 
     width: '100%', 
@@ -577,10 +577,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     alignItems: 'center' 
   },
+  playOverlay: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playOverlayActive: {
+    backgroundColor: Colors.primary,
+  },
   
   // Track Info
   trackInfo: { flex: 1, minWidth: 0 },
   trackTitle: { fontSize: 14, fontWeight: '600', color: Colors.text },
+  trackTitlePlaying: { color: Colors.primary },
   trackArtist: { fontSize: 12, color: Colors.primary, marginTop: 2 },
   trackGenre: { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
   
