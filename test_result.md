@@ -336,10 +336,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Admin Diamonds Page - No Crash"
-    - "Admin Broadcast/Email Page - No Crash"
-    - "Rankings Page - Music Player Works"
-    - "Track Radar - Correct Track Count Filter"
     - "Push Notifications Registration"
     - "Track Upload with Audio"
   stuck_tasks: []
