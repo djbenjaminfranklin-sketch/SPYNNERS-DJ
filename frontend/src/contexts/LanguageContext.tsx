@@ -1303,6 +1303,10 @@ const translations: Record<Language, Record<string, string>> = {
     'analytics.basedOnRated': 'Basé sur vos tracks notés',
     'analytics.invalidDateFormat': 'Format de date invalide. Utilisez AAAA-MM-JJ',
     'analytics.savePdfError': 'Impossible de sauvegarder le fichier PDF',
+    'analytics.pdfNotAvailable': "L'export PDF nécessite un serveur. Cette fonctionnalité sera disponible dans une prochaine mise à jour.",
+    
+    // Broadcast
+    'broadcast.notAvailableOffline': "L'envoi d'emails groupés nécessite un serveur. Utilisez Base44 Console ou un service email externe pour les broadcasts.",
     
     // Radar
     'radar.title': 'Track Radar',
