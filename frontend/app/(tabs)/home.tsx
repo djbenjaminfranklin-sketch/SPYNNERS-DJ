@@ -621,9 +621,16 @@ export default function HomeScreen() {
   // Notification state
   const [notificationCount, setNotificationCount] = useState(0);
   
-  // Load notifications count
+  // Load notifications count - refresh every 30 seconds
   useEffect(() => {
     loadNotifications();
+    
+    // Set up interval to refresh notifications every 30 seconds
+    const notifInterval = setInterval(() => {
+      loadNotifications();
+    }, 30000);
+    
+    return () => clearInterval(notifInterval);
   }, [user]);
 
   const loadNotifications = async () => {
@@ -632,6 +639,7 @@ export default function HomeScreen() {
       if (userId) {
         const count = await base44Notifications2.getUnreadCount(userId);
         setNotificationCount(count);
+        console.log('[Home] Notification count:', count);
       }
     } catch (error) {
       console.error('[Home] Error loading notifications:', error);
