@@ -21,6 +21,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
+  expoPushToken: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, fullName: string, userType?: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -33,6 +34,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
+  
+  // Notification listeners refs
+  const notificationListener = useRef<Notifications.Subscription | null>(null);
+  const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
     loadStoredAuth();
