@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "SPYNNERS Live",
-    "slug": "spynners-live-experience",
+    "name": "SPYNNERS DJ",
+    "slug": "spynners-dj",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,8 +9,8 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.spynners.live",
-      "buildNumber": "2",
+      "bundleIdentifier": "com.abbas.spynners",
+      "buildNumber": "17",
       "associatedDomains": [
         "applinks:spynners.com",
         "webcredentials:spynners.com"
@@ -32,7 +32,7 @@
       }
     },
     "android": {
-      "package": "com.spynners.live",
+      "package": "com.abbas.spynners",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -85,9 +85,9 @@
       "base44AppId": "691a4d96d819355b52c063f3",
       "acrcloudHost": "identify-eu-west-1.acrcloud.com",
       "eas": {
-        "projectId": "bb56295f-5394-4059-91ff-6d45e96eba63"
+        "projectId": "c1af0b44-03ab-45a7-9162-842db0b8c638"
       }
     },
-    "owner": "spynners"
+    "owner": "benfranklin12345"
   }
 }
