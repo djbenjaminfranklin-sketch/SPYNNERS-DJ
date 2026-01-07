@@ -500,6 +500,10 @@ const translations: Record<Language, Record<string, string>> = {
     'analytics.basedOnRated': 'Based on your rated tracks',
     'analytics.invalidDateFormat': 'Invalid date format. Use YYYY-MM-DD',
     'analytics.savePdfError': 'Unable to save PDF file',
+    'analytics.pdfNotAvailable': 'PDF export requires a server. This feature will be available in a future update.',
+    
+    // Broadcast
+    'broadcast.notAvailableOffline': 'Group email sending requires a server. Use Base44 Console or an external email service for broadcasts.',
     
     // Radar
     'radar.title': 'Track Radar',
