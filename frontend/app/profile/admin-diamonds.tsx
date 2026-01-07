@@ -39,6 +39,7 @@ type UserItem = {
 export default function AdminDiamonds() {
   const router = useRouter();
   const { user, token } = useAuth();
+  const { t } = useLanguage();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
