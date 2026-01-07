@@ -336,10 +336,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Internationalization (i18n) System Testing"
-    - "Language Switching Functionality"
-    - "English Default Language Verification"
-    - "French Language Translation Testing"
+    - "Admin Diamonds Page - No Crash"
+    - "Admin Broadcast/Email Page - No Crash"
+    - "Rankings Page - Music Player Works"
+    - "Track Radar - Correct Track Count Filter"
+    - "Push Notifications Registration"
+    - "Track Upload with Audio"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -353,3 +355,5 @@ agent_communication:
     message: "BLACK DIAMONDS FIX TESTING COMPLETED SUCCESSFULLY. Tested the specific fix requested: Login API POST /api/base44/auth/login with credentials djbenjaminfranklin@gmail.com/Elsamila1979 successfully returns user.data.black_diamonds = 48 (not 0 as before). The fix is working correctly. User object contains full data structure with proper black diamonds value. All backend testing is complete - 9 total tests passed, 0 failed."
   - agent: "testing"
     message: "🎉 INTERNATIONALIZATION (i18n) SYSTEM TESTING COMPLETED SUCCESSFULLY! Comprehensive testing performed on mobile dimensions (390x844) covering all requested areas: ✅ Login flow displays perfect English text ('Sign In', 'Email', 'Password') ✅ Navigation tabs show correct English labels ('Home', 'My Uploads', 'Chat', 'Profile') ✅ Profile stats display proper English labels ('Uploads', 'Plays', 'Downloads') ✅ Language switcher works flawlessly - successfully switched from English to French and verified French text ('Profil', 'Accueil', 'Mes Uploads'), then switched back to English ✅ Admin pages are accessible and display English labels ('Dashboard', 'Users', 'Downloads', 'Sessions', 'Diamonds') ✅ No untranslated keys or hardcoded French text found. The i18n system is working perfectly with proper English defaults and seamless language switching functionality. All requirements from the review request have been met."
+  - agent: "main"
+    message: "BUILD 20 FIXES - User reported 6 bugs in TestFlight build 19. I fixed: 1) Track Radar showing 172 tracks instead of 26 - added status='approved' filter 2) Admin Diamonds crash - migrated to Base44 direct API 3) Admin Broadcast/Email crash - already uses Base44 4) Rankings no play - migrated to Base44 direct API with client-side sorting 5) Push notifications - implemented token registration in AuthContext 6) Upload audio - needs verification. All pages now use Base44 API directly instead of BACKEND_URL which is inaccessible in production builds. PLEASE TEST: Login as djbenjaminfranklin@gmail.com / Elsamila1979, navigate to each problem page and verify no crashes."
