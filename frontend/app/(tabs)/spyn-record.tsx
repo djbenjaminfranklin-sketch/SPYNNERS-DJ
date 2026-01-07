@@ -955,23 +955,23 @@ export default function SpynRecordScreen() {
         
         // ALWAYS try to send to backend first - only go offline if it fails
         try {
-          // Online mode - send to backend
-          console.log('[SPYN Record] Sending audio to backend for recognition...');
+          // Online mode - send to Base44 for recognition
+          console.log('[SPYN Record] Sending audio to Base44 for recognition...');
           
-          // Send to backend for recognition
-          const response = await axios.post(`${BACKEND_URL}/api/recognize-audio`, {
-            audio_base64: audioBase64,
-          }, {
-            timeout: 30000,
+          // Send to Base44 for recognition
+          const response = await base44Spyn.recognizeAudio({
+            audio_data: audioBase64,
+            sample_rate: 44100,
+            channels: 2,
           });
           
           // Mark that we successfully made an API call (proves we're online!)
           hasSuccessfulApiCallRef.current = true;
           console.log('[SPYN Record] ✅ API call successful - we are ONLINE');
           
-          console.log('[SPYN Record] Recognition response:', response.data);
+          console.log('[SPYN Record] Recognition response:', response);
           
-          if (response.data.success && response.data.title) {
+          if (response.success && response.title) {
             const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
             
             // IMPROVED DEDUPLICATION: Normalize title for comparison
