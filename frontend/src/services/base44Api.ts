@@ -1083,7 +1083,7 @@ export const base44Playlists = {
 // ==================== FILES SERVICE ====================
 
 export const base44Files = {
-  async upload(fileUri: string, fileName: string, mimeType?: string): Promise<any> {
+  async upload(fileUri: string, fileName: string, mimeType?: string, authToken?: string): Promise<any> {
     try {
       console.log('[Files] Starting upload:', { fileName, fileUri: fileUri.substring(0, 100) });
       
@@ -1091,6 +1091,16 @@ export const base44Files = {
       const actualMimeType = mimeType || getMimeType(fileName);
       
       const BASE44_APP_ID = '691a4d96d819355b52c063f3';
+      
+      // Get auth token from storage if not provided
+      let token = authToken;
+      if (!token) {
+        try {
+          token = await AsyncStorage.getItem(TOKEN_KEY) || '';
+        } catch (e) {
+          console.log('[Files] Could not get token from storage');
+        }
+      }
       
       // Convert file to base64 for Base44 function
       let base64Data = '';
@@ -1117,25 +1127,32 @@ export const base44Files = {
         throw new Error('Failed to read file');
       }
       
-      // Call Base44 function using correct URL format
+      // Call Base44 function with authentication
       if (base64Data) {
         // Try different URL formats for Base44 functions
         const functionUrls = [
           `https://spynners.base44.app/api/apps/${BASE44_APP_ID}/functions/uploadTrackFile`,
-          `https://api.base44.app/v1/apps/${BASE44_APP_ID}/functions/invoke/uploadTrackFile`,
-          `https://base44.app/api/apps/${BASE44_APP_ID}/functions/invoke/uploadTrackFile`,
+          `https://spynners.base44.app/api/apps/${BASE44_APP_ID}/functions/invoke/uploadTrackFile`,
+          `https://api.base44.app/v1/apps/${BASE44_APP_ID}/functions/uploadTrackFile`,
         ];
         
         for (const functionUrl of functionUrls) {
           try {
             console.log('[Files] Trying Base44 function URL:', functionUrl);
             
+            const headers: Record<string, string> = {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            };
+            
+            // Add authentication token
+            if (token) {
+              headers['Authorization'] = `Bearer ${token}`;
+            }
+            
             const response = await fetch(functionUrl, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-              },
+              headers,
               body: JSON.stringify({
                 file: base64Data,
                 filename: fileName,
@@ -1160,13 +1177,19 @@ export const base44Files = {
                 const fileUrl = `https://base44.app/api/apps/${BASE44_APP_ID}/files/public/${BASE44_APP_ID}/${result.filename || fileName}`;
                 return { file_url: fileUrl, success: true, ...result };
               }
+            } else if (response.status === 401) {
+              console.log('[Files] Authentication failed - need valid token');
+              throw new Error('Authentication required. Please log in again.');
             } else if (response.status !== 404 && response.status !== 405) {
               // If it's not a routing error, log and continue
               const errorText = await response.text();
               console.log('[Files] Function call failed:', response.status, errorText);
             }
-          } catch (urlError) {
-            console.log('[Files] URL failed:', functionUrl, urlError);
+          } catch (urlError: any) {
+            console.log('[Files] URL failed:', functionUrl, urlError.message);
+            if (urlError.message.includes('Authentication')) {
+              throw urlError;
+            }
           }
         }
         
