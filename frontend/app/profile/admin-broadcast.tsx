@@ -96,39 +96,26 @@ export default function AdminBroadcast() {
 
   const loadData = async () => {
     try {
-      // Fetch stats - use higher limit to get accurate user count
-      const [usersRes, tracksRes, historyRes] = await Promise.all([
-        axios.get(`${BACKEND_URL}/api/admin/users?limit=10000`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { total: 0, users: [] } })),
-        axios.get(`${BACKEND_URL}/api/admin/tracks?limit=10`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { tracks: [] } })),
-        axios.get(`${BACKEND_URL}/api/admin/broadcast/history?limit=20`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { broadcasts: [] } })),
+      // Fetch users and tracks from Base44 directly
+      const [users, tracks] = await Promise.all([
+        base44Users.list({ limit: 1000 }).catch(() => []),
+        base44Tracks.list({ limit: 10 }).catch(() => []),
       ]);
       
       // Get user count and store users for autocomplete
-      const users = usersRes.data?.users || [];
-      const userTotal = usersRes.data?.total || users.length || 0;
-      setUserCount(userTotal);
+      setUserCount(users.length);
       setAllUsers(users.map((u: any) => ({
-        id: u.id,
+        id: u.id || u._id,
         email: u.email,
         full_name: u.full_name,
-        artist_name: u.artist_name,
-        avatar_url: u.avatar_url || u.generated_avatar_url,
+        artist_name: u.artist_name || u.data?.artist_name,
+        avatar_url: u.avatar_url || u.data?.avatar_url || u.generated_avatar_url,
       })));
-      setRecentTracks(tracksRes.data?.tracks || []);
-      // Map broadcast history with correct field names
-      const mappedHistory = (historyRes.data?.broadcasts || []).map((b: any) => ({
-        id: b.id,
-        subject: b.subject,
-        message: b.message,
-        recipient_type: b.recipient_type,
-        recipient_count: b.recipient_count || 0,
-        sent_at: b.sent_at || b.created_date,
-        sent_by: b.sent_by,
-        category: b.category || (b.categories?.length > 0 ? b.categories.join(', ') : null),
-      }));
-      setBroadcastHistory(mappedHistory);
+      setRecentTracks(tracks.slice(0, 10));
+      // Broadcast history not available without backend - show empty
+      setBroadcastHistory([]);
       
-      console.log('[AdminBroadcast] Loaded - Users:', userTotal, 'Tracks:', tracksRes.data?.tracks?.length || 0);
+      console.log('[AdminBroadcast] Loaded - Users:', users.length, 'Tracks:', tracks.length);
     } catch (error) {
       console.error('[AdminBroadcast] Error:', error);
     } finally {
