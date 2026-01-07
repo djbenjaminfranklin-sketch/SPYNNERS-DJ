@@ -295,10 +295,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('[AuthContext] Logging out...');
       
+      // Remove push token from backend before logout
+      const userId = user?.id || user?._id || '';
+      if (userId && expoPushToken) {
+        console.log('[AuthContext] Removing push token...');
+        await base44PushNotifications.removePushToken(userId);
+      }
+      
       await base44Auth.logout();
       
       setToken(null);
       setUser(null);
+      setExpoPushToken(null);
       
       console.log('[AuthContext] Logged out successfully');
     } catch (error) {
@@ -307,7 +315,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, signup, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, expoPushToken, login, signup, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
