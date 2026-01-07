@@ -127,12 +127,17 @@ export default function AnalyticsScreen() {
       const allTracks = await base44Tracks.list({ limit: 500 });
       console.log('[Analytics] Total tracks loaded:', allTracks.length);
       
-      // Filter to get ONLY user's tracks
+      // Filter to get ONLY user's tracks - convert to string for comparison
       const myTracks = allTracks.filter((track: any) => {
-        const isOwner = track.producer_id === userId || 
-               track.created_by_id === userId ||
-               track.uploaded_by === userId ||
-               (track as any).owner_id === userId;
+        const trackProducerId = String(track.producer_id || '').trim();
+        const trackCreatedById = String(track.created_by_id || '').trim();
+        const trackUploadedBy = String(track.uploaded_by || '').trim();
+        const trackOwnerId = String((track as any).owner_id || '').trim();
+        
+        const isOwner = trackProducerId === userId || 
+               trackCreatedById === userId ||
+               trackUploadedBy === userId ||
+               trackOwnerId === userId;
         return isOwner;
       });
       
