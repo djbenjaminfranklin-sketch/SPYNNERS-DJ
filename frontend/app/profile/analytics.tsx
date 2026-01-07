@@ -209,9 +209,14 @@ export default function AnalyticsScreen() {
         });
       });
 
-      // Sort by plays for top tracks
-      trackStats.sort((a, b) => b.plays - a.plays);
-      setTopTracks(trackStats.slice(0, 5));
+      // Sort by plays for top tracks - ONLY show approved tracks
+      const approvedTrackStats = trackStats.filter(t => 
+        t.status?.toLowerCase() === 'approved' || 
+        t.status?.toLowerCase() === 'active' ||
+        !t.status // No status usually means approved
+      );
+      approvedTrackStats.sort((a, b) => b.plays - a.plays);
+      setTopTracks(approvedTrackStats.slice(0, 5));
 
       setStats({
         totalTracks: myTracks.length,
