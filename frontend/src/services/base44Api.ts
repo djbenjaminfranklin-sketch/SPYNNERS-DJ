@@ -1238,14 +1238,15 @@ export const base44Files = {
       
       // Use Base44 SDK to call the function
       if (base64Data) {
-        console.log('[Files] Creating Base44 client with token...');
+        console.log('[Files] Creating Base44 client...');
         
+        // Use full app ID instead of slug
         const base44 = createClient({
-          appId: 'spynners',
+          appId: '691a4d96d819355b52c063f3',
           token: token || undefined,
         });
         
-        console.log('[Files] Invoking publicUploadTrack function...');
+        console.log('[Files] Base44 client created, invoking function...');
         console.log('[Files] Payload: filename=', fileName, 'mimeType=', actualMimeType, 'base64Length=', base64Data.length);
         
         try {
