@@ -127,15 +127,19 @@ export default function AnalyticsScreen() {
       const allTracks = await base44Tracks.list({ limit: 500 });
       console.log('[Analytics] Total tracks loaded:', allTracks.length);
       
-      // Filter to get ONLY user's tracks - use ONLY producer_id (not created_by_id which is admin)
+      // Filter to get ONLY user's APPROVED tracks
       const myTracks = allTracks.filter((track: any) => {
         const trackProducerId = String(track.producer_id || '').trim();
-        // ONLY match by producer_id - this is the actual owner of the track
+        const trackStatus = String(track.status || '').toLowerCase().trim();
+        
+        // Must be owned by user AND approved
         const isOwner = trackProducerId === userId && trackProducerId !== '';
-        return isOwner;
+        const isApproved = trackStatus === 'approved' || trackStatus === 'active' || trackStatus === '';
+        
+        return isOwner && isApproved;
       });
       
-      console.log('[Analytics] My tracks count (by producer_id only):', myTracks.length);
+      console.log('[Analytics] My approved tracks count:', myTracks.length);
       console.log('[Analytics] User ID being checked:', userId);
 
       // Calculate detailed stats
