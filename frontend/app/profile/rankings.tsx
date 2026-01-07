@@ -215,6 +215,25 @@ export default function RankingsScreen() {
     return track.producer_name || track.artist_name || 'Unknown Artist';
   };
 
+  // Handle play track
+  const handlePlayTrack = (track: Track) => {
+    const trackId = track.id || track._id || '';
+    const currentId = currentTrack?.id || currentTrack?._id || '';
+    
+    if (currentId === trackId && isPlaying) {
+      togglePlayPause();
+    } else {
+      playTrack(track, tracks);
+    }
+  };
+
+  // Check if track is currently playing
+  const isTrackPlaying = (track: Track): boolean => {
+    const trackId = track.id || track._id || '';
+    const currentId = currentTrack?.id || currentTrack?._id || '';
+    return currentId === trackId && isPlaying;
+  };
+
   // Render medal for top 3
   const renderMedal = (rank: number) => {
     const colors: Record<number, { bg: string, icon: string }> = {
