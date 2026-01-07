@@ -102,3 +102,7 @@ backend/spynners-final-v2.zip
 *.env
 *.env.*
 model.patch
+-e 
+# Environment files
+*.env
+*.env.*
