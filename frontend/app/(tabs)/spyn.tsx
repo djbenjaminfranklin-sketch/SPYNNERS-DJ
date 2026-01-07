@@ -411,24 +411,33 @@ export default function SpynScreen() {
       let venueTypes: string[] = [];
       let isValidVenue = false;
       
-      // Try to get venue from Google Places API
+      // Try to get venue from Base44 getNearbyPlaces function (Foursquare)
       try {
-        const response = await axios.get(
-          `${BACKEND_URL}/api/nearby-places`,
-          { params: { lat, lng }, timeout: 10000 }
-        );
-        if (response.data.success && response.data.venue) {
-          venueName = response.data.venue;
-          venueType = response.data.venue_type || response.data.types?.[0];
-          venueTypes = response.data.types || [];
+        const placesResponse = await base44Spyn.getNearbyPlaces({
+          latitude: lat,
+          longitude: lng,
+          radius: 1000,
+        });
+        
+        if (placesResponse.success && placesResponse.venue) {
+          venueName = placesResponse.venue;
+          venueType = placesResponse.venue_type || placesResponse.types?.[0];
+          venueTypes = placesResponse.types || [];
           
           // Check if it's a valid venue for Black Diamond
           isValidVenue = venueTypes.some((type: string) => 
             VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
           );
+        } else if (placesResponse.places && placesResponse.places.length > 0) {
+          // Handle array of places response
+          const nearestPlace = placesResponse.places[0];
+          venueName = nearestPlace.name;
+          venueType = nearestPlace.category || nearestPlace.type;
+          venueTypes = nearestPlace.categories || [venueType];
+          isValidVenue = true; // Assume valid if returned by Foursquare
         }
       } catch (e) {
-        console.log('Places lookup failed, using reverse geocoding');
+        console.log('[SPYN] Places lookup failed, using reverse geocoding');
       }
       
       // Get address via reverse geocoding
