@@ -1942,6 +1942,121 @@ export const base44Notifications2 = {
   },
 };
 
+// ==================== SPYN FUNCTIONS (ACRCloud, Places, Diamonds) ====================
+
+export const base44Spyn = {
+  /**
+   * Recognize audio using ACRCloud via Base44
+   */
+  async recognizeAudio(params: {
+    audio_data: string;
+    sample_rate?: number;
+    channels?: number;
+    location?: any;
+    dj_id?: string;
+    dj_name?: string;
+  }): Promise<any> {
+    try {
+      console.log('[base44Spyn] Calling recognizeAudio function...');
+      
+      const response = await fetch(
+        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/recognizeAudio`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            audio_data: params.audio_data,
+            sample_rate: params.sample_rate || 44100,
+            channels: params.channels || 1,
+            location: params.location,
+            dj_id: params.dj_id,
+            dj_name: params.dj_name,
+          }),
+        }
+      );
+      
+      const data = await response.json();
+      console.log('[base44Spyn] recognizeAudio response:', data);
+      return data;
+    } catch (error) {
+      console.error('[base44Spyn] recognizeAudio error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get nearby places (clubs, bars) using Foursquare via Base44
+   */
+  async getNearbyPlaces(params: {
+    latitude: number;
+    longitude: number;
+    radius?: number;
+  }): Promise<any> {
+    try {
+      console.log('[base44Spyn] Calling getNearbyPlaces function...');
+      
+      const response = await fetch(
+        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/getNearbyPlaces`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            latitude: params.latitude,
+            longitude: params.longitude,
+            radius: params.radius || 1000,
+          }),
+        }
+      );
+      
+      const data = await response.json();
+      console.log('[base44Spyn] getNearbyPlaces response:', data);
+      return data;
+    } catch (error) {
+      console.error('[base44Spyn] getNearbyPlaces error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Award Black Diamond to producer when their track is played
+   */
+  async awardDiamond(params: {
+    producer_email: string;
+    track_title: string;
+    dj_name: string;
+    venue?: string;
+    city?: string;
+    country?: string;
+  }): Promise<any> {
+    try {
+      console.log('[base44Spyn] Calling awardDiamond function...');
+      
+      const response = await fetch(
+        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/awardDiamond`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            producer_email: params.producer_email,
+            track_title: params.track_title,
+            dj_name: params.dj_name,
+            venue: params.venue || '',
+            city: params.city || '',
+            country: params.country || '',
+          }),
+        }
+      );
+      
+      const data = await response.json();
+      console.log('[base44Spyn] awardDiamond response:', data);
+      return data;
+    } catch (error) {
+      console.error('[base44Spyn] awardDiamond error:', error);
+      throw error;
+    }
+  },
+};
+
 // ==================== PUSH NOTIFICATIONS SERVICE ====================
 
 export const base44PushNotifications = {
