@@ -405,14 +405,41 @@ export default function HomeScreen() {
     setMemberSearchQuery(''); // Reset search
     
     try {
-      // Load ALL members using nativeGetAllUsers with higher limit
-      const users = await base44Users.nativeGetAllUsers({ search: '', limit: 1000, offset: 0 });
       const userId = user?.id || user?._id || '';
+      let users: any[] = [];
       
-      console.log('[SendTrack] Loaded', users.length, 'users');
+      // Method 1: Try nativeGetAllUsers first
+      try {
+        users = await base44Users.nativeGetAllUsers({ search: '', limit: 1000, offset: 0 });
+        console.log('[SendTrack] Method 1 - Got', users.length, 'users');
+      } catch (e) {
+        console.log('[SendTrack] Method 1 failed');
+      }
+      
+      // Method 2: If no users, try list() function
+      if (!users || users.length === 0) {
+        try {
+          users = await base44Users.list({ limit: 1000 });
+          console.log('[SendTrack] Method 2 - Got', users.length, 'users');
+        } catch (e) {
+          console.log('[SendTrack] Method 2 failed');
+        }
+      }
+      
+      // Method 3: If still no users, extract from tracks
+      if (!users || users.length === 0) {
+        try {
+          users = await base44Users.fetchAllUsersFromTracks();
+          console.log('[SendTrack] Method 3 - Got', users.length, 'users from tracks');
+        } catch (e) {
+          console.log('[SendTrack] Method 3 failed');
+        }
+      }
+      
+      console.log('[SendTrack] Total loaded:', users?.length || 0, 'users');
       
       // Filter out current user
-      const filteredUsers = users.filter((u: any) => {
+      const filteredUsers = (users || []).filter((u: any) => {
         const memberId = u.id || u._id || '';
         return memberId !== userId;
       });
