@@ -3,6 +3,9 @@
  * Uses direct Base44 API on mobile, backend proxy on web to avoid CORS
  */
 
+// IMPORTANT: This polyfill must be imported first for crypto support in React Native
+import 'react-native-get-random-values';
+
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
