@@ -989,19 +989,16 @@ export default function SpynScreen() {
     if (canEarnDiamond) {
       console.log('[SPYN] Valid venue detected, awarding Black Diamond...');
       try {
-        const awardResponse = await axios.post(
-          `${BACKEND_URL}/api/award-diamond`,
-          { 
-            user_id: user?.id,
-            type: 'black',
-            reason: 'spyn_session',
-            venue: correctedVenue || location?.venue,
-            venue_type: location?.venue_type,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const awardResponse = await base44Spyn.awardDiamond({
+          producer_email: user?.email || '',
+          track_title: identifiedTracks[0]?.title || 'Session SPYN',
+          dj_name: user?.full_name || 'DJ',
+          venue: correctedVenue || location?.venue || '',
+          city: location?.city || '',
+          country: location?.country || '',
+        });
         
-        if (awardResponse.data.success && !awardResponse.data.already_awarded) {
+        if (awardResponse.success && !awardResponse.already_awarded) {
           console.log('[SPYN] Black Diamond awarded!');
           
           setShowDiamondModal(true);
