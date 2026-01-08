@@ -860,16 +860,17 @@ export default function SpynScreen() {
         let producerId = response.producer_id || '';
         let trackId = response.spynners_track_id || response.acr_id || '';
         
-        // If we have spynners_track_id but no title, fetch from Base44
-        if (!trackTitle && response.spynners_track_id) {
-          console.log('[SPYN] Track ID found but no title - fetching track details...');
+        // If we have spynners_track_id but no title/cover, fetch from Base44
+        if (response.spynners_track_id && (!trackTitle || trackTitle === 'Track identifiée' || !coverImage)) {
+          console.log('[SPYN] Track ID found but missing title/cover - fetching track details...');
           try {
             const trackDetails = await base44Tracks.getById(response.spynners_track_id);
             if (trackDetails) {
-              trackTitle = trackDetails.title || 'Track identifiée';
+              trackTitle = trackDetails.title || trackTitle || 'Track identifiée';
               trackArtist = trackDetails.producer_name || trackDetails.artist_name || trackArtist;
               coverImage = trackDetails.artwork_url || trackDetails.cover_image || coverImage;
               producerId = trackDetails.producer_id || producerId;
+              console.log('[SPYN] Track details fetched:', trackTitle, trackArtist, coverImage ? '(has cover)' : '(no cover)');
             }
           } catch (e) {
             console.log('[SPYN] Could not fetch track details:', e);
