@@ -1335,24 +1335,20 @@ export default function SpynRecordScreen() {
       const detectedTitles = new Set<string>();
       
       if (audioBase64ForAnalysis && audioBase64ForAnalysis.length > 0) {
-        console.log('[SPYN Record] Analyzing audio, length:', audioBase64ForAnalysis.length);
+        console.log('[SPYN Record] Analyzing audio with ACRCloud hybrid, length:', audioBase64ForAnalysis.length);
         
         try {
-          const response = await base44Spyn.recognizeAudio({
-            audio_data: audioBase64ForAnalysis,
-            sample_rate: 44100,
-            channels: 2,
-          });
+          // Use direct ACRCloud hybrid recognition
+          const response = await recognizeAudioHybrid(audioBase64ForAnalysis);
           
           console.log('[SPYN Record] Analysis response:', response);
           
-          // Check if we found a track - either with title OR with spynners_track_id
-          if (response.success && (response.title || (response.found && response.spynners_track_id))) {
-            // Get title from various possible fields
-            let trackTitle = response.title || response.external_title || response.track_title;
-            let trackArtist = response.artist || response.external_artist || response.track_artist;
-            let coverImage = response.cover_image || response.artwork_url || '';
-            let producerId = response.producer_id;
+          // Check if we found a track
+          if (response.success && response.found && response.title) {
+            const trackTitle = response.title;
+            const trackArtist = response.artist || 'Artiste inconnu';
+            const coverImage = response.cover_image || '';
+            const producerId = '';
             
             // If we have track ID but no title, fetch track details from Base44
             if (!trackTitle && response.spynners_track_id) {
