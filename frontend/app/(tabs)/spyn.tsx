@@ -508,10 +508,20 @@ export default function SpynScreen() {
           venueTypes = placesResponse.types || [];
           console.log('[SPYN] Got venue name:', venueName, 'type:', venueType, 'types:', venueTypes);
           
-          // Check if it's a valid venue for Black Diamond - STRICT CHECK
-          isValidVenue = venueTypes.some((type: string) => 
-            VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+          // Check if venue is in EXCLUDED list (home, office, etc.)
+          const isExcluded = venueTypes.some((type: string) => 
+            EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
+          
+          if (isExcluded) {
+            console.log('[SPYN] ❌ Venue EXCLUDED - is a residence/office/etc');
+            isValidVenue = false;
+          } else {
+            // Check if it's a valid venue for Black Diamond - STRICT CHECK
+            isValidVenue = venueTypes.some((type: string) => 
+              VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+            );
+          }
           console.log('[SPYN] Venue validation:', isValidVenue ? 'VALID VENUE ✓' : 'NOT A VALID VENUE');
         } else if (placesResponse.places && placesResponse.places.length > 0) {
           // Handle array of places response
@@ -521,10 +531,20 @@ export default function SpynScreen() {
           venueTypes = nearestPlace.categories || [venueType].filter(Boolean);
           console.log('[SPYN] Got venue from places array:', venueName, 'categories:', venueTypes);
           
-          // STRICT CHECK - don't assume it's valid, verify the types
-          isValidVenue = venueTypes.some((type: string) => 
-            VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+          // Check if venue is in EXCLUDED list
+          const isExcluded = venueTypes.some((type: string) => 
+            EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
+          
+          if (isExcluded) {
+            console.log('[SPYN] ❌ Venue EXCLUDED - is a residence/office/etc');
+            isValidVenue = false;
+          } else {
+            // STRICT CHECK - don't assume it's valid, verify the types
+            isValidVenue = venueTypes.some((type: string) => 
+              VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+            );
+          }
           console.log('[SPYN] Venue validation:', isValidVenue ? 'VALID VENUE ✓' : 'NOT A VALID VENUE');
         } else if (placesResponse.name) {
           // Direct venue object response
@@ -533,10 +553,20 @@ export default function SpynScreen() {
           venueTypes = placesResponse.types || [venueType].filter(Boolean);
           console.log('[SPYN] Got direct venue:', venueName, 'types:', venueTypes);
           
-          // STRICT CHECK - don't assume it's valid, verify the types
-          isValidVenue = venueTypes.some((type: string) => 
-            VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+          // Check if venue is in EXCLUDED list
+          const isExcluded = venueTypes.some((type: string) => 
+            EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
+          
+          if (isExcluded) {
+            console.log('[SPYN] ❌ Venue EXCLUDED - is a residence/office/etc');
+            isValidVenue = false;
+          } else {
+            // STRICT CHECK - don't assume it's valid, verify the types
+            isValidVenue = venueTypes.some((type: string) => 
+              VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+            );
+          }
           console.log('[SPYN] Venue validation:', isValidVenue ? 'VALID VENUE ✓' : 'NOT A VALID VENUE');
         }
       } catch (e: any) {
