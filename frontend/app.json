@@ -79,8 +79,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/spynners-logo.png",
-          "color": "#00D4FF",
-          "sounds": ["./assets/sounds/notification.wav"]
+          "color": "#00D4FF"
         }
       ]
     ],
