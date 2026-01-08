@@ -937,8 +937,6 @@ export default function SpynScreen() {
         }
       } else {
         // No track found
-        console.log('[SPYN] No track identified');
-      } else {
         console.log('[SPYN] No track identified in this cycle');
       }
     } catch (error: any) {
