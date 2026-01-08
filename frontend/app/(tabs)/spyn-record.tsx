@@ -732,6 +732,16 @@ export default function SpynRecordScreen() {
       // Keep screen awake during recording
       activateKeepAwakeAsync('spyn-record-session').catch(e => console.log('[SPYN Record] Keep awake error:', e));
       
+      // Show info alert about screen staying on (only on mobile)
+      if (Platform.OS !== 'web') {
+        Alert.alert(
+          '🎙️ ' + t('spynRecord.recordingStarted'),
+          t('spynRecord.screenStaysOn') || 'L\'écran restera allumé pendant l\'enregistrement. Ne verrouillez pas manuellement votre téléphone pour permettre l\'identification des tracks.',
+          [{ text: 'OK', style: 'default' }],
+          { cancelable: true }
+        );
+      }
+      
       setIsRecording(true);
       isRecordingRef.current = true; // Also update ref for closures
       setIsPaused(false);
