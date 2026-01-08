@@ -183,6 +183,11 @@ export default function HomeScreen() {
     loadTracks();
   }, []);
 
+  // Reload tracks when filters change
+  useEffect(() => {
+    loadTracks();
+  }, [selectedGenre, selectedEnergy, showVIPOnly, selectedSort]);
+
   useEffect(() => {
     // Animate player appearance
     Animated.timing(playerAnim, {
