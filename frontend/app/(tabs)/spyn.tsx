@@ -772,8 +772,12 @@ export default function SpynScreen() {
       }
 
       // ONLY show tracks that are found in Spynners database
-      if (response.success && response.title && response.spynners_track_id) {
-        const trackKey = `${response.title}-${response.artist}`.toLowerCase();
+      if (response.success && response.found && response.spynners_track_id) {
+        // Get title from various possible fields
+        const trackTitle = response.title || response.external_title || response.track_title || 'Track identifiée';
+        const trackArtist = response.artist || response.external_artist || response.track_artist || 'Artiste inconnu';
+        
+        const trackKey = `${trackTitle}-${trackArtist}`.toLowerCase();
         
         // Check if we already identified this track
         if (!identifiedTracksRef.current.includes(trackKey)) {
