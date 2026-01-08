@@ -198,8 +198,19 @@ export default function HomeScreen() {
       console.log('[Home] Loading tracks...');
       console.log('[Home] Filters - Genre:', selectedGenre, 'Energy:', selectedEnergy, 'VIP:', showVIPOnly);
       
-      // Load ALL tracks with high limit - we'll filter client-side for accuracy
-      const filters: any = { limit: 500 };
+      // Build server-side filters for better performance
+      const filters: any = { limit: 200 };
+      
+      // Add server-side filters if available
+      if (selectedGenre !== 'All Genres') {
+        filters.genre = selectedGenre;
+      }
+      if (selectedEnergy !== 'All Energy Levels') {
+        filters.energy_level = selectedEnergy.toLowerCase().replace(' ', '_');
+      }
+      if (showVIPOnly) {
+        filters.is_vip = true;
+      }
       
       const sortMap: Record<string, string> = {
         'Recently Added': '-created_date',
@@ -219,7 +230,7 @@ export default function HomeScreen() {
         );
         console.log('[Home] Approved tracks:', filteredTracks.length);
         
-        // Step 2: Apply genre filter CLIENT-SIDE for accuracy
+        // Step 2: Apply genre filter CLIENT-SIDE for accuracy (double check)
         if (selectedGenre !== 'All Genres') {
           const genreLower = selectedGenre.toLowerCase();
           filteredTracks = filteredTracks.filter((track: Track) => {
@@ -232,7 +243,7 @@ export default function HomeScreen() {
           console.log('[Home] After genre filter:', filteredTracks.length, 'tracks for', selectedGenre);
         }
         
-        // Step 3: Apply energy filter CLIENT-SIDE
+        // Step 3: Apply energy filter CLIENT-SIDE (double check)
         if (selectedEnergy !== 'All Energy Levels') {
           const energyLower = selectedEnergy.toLowerCase().replace(' ', '_');
           filteredTracks = filteredTracks.filter((track: Track) => {
@@ -242,7 +253,7 @@ export default function HomeScreen() {
           console.log('[Home] After energy filter:', filteredTracks.length, 'tracks');
         }
         
-        // Step 4: Apply VIP filter CLIENT-SIDE
+        // Step 4: Apply VIP filter CLIENT-SIDE (double check)
         if (showVIPOnly) {
           filteredTracks = filteredTracks.filter((track: Track) => track.is_vip === true);
           console.log('[Home] After VIP filter:', filteredTracks.length, 'tracks');
