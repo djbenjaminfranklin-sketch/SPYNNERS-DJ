@@ -1303,7 +1303,7 @@ export default function SpynRecordScreen() {
   const confirmEndSession = async () => {
     try {
       console.log('[SPYN Record] Processing end session...');
-      setShowEndSessionModal(false);
+      // DON'T close modal yet - keep it visible during processing
       setCurrentAnalysis('Analyse en cours...');
       
       let audioBase64ForAnalysis = '';
