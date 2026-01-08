@@ -1581,6 +1581,9 @@ export default function SpynRecordScreen() {
         setOtherDjName('');
         setSaveMix(true);
         
+        // Allow screen to sleep again
+        deactivateKeepAwake('spyn-record-session');
+        
         // NOW close the modal after everything is done
         setShowEndSessionModal(false);
         
