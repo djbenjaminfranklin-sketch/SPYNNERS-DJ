@@ -841,21 +841,42 @@ export default function SpynScreen() {
       console.log('[SPYN] ACRCloud Response:', JSON.stringify(response, null, 2));
 
       // Show response in debug log
-      if (response.error && !response.found) {
+      if (response.error) {
         setDebugLog(`❌ Erreur: ${response.error}`);
-      } else if (response.found && response.title) {
-        setDebugLog(`✅ ${response.title} (${response.mode})`);
+      } else if (response.found || response.title || response.external_title) {
+        setDebugLog(`✅ ${response.title || response.external_title || 'Track trouvée'}`);
       } else {
         setDebugLog('🎵 Aucune track identifiée');
       }
 
-      // Show tracks that are found (either in OFFLINE Spynners catalog or ONLINE global)
-      if (response.success && response.found && response.title) {
-        // Get title and artist directly from ACRCloud response
-        let trackTitle = response.title;
-        let trackArtist = response.artist || 'Artiste inconnu';
-        let coverImage = response.cover_image || '';
-        let producerId = '';
+      // Check if track was found - handle various response formats from Base44
+      const hasTrack = response.success && (response.found || response.title || response.external_title || response.spynners_track_id);
+      
+      if (hasTrack) {
+        // Get title and artist from various possible fields
+        let trackTitle = response.title || response.external_title || response.external_metadata?.title;
+        let trackArtist = response.artist || response.external_artist || response.external_metadata?.artist || 'Artiste inconnu';
+        let coverImage = response.cover_image || response.artwork_url || '';
+        let producerId = response.producer_id || '';
+        let trackId = response.spynners_track_id || response.acr_id || '';
+        
+        // If we have spynners_track_id but no title, fetch from Base44
+        if (!trackTitle && response.spynners_track_id) {
+          console.log('[SPYN] Track ID found but no title - fetching track details...');
+          try {
+            const trackDetails = await base44Tracks.getById(response.spynners_track_id);
+            if (trackDetails) {
+              trackTitle = trackDetails.title || 'Track identifiée';
+              trackArtist = trackDetails.producer_name || trackDetails.artist_name || trackArtist;
+              coverImage = trackDetails.artwork_url || trackDetails.cover_image || coverImage;
+              producerId = trackDetails.producer_id || producerId;
+            }
+          } catch (e) {
+            console.log('[SPYN] Could not fetch track details:', e);
+          }
+        }
+        
+        trackTitle = trackTitle || 'Track identifiée';
         
         const trackKey = `${trackTitle}-${trackArtist}`.toLowerCase();
         
