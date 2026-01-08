@@ -1960,7 +1960,7 @@ export const base44Spyn = {
       console.log('[base44Spyn] Calling recognizeAudio function...');
       
       const response = await fetch(
-        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/recognizeAudio`,
+        `https://spynners.base44.app/api/functions/recognizeAudio`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1985,7 +1985,7 @@ export const base44Spyn = {
   },
 
   /**
-   * Get nearby places (clubs, bars) using Foursquare via Base44
+   * Get nearby places (clubs, bars) using Google Places via Base44
    */
   async getNearbyPlaces(params: {
     latitude: number;
@@ -1996,7 +1996,7 @@ export const base44Spyn = {
       console.log('[base44Spyn] Calling getNearbyPlaces function...');
       
       const response = await fetch(
-        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/getNearbyPlaces`,
+        `https://spynners.base44.app/api/functions/getNearbyPlaces`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2032,7 +2032,7 @@ export const base44Spyn = {
       console.log('[base44Spyn] Calling awardDiamond function...');
       
       const response = await fetch(
-        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/awardDiamond`,
+        `https://spynners.base44.app/api/functions/awardDiamond`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
