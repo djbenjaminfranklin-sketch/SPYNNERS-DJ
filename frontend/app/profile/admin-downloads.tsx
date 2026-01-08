@@ -80,32 +80,13 @@ export default function AdminDownloads() {
     try {
       console.log('[AdminDownloads] Loading downloads...');
       
-      // Fetch tracks directly from Base44 entities API
+      // Use base44Tracks to get all tracks with their download counts
       let tracksData: any[] = [];
       
       try {
-        const url = `${BASE44_API_URL}/entities/Track?limit=500`;
-        console.log('[AdminDownloads] Fetching from:', url);
-        
-        const response = await axios.get(url, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 30000,
-        });
-        
-        console.log('[AdminDownloads] Response status:', response.status);
-        
-        if (Array.isArray(response.data)) {
-          tracksData = response.data;
-        } else if (response.data?.items) {
-          tracksData = response.data.items;
-        } else if (response.data?.data) {
-          tracksData = response.data.data;
-        }
-        
-        console.log('[AdminDownloads] Got', tracksData.length, 'tracks from Base44');
+        // Use base44Tracks.list which uses the mobile API proxy
+        tracksData = await base44Tracks.list({ limit: 1000 });
+        console.log('[AdminDownloads] Got', tracksData?.length || 0, 'tracks from Base44');
       } catch (base44Error: any) {
         console.error('[AdminDownloads] Base44 error:', base44Error?.message);
         
