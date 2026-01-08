@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the SPYNNERS application with a focus on the internationalization (i18n) system. The app should display all text in English by default and allow language switching to French."
+user_problem_statement: "Test complet de l'application SPYNNERS avant build iOS natif. Application de DJ avec détection de tracks audio, envoi de tracks entre utilisateurs, et gestion admin. APIs critiques à tester: Authentification, Tracks, TrackSend, Admin Downloads, Audio Recognition, Places, Audio Concatenation."
 
 backend:
   - task: "Health Check API"
