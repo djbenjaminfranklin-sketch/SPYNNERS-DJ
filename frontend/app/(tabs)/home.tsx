@@ -275,25 +275,6 @@ export default function HomeScreen() {
       setLoading(false);
     }
   };
-            default: // Recently Added
-              return new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime();
-          }
-        });
-        
-        console.log('[Home] Final filtered tracks:', filteredTracks.length);
-        setTracks(filteredTracks);
-      } else {
-        console.log('[Home] No tracks from API, showing demo tracks');
-        setTracks(getDemoTracks());
-      }
-    } catch (error) {
-      console.error('[Home] Error loading tracks:', error);
-      // Show demo tracks on error
-      setTracks(getDemoTracks());
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const onRefresh = async () => {
     setRefreshing(true);
