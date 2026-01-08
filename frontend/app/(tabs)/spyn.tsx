@@ -1186,6 +1186,25 @@ export default function SpynScreen() {
           </Text>
         </View>
 
+        {/* ==================== DEBUG: AUDIO SOURCE & STATUS ==================== */}
+        {debugLog ? (
+          <View style={[styles.debugBanner, { backgroundColor: '#1a1a2e', marginTop: 4 }]}>
+            <Ionicons 
+              name={isExternalAudio ? "hardware-chip" : "mic"} 
+              size={16} 
+              color={isExternalAudio ? "#00D4FF" : "#888"} 
+            />
+            <Text style={[styles.debugText, { color: '#00D4FF', flex: 1 }]}>
+              {debugLog}
+            </Text>
+            {audioSourceInfo !== 'Détection...' && (
+              <Text style={[styles.debugText, { color: isExternalAudio ? '#4CAF50' : '#888', fontSize: 10 }]}>
+                {isExternalAudio ? '🔌 EXTERNE' : '📱 INTERNE'}
+              </Text>
+            )}
+          </View>
+        ) : null}
+
         {/* ==================== OFFLINE BANNER ==================== */}
         {isOffline && (
           <View style={styles.offlineBanner}>
