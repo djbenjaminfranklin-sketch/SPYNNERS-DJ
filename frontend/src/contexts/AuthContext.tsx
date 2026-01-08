@@ -1,18 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import Constants from 'expo-constants';
-import { base44Auth, base44Users, base44PushNotifications, User } from '../services/base44Api';
-
-// NOTE: Notification handler is set up inside the component to prevent iOS crashes
+import { base44Auth, base44Users, User } from '../services/base44Api';
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  expoPushToken: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, fullName: string, userType?: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -25,58 +18,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  
-  // Notification listeners refs
-  const notificationListener = useRef<Notifications.Subscription | null>(null);
-  const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
     loadStoredAuth();
-    
-    // Delay notification listener setup to not block app startup
-    // and wrap in try-catch to prevent crashes
-    const setupNotificationListeners = async () => {
-      try {
-        // Wait for app to be fully initialized
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Only set up listeners on native platforms
-        if (Platform.OS === 'web') {
-          console.log('[AuthContext] Skipping notification listeners on web');
-          return;
-        }
-        
-        console.log('[AuthContext] Setting up notification listeners...');
-        
-        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-          console.log('[AuthContext] Notification received:', notification?.request?.content?.title);
-        });
-
-        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-          console.log('[AuthContext] Notification tapped:', response?.notification?.request?.content?.data);
-        });
-        
-        console.log('[AuthContext] Notification listeners set up successfully');
-      } catch (error) {
-        console.log('[AuthContext] Failed to set up notification listeners (non-fatal):', error);
-      }
-    };
-    
-    setupNotificationListeners();
-
-    return () => {
-      try {
-        if (notificationListener.current) {
-          Notifications.removeNotificationSubscription(notificationListener.current);
-        }
-        if (responseListener.current) {
-          Notifications.removeNotificationSubscription(responseListener.current);
-        }
-      } catch (e) {
-        console.log('[AuthContext] Error cleaning up notification listeners:', e);
-      }
-    };
   }, []);
 
   // Register push notifications when user changes - with delay to not block app startup
