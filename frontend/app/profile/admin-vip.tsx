@@ -86,13 +86,12 @@ export default function AdminVIP() {
 
   const loadData = async () => {
     try {
-      // Use Base44 API instead of local backend
-      const tracksResponse = await fetch('https://spynners.base44.app/api/entities/Track?is_vip=true&limit=500');
-      const tracksData = await tracksResponse.json();
+      // Use base44Tracks API with VIP filter
+      console.log('[AdminVIP] Loading VIP tracks...');
+      const tracks = await base44Tracks.list({ is_vip: true, limit: 500 });
       
-      if (tracksData) {
-        const allTracks = Array.isArray(tracksData) ? tracksData : (tracksData.items || []);
-        const vip = allTracks.filter((t: any) => t.is_vip === true).map((t: any) => ({
+      if (tracks && tracks.length > 0) {
+        const vip = tracks.map((t: any) => ({
           id: t.id || t._id,
           title: t.title,
           artist: t.artist_name || t.producer_name,
@@ -105,9 +104,13 @@ export default function AdminVIP() {
         }));
         setVipTracks(vip);
         console.log('[AdminVIP] Loaded', vip.length, 'VIP tracks');
+      } else {
+        console.log('[AdminVIP] No VIP tracks found');
+        setVipTracks([]);
       }
     } catch (error) {
       console.error('[AdminVIP] Error:', error);
+      setVipTracks([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
