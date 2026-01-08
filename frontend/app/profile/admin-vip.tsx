@@ -49,6 +49,7 @@ type VIPTrack = {
 export default function AdminVIP() {
   const router = useRouter();
   const { user, token } = useAuth();
+  const { t } = useLanguage();
   const [vipTracks, setVipTracks] = useState<VIPTrack[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
