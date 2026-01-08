@@ -604,6 +604,9 @@ export default function SpynScreen() {
     // FIX: Make sure the ending flag is reset when starting a new session
     isEndingSessionRef.current = false;
     
+    // Keep screen awake during session
+    activateKeepAwakeAsync('spyn-session').catch(e => console.log('[SPYN] Keep awake error:', e));
+    
     // Immediately set session active to switch UI
     setSessionActive(true);
     sessionActiveRef.current = true;
