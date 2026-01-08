@@ -78,16 +78,18 @@ async function identifyAudio(
     const signature = createSignature(stringToSign, config.accessSecret);
     
     // Calculate sample bytes from base64
-    const sampleBytes = Math.floor(audioBase64.length * 0.75); // Approximate size from base64
+    const sampleBytes = Math.floor(audioBase64.length * 0.75);
     
-    // Prepare form data - use base64 directly for React Native compatibility
-    const formData = new FormData();
+    const url = `https://${config.host}${httpUri}`;
+    console.log(`[ACRCloud] Sending request to ${mode} API: ${url}`);
+    console.log(`[ACRCloud] Sample bytes: ${sampleBytes}, Platform: ${Platform.OS}`);
     
-    // On React Native, we can't create Blob from ArrayBuffer
-    // Instead, send the base64 data directly as a string field
-    // ACRCloud accepts base64 encoded audio in the 'sample' field
+    let response: Response;
+    
     if (Platform.OS === 'web') {
-      // Web: Convert base64 to blob
+      // Web: Use Blob approach
+      const formData = new FormData();
+      
       try {
         const binaryString = atob(audioBase64);
         const bytes = new Uint8Array(binaryString.length);
@@ -98,47 +100,67 @@ async function identifyAudio(
         formData.append('sample', audioBlob, 'audio.m4a');
         formData.append('sample_bytes', bytes.length.toString());
       } catch (blobError) {
-        console.log('[ACRCloud] Blob creation failed, using base64 fallback');
-        // Fallback: send as base64
-        formData.append('sample', audioBase64);
-        formData.append('sample_bytes', sampleBytes.toString());
+        console.log('[ACRCloud] Blob creation failed:', blobError);
+        throw new Error('Failed to create audio blob');
       }
-    } else {
-      // React Native: Use a different approach
-      // Create a file-like object that React Native's FormData can handle
-      console.log('[ACRCloud] Using React Native FormData approach...');
       
-      // For React Native, we need to use uri-based approach or send base64
-      // ACRCloud API supports receiving audio as base64 in sample field
-      formData.append('sample', audioBase64);
+      formData.append('access_key', config.accessKey);
+      formData.append('data_type', dataType);
+      formData.append('signature_version', signatureVersion);
+      formData.append('signature', signature);
+      formData.append('timestamp', timestamp);
+      
+      response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
+    } else {
+      // React Native: Use multipart form with base64 data URI
+      // ACRCloud expects the audio as a file, so we create a data URI
+      console.log('[ACRCloud] Using React Native approach with data URI...');
+      
+      // Create form data with the audio as a "file" using data URI
+      const formData = new FormData();
+      
+      // React Native FormData can accept objects with uri, type, name
+      // We'll use a data URI approach
+      const audioFile = {
+        uri: `data:audio/mp4;base64,${audioBase64}`,
+        type: 'audio/mp4',
+        name: 'audio.m4a',
+      };
+      
+      formData.append('sample', audioFile as any);
       formData.append('sample_bytes', sampleBytes.toString());
+      formData.append('access_key', config.accessKey);
+      formData.append('data_type', dataType);
+      formData.append('signature_version', signatureVersion);
+      formData.append('signature', signature);
+      formData.append('timestamp', timestamp);
+      
+      response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
     }
     
-    formData.append('access_key', config.accessKey);
-    formData.append('data_type', dataType);
-    formData.append('signature_version', signatureVersion);
-    formData.append('signature', signature);
-    formData.append('timestamp', timestamp);
-    
-    const url = `https://${config.host}${httpUri}`;
-    console.log(`[ACRCloud] Sending request to ${mode} API: ${url}`);
-    console.log(`[ACRCloud] Sample bytes: ${sampleBytes}`);
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-    });
-    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[ACRCloud] HTTP error ${response.status}:`, errorText);
       throw new Error(`HTTP error: ${response.status}`);
     }
     
     const result = await response.json();
-    console.log(`[ACRCloud] ${mode} response:`, JSON.stringify(result, null, 2));
+    console.log(`[ACRCloud] ${mode} response code:`, result.status?.code, result.status?.msg);
     
     // Parse ACRCloud response
     if (result.status?.code === 0 && result.metadata?.music?.length > 0) {
       const music = result.metadata.music[0];
+      
+      console.log(`[ACRCloud] ✅ Track found: ${music.title} by ${music.artists?.map((a: any) => a.name).join(', ')}`);
       
       return {
         success: true,
@@ -160,6 +182,7 @@ async function identifyAudio(
     }
     
     // No match found
+    console.log(`[ACRCloud] No match in ${mode} catalog`);
     return {
       success: true,
       found: false,
