@@ -529,13 +529,20 @@ export default function HomeScreen() {
       const userId = user?.id || user?._id || '';
       const trackId = selectedTrackForSend.id || selectedTrackForSend._id || '';
       
-      // Create a message or notification to send the track
-      await base44Messages.send({
-        sender_id: userId,
-        receiver_id: memberId,
-        content: `🎵 Shared track: ${selectedTrackForSend.title}`,
+      // Use TrackSend entity to send the track (same as website)
+      await base44TrackSend.create({
         track_id: trackId,
-        type: 'track_share',
+        track_title: selectedTrackForSend.title,
+        track_producer_name: selectedTrackForSend.producer_name || selectedTrackForSend.artist_name,
+        track_artwork_url: selectedTrackForSend.artwork_url || selectedTrackForSend.cover_image,
+        track_genre: selectedTrackForSend.genre,
+        sender_id: userId,
+        sender_name: user?.full_name || user?.name || user?.email || 'Unknown',
+        sender_avatar: user?.avatar_url,
+        receiver_id: memberId,
+        receiver_name: memberName,
+        message: '', // Could add a message field to the UI
+        viewed: false,
       });
       
       Alert.alert(t('common.success'), `Track "${selectedTrackForSend.title}" ${t('common.sentTo')} ${memberName}`);
