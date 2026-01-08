@@ -2452,3 +2452,6 @@ export default {
 
 // Alias for convenience
 export const base44Api = base44Auth;
+
+// Export mobileApi for direct use
+export { mobileApi };
