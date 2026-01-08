@@ -64,6 +64,21 @@ const VALID_VENUE_TYPES = [
   // These are too generic and can match homes or any business
 ];
 
+// Types that should NEVER receive Black Diamond
+const EXCLUDED_VENUE_TYPES = [
+  'home', 'house', 'residence', 'residential', 'apartment', 'flat',
+  'lodging', 'hotel', 'motel', 'hostel', 'guest_house',
+  'store', 'shop', 'shopping', 'supermarket', 'grocery',
+  'office', 'workplace', 'bank', 'atm', 'post_office',
+  'school', 'university', 'hospital', 'pharmacy', 'doctor',
+  'parking', 'gas_station', 'car_wash', 'car_repair',
+  'gym', 'spa', 'beauty_salon', 'hair_care',
+  'real_estate_agency', 'insurance_agency', 'lawyer',
+  'church', 'mosque', 'synagogue', 'temple', 'cemetery',
+  'locality', 'political', 'sublocality', 'street_address', 'route',
+  'neighborhood', 'premise', 'subpremise', 'natural_feature', 'park'
+];
+
 interface TrackResult {
   success: boolean;
   title?: string;
