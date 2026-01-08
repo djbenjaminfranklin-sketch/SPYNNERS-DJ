@@ -186,17 +186,26 @@ export default function SpynScreen() {
   // Initialize offline mode
   const initOfflineMode = async () => {
     try {
+      // On native platforms, always start ONLINE and let NetInfo determine the actual status
       // On web, use navigator.onLine as the primary source of truth
-      // NetInfo often reports false negatives on web
-      const isActuallyOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+      let isActuallyOnline = true;
       
-      console.log('[SPYN] Initial network check - navigator.onLine:', isActuallyOnline);
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+        isActuallyOnline = navigator.onLine;
+        console.log('[SPYN] Web platform - navigator.onLine:', isActuallyOnline);
+      } else {
+        // Native platforms: Default to ONLINE, NetInfo will update if we're actually offline
+        console.log('[SPYN] Native platform - defaulting to ONLINE');
+        isActuallyOnline = true;
+      }
       
-      // Force online if navigator says we're online
+      console.log('[SPYN] Initial network check - isActuallyOnline:', isActuallyOnline);
+      
+      // Force online on native platforms by default
       setIsOffline(!isActuallyOnline);
       
       // Listen for online/offline events on web
-      if (typeof window !== 'undefined') {
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
         const handleOnline = () => {
           console.log('[SPYN] 🌐 Browser reports ONLINE');
           setIsOffline(false);
@@ -219,7 +228,11 @@ export default function SpynScreen() {
       }
       
       // Register for push notifications (for offline sync alerts)
-      await offlineService.registerForPushNotifications();
+      try {
+        await offlineService.registerForPushNotifications();
+      } catch (pushError) {
+        console.log('[SPYN] Push notification registration skipped:', pushError);
+      }
       
     } catch (error) {
       console.error('[SPYN] Offline init error:', error);
