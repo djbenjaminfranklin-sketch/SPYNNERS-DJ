@@ -4615,9 +4615,9 @@ async def export_admin_downloads_pdf(request: AdminDownloadsPDFRequest, authoriz
                             print(f"[Admin Downloads PDF] Date parse error for track {track.get('title')}: {e}")
                             pass
                     elif not track_date and (request.start_date or request.end_date):
-                        # No date on track but filter is set - INCLUDE anyway (don't exclude based on missing date)
-                        include = True
-                        print(f"[Admin Downloads PDF] Track included despite no date: {track.get('title')}")
+                        # No date on track but filter is set - EXCLUDE (can't verify if in range)
+                        include = False
+                        print(f"[Admin Downloads PDF] Track excluded (no date, can't verify range): {track.get('title')}")
                     
                     if include:
                         downloads.append({
