@@ -1366,25 +1366,53 @@ export default function SpynRecordScreen() {
           
           console.log('[SPYN Record] Analysis response:', response);
           
-          if (response.success && response.title) {
-            const trackKey = response.title.toLowerCase();
+          // Check if we found a track - either with title OR with spynners_track_id
+          if (response.success && (response.title || (response.found && response.spynners_track_id))) {
+            // Get title from various possible fields
+            let trackTitle = response.title || response.external_title || response.track_title;
+            let trackArtist = response.artist || response.external_artist || response.track_artist;
+            let coverImage = response.cover_image || response.artwork_url || '';
+            let producerId = response.producer_id;
+            
+            // If we have track ID but no title, fetch track details from Base44
+            if (!trackTitle && response.spynners_track_id) {
+              console.log('[SPYN Record] Track ID found but no title - fetching track details...');
+              try {
+                const trackDetails = await base44Tracks.getById(response.spynners_track_id);
+                if (trackDetails) {
+                  trackTitle = trackDetails.title || 'Track identifiée';
+                  trackArtist = trackDetails.producer_name || trackDetails.artist_name || 'Artiste inconnu';
+                  coverImage = trackDetails.artwork_url || trackDetails.cover_image || coverImage;
+                  producerId = trackDetails.producer_id || producerId;
+                  console.log('[SPYN Record] ✅ Track details fetched:', trackTitle, 'by', trackArtist);
+                }
+              } catch (fetchError) {
+                console.error('[SPYN Record] Could not fetch track details:', fetchError);
+              }
+            }
+            
+            // Fallback values
+            trackTitle = trackTitle || 'Track identifiée';
+            trackArtist = trackArtist || 'Artiste inconnu';
+            
+            const trackKey = trackTitle.toLowerCase();
             if (!detectedTitles.has(trackKey)) {
               detectedTitles.add(trackKey);
               
               const newTrack: IdentifiedTrack = {
                 id: `${Date.now()}`,
-                title: response.title,
-                artist: response.artist || 'Unknown Artist',
+                title: trackTitle,
+                artist: trackArtist,
                 timestamp: formatDuration(recordingDuration),
                 elapsedTime: recordingDuration,
-                coverImage: response.cover_image,
+                coverImage: coverImage,
                 spynnersTrackId: response.spynners_track_id,
-                producerId: response.producer_id,
+                producerId: producerId,
               };
               
               detectedTracks.push(newTrack);
               setIdentifiedTracks(prev => [...prev, newTrack]);
-              setCurrentAnalysis(`✅ ${response.title}`);
+              setCurrentAnalysis(`✅ ${trackTitle}`);
               
               sendEmailForTrack(newTrack);
               console.log('[SPYN Record] ✅ Track identified:', newTrack.title);
