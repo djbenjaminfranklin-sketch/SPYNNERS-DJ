@@ -479,9 +479,14 @@ export default function SpynRecordScreen() {
             // iOS automatically uses connected USB/Lightning audio if available
             try {
               console.log('[SPYN Record] Testing audio input...');
-              const { recording: testRecording } = await Audio.Recording.createAsync(
-                Audio.RecordingOptionsPresets.HIGH_QUALITY
-              );
+              
+              // Create recording with metering enabled
+              const recordingOptions = {
+                ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+                isMeteringEnabled: true,
+              };
+              
+              const { recording: testRecording } = await Audio.Recording.createAsync(recordingOptions);
               
               // Record for a brief moment to check if we're getting audio
               await new Promise(resolve => setTimeout(resolve, 500));
