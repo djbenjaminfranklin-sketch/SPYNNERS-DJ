@@ -1361,16 +1361,16 @@ export default function SpynRecordScreen() {
                 timestamp: formatDuration(recordingDuration),
                 elapsedTime: recordingDuration,
                 coverImage: coverImage,
-                spynnersTrackId: response.spynners_track_id,
+                spynnersTrackId: response.acr_id, // Use ACRCloud ID
                 producerId: producerId,
               };
               
               detectedTracks.push(newTrack);
               setIdentifiedTracks(prev => [...prev, newTrack]);
-              setCurrentAnalysis(`✅ ${trackTitle}`);
+              setCurrentAnalysis(`✅ ${trackTitle} (${response.mode})`);
               
               sendEmailForTrack(newTrack);
-              console.log('[SPYN Record] ✅ Track identified:', newTrack.title);
+              console.log('[SPYN Record] ✅ Track identified:', newTrack.title, 'via', response.mode);
             }
           } else {
             console.log('[SPYN Record] No track detected in response');
