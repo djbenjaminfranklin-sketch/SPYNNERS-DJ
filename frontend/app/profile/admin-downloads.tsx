@@ -380,7 +380,7 @@ export default function AdminDownloads() {
 
         {/* Date Filter Section */}
         <View style={styles.filterSection}>
-          <Text style={styles.filterTitle}>Filtre par date</Text>
+          <Text style={styles.filterTitle}>{t('admin.filterByDate')}</Text>
           <View style={styles.filterRow}>
             <TouchableOpacity 
               style={styles.dateFilterBtn}
@@ -392,8 +392,8 @@ export default function AdminDownloads() {
               <Ionicons name="calendar" size={18} color="#00BFA5" />
               <Text style={styles.dateFilterBtnText}>
                 {dateFilter.startDate || dateFilter.endDate 
-                  ? `${formatDateDisplay(dateFilter.startDate) || 'Début'} → ${formatDateDisplay(dateFilter.endDate) || 'Fin'}`
-                  : 'Sélectionner les dates'
+                  ? `${formatDateDisplay(dateFilter.startDate) || t('admin.start')} → ${formatDateDisplay(dateFilter.endDate) || t('admin.end')}`
+                  : t('admin.selectDates')
                 }
               </Text>
             </TouchableOpacity>
@@ -437,7 +437,7 @@ export default function AdminDownloads() {
         </TouchableOpacity>
 
         {/* Download History */}
-        <Text style={styles.sectionTitle}>Historique ({filteredDownloads.length})</Text>
+        <Text style={styles.sectionTitle}>{t('admin.history')} ({filteredDownloads.length})</Text>
         
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderText, { flex: 0.8 }]}>Date</Text>
@@ -475,7 +475,7 @@ export default function AdminDownloads() {
             </View>
 
             <View style={styles.dateInputContainer}>
-              <Text style={styles.dateInputLabel}>Date de début</Text>
+              <Text style={styles.dateInputLabel}>{t('admin.startDate')}</Text>
               <TextInput
                 style={styles.dateInput}
                 placeholder="AAAA-MM-JJ"
@@ -486,7 +486,7 @@ export default function AdminDownloads() {
             </View>
 
             <View style={styles.dateInputContainer}>
-              <Text style={styles.dateInputLabel}>Date de fin</Text>
+              <Text style={styles.dateInputLabel}>{t('admin.endDate')}</Text>
               <TextInput
                 style={styles.dateInput}
                 placeholder="AAAA-MM-JJ"
