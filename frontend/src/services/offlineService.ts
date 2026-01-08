@@ -34,15 +34,8 @@ const BACKEND_URL = getBackendUrl();
 const OFFLINE_SESSIONS_KEY = 'offline_spyn_sessions';
 const PUSH_TOKEN_KEY = 'expo_push_token';
 
-// Configure notification handler
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    priority: Notifications.AndroidNotificationPriority.HIGH,
-  }),
-});
+// NOTE: Notification handler should be set up inside a component, not at module level
+// to prevent iOS crashes on production builds
 
 export interface OfflineRecording {
   id: string;
