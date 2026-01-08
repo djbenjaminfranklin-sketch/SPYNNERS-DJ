@@ -254,18 +254,24 @@ export default function SpynRecordScreen() {
         'nightclub', 'club', 'lounge', 'pub', 'disco'
       ];
       
-      // Try to get venue from Base44 getNearbyPlaces function (Foursquare)
+      // Try to get venue from Base44 getNearbyPlaces function (Google Places)
       try {
+        console.log('[SPYN Record] Calling getNearbyPlaces for:', lat, lng);
         const placesResponse = await base44Spyn.getNearbyPlaces({
           latitude: lat,
           longitude: lng,
           radius: 1000,
         });
         
-        if (placesResponse.success && placesResponse.venue) {
+        console.log('[SPYN Record] getNearbyPlaces response:', JSON.stringify(placesResponse));
+        
+        if (placesResponse.error) {
+          console.log('[SPYN Record] getNearbyPlaces returned error:', placesResponse.error);
+        } else if (placesResponse.success && placesResponse.venue) {
           venueName = placesResponse.venue;
           venueType = placesResponse.venue_type || placesResponse.types?.[0];
           venueTypes = placesResponse.types || [];
+          console.log('[SPYN Record] Got venue name:', venueName);
           
           // Check if it's a valid venue for Black Diamond
           isValidVenue = venueTypes.some((type: string) => 
@@ -278,9 +284,17 @@ export default function SpynRecordScreen() {
           venueType = nearestPlace.category || nearestPlace.type;
           venueTypes = nearestPlace.categories || [venueType];
           isValidVenue = true;
+          console.log('[SPYN Record] Got venue from places array:', venueName);
+        } else if (placesResponse.name) {
+          // Direct venue object response
+          venueName = placesResponse.name;
+          venueType = placesResponse.type || placesResponse.category;
+          venueTypes = placesResponse.types || [venueType];
+          isValidVenue = true;
+          console.log('[SPYN Record] Got direct venue:', venueName);
         }
-      } catch (e) {
-        console.log('[SPYN Record] Places lookup failed, using reverse geocoding');
+      } catch (e: any) {
+        console.log('[SPYN Record] Places lookup failed:', e?.message || e, '- using reverse geocoding');
       }
       
       // Get address via reverse geocoding
