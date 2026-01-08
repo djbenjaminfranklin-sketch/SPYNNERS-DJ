@@ -855,7 +855,7 @@ export default function HomeScreen() {
           
           <TouchableOpacity 
             style={[styles.vipButton, showVIPOnly && styles.vipButtonActive]}
-            onPress={() => { setShowVIPOnly(!showVIPOnly); setTimeout(loadTracks, 100); }}
+            onPress={() => setShowVIPOnly(!showVIPOnly)}
           >
             <LinearGradient colors={['#FF9800', '#F57C00']} style={styles.vipButtonGradient}>
               <Ionicons name="diamond" size={14} color="#fff" />
