@@ -84,13 +84,12 @@ export default function AdminVIP() {
 
   const loadData = async () => {
     try {
-      const tracksRes = await axios.get(`${BACKEND_URL}/api/admin/tracks?limit=500`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).catch(() => ({ data: { tracks: [] } }));
+      // Use Base44 API instead of local backend
+      const tracksResponse = await fetch('https://spynners.base44.app/api/entities/Track?is_vip=true&limit=500');
+      const tracksData = await tracksResponse.json();
       
-      // Filter VIP tracks
-      if (tracksRes.data?.success && tracksRes.data?.tracks) {
-        const allTracks = tracksRes.data.tracks;
+      if (tracksData) {
+        const allTracks = Array.isArray(tracksData) ? tracksData : (tracksData.items || []);
         const vip = allTracks.filter((t: any) => t.is_vip === true).map((t: any) => ({
           id: t.id || t._id,
           title: t.title,
