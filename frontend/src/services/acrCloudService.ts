@@ -1,6 +1,10 @@
 /**
  * ACRCloud Direct Recognition Service
  * 
+ * NOTE: Due to React Native limitations with FormData and Blob,
+ * we use Base44 cloud functions as proxy for ACRCloud on mobile.
+ * On web, we can call ACRCloud directly.
+ * 
  * Hybrid mode:
  * 1. OFFLINE (priority) - Our Spynners catalog, fast, no limits
  * 2. ONLINE (fallback) - Global ACRCloud catalog
@@ -50,9 +54,9 @@ function createSignature(stringToSign: string, accessSecret: string): string {
 }
 
 /**
- * Call ACRCloud identify API
+ * Call ACRCloud identify API (Web only)
  */
-async function identifyAudio(
+async function identifyAudioWeb(
   audioBase64: string,
   config: typeof OFFLINE_CONFIG | typeof ONLINE_CONFIG,
   mode: 'offline' | 'online'
@@ -64,7 +68,6 @@ async function identifyAudio(
     const dataType = 'audio';
     const signatureVersion = '1';
     
-    // Create string to sign
     const stringToSign = [
       httpMethod,
       httpUri,
@@ -77,90 +80,41 @@ async function identifyAudio(
     console.log(`[ACRCloud] Creating signature for ${mode} mode...`);
     const signature = createSignature(stringToSign, config.accessSecret);
     
-    // Calculate sample bytes from base64
-    const sampleBytes = Math.floor(audioBase64.length * 0.75);
+    const formData = new FormData();
+    
+    // Web: Convert base64 to blob
+    const binaryString = atob(audioBase64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const audioBlob = new Blob([bytes], { type: 'audio/mp4' });
+    
+    formData.append('sample', audioBlob, 'audio.m4a');
+    formData.append('sample_bytes', bytes.length.toString());
+    formData.append('access_key', config.accessKey);
+    formData.append('data_type', dataType);
+    formData.append('signature_version', signatureVersion);
+    formData.append('signature', signature);
+    formData.append('timestamp', timestamp);
     
     const url = `https://${config.host}${httpUri}`;
     console.log(`[ACRCloud] Sending request to ${mode} API: ${url}`);
-    console.log(`[ACRCloud] Sample bytes: ${sampleBytes}, Platform: ${Platform.OS}`);
     
-    let response: Response;
-    
-    if (Platform.OS === 'web') {
-      // Web: Use Blob approach
-      const formData = new FormData();
-      
-      try {
-        const binaryString = atob(audioBase64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        const audioBlob = new Blob([bytes], { type: 'audio/mp4' });
-        formData.append('sample', audioBlob, 'audio.m4a');
-        formData.append('sample_bytes', bytes.length.toString());
-      } catch (blobError) {
-        console.log('[ACRCloud] Blob creation failed:', blobError);
-        throw new Error('Failed to create audio blob');
-      }
-      
-      formData.append('access_key', config.accessKey);
-      formData.append('data_type', dataType);
-      formData.append('signature_version', signatureVersion);
-      formData.append('signature', signature);
-      formData.append('timestamp', timestamp);
-      
-      response = await fetch(url, {
-        method: 'POST',
-        body: formData,
-      });
-    } else {
-      // React Native: Use multipart form with base64 data URI
-      // ACRCloud expects the audio as a file, so we create a data URI
-      console.log('[ACRCloud] Using React Native approach with data URI...');
-      
-      // Create form data with the audio as a "file" using data URI
-      const formData = new FormData();
-      
-      // React Native FormData can accept objects with uri, type, name
-      // We'll use a data URI approach
-      const audioFile = {
-        uri: `data:audio/mp4;base64,${audioBase64}`,
-        type: 'audio/mp4',
-        name: 'audio.m4a',
-      };
-      
-      formData.append('sample', audioFile as any);
-      formData.append('sample_bytes', sampleBytes.toString());
-      formData.append('access_key', config.accessKey);
-      formData.append('data_type', dataType);
-      formData.append('signature_version', signatureVersion);
-      formData.append('signature', signature);
-      formData.append('timestamp', timestamp);
-      
-      response = await fetch(url, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-    }
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    });
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[ACRCloud] HTTP error ${response.status}:`, errorText);
       throw new Error(`HTTP error: ${response.status}`);
     }
     
     const result = await response.json();
     console.log(`[ACRCloud] ${mode} response code:`, result.status?.code, result.status?.msg);
     
-    // Parse ACRCloud response
     if (result.status?.code === 0 && result.metadata?.music?.length > 0) {
       const music = result.metadata.music[0];
-      
-      console.log(`[ACRCloud] ✅ Track found: ${music.title} by ${music.artists?.map((a: any) => a.name).join(', ')}`);
       
       return {
         success: true,
@@ -181,8 +135,6 @@ async function identifyAudio(
       };
     }
     
-    // No match found
-    console.log(`[ACRCloud] No match in ${mode} catalog`);
     return {
       success: true,
       found: false,
@@ -202,15 +154,87 @@ async function identifyAudio(
 }
 
 /**
- * Hybrid recognition: Try OFFLINE first, then ONLINE as fallback
+ * Call local backend for ACRCloud recognition (React Native)
+ * The backend handles the FormData/file upload complexity
+ */
+async function identifyAudioNative(audioBase64: string): Promise<ACRCloudResult> {
+  try {
+    console.log('[ACRCloud] Using local backend proxy for React Native...');
+    
+    // Get the backend URL from environment or use default
+    const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://stable-app-deploy.preview.emergentagent.com';
+    
+    const response = await fetch(`${backendUrl}/api/recognize-audio`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        audio_base64: audioBase64,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[ACRCloud] Backend error:', response.status, errorText);
+      throw new Error(`Backend error: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('[ACRCloud] Backend response:', JSON.stringify(result).substring(0, 200));
+    
+    if (result.success && result.title) {
+      return {
+        success: true,
+        found: true,
+        title: result.title,
+        artist: result.artist || 'Unknown Artist',
+        album: result.album,
+        genre: result.genre,
+        cover_image: result.cover_image,
+        score: result.score,
+        mode: 'offline', // Backend uses the Spynners catalog
+        acr_id: result.acr_id,
+        external_ids: result.external_ids,
+      };
+    }
+    
+    return {
+      success: true,
+      found: false,
+      mode: 'none',
+      error: result.message || 'No match found',
+    };
+    
+  } catch (error: any) {
+    console.error('[ACRCloud] Native recognition error:', error?.message || error);
+    return {
+      success: false,
+      found: false,
+      mode: 'none',
+      error: error?.message || 'Recognition failed',
+    };
+  }
+}
+
+/**
+ * Hybrid recognition: 
+ * - Web: Try OFFLINE first (Spynners), then ONLINE (global)
+ * - Native: Use backend proxy (which has the hybrid logic)
  */
 export async function recognizeAudioHybrid(audioBase64: string): Promise<ACRCloudResult> {
   console.log('[ACRCloud] Starting hybrid recognition...');
-  console.log('[ACRCloud] Audio data length:', audioBase64.length);
+  console.log('[ACRCloud] Audio data length:', audioBase64.length, 'Platform:', Platform.OS);
   
-  // Step 1: Try OFFLINE mode (Spynners catalog)
+  // On React Native, use the backend proxy
+  if (Platform.OS !== 'web') {
+    console.log('[ACRCloud] Using backend proxy for React Native...');
+    return await identifyAudioNative(audioBase64);
+  }
+  
+  // On Web, call ACRCloud directly
   console.log('[ACRCloud] Step 1: Trying OFFLINE mode (Spynners catalog)...');
-  const offlineResult = await identifyAudio(audioBase64, OFFLINE_CONFIG, 'offline');
+  const offlineResult = await identifyAudioWeb(audioBase64, OFFLINE_CONFIG, 'offline');
   
   if (offlineResult.found) {
     console.log('[ACRCloud] ✅ Track found in OFFLINE catalog:', offlineResult.title);
@@ -219,9 +243,8 @@ export async function recognizeAudioHybrid(audioBase64: string): Promise<ACRClou
   
   console.log('[ACRCloud] No match in OFFLINE catalog, trying ONLINE...');
   
-  // Step 2: Fallback to ONLINE mode (global catalog)
   console.log('[ACRCloud] Step 2: Trying ONLINE mode (global catalog)...');
-  const onlineResult = await identifyAudio(audioBase64, ONLINE_CONFIG, 'online');
+  const onlineResult = await identifyAudioWeb(audioBase64, ONLINE_CONFIG, 'online');
   
   if (onlineResult.found) {
     console.log('[ACRCloud] ✅ Track found in ONLINE catalog:', onlineResult.title);
