@@ -195,6 +195,9 @@ const styles = StyleSheet.create({
   trackInfo: { flex: 1 },
   trackTitle: { fontSize: 15, fontWeight: '600', color: Colors.text },
   trackArtist: { fontSize: 13, color: Colors.primary, marginTop: 2 },
+  senderInfo: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
+  senderText: { fontSize: 11, color: Colors.textMuted },
+  messageText: { fontSize: 11, color: '#888', fontStyle: 'italic', marginTop: 2 },
   trackMeta: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
   actions: { flexDirection: 'row', gap: 8 },
   actionButton: {
