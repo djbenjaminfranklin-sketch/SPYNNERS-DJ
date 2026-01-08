@@ -11,21 +11,17 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
-import Constants from 'expo-constants';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { base44Tracks, base44Messages, Track } from '../../src/services/base44Api';
+import { base44TrackSend, TrackSend } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
-
-const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
 export default function ReceivedScreen() {
   const { user, token } = useAuth();
   const router = useRouter();
   const { t } = useLanguage();
-  const [tracks, setTracks] = useState<Track[]>([]);
+  const [receivedTracks, setReceivedTracks] = useState<TrackSend[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -43,43 +39,24 @@ export default function ReceivedScreen() {
       const userId = user?.id || user?._id;
       if (!userId) {
         console.log('[Received] No user ID found');
-        setTracks([]);
+        setReceivedTracks([]);
         return;
       }
       
-      // Load messages that contain shared tracks
-      const messages = await base44Messages.list({ receiver_id: userId });
-      console.log('[Received] Messages loaded:', messages.length);
+      // Load tracks received via TrackSend entity
+      const tracks = await base44TrackSend.getReceived(userId);
+      console.log('[Received] Loaded', tracks.length, 'tracks');
+      setReceivedTracks(tracks);
       
-      // Filter messages that have track_id (shared tracks)
-      const trackMessages = messages.filter((msg: any) => 
-        msg.track_id && (msg.type === 'track_share' || msg.type === 'track_played')
-      );
-      console.log('[Received] Track messages:', trackMessages.length);
-      
-      // Load track details for each shared track
-      const receivedTracks: Track[] = [];
-      for (const msg of trackMessages) {
-        try {
-          const track = await base44Tracks.getById(msg.track_id);
-          if (track) {
-            // Add sender info to track
-            receivedTracks.push({
-              ...track,
-              sent_by: msg.sender_id,
-              received_at: msg.created_at,
-            });
-          }
-        } catch (e) {
-          console.log('[Received] Could not load track:', msg.track_id);
+      // Mark unviewed tracks as viewed
+      for (const track of tracks) {
+        if (!track.viewed && (track.id || track._id)) {
+          await base44TrackSend.markAsViewed(track.id || track._id || '');
         }
       }
-      
-      console.log('[Received] Tracks loaded:', receivedTracks.length);
-      setTracks(receivedTracks);
     } catch (error) {
       console.error('[Received] Error loading tracks:', error);
-      setTracks([]);
+      setReceivedTracks([]);
     } finally {
       setLoading(false);
     }
