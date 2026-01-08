@@ -22,9 +22,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
 
   useEffect(() => {
     loadStoredAuth();
+  }, []);
+
+  // Configure notification handler - MUST be inside component, not at module level
+  useEffect(() => {
+    // Set how notifications should be handled when received while app is foregrounded
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
   }, []);
 
   // Register push notifications when user changes - with delay to not block app startup
