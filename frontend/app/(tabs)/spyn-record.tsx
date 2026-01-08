@@ -1061,27 +1061,46 @@ export default function SpynRecordScreen() {
         
         // Use direct ACRCloud API (hybrid mode: OFFLINE first, then ONLINE)
         try {
-          console.log('[SPYN Record] 🎵 Sending audio to ACRCloud (hybrid mode)...');
+          console.log('[SPYN Record] 🎵 Sending audio to Base44 recognizeAudio...');
           
-          // Direct ACRCloud recognition - no more Base44 intermediary!
-          const response = await recognizeAudioHybrid(audioBase64);
+          // Use base44Spyn.recognizeAudio - same as website
+          const response = await base44Spyn.recognizeAudio({
+            audio_data: audioBase64,
+            sample_rate: 48000,
+            channels: 2,
+          });
           
           // Mark that we successfully made an API call (proves we're online!)
           hasSuccessfulApiCallRef.current = true;
-          console.log(`[SPYN Record] ✅ ACRCloud ${response.mode} mode response received`);
+          console.log('[SPYN Record] ✅ Base44 response received');
           
           console.log('[SPYN Record] Recognition response:', response);
           
-          // Check if we found a track
-          if (response.success && response.found && response.title) {
-            // Get title and artist directly from ACRCloud response
-            let trackTitle = response.title;
-            let trackArtist = response.artist || 'Artiste inconnu';
-            let coverImage = response.cover_image || '';
-            let producerId = '';
+          // Check if we found a track - handle various response formats
+          const hasTrack = response.success && (response.found || response.title || response.external_title || response.spynners_track_id);
+          
+          if (hasTrack) {
+            // Get title and artist from various possible fields
+            let trackTitle = response.title || response.external_title || response.external_metadata?.title;
+            let trackArtist = response.artist || response.external_artist || response.external_metadata?.artist || 'Artiste inconnu';
+            let coverImage = response.cover_image || response.artwork_url || '';
+            let producerId = response.producer_id || '';
             
-            // ACRCloud returns title and artist directly - no need to fetch from Base44
-            // Fallback values (should not be needed since we check response.found)
+            // If we have spynners_track_id but no title, fetch from Base44
+            if (!trackTitle && response.spynners_track_id) {
+              try {
+                const trackDetails = await base44Tracks.getById(response.spynners_track_id);
+                if (trackDetails) {
+                  trackTitle = trackDetails.title;
+                  trackArtist = trackDetails.producer_name || trackDetails.artist_name || trackArtist;
+                  coverImage = trackDetails.artwork_url || trackDetails.cover_image || coverImage;
+                  producerId = trackDetails.producer_id || producerId;
+                }
+              } catch (e) {
+                console.log('[SPYN Record] Could not fetch track details:', e);
+              }
+            }
+            
             trackTitle = trackTitle || 'Track identifiée';
             trackArtist = trackArtist || 'Artiste inconnu';
             
