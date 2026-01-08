@@ -75,7 +75,7 @@ async function identifyAudio(
     ].join('\n');
     
     console.log(`[ACRCloud] Creating signature for ${mode} mode...`);
-    const signature = await createSignature(stringToSign, config.accessSecret);
+    const signature = createSignature(stringToSign, config.accessSecret);
     
     // Prepare form data
     const formData = new FormData();
