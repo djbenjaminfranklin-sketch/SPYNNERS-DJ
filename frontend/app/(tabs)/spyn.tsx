@@ -1071,8 +1071,10 @@ export default function SpynScreen() {
     stopListeningAnimation();
     isRecordingRef.current = false;
     
-    // Reset session state
-    setIsSessionActive(false);
+    // Reset UI state
+    setSession(null);
+    setSessionDuration(0);
+    setCurrentTrack(null);
     console.log('[SPYN] ✅ Session stopped');
   };
 
