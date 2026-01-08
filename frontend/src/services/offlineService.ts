@@ -136,6 +136,21 @@ class OfflineService {
         this.networkChangeCallbacks.forEach(cb => cb(false));
       });
     }
+    
+    // Listen for app state changes (foreground/background)
+    // When app comes back to foreground, try to sync pending sessions
+    if (Platform.OS !== 'web') {
+      AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+        console.log('[Offline] App state changed to:', nextAppState);
+        if (nextAppState === 'active') {
+          // App came to foreground - check network and sync
+          console.log('[Offline] App became active - checking for pending sync...');
+          this.isOnline = true; // Assume online when app becomes active
+          this.networkChangeCallbacks.forEach(cb => cb(true));
+          this.autoSyncPendingSessions();
+        }
+      });
+    }
   }
 
   private async autoSyncPendingSessions() {
