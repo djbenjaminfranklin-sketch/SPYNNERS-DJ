@@ -1614,57 +1614,37 @@ export default function SpynRecordScreen() {
         
         Alert.alert('✅ Téléchargement lancé', 'Votre mix a été téléchargé.');
       } else {
-        // On iOS/Android, convert to MP3 then share
-        console.log('[SPYN Record] Converting to MP3...');
-        setCurrentAnalysis('Conversion en MP3...');
+        // On iOS/Android, share the M4A file directly
+        // M4A (AAC) is a high-quality format supported by all devices
+        // No conversion needed - M4A is the native iOS recording format
+        console.log('[SPYN Record] Preparing M4A file for sharing...');
+        setCurrentAnalysis('Préparation du fichier audio...');
         
         try {
-          // Read the m4a file as base64
-          const audioBase64 = await LegacyFileSystem.readAsStringAsync(fileUri, {
-            encoding: LegacyFileSystem.EncodingType.Base64,
-          });
-          console.log('[SPYN Record] Read audio file, size:', audioBase64.length);
+          // Copy the file to a properly named location for sharing
+          const cacheDir = LegacyFileSystem.cacheDirectory || '';
+          const m4aPath = `${cacheDir}${fileName}.m4a`;
           
-          // Send to backend for conversion
-          const response = await axios.post(`${BACKEND_URL}/api/convert-audio`, {
-            audio_base64: audioBase64,
-            output_format: 'mp3'
-          }, {
-            timeout: 120000, // 2 minutes timeout for large files
-          });
-          
-          if (response.data.success) {
-            console.log('[SPYN Record] Conversion successful, MP3 size:', response.data.size);
-            
-            // Save the MP3 file locally - use LegacyFileSystem for cacheDirectory
-            const cacheDir = LegacyFileSystem.cacheDirectory || '';
-            const mp3Path = `${cacheDir}${fileName}.mp3`;
-            console.log('[SPYN Record] Saving MP3 to:', mp3Path);
-            
-            await LegacyFileSystem.writeAsStringAsync(mp3Path, response.data.audio_base64, {
-              encoding: LegacyFileSystem.EncodingType.Base64,
+          // Check if we need to copy the file (if it's in a temp location)
+          if (fileUri !== m4aPath) {
+            console.log('[SPYN Record] Copying file to:', m4aPath);
+            await LegacyFileSystem.copyAsync({
+              from: fileUri,
+              to: m4aPath,
             });
-            console.log('[SPYN Record] MP3 saved successfully');
-            
-            // Share the MP3 file
-            setCurrentAnalysis('');
-            await shareRecording(mp3Path);
-            
-            // Cleanup original m4a
-            try {
-              await LegacyFileSystem.deleteAsync(fileUri, { idempotent: true });
-            } catch (e) {
-              // Ignore cleanup errors
-            }
-          } else {
-            console.log('[SPYN Record] Conversion failed, sharing original m4a');
-            setCurrentAnalysis('');
-            await shareRecording(fileUri);
           }
-        } catch (conversionError) {
-          console.error('[SPYN Record] Conversion error:', conversionError);
+          
+          console.log('[SPYN Record] ✅ M4A file ready for sharing');
           setCurrentAnalysis('');
-          // Fall back to sharing original m4a
+          
+          // Share the M4A file
+          await shareRecording(m4aPath);
+          
+          // Don't delete original - it might be the same file
+        } catch (shareError: any) {
+          console.error('[SPYN Record] Share preparation error:', shareError?.message);
+          setCurrentAnalysis('');
+          // Try to share the original file directly
           await shareRecording(fileUri);
         }
       }
