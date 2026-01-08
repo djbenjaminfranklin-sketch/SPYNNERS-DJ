@@ -1077,7 +1077,35 @@ export default function SpynRecordScreen() {
           
           console.log('[SPYN Record] Recognition response:', response);
           
-          if (response.success && response.title) {
+          // Check if we found a track - either with title OR with spynners_track_id
+          if (response.success && (response.title || (response.found && response.spynners_track_id))) {
+            // Get title from various possible fields
+            let trackTitle = response.title || response.external_title || response.track_title;
+            let trackArtist = response.artist || response.external_artist || response.track_artist;
+            let coverImage = response.cover_image || response.artwork_url || '';
+            let producerId = response.producer_id;
+            
+            // If we have track ID but no title, fetch track details from Base44
+            if (!trackTitle && response.spynners_track_id) {
+              console.log('[SPYN Record] Track ID found but no title - fetching track details...');
+              try {
+                const trackDetails = await base44Tracks.getById(response.spynners_track_id);
+                if (trackDetails) {
+                  trackTitle = trackDetails.title || 'Track identifiée';
+                  trackArtist = trackDetails.producer_name || trackDetails.artist_name || 'Artiste inconnu';
+                  coverImage = trackDetails.artwork_url || trackDetails.cover_image || coverImage;
+                  producerId = trackDetails.producer_id || producerId;
+                  console.log('[SPYN Record] ✅ Track details fetched:', trackTitle, 'by', trackArtist);
+                }
+              } catch (fetchError) {
+                console.error('[SPYN Record] Could not fetch track details:', fetchError);
+              }
+            }
+            
+            // Fallback values
+            trackTitle = trackTitle || 'Track identifiée';
+            trackArtist = trackArtist || 'Artiste inconnu';
+            
             const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
             
             // IMPROVED DEDUPLICATION: Normalize title for comparison
