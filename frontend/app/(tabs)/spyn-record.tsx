@@ -1513,6 +1513,9 @@ export default function SpynRecordScreen() {
         setOtherDjName('');
         setSaveMix(true);
         
+        // NOW close the modal after everything is done
+        setShowEndSessionModal(false);
+        
         // Show completion alert
         Alert.alert(
           '🎉 Session terminée !',
