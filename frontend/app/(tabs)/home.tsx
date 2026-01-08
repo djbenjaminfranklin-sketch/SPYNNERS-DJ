@@ -247,11 +247,12 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       const result = await base44Tracks.search(searchQuery);
-      // Filter approved tracks only
+      // Filter approved tracks only - STRICT: never show rejected or pending
       const approvedTracks = (result || []).filter((track: Track) => 
         track.is_approved === true || track.status === 'approved'
       );
-      setTracks(approvedTracks.length > 0 ? approvedTracks : result || []);
+      console.log('[Home] Search results:', approvedTracks.length, '/', (result || []).length);
+      setTracks(approvedTracks);
     } catch (error) {
       console.error('Search error:', error);
     } finally {
