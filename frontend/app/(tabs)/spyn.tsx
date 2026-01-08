@@ -1093,6 +1093,9 @@ export default function SpynScreen() {
     console.log('[SPYN] Stopping session...');
     sessionActiveRef.current = false;
     
+    // Allow screen to sleep again
+    deactivateKeepAwake('spyn-session');
+    
     if (recognitionLoopRef.current) {
       clearInterval(recognitionLoopRef.current);
       recognitionLoopRef.current = null;
