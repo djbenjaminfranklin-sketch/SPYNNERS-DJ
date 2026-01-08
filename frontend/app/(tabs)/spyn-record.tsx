@@ -1118,8 +1118,8 @@ export default function SpynRecordScreen() {
                 .trim();
             };
             
-            const normalizedNewTitle = normalizeTitle(response.title);
-            const normalizedNewArtist = response.artist ? normalizeTitle(response.artist) : '';
+            const normalizedNewTitle = normalizeTitle(trackTitle);
+            const normalizedNewArtist = trackArtist ? normalizeTitle(trackArtist) : '';
             
             // Check if this track (by normalized title AND artist) was already identified
             const isDuplicate = identifiedTracksRef.current.some(t => {
@@ -1132,7 +1132,7 @@ export default function SpynRecordScreen() {
             });
             
             console.log('[SPYN Record] Dedup check:', {
-              newTitle: response.title,
+              newTitle: trackTitle,
               normalizedNewTitle,
               existingTracks: identifiedTracksRef.current.map(t => t.title),
               isDuplicate
@@ -1141,13 +1141,13 @@ export default function SpynRecordScreen() {
             if (!isDuplicate) {
               const newTrack: IdentifiedTrack = {
                 id: `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                title: response.title,
-                artist: response.artist || 'Unknown Artist',
+                title: trackTitle,
+                artist: trackArtist,
                 timestamp: formatDuration(elapsedTime),
                 elapsedTime,
-                coverImage: response.cover_image,
+                coverImage: coverImage,
                 spynnersTrackId: response.spynners_track_id,
-                producerId: response.producer_id,
+                producerId: producerId,
               };
               
               // Update ref FIRST to prevent race conditions
