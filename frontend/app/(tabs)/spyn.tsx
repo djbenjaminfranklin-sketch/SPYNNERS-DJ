@@ -810,6 +810,7 @@ export default function SpynScreen() {
     // ONLINE MODE: Send to ACRCloud via Base44
     try {
       console.log('[SPYN] Sending audio to ACRCloud via Base44...');
+      setDebugLog('🔍 Analyse ACRCloud...');
       
       const response = await base44Spyn.recognizeAudio({
         audio_data: audioBase64,
@@ -821,6 +822,17 @@ export default function SpynScreen() {
       });
 
       console.log('[SPYN] ACRCloud Response:', JSON.stringify(response, null, 2));
+
+      // Show response in debug log
+      if (response.error) {
+        setDebugLog(`❌ Erreur: ${response.error}`);
+      } else if (response.found && response.spynners_track_id) {
+        setDebugLog(`✅ Track: ${response.title || 'Trouvée'}`);
+      } else if (response.external_title) {
+        setDebugLog(`⚠️ Pas dans Spynners: ${response.external_title}`);
+      } else {
+        setDebugLog('🎵 Aucune track identifiée');
+      }
 
       // ONLY show tracks that are found in Spynners database
       if (response.success && response.found && response.spynners_track_id) {
