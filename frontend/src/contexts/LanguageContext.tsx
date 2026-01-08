@@ -1074,6 +1074,10 @@ const translations: Record<Language, Record<string, string>> = {
     'spyn.blackDiamondEarned': 'Vous avez gagné un Black Diamond',
     'spyn.identifiedTracks': 'Tracks identifiées',
     'spyn.autoAnalysis': 'Analyse auto toutes les',
+    'spyn.sessionStarted': 'Session démarrée',
+    'spyn.screenStaysOn': 'L\'écran restera allumé pendant la session. Ne verrouillez pas manuellement votre téléphone pour permettre l\'identification des tracks.',
+    'spynRecord.recordingStarted': 'Enregistrement démarré',
+    'spynRecord.screenStaysOn': 'L\'écran restera allumé pendant l\'enregistrement. Ne verrouillez pas manuellement votre téléphone pour permettre l\'identification des tracks.',
     
     // Profile
     'profile.editProfile': 'Modifier le Profil',
