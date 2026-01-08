@@ -25,6 +25,7 @@ import Constants from 'expo-constants';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import { base44Notifications, mobileApi, base44SessionTracks, base44Spyn, base44Tracks } from '../../src/services/base44Api';
+import { recognizeAudioHybrid } from '../../src/services/acrCloudService';
 import { useLocalSearchParams } from 'expo-router';
 import offlineService from '../../src/services/offlineService';
 
