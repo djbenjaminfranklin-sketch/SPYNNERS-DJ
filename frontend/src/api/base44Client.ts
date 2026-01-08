@@ -19,7 +19,7 @@ const getBackendUrl = () => {
   }
   return Constants.expoConfig?.extra?.backendUrl || 
          process.env.EXPO_PUBLIC_BACKEND_URL || 
-         'https://djsound-debug.preview.emergentagent.com';
+         'https://stable-app-deploy.preview.emergentagent.com';
 };
 
 // Storage key for auth token

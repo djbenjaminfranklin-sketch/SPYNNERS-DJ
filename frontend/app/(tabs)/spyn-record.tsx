@@ -56,7 +56,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return 'https://djsound-debug.preview.emergentagent.com';
+  return 'https://stable-app-deploy.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 

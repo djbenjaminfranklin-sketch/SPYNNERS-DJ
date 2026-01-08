@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://djsound-debug.preview.emergentagent.com';
+  return 'https://stable-app-deploy.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();
