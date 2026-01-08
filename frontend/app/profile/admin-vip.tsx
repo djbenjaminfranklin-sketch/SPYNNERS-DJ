@@ -24,6 +24,7 @@ import { isUserAdmin } from '../../src/components/AdminBadge';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import { base44Tracks } from '../../src/services/base44Api';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
