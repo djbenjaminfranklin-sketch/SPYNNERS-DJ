@@ -783,6 +783,19 @@ export default function SpynRecordScreen() {
     try {
       console.log('[SPYN Record] Starting native recording...');
       
+      // CRITICAL: Clean up any existing recording first
+      if (recordingRef.current) {
+        console.log('[SPYN Record] Cleaning up existing recording...');
+        try {
+          await recordingRef.current.stopAndUnloadAsync();
+        } catch (e) {
+          console.log('[SPYN Record] Existing recording cleanup error (ignored):', e);
+        }
+        recordingRef.current = null;
+        // Wait for iOS to release audio session
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      
       // Request permissions first
       console.log('[SPYN Record] Requesting audio permissions...');
       const { granted } = await Audio.requestPermissionsAsync();
@@ -802,6 +815,9 @@ export default function SpynRecordScreen() {
       });
       console.log('[SPYN Record] Audio mode set successfully');
       
+      // Wait a bit more before creating new recording
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       // Use the modern API - createAsync with HIGH_QUALITY preset (same as SPYN)
       console.log('[SPYN Record] Creating recording...');
       const { recording } = await Audio.Recording.createAsync(
@@ -812,6 +828,33 @@ export default function SpynRecordScreen() {
       console.log('[SPYN Record] ✅ Native recording started successfully, recording object:', !!recording);
     } catch (error: any) {
       console.error('[SPYN Record] ❌ Native recording error:', error?.message || error);
+      
+      // If it's the "only one Recording" error, try to force cleanup and retry once
+      if (error?.message?.includes('Only one Recording')) {
+        console.log('[SPYN Record] Attempting recovery from Recording conflict...');
+        try {
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: false,
+            playsInSilentModeIOS: true,
+          });
+          await new Promise(resolve => setTimeout(resolve, 500));
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: true,
+            playsInSilentModeIOS: true,
+          });
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          const { recording } = await Audio.Recording.createAsync(
+            Audio.RecordingOptionsPresets.HIGH_QUALITY
+          );
+          recordingRef.current = recording;
+          console.log('[SPYN Record] ✅ Recovery successful!');
+          return;
+        } catch (retryError) {
+          console.error('[SPYN Record] Recovery failed:', retryError);
+        }
+      }
+      
       Alert.alert('Erreur', `Impossible de démarrer l'enregistrement: ${error?.message || 'Erreur inconnue'}`);
       throw error;
     }
