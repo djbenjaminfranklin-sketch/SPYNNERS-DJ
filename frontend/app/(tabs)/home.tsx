@@ -1257,11 +1257,11 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: -8,
+    marginLeft: -20,
   },
   headerLogo: {
-    width: 180,
-    height: 52,
+    width: 160,
+    height: 46,
   },
   logoText: {
     fontSize: 22,
