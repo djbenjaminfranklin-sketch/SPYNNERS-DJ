@@ -601,6 +601,16 @@ export default function SpynScreen() {
     // Keep screen awake during session
     activateKeepAwakeAsync('spyn-session').catch(e => console.log('[SPYN] Keep awake error:', e));
     
+    // Show info alert about screen staying on (only on mobile)
+    if (Platform.OS !== 'web') {
+      Alert.alert(
+        '🎧 ' + t('spyn.sessionStarted'),
+        t('spyn.screenStaysOn') || 'L\'écran restera allumé pendant la session. Ne verrouillez pas manuellement votre téléphone pour permettre l\'identification des tracks.',
+        [{ text: 'OK', style: 'default' }],
+        { cancelable: true }
+      );
+    }
+    
     // Immediately set session active to switch UI
     setSessionActive(true);
     sessionActiveRef.current = true;
