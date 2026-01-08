@@ -1053,12 +1053,27 @@ export default function SpynScreen() {
       durationIntervalRef.current = null;
     }
     
+    // Stop web MediaRecorder
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
     }
     
+    // Stop native recording (expo-av)
+    if (recordingRef.current) {
+      try {
+        recordingRef.current.stopAndUnloadAsync().catch(() => {});
+      } catch (e) {
+        // Ignore errors when stopping
+      }
+      recordingRef.current = null;
+    }
+    
     stopListeningAnimation();
     isRecordingRef.current = false;
+    
+    // Reset session state
+    setIsSessionActive(false);
+    console.log('[SPYN] ✅ Session stopped');
   };
 
   const handleEndSession = () => {
