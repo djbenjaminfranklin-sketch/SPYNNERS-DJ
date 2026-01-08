@@ -491,27 +491,38 @@ export default function SpynScreen() {
           venueName = placesResponse.venue;
           venueType = placesResponse.venue_type || placesResponse.types?.[0];
           venueTypes = placesResponse.types || [];
-          console.log('[SPYN] Got venue name:', venueName, 'type:', venueType);
+          console.log('[SPYN] Got venue name:', venueName, 'type:', venueType, 'types:', venueTypes);
           
-          // Check if it's a valid venue for Black Diamond
+          // Check if it's a valid venue for Black Diamond - STRICT CHECK
           isValidVenue = venueTypes.some((type: string) => 
             VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
           );
+          console.log('[SPYN] Venue validation:', isValidVenue ? 'VALID VENUE ✓' : 'NOT A VALID VENUE');
         } else if (placesResponse.places && placesResponse.places.length > 0) {
           // Handle array of places response
           const nearestPlace = placesResponse.places[0];
           venueName = nearestPlace.name;
           venueType = nearestPlace.category || nearestPlace.type;
-          venueTypes = nearestPlace.categories || [venueType];
-          isValidVenue = true;
-          console.log('[SPYN] Got venue from places array:', venueName);
+          venueTypes = nearestPlace.categories || [venueType].filter(Boolean);
+          console.log('[SPYN] Got venue from places array:', venueName, 'categories:', venueTypes);
+          
+          // STRICT CHECK - don't assume it's valid, verify the types
+          isValidVenue = venueTypes.some((type: string) => 
+            VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+          );
+          console.log('[SPYN] Venue validation:', isValidVenue ? 'VALID VENUE ✓' : 'NOT A VALID VENUE');
         } else if (placesResponse.name) {
           // Direct venue object response
           venueName = placesResponse.name;
           venueType = placesResponse.type || placesResponse.category;
-          venueTypes = placesResponse.types || [venueType];
-          isValidVenue = true;
-          console.log('[SPYN] Got direct venue:', venueName);
+          venueTypes = placesResponse.types || [venueType].filter(Boolean);
+          console.log('[SPYN] Got direct venue:', venueName, 'types:', venueTypes);
+          
+          // STRICT CHECK - don't assume it's valid, verify the types
+          isValidVenue = venueTypes.some((type: string) => 
+            VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+          );
+          console.log('[SPYN] Venue validation:', isValidVenue ? 'VALID VENUE ✓' : 'NOT A VALID VENUE');
         }
       } catch (e: any) {
         console.log('[SPYN] Places lookup failed:', e?.message || e, '- using reverse geocoding');
