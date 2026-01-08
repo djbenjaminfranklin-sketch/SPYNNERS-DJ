@@ -190,25 +190,12 @@ export default function SpynScreen() {
     startIdleAnimations();
     initOfflineMode();
     
-    // Subscribe to network changes - but NEVER go offline during an active session
+    // Subscribe to network changes - ALWAYS STAY ONLINE for this app
+    // The offline mode causes more issues than it solves
     const unsubscribeNetwork = offlineService.onNetworkChange((online) => {
-      // On web, check navigator.onLine as the real source
-      const browserOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-      console.log('[SPYN] Network changed callback:', online ? 'ONLINE' : 'OFFLINE', '- navigator.onLine:', browserOnline);
-      
-      // IMPORTANT: During an active session, ALWAYS stay online to continue recognition
-      if (sessionActiveRef.current) {
-        console.log('[SPYN] Session active - forcing ONLINE mode');
-        setIsOffline(false);
-        return;
-      }
-      
-      // Only go offline if BOTH offlineService AND navigator say offline
-      if (browserOnline) {
-        setIsOffline(false);
-      } else {
-        setIsOffline(!online);
-      }
+      console.log('[SPYN] Network changed callback - FORCING ONLINE (offline mode disabled)');
+      // ALWAYS stay online - offline mode is disabled for better UX
+      setIsOffline(false);
     });
     
     return () => {
