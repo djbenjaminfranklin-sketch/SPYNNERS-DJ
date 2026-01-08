@@ -653,7 +653,11 @@ export default function HomeScreen() {
       {/* Top Header with Language & Notifications */}
       <View style={styles.topHeader}>
         <View style={styles.headerLeft}>
-          <Text style={styles.logoText}>SPYNNERS</Text>
+          <Image 
+            source={require('../../assets/images/spynners-logo.png')}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
         </View>
         
         <View style={styles.headerRight}>
