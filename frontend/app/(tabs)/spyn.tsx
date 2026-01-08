@@ -789,12 +789,12 @@ export default function SpynScreen() {
           
           const trackResult: TrackResult = {
             success: true,
-            title: response.title,
-            artist: response.artist,
-            album: response.album,
-            genre: response.genre,
-            cover_image: response.cover_image,
-            score: response.score,
+            title: trackTitle,
+            artist: trackArtist,
+            album: response.album || response.track_album || '',
+            genre: response.genre || response.track_genre || '',
+            cover_image: response.cover_image || response.artwork_url || '',
+            score: response.score || 100,
             time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
             id: response.spynners_track_id,
             producer_id: response.producer_id,
