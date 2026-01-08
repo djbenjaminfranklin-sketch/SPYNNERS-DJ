@@ -6,7 +6,7 @@
  * 2. ONLINE (fallback) - Global ACRCloud catalog
  */
 
-import * as Crypto from 'expo-crypto';
+import CryptoJS from 'crypto-js';
 import { Platform } from 'react-native';
 
 // ACRCloud Credentials
@@ -44,45 +44,9 @@ export interface ACRCloudResult {
 /**
  * Create HMAC-SHA1 signature for ACRCloud API
  */
-async function createSignature(
-  stringToSign: string,
-  accessSecret: string
-): Promise<string> {
-  try {
-    // For React Native, we need to use a different approach
-    // expo-crypto doesn't support HMAC directly, so we'll use a web-compatible method
-    
-    if (Platform.OS === 'web') {
-      // Web: Use SubtleCrypto
-      const encoder = new TextEncoder();
-      const keyData = encoder.encode(accessSecret);
-      const messageData = encoder.encode(stringToSign);
-      
-      const key = await crypto.subtle.importKey(
-        'raw',
-        keyData,
-        { name: 'HMAC', hash: 'SHA-1' },
-        false,
-        ['sign']
-      );
-      
-      const signature = await crypto.subtle.sign('HMAC', key, messageData);
-      const signatureArray = new Uint8Array(signature);
-      const base64Signature = btoa(String.fromCharCode(...signatureArray));
-      return base64Signature;
-    } else {
-      // Native: Use crypto-js style implementation
-      // We'll use a simpler approach with fetch and let the server handle it
-      // For now, use a basic implementation
-      const hmacModule = await import('crypto-js/hmac-sha1');
-      const Base64Module = await import('crypto-js/enc-base64');
-      const hmac = hmacModule.default(stringToSign, accessSecret);
-      return Base64Module.default.stringify(hmac);
-    }
-  } catch (error) {
-    console.error('[ACRCloud] Signature creation error:', error);
-    throw error;
-  }
+function createSignature(stringToSign: string, accessSecret: string): string {
+  const hmac = CryptoJS.HmacSHA1(stringToSign, accessSecret);
+  return CryptoJS.enc.Base64.stringify(hmac);
 }
 
 /**
