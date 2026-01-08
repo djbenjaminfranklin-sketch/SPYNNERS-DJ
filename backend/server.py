@@ -328,10 +328,10 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
             data_type, signature_version, timestamp, ACRCLOUD_ACCESS_SECRET
         )
         
-        # Prepare request - ACRCloud accepts various formats
-        # Use detected format instead of hardcoded wav
+        # Prepare request - Match the working implementation exactly
+        # Send as audio/wav with explicit parameters
         files = {
-            'sample': (f'audio.{audio_extension}', BytesIO(audio_data), audio_format)
+            'sample': ('audio.wav', BytesIO(audio_data), 'audio/wav')
         }
         
         data = {
@@ -340,10 +340,12 @@ async def recognize_audio(request: AudioRecognitionRequest, authorization: Optio
             'timestamp': timestamp,
             'signature': signature,
             'data_type': data_type,
-            'signature_version': signature_version
+            'signature_version': signature_version,
+            'sample_rate': '48000',      # Added: match working implementation
+            'audio_format': 'wav'        # Added: match working implementation
         }
         
-        print(f"[ACRCloud] Sending {len(audio_data)} bytes as {audio_format} to ACRCloud...")
+        print(f"[ACRCloud] Sending {len(audio_data)} bytes to ACRCloud with key {ACRCLOUD_ACCESS_KEY[:8]}...")
         
         # Send to ACRCloud
         async with httpx.AsyncClient(timeout=30.0) as client:
