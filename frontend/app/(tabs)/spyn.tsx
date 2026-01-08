@@ -760,16 +760,6 @@ export default function SpynScreen() {
       });
 
       console.log('[SPYN] ACRCloud Response:', JSON.stringify(response, null, 2));
-      
-      // DEBUG: Show response to user
-      if (__DEV__) {
-        const debugMsg = response.error 
-          ? `Erreur: ${response.error}` 
-          : response.title 
-            ? `Track: ${response.title} - ${response.artist}` 
-            : `Pas de track trouvée. Réponse: ${JSON.stringify(response).substring(0, 200)}`;
-        Alert.alert('Debug ACRCloud', debugMsg);
-      }
 
       // ONLY show tracks that are found in Spynners database
       if (response.success && response.found && response.spynners_track_id) {
