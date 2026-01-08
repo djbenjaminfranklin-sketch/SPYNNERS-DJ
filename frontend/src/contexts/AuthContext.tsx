@@ -177,21 +177,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('[AuthContext] Push notification registration failed (non-fatal):', error);
     }
   };
-        });
-        
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'Default',
-          importance: Notifications.AndroidImportance.HIGH,
-          sound: 'default',
-        });
-        
-        console.log('[AuthContext] Android notification channels configured');
-      }
-      
-    } catch (error) {
-      console.error('[AuthContext] Error registering push notifications:', error);
-    }
-  };
 
   // Fetch complete user data from Base44 Users collection
   const fetchCompleteUserData = async (basicUser: User): Promise<User> => {
