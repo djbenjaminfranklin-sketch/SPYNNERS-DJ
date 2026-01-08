@@ -1,3 +1,6 @@
+// IMPORTANT: Polyfill for crypto must be first import
+import 'react-native-get-random-values';
+
 import { Stack } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
