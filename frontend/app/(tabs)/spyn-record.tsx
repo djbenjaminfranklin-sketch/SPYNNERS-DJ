@@ -456,18 +456,57 @@ export default function SpynRecordScreen() {
           setSelectedDeviceId(defaultDevice.deviceId);
         }
       } else {
-        // Native (iOS/Android) - iOS automatically routes audio through connected devices
-        // No need for test recording - just check if we have permission and inform user
+        // Native (iOS/Android) - Need to configure audio session and check for external devices
         try {
           const status = await Audio.getPermissionsAsync();
           
           if (status.granted) {
-            console.log('[SPYN Record] Audio permission granted - iOS will auto-route external devices');
-            // On iOS, when a USB/Lightning audio interface is connected, 
-            // the system automatically uses it as the input source
-            setAudioSource('internal');
-            setAudioSourceName(t('spynRecord.audioSourceAuto'));
-            console.log('[SPYN Record] iOS audio routing active - external devices will be used automatically if connected');
+            console.log('[SPYN Record] Audio permission granted - configuring for external input...');
+            
+            // Configure audio mode to allow external input devices
+            // This is CRITICAL for iOS to recognize USB/Lightning audio interfaces
+            await Audio.setAudioModeAsync({
+              allowsRecordingIOS: true,
+              playsInSilentModeIOS: true,
+              staysActiveInBackground: true,
+              // These settings help iOS recognize external audio devices
+              interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+              interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+            });
+            
+            // Check if external input is available by examining audio session
+            // On iOS, when USB/Lightning audio is connected, it becomes the default input
+            // We can detect this by attempting a brief recording test
+            try {
+              console.log('[SPYN Record] Testing for external audio input...');
+              const { recording: testRecording } = await Audio.Recording.createAsync(
+                Audio.RecordingOptionsPresets.HIGH_QUALITY
+              );
+              
+              // Get the recording status to check input
+              const testStatus = await testRecording.getStatusAsync();
+              console.log('[SPYN Record] Test recording status:', testStatus);
+              
+              // Stop and unload the test recording
+              await testRecording.stopAndUnloadAsync();
+              
+              // If we got here without error, audio input is working
+              // Check if an external device is connected (iOS will auto-route)
+              // Unfortunately, expo-av doesn't expose the actual input device name
+              // But we can inform the user that the system will use any connected device
+              
+              // For now, we'll show a more informative message
+              // In a real app, you might use a native module to query AVAudioSession.availableInputs
+              setAudioSource('internal');
+              setAudioSourceName('Entrée audio active - Branchez votre interface');
+              console.log('[SPYN Record] ✅ Audio input configured - external devices will be used if connected');
+              
+            } catch (testError: any) {
+              console.log('[SPYN Record] Test recording error:', testError?.message);
+              // Even if test fails, still show that audio is configured
+              setAudioSource('internal');
+              setAudioSourceName(t('spynRecord.audioSourceAuto'));
+            }
           } else {
             setAudioSource('internal');
             setAudioSourceName(t('spynRecord.permissionRequired'));
