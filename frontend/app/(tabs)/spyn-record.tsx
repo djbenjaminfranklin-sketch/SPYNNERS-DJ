@@ -2282,6 +2282,22 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     gap: 8,
   },
+  locationDisplayContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 6,
+  },
+  locationDisplayText: {
+    color: '#aaa',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  verifiedBadge: {
+    marginLeft: 2,
+  },
   audioSourceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
