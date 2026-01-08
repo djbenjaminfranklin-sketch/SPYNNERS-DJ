@@ -196,12 +196,10 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       console.log('[Home] Loading tracks...');
-      console.log('[Home] User logged in:', !!user);
+      console.log('[Home] Filters - Genre:', selectedGenre, 'Energy:', selectedEnergy, 'VIP:', showVIPOnly);
       
-      const filters: any = { limit: 100 }; // Get more tracks to have better selection
-      if (selectedGenre !== 'All Genres') filters.genre = selectedGenre;
-      if (selectedEnergy !== 'All Energy Levels') filters.energy_level = selectedEnergy.toLowerCase().replace(' ', '_');
-      if (showVIPOnly) filters.is_vip = true;
+      // Load ALL tracks with high limit - we'll filter client-side for accuracy
+      const filters: any = { limit: 500 };
       
       const sortMap: Record<string, string> = {
         'Recently Added': '-created_date',
@@ -212,17 +210,60 @@ export default function HomeScreen() {
       filters.sort = sortMap[selectedSort] || '-created_date';
 
       const result = await base44Tracks.list(filters);
-      console.log('[Home] Tracks loaded:', result?.length || 0);
+      console.log('[Home] Total tracks loaded:', result?.length || 0);
       
       if (result && result.length > 0) {
-        // Filter ONLY approved tracks - STRICT: never show rejected or pending
-        const approvedTracks = result.filter((track: Track) => 
+        // Step 1: Filter ONLY approved tracks
+        let filteredTracks = result.filter((track: Track) => 
           track.status === 'approved' || track.is_approved === true
         );
-        console.log('[Home] Approved tracks:', approvedTracks.length, '/', result.length);
+        console.log('[Home] Approved tracks:', filteredTracks.length);
         
-        // Only show approved tracks, even if it's an empty list
-        setTracks(approvedTracks);
+        // Step 2: Apply genre filter CLIENT-SIDE for accuracy
+        if (selectedGenre !== 'All Genres') {
+          const genreLower = selectedGenre.toLowerCase();
+          filteredTracks = filteredTracks.filter((track: Track) => {
+            const trackGenre = (track.genre || '').toLowerCase();
+            // Exact match or contains (for "Afro House" matching "afro house")
+            return trackGenre === genreLower || 
+                   trackGenre.includes(genreLower) ||
+                   genreLower.includes(trackGenre);
+          });
+          console.log('[Home] After genre filter:', filteredTracks.length, 'tracks for', selectedGenre);
+        }
+        
+        // Step 3: Apply energy filter CLIENT-SIDE
+        if (selectedEnergy !== 'All Energy Levels') {
+          const energyLower = selectedEnergy.toLowerCase().replace(' ', '_');
+          filteredTracks = filteredTracks.filter((track: Track) => {
+            const trackEnergy = (track.energy_level || '').toLowerCase().replace(' ', '_');
+            return trackEnergy === energyLower;
+          });
+          console.log('[Home] After energy filter:', filteredTracks.length, 'tracks');
+        }
+        
+        // Step 4: Apply VIP filter CLIENT-SIDE
+        if (showVIPOnly) {
+          filteredTracks = filteredTracks.filter((track: Track) => track.is_vip === true);
+          console.log('[Home] After VIP filter:', filteredTracks.length, 'tracks');
+        }
+        
+        // Step 5: Sort client-side
+        filteredTracks.sort((a: Track, b: Track) => {
+          switch (selectedSort) {
+            case 'Most Downloaded':
+              return (b.download_count || 0) - (a.download_count || 0);
+            case 'Top Rated':
+              return (b.average_rating || b.rating || 0) - (a.average_rating || a.rating || 0);
+            case 'Oldest':
+              return new Date(a.created_date || 0).getTime() - new Date(b.created_date || 0).getTime();
+            default: // Recently Added
+              return new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime();
+          }
+        });
+        
+        console.log('[Home] Final filtered tracks:', filteredTracks.length);
+        setTracks(filteredTracks);
       } else {
         console.log('[Home] No tracks from API, showing demo tracks');
         setTracks(getDemoTracks());
