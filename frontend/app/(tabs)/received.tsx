@@ -15,7 +15,7 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { base44Tracks, Track } from '../../src/services/base44Api';
+import { base44Tracks, base44Messages, Track } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 
