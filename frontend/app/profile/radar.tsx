@@ -233,13 +233,14 @@ export default function LiveRadarScreen() {
           const userTracks = await base44Tracks.list({ limit: 1000 });
           console.log('[LiveRadar] Total tracks from API:', userTracks.length);
           
-          // Filter tracks owned by current user with status 'approved'
+          // Filter tracks owned by current user with status 'approved' - STRICT
           const myTracks = userTracks.filter((t: Track) => {
             const trackProducerId = t.producer_id || '';
             const trackCreatedById = t.created_by_id || '';
             const trackUploadedBy = t.uploaded_by || '';
             const trackOwnerId = (t as any).owner_id || '';
-            const trackStatus = t.status || 'pending';
+            // Convert status to lowercase and trim for comparison
+            const trackStatus = String(t.status || '').toLowerCase().trim();
             
             // Only count approved tracks that belong to this user
             const isMyTrack = trackProducerId === userId || 
@@ -247,7 +248,10 @@ export default function LiveRadarScreen() {
                    trackUploadedBy === userId ||
                    trackOwnerId === userId;
             
-            return isMyTrack && trackStatus === 'approved';
+            // STRICT: only 'approved' or 'active' status
+            const isApproved = trackStatus === 'approved' || trackStatus === 'active';
+            
+            return isMyTrack && isApproved;
           });
           
           console.log('[LiveRadar] Filtered to approved tracks:', myTracks.length);
