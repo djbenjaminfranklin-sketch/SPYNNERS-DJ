@@ -751,8 +751,13 @@ export default function SpynRecordScreen() {
       recordingSegmentsRef.current = [];
       
       // Update location in background when starting
+      console.log('[SPYN Record] Location permission status:', locationPermission);
       if (locationPermission) {
+        console.log('[SPYN Record] Calling updateLocation...');
         updateLocation();
+      } else {
+        console.log('[SPYN Record] No location permission, trying to request...');
+        requestLocationPermission();
       }
       
       // Start duration timer
