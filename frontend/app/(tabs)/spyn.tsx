@@ -140,6 +140,13 @@ export default function SpynScreen() {
   const [micPermission, setMicPermission] = useState(false);
   const [micPermissionRequested, setMicPermissionRequested] = useState(false);
   
+  // Audio source detection state
+  const [audioSourceInfo, setAudioSourceInfo] = useState<string>('Détection...');
+  const [isExternalAudio, setIsExternalAudio] = useState(false);
+  
+  // Debug log state (visible on screen)
+  const [debugLog, setDebugLog] = useState<string>('');
+  
   // Offline mode state
   const [isOffline, setIsOffline] = useState(false);
   const [offlineRecordingsCount, setOfflineRecordingsCount] = useState(0);
