@@ -823,13 +823,20 @@ export default function SpynScreen() {
       return;
     }
     
-    // ONLINE MODE: Send directly to ACRCloud (hybrid: OFFLINE catalog first, then ONLINE)
+    // ONLINE MODE: Send to ACRCloud via Base44 (same as website)
     try {
-      console.log('[SPYN] 🎵 Sending audio to ACRCloud (hybrid mode)...');
+      console.log('[SPYN] 🎵 Sending audio to Base44 recognizeAudio...');
       setDebugLog('🔍 Analyse ACRCloud...');
       
-      // Direct ACRCloud recognition - no more Base44 intermediary!
-      const response = await recognizeAudioHybrid(audioBase64);
+      // Use base44Spyn.recognizeAudio - same as website
+      const response = await base44Spyn.recognizeAudio({
+        audio_data: audioBase64,
+        sample_rate: 48000,
+        channels: 2,
+        location: location,
+        dj_id: user?.id,
+        dj_name: user?.full_name,
+      });
 
       console.log('[SPYN] ACRCloud Response:', JSON.stringify(response, null, 2));
 
