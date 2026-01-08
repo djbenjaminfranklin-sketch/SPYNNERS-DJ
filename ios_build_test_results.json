@@ -1,97 +1,23 @@
 {
   "summary": {
     "total_tests": 8,
-    "passed": 5,
-    "failed": 3,
-    "success_rate": 62.5,
-    "backend_stable": false,
-    "timestamp": "2026-01-08T22:19:39.956939"
+    "passed": 8,
+    "failed": 0,
+    "success_rate": 100.0,
+    "backend_stable": true,
+    "timestamp": "2026-01-08T22:20:15.007159"
   },
   "test_results": [
     {
       "test": "1. Authentication (Base44)",
-      "success": false,
-      "details": "No token in response",
+      "success": true,
+      "details": "\u2705 Token received. Black diamonds: 60",
       "response_data": {
-        "user": {
-          "id": "691a4d96d819355b52c063f4",
-          "created_date": "2025-11-16T22:17:58.570000",
-          "updated_date": "2026-01-08T22:18:42.896000",
-          "email": "djbenjaminfranklin@gmail.com",
-          "api_key": "c55eb256102543faa32b709a96597e05",
-          "phone_number": null,
-          "full_name": "Benjamin Franklin",
-          "disabled": null,
-          "hashed_password": "$2b$12$7CEO6hu.qSVrtrx.lmDCkepY4WPEjSxySWQCr/trVYBOtAP4QoslW",
-          "hashed_reset_token": null,
-          "is_verified": true,
-          "otp_code": null,
-          "otp_expires_at": null,
-          "otp_attempts": 0,
-          "data": {
-            "user_type": "both",
-            "artist_name": "Benjamin Franklin",
-            "avatar_url": "https://base44.app/api/apps/691a4d96d819355b52c063f3/files/public/691a4d96d819355b52c063f3/181d7c23a_d7847537-1c93-4189-8bd5-dd611b72e976.jpeg",
-            "last_active": "2026-01-08T22:18:42.359Z",
-            "instagram_url": "@benjaminfranklinmusic",
-            "preferred_genres": [
-              "Tech House",
-              "Afro House",
-              "Classic House / Electronic House",
-              "Deep House",
-              "Progressive House",
-              "Melodic House & Techno",
-              "Organic House / Downtempo",
-              "Bass House",
-              "Jackin' House",
-              "Mainstage House",
-              "Acid House",
-              "Soulful House / Vocal House",
-              "Latin House",
-              "UK Funky House",
-              "Funky House / Groove House",
-              "Tropical House",
-              "Melodic House",
-              "Melodic Techno",
-              "Afro Tech",
-              "Amapiano"
-            ],
-            "nationality": "FR",
-            "residence_club": "MOTEL PARTICULIER ",
-            "black_diamonds": 60,
-            "bio": "",
-            "career_highlights": "",
-            "years_experience": 25,
-            "user_types": [
-              "producer",
-              "dj"
-            ],
-            "auto_message_settings": {
-              "message": "Thanks for playing my track. If you could film the audience while you're playing it and send it to me, that would be great. \n\ncontact@spynners.com\n\nBenjamin Franklin",
-              "enabled": true
-            },
-            "created_date": "2025-11-16T22:17:58.570000",
-            "updated_date": "2025-12-19T08:26:22.526000",
-            "disabled": null,
-            "is_verified": true,
-            "app_id": "691a4d96d819355b52c063f3",
-            "is_service": false,
-            "_app_role": "admin",
-            "sub_labels": [],
-            "sacem_number": " 228230",
-            "push_token": "ExponentPushToken[pBu6XUOoSVuebUpKyZCv-c]"
-          },
-          "app_id": "691a4d96d819355b52c063f3",
-          "role": "admin",
-          "is_service": false,
-          "granted_by_support_access": false,
-          "support_access_expires_at": null
-        },
-        "success": true,
-        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkamJlbmphbWluZnJhbmtsaW5AZ21haWwuY29tIiwiZXhwIjoxNzc1Njg2Nzc4LCJpYXQiOjE3Njc5MTA3Nzh9.bW4r5uYa8-CQSZf0tS38x7EkYRit1A9GXSCmjLb4wi8",
-        "country_code": "US"
+        "has_token": true,
+        "black_diamonds": 60,
+        "token_type": "access_token"
       },
-      "timestamp": "2026-01-08T22:19:38.193439"
+      "timestamp": "2026-01-08T22:20:11.182692"
     },
     {
       "test": "2. Tracks API",
@@ -102,28 +28,806 @@
         "structure_valid": true,
         "sample": null
       },
-      "timestamp": "2026-01-08T22:19:38.235818"
+      "timestamp": "2026-01-08T22:20:11.260610"
     },
     {
       "test": "3. TrackSend API",
       "success": true,
       "details": "\u2705 Entity not implemented locally (expected for Base44 entity)",
       "response_data": "404 - Expected",
-      "timestamp": "2026-01-08T22:19:38.276021"
+      "timestamp": "2026-01-08T22:20:11.300647"
     },
     {
       "test": "4a. Admin Downloads (GET)",
-      "success": false,
-      "details": "HTTP 401",
-      "response_data": "{\"detail\":\"Authorization required\"}",
-      "timestamp": "2026-01-08T22:19:38.314093"
+      "success": true,
+      "details": "\u2705 Download stats retrieved",
+      "response_data": {
+        "success": true,
+        "downloads": [
+          {
+            "track_id": "695d74394bc268339f8e5f27",
+            "track_title": "Xavier E - Devotion of a Lifetime feat Manny Guerr (Sweet Rains Remix)",
+            "producer": "LFTD MUSIC GROUP INC",
+            "genre": "Dance / Pop",
+            "download_count": 1
+          },
+          {
+            "track_id": "69590ea5dedc3a546846b1bc",
+            "track_title": "GROOVE IS AFRO HOUSE",
+            "producer": "LIBOZ",
+            "genre": "Afro House",
+            "download_count": 1
+          },
+          {
+            "track_id": "69541bef6c94563097359243",
+            "track_title": "ERIC ORDER - NEVER CONTROL",
+            "producer": "MODUS VIVENDI MUSIC GROUP",
+            "genre": "Melodic House & Techno",
+            "download_count": 1
+          },
+          {
+            "track_id": "69541be83f456782d19bc9cd",
+            "track_title": "GEERIK (ES) - ECHOES",
+            "producer": "MODUS VIVENDI MUSIC GROUP",
+            "genre": "Trance (Main Floor)",
+            "download_count": 1
+          },
+          {
+            "track_id": "69541be3dbe95a7746e6261d",
+            "track_title": "FRANCIS ALARTE - DECEMBER",
+            "producer": "MODUS VIVENDI MUSIC GROUP",
+            "genre": "Melodic House & Techno",
+            "download_count": 2
+          },
+          {
+            "track_id": "69541bdbed74bfeb60d72ba6",
+            "track_title": "VICO VAZQUEZ - BIG POTY",
+            "producer": "MODUS VIVENDI MUSIC GROUP",
+            "genre": "Progressive House",
+            "download_count": 2
+          },
+          {
+            "track_id": "69541bd4b989c67aa98c6a85",
+            "track_title": "ARIANA (BR) - QUIERO TE SENTIR",
+            "producer": "MODUS VIVENDI MUSIC GROUP",
+            "genre": "Progressive House",
+            "download_count": 2
+          },
+          {
+            "track_id": "69541bcde0d98dd9a2cbda4d",
+            "track_title": "D4MIAN SMITH - BLACK THURSDAY",
+            "producer": "MODUS VIVENDI MUSIC GROUP",
+            "genre": "Progressive House",
+            "download_count": 2
+          },
+          {
+            "track_id": "69541bca3e6ada21b2f8c8e1",
+            "track_title": "J-NEO - DESIRES",
+            "producer": "MODUS VIVENDI MUSIC GROUP",
+            "genre": "Melodic House & Techno",
+            "download_count": 2
+          },
+          {
+            "track_id": "69541bc66b34a912d972f567",
+            "track_title": "MOLYNN - HOLD ME STRONG",
+            "producer": "MODUS VIVENDI MUSIC GROUP",
+            "genre": "Progressive House",
+            "download_count": 2
+          },
+          {
+            "track_id": "69541bc1b4cefb53a5c69eba",
+            "track_title": "ERIC ORDER - WE LOVE",
+            "producer": "MODUS VIVENDI MUSIC GROUP",
+            "genre": "Melodic House & Techno",
+            "download_count": 2
+          },
+          {
+            "track_id": "69541bbbea972cbaf84a6069",
+            "track_title": "TarDo - LAST CHANCE",
+            "producer": "MODUS VIVENDI MUSIC GROUP",
+            "genre": "Melodic House & Techno",
+            "download_count": 2
+          },
+          {
+            "track_id": "69541b11b791647b35e8d887",
+            "track_title": "S\u00d8M\u00c4R N\u00d4MAR - BREATHE",
+            "producer": "S\u00d8M\u00c4R N\u00d4MAR",
+            "genre": "Melodic House & Techno",
+            "download_count": 1
+          },
+          {
+            "track_id": "6952c61bc8c6bbaa4f80f256",
+            "track_title": "Daniel Zamadi - House Control (Extended Mix)",
+            "producer": "LFTD MUSIC GROUP INC",
+            "genre": "Tech House",
+            "download_count": 4
+          },
+          {
+            "track_id": "6952c614be49e9e367b64b8f",
+            "track_title": "M.A.N.I.L.A. & Francis Kay - Wicked Game (Extended Mix)",
+            "producer": "LFTD MUSIC GROUP INC",
+            "genre": "Melodic House & Techno",
+            "download_count": 2
+          },
+          {
+            "track_id": "6952c60c5b560220fab783c1",
+            "track_title": "Quincy - Signs Were Clear (Extended Mix)",
+            "producer": "LFTD MUSIC GROUP INC",
+            "genre": "Melodic House & Techno",
+            "download_count": 3
+          },
+          {
+            "track_id": "6952c6077f3ffce67d5e0636",
+            "track_title": "Rythm\u00e9e - Pieces (Extended Mix)",
+            "producer": "LFTD MUSIC GROUP INC",
+            "genre": "Melodic House & Techno",
+            "download_count": 2
+          },
+          {
+            "track_id": "6952c60279c50925d00d1977",
+            "track_title": "Tio Chelito - Discotheque",
+            "producer": "LFTD MUSIC GROUP INC",
+            "genre": "Tech House",
+            "download_count": 3
+          },
+          {
+            "track_id": "69524981fe595f76d6a537a2",
+            "track_title": "LEA\u00c9H",
+            "producer": "Baptiste Grillot",
+            "genre": "Afro House",
+            "download_count": 2
+          },
+          {
+            "track_id": "694d01c3a40ab30a512c6e18",
+            "track_title": "SUNSET WITH YOU (Benjamin Franklin remix) ",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 1
+          },
+          {
+            "track_id": "694839764519121d29896d30",
+            "track_title": "NoBrokeBoys - Discolines (Spiga Remix)",
+            "producer": "Nicolas SPIGA",
+            "genre": "Tech House",
+            "download_count": 3
+          },
+          {
+            "track_id": "6943f5e05ca5df53b6b79da1",
+            "track_title": "COMO COMO ",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro Tech",
+            "download_count": 5
+          },
+          {
+            "track_id": "6941df5402641242b6b30da3",
+            "track_title": "Mbona",
+            "producer": "\u00d6de",
+            "genre": "Afro House",
+            "download_count": 5
+          },
+          {
+            "track_id": "69418b55d28e760cb86042ee",
+            "track_title": "PRAY FOR TOMORROW",
+            "producer": "Benjamin Franklin",
+            "genre": "HOUSE",
+            "download_count": 3
+          },
+          {
+            "track_id": "6941321050bdc0bc38636e05",
+            "track_title": "Sunshine",
+            "producer": "JR From Dallas",
+            "genre": "Soulful House",
+            "download_count": 3
+          },
+          {
+            "track_id": "694130c1d9f62cbeb945a90c",
+            "track_title": "Mariah's Rework",
+            "producer": "JR From Dallas",
+            "genre": "Soulful House",
+            "download_count": 5
+          },
+          {
+            "track_id": "69412ff934e53c413750ac73",
+            "track_title": "Come On",
+            "producer": "JR From Dallas",
+            "genre": "Deep House",
+            "download_count": 3
+          },
+          {
+            "track_id": "69412ac4a0ed3df37dffc65c",
+            "track_title": "Hermano (Orkun Bozdemir Remix)",
+            "producer": "Orkun Bozdemir",
+            "genre": "Afro House",
+            "download_count": 7
+          },
+          {
+            "track_id": "694129ef9b1bf59d1ceef6df",
+            "track_title": "Ville Maudite",
+            "producer": "Orkun Bozdemir",
+            "genre": "Deep House",
+            "download_count": 5
+          },
+          {
+            "track_id": "694128b299fae4a86294d857",
+            "track_title": "Feel It In The Air",
+            "producer": "Orkun Bozdemir",
+            "genre": "Deep House",
+            "download_count": 6
+          },
+          {
+            "track_id": "6941288fa6c1b92529be0af0",
+            "track_title": "Golden Harmony",
+            "producer": "JR From Dallas",
+            "genre": "Deep House",
+            "download_count": 2
+          },
+          {
+            "track_id": "694077b6369190707314ae35",
+            "track_title": "MONA KI NGI XICA",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 4
+          },
+          {
+            "track_id": "6940749802498527d60a2b69",
+            "track_title": "MOWI",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro Tech",
+            "download_count": 4
+          },
+          {
+            "track_id": "6940731a6c47e6460600fc17",
+            "track_title": "SAUDADE ",
+            "producer": "Benjamin Franklin",
+            "genre": "Latin House",
+            "download_count": 3
+          },
+          {
+            "track_id": "69406fdf2b7c7cc34b494f96",
+            "track_title": "FAYA Feat Lalita K",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 6
+          },
+          {
+            "track_id": "694060808b017388abfbbca8",
+            "track_title": "Bloomy - SABLE N\u00d8IR",
+            "producer": "SABLE N\u00d8IR",
+            "genre": "Afro House",
+            "download_count": 3
+          },
+          {
+            "track_id": "694001a5fe3c1a7744adb57c",
+            "track_title": "Life with me - SABLE N\u00d8IR",
+            "producer": "SABLE N\u00d8IR",
+            "genre": "Deep House",
+            "download_count": 10
+          },
+          {
+            "track_id": "693fd6de711bad28cc8c1d4d",
+            "track_title": "Afterlife",
+            "producer": "McLovin",
+            "genre": "Deep House",
+            "download_count": 8
+          },
+          {
+            "track_id": "693fd5676a84d240bb626aee",
+            "track_title": "go up",
+            "producer": "McLovin",
+            "genre": "Deep House",
+            "download_count": 7
+          },
+          {
+            "track_id": "693fc541b256facbd1bfe509",
+            "track_title": "Simon Sim's Feat Luny - Take it or Leave it (Extended Mix)",
+            "producer": "RED ISLAND MUSIC",
+            "genre": "Afro House",
+            "download_count": 4
+          },
+          {
+            "track_id": "693e8ee752643b06becc2848",
+            "track_title": "Traficante",
+            "producer": "odeofficiel",
+            "genre": "Afro House",
+            "download_count": 8
+          },
+          {
+            "track_id": "693e88e04c2e446f5e69b3e2",
+            "track_title": "Never back down",
+            "producer": "djdanidane",
+            "genre": "Indie Dance",
+            "download_count": 5
+          },
+          {
+            "track_id": "693e8708d7ee9d5f8a195c0c",
+            "track_title": "RESPECT FOR THE DJ'S (DANIDANE REMIX)",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 6
+          },
+          {
+            "track_id": "693e830ddac0b8f1cca6ce10",
+            "track_title": "GIVE IT UP ",
+            "producer": "Benjamin Franklin",
+            "genre": "Funky House",
+            "download_count": 4
+          },
+          {
+            "track_id": "693e81859633798c4b1db7e2",
+            "track_title": "WHAT GOES AROUND",
+            "producer": "Benjamin Franklin",
+            "genre": "Remix Deep House",
+            "download_count": 4
+          },
+          {
+            "track_id": "693e8014c694598e781bea6c",
+            "track_title": "RUNNING",
+            "producer": "Benjamin Franklin",
+            "genre": "Remix Afro House",
+            "download_count": 4
+          },
+          {
+            "track_id": "693e7f543027a99d4d9a9e43",
+            "track_title": "LIBERTAD",
+            "producer": "RUBINFELD",
+            "genre": "Afro Tech",
+            "download_count": 4
+          },
+          {
+            "track_id": "693e64056bf2fc4415629c08",
+            "track_title": "Love Fuck",
+            "producer": "odeofficiel",
+            "genre": "Afro House",
+            "download_count": 4
+          },
+          {
+            "track_id": "693d86eb87addeb02a43c286",
+            "track_title": "This Is House Music",
+            "producer": "Double G",
+            "genre": "HOUSE",
+            "download_count": 15
+          },
+          {
+            "track_id": "693bd337580b78defb6d1833",
+            "track_title": "What's on your mind",
+            "producer": "arthurrozenfeld",
+            "genre": "Deep House",
+            "download_count": 17
+          },
+          {
+            "track_id": "693baf88580b78defb6d020d",
+            "track_title": "Need a Little Love Extended Mix",
+            "producer": "loicollivier23",
+            "genre": "HOUSE",
+            "download_count": 8
+          },
+          {
+            "track_id": "693a63437bcac6f491beea0a",
+            "track_title": "Simon Sim's - Nthembo (Extended Mix)",
+            "producer": "RED ISLAND MUSIC",
+            "genre": "Afro House",
+            "download_count": 14
+          },
+          {
+            "track_id": "6939e5bc39d5d7fe6ec8efa3",
+            "track_title": "Move To The Beat",
+            "producer": "ANDY CLEY",
+            "genre": "Tech House",
+            "download_count": 14
+          },
+          {
+            "track_id": "6939db612bbd6f05699e8d09",
+            "track_title": "Help Me",
+            "producer": "mordaneyez",
+            "genre": "Minimal / Deep Tech",
+            "download_count": 11
+          },
+          {
+            "track_id": "6939d62b7c8a2a8c4cf61d44",
+            "track_title": "Not The Same (Original Mix)",
+            "producer": "ANDY CLEY",
+            "genre": "Mainstage",
+            "download_count": 4
+          },
+          {
+            "track_id": "6939a70c8c4122480e93f534",
+            "track_title": "Is In The House",
+            "producer": "N.T.H",
+            "genre": "HOUSE",
+            "download_count": 7
+          },
+          {
+            "track_id": "6939a54715bf6c9f527349af",
+            "track_title": "Called Again",
+            "producer": "John Modena",
+            "genre": "HOUSE",
+            "download_count": 10
+          },
+          {
+            "track_id": "69399365f07322c1e2eec4b0",
+            "track_title": "Don't Stop",
+            "producer": "Jared",
+            "genre": "HOUSE",
+            "download_count": 10
+          },
+          {
+            "track_id": "6939914435fada7e7a91d085",
+            "track_title": "Back to The Old School",
+            "producer": "Flaroll, Aleks Cameron",
+            "genre": "HOUSE",
+            "download_count": 8
+          },
+          {
+            "track_id": "6939901a4399e2e437edf3ab",
+            "track_title": "Let Me Know You",
+            "producer": "Guy Ohms",
+            "genre": "HOUSE",
+            "download_count": 6
+          },
+          {
+            "track_id": "69398cc9ab512f607339c827",
+            "track_title": "Pushin On",
+            "producer": "Aleks Carmeron",
+            "genre": "HOUSE",
+            "download_count": 4
+          },
+          {
+            "track_id": "693984d6787a5fc39f41fc61",
+            "track_title": "Rise",
+            "producer": "Jared",
+            "genre": "HOUSE",
+            "download_count": 8
+          },
+          {
+            "track_id": "69396ec628533d4ea76da0a6",
+            "track_title": "Feelings",
+            "producer": "Xpilot",
+            "genre": "HOUSE",
+            "download_count": 5
+          },
+          {
+            "track_id": "69396aef8aba4deea716f70a",
+            "track_title": "Always Here",
+            "producer": "Burdy",
+            "genre": "HOUSE",
+            "download_count": 6
+          },
+          {
+            "track_id": "6939687d3d5e54d0afccf0ed",
+            "track_title": "Don't Let Me Go",
+            "producer": "Robbie Neji, Whoslaureen",
+            "genre": "HOUSE",
+            "download_count": 7
+          },
+          {
+            "track_id": "6939655882d1a986048b239e",
+            "track_title": "Throught Shiva",
+            "producer": "Andy Silva",
+            "genre": "HOUSE",
+            "download_count": 6
+          },
+          {
+            "track_id": "693961aca8b9f54c116ebb27",
+            "track_title": "Need Somebody",
+            "producer": "Aleks Cameron feat Emma LDL",
+            "genre": "HOUSE",
+            "download_count": 6
+          },
+          {
+            "track_id": "693960db377d7745fb550fb5",
+            "track_title": "Never Be The Same",
+            "producer": "HMH",
+            "genre": "HOUSE",
+            "download_count": 4
+          },
+          {
+            "track_id": "69395fa6ef574112a6dd5b34",
+            "track_title": "Succes",
+            "producer": "Alan Parker Lewis",
+            "genre": "HOUSE",
+            "download_count": 4
+          },
+          {
+            "track_id": "69395e9e8230813baea30319",
+            "track_title": "Turn Me On",
+            "producer": "Lakus",
+            "genre": "HOUSE",
+            "download_count": 5
+          },
+          {
+            "track_id": "69395d5fb03fc8dc29f8cc20",
+            "track_title": "I Wanna Be",
+            "producer": "Scopetani",
+            "genre": "HOUSE",
+            "download_count": 5
+          },
+          {
+            "track_id": "69395b61b636ad85e53533c4",
+            "track_title": "Be My Love",
+            "producer": "The Doberman Club feat Vicky Buffy",
+            "genre": "HOUSE",
+            "download_count": 3
+          },
+          {
+            "track_id": "693959aef8ae71bd903379d1",
+            "track_title": "Love (Instrumental Dub Mix)",
+            "producer": "Alan Parker Lewis feat Tony Leeroy and Demis",
+            "genre": "Soulful House",
+            "download_count": 4
+          },
+          {
+            "track_id": "693959335e34954a30c7ebbb",
+            "track_title": "Love (Sax Mix",
+            "producer": "Alan Parker Lewis feat Tony Leeroy and Demis",
+            "genre": "Soulful House",
+            "download_count": 5
+          },
+          {
+            "track_id": "6939584414068dd327c520e6",
+            "track_title": "Love (Original Mix)",
+            "producer": "Alan Parker Lewis feat Tony Leery and Demis",
+            "genre": "Soulful House",
+            "download_count": 4
+          },
+          {
+            "track_id": "6939574045a25edd543e226f",
+            "track_title": "Trouble On The Dancefloor (Yungness & Jaminn Remix)",
+            "producer": "Yves Jones",
+            "genre": "Tech House",
+            "download_count": 9
+          },
+          {
+            "track_id": "693956a4a8ec489a0530c1ff",
+            "track_title": "Trouble On The Dancefloor (Original Mix)",
+            "producer": "Yves Jones",
+            "genre": "HOUSE",
+            "download_count": 4
+          },
+          {
+            "track_id": "69395554bde51d7dc3228d6a",
+            "track_title": "Shaka Shaka",
+            "producer": "The Doberman Club",
+            "genre": "HOUSE",
+            "download_count": 4
+          },
+          {
+            "track_id": "6939540f140d5214bd6c110a",
+            "track_title": "Cold Night In February",
+            "producer": "Yves Jones",
+            "genre": "HOUSE",
+            "download_count": 4
+          },
+          {
+            "track_id": "693953b4d5f8cead5c5ea284",
+            "track_title": "Chicago Shakedown",
+            "producer": "Yves Jones",
+            "genre": "HOUSE",
+            "download_count": 4
+          },
+          {
+            "track_id": "69394487a9dd8851e68913a7",
+            "track_title": "Camarat",
+            "producer": "Sam Lion ",
+            "genre": "HOUSE",
+            "download_count": 5
+          },
+          {
+            "track_id": "6938f55a9ca7ba76ed0b09dd",
+            "track_title": "Relax My Eyes",
+            "producer": "RHUM G",
+            "genre": "Afro House",
+            "download_count": 15
+          },
+          {
+            "track_id": "6938f4018dce07f7ec53469e",
+            "track_title": "Hate It Or Love It",
+            "producer": "RHUM G",
+            "genre": "Deep House",
+            "download_count": 7
+          },
+          {
+            "track_id": "6938f2fbcaa07eaef1917545",
+            "track_title": "Lost Up (Original Mix)",
+            "producer": "RHUM G",
+            "genre": "Afro Tech",
+            "download_count": 6
+          },
+          {
+            "track_id": "69389b03d0bb641356756dd5",
+            "track_title": "The spirit of brasa",
+            "producer": "pymhouse",
+            "genre": "Funky House",
+            "download_count": 8
+          },
+          {
+            "track_id": "69387b66f09b9e87f346c86d",
+            "track_title": "Sonder",
+            "producer": "info",
+            "genre": "HOUSE",
+            "download_count": 7
+          },
+          {
+            "track_id": "69387827b3ed100af24ff15b",
+            "track_title": "CHUPA SIN MANO",
+            "producer": "Benjamin Franklin",
+            "genre": "Latin House",
+            "download_count": 10
+          },
+          {
+            "track_id": "693870be7730bba37886506b",
+            "track_title": "FUGIR",
+            "producer": "Benjamin Franklin",
+            "genre": "Remix Afro House",
+            "download_count": 6
+          },
+          {
+            "track_id": "69371629e43dd4bbade0a3b4",
+            "track_title": "Afrikka",
+            "producer": "alexandre billard",
+            "genre": "Tech House",
+            "download_count": 15
+          },
+          {
+            "track_id": "693714f0d1aed06e8653a264",
+            "track_title": "We Are the world ",
+            "producer": "alexandre billard",
+            "genre": "Remix Afro House",
+            "download_count": 7
+          },
+          {
+            "track_id": "6931fdcf668999ceecf65180",
+            "track_title": "Beautiful People ",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 10
+          },
+          {
+            "track_id": "69309d5671016fd4eaf55a13",
+            "track_title": "Me & you",
+            "producer": "rey giarmon",
+            "genre": "Remix Afro House",
+            "download_count": 8
+          },
+          {
+            "track_id": "692f7c842600127477744bdf",
+            "track_title": "Sandenai",
+            "producer": "SANTIAGO CORTES",
+            "genre": "Afro Tech",
+            "download_count": 9
+          },
+          {
+            "track_id": "692f12ad56dc289efa7fb2fa",
+            "track_title": "In house we Trust",
+            "producer": "Tomazzi",
+            "genre": "Tech House",
+            "download_count": 14
+          },
+          {
+            "track_id": "692ee9ac303d9e9049894ac4",
+            "track_title": "STILL WE RISE",
+            "producer": "mario",
+            "genre": "Funky House / Groove House",
+            "download_count": 6
+          },
+          {
+            "track_id": "692d9d2fc0b2544a09bb2716",
+            "track_title": "L.A",
+            "producer": "CHABZ",
+            "genre": "Tech House",
+            "download_count": 14
+          },
+          {
+            "track_id": "692c38ca6c1c3695e56b1217",
+            "track_title": "Break Knote, Essence of TIME, Beatri$  - Close To The Sky (Vocal Extented)",
+            "producer": "Break Knote",
+            "genre": "Melodic House",
+            "download_count": 6
+          },
+          {
+            "track_id": "691fb6fbb861af1111655e32",
+            "track_title": "Peace in The world - Benjamin Franklin & Lalita k (Buyabass Remix)",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 6
+          },
+          {
+            "track_id": "691fb5024819ec8310d3648f",
+            "track_title": "Respect for the dj's - Benjamin Franklin & Simon Sim's Feat Mc Adrian",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 8
+          },
+          {
+            "track_id": "691f73089e131dc63802536e",
+            "track_title": "GET THE F**K OUT THE WAY ",
+            "producer": "MVRKUS",
+            "genre": "Funky House / Groove House",
+            "download_count": 6
+          },
+          {
+            "track_id": "691f55dd665034f3d620e2b2",
+            "track_title": "Afraid To Feel",
+            "producer": "Break Knote",
+            "genre": "Melodic House",
+            "download_count": 5
+          },
+          {
+            "track_id": "691d281fae3757fce287e038",
+            "track_title": "BUILD AT HOME- BENJAMIN FRANKLIN REMIX",
+            "producer": "Benjamin Franklin",
+            "genre": "Remix Melodic House & Techno",
+            "download_count": 3
+          },
+          {
+            "track_id": "691bbce0279bfc252f6d25c8",
+            "track_title": "MATTINA - BENJAMIN FRANKLIN",
+            "producer": "Benjamin Franklin",
+            "genre": "Deep House",
+            "download_count": 14
+          },
+          {
+            "track_id": "691b96add0106101fec057aa",
+            "track_title": "Peace in the world -Benjamin Franklin - Lalita K",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 4
+          },
+          {
+            "track_id": "691b95cc7d73e57ddec74513",
+            "track_title": "Ain't No love - Benjamin Franklin",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 4
+          },
+          {
+            "track_id": "691b95238b26dde68518711f",
+            "track_title": "This sound - Benjamin Franklin Remix",
+            "producer": "Benjamin Franklin",
+            "genre": "Remix Afro House",
+            "download_count": 7
+          },
+          {
+            "track_id": "691b9227da535a87651f8538",
+            "track_title": "Try to Fight -Benjamin Franklin - Orkun Bozdemir",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 13
+          },
+          {
+            "track_id": "691b03ad73ed5005a0d6adef",
+            "track_title": "PARA BAILAR - BENJAMIN FRANKLIN-TOMAZZI",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 10
+          },
+          {
+            "track_id": "691ae1aac6eb667a93350bb6",
+            "track_title": "NA NA NA NA ",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 29
+          },
+          {
+            "track_id": "691a86b86e4e169e5dd06c12",
+            "track_title": "hakuna - Benjamin Franklin",
+            "producer": "Benjamin Franklin",
+            "genre": "Afro House",
+            "download_count": 16
+          }
+        ],
+        "total_downloads": 676,
+        "tracks_with_downloads": 110
+      },
+      "timestamp": "2026-01-08T22:20:13.170642"
     },
     {
       "test": "4b. Admin Downloads (PDF)",
-      "success": false,
-      "details": "HTTP 401",
-      "response_data": "{\"detail\":\"Authorization required\"}",
-      "timestamp": "2026-01-08T22:19:38.351748"
+      "success": true,
+      "details": "\u2705 PDF generated. Content-Type: application/pdf",
+      "response_data": {
+        "size": 14007
+      },
+      "timestamp": "2026-01-08T22:20:13.668535"
     },
     {
       "test": "5. Audio Recognition",
@@ -134,11 +838,11 @@
         "message": "Could not identify the track",
         "status": {
           "version": "1.0",
-          "code": 3001,
-          "msg": "Missing/Invalid Access Key"
+          "msg": "Missing/Invalid Access Key",
+          "code": 3001
         }
       },
-      "timestamp": "2026-01-08T22:19:38.979480"
+      "timestamp": "2026-01-08T22:20:14.338212"
     },
     {
       "test": "6. Nearby Places",
@@ -148,7 +852,7 @@
         "places_count": 3,
         "mock": false
       },
-      "timestamp": "2026-01-08T22:19:39.211031"
+      "timestamp": "2026-01-08T22:20:14.525056"
     },
     {
       "test": "7. Audio Concatenation",
@@ -158,14 +862,10 @@
         "success": false,
         "message": "Concatenation failed: ffmpeg version 5.1.8-0+deb12u1 Copyright (c) 2000-2025 the FFmpeg developers\n  built with gcc 12 (Debian 12.2.0-14+deb12u1)\n  configuration: --prefix=/usr --extra-version=0+deb12u1 --toolchain=hardened --libdir=/usr/lib/aarch64-linux-gnu --incdir=/usr/include/aarch64-linux-gnu --arch=arm64 --enable-gpl --disable-stripping --enable-gnutls --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --ena"
       },
-      "timestamp": "2026-01-08T22:19:39.956020"
+      "timestamp": "2026-01-08T22:20:15.006236"
     }
   ],
-  "failed_tests": [
-    "1. Authentication (Base44)",
-    "4a. Admin Downloads (GET)",
-    "4b. Admin Downloads (PDF)"
-  ],
+  "failed_tests": [],
   "backend_url": "https://spynner-stable.preview.emergentagent.com/api",
   "test_credentials": "djbenjaminfranklin@gmail.com"
 }
