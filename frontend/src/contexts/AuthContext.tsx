@@ -6,16 +6,7 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { base44Auth, base44Users, base44PushNotifications, User } from '../services/base44Api';
 
-// Configure how notifications are handled when app is in foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// NOTE: Notification handler is set up inside the component to prevent iOS crashes
 
 interface AuthContextType {
   user: User | null;
