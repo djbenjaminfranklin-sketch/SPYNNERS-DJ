@@ -22,6 +22,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import { isUserAdmin } from '../../src/components/AdminBadge';
+import { base44Tracks } from '../../src/services/base44Api';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_PUBLIC_BACKEND_URL || '';
 const BASE44_APP_ID = '691a4d96d819355b52c063f3';
