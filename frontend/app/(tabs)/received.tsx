@@ -40,28 +40,43 @@ export default function ReceivedScreen() {
       setLoading(true);
       console.log('[Received] Loading received tracks...');
       
-      // Try to load received tracks via native API
-      try {
-        const response = await axios.post(
-          `${BACKEND_URL}/api/tracks/received`,
-          { limit: 100, offset: 0 },
-          { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-        );
-        
-        if (response.data?.tracks) {
-          setTracks(response.data.tracks);
-          return;
-        }
-        if (Array.isArray(response.data)) {
-          setTracks(response.data);
-          return;
-        }
-      } catch (apiError) {
-        console.log('[Received] Native API not available');
+      const userId = user?.id || user?._id;
+      if (!userId) {
+        console.log('[Received] No user ID found');
+        setTracks([]);
+        return;
       }
       
-      // Fallback: show empty state
-      setTracks([]);
+      // Load messages that contain shared tracks
+      const messages = await base44Messages.list({ receiver_id: userId });
+      console.log('[Received] Messages loaded:', messages.length);
+      
+      // Filter messages that have track_id (shared tracks)
+      const trackMessages = messages.filter((msg: any) => 
+        msg.track_id && (msg.type === 'track_share' || msg.type === 'track_played')
+      );
+      console.log('[Received] Track messages:', trackMessages.length);
+      
+      // Load track details for each shared track
+      const receivedTracks: Track[] = [];
+      for (const msg of trackMessages) {
+        try {
+          const track = await base44Tracks.getById(msg.track_id);
+          if (track) {
+            // Add sender info to track
+            receivedTracks.push({
+              ...track,
+              sent_by: msg.sender_id,
+              received_at: msg.created_at,
+            });
+          }
+        } catch (e) {
+          console.log('[Received] Could not load track:', msg.track_id);
+        }
+      }
+      
+      console.log('[Received] Tracks loaded:', receivedTracks.length);
+      setTracks(receivedTracks);
     } catch (error) {
       console.error('[Received] Error loading tracks:', error);
       setTracks([]);
