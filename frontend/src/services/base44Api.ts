@@ -1880,8 +1880,12 @@ export const base44Notifications2 = {
       if (Array.isArray(data)) return data;
       if (data?.items) return data.items;
       return [];
-    } catch (error) {
-      console.error('[Notifications] Error getting unread notifications:', error);
+    } catch (error: any) {
+      // Silently handle errors - don't spam console with notification errors
+      // Rate limit errors (429) are expected when making many requests
+      if (error?.response?.status !== 429) {
+        console.log('[Notifications] Could not fetch notifications');
+      }
       return [];
     }
   },
