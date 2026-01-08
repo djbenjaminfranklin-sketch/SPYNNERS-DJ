@@ -1959,6 +1959,25 @@ export default function SpynRecordScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Location Display During Recording */}
+      {location && (
+        <View style={styles.locationDisplayContainer}>
+          <Ionicons 
+            name="location" 
+            size={16} 
+            color={location.is_valid_venue ? GREEN_COLOR : '#888'} 
+          />
+          <Text style={styles.locationDisplayText}>
+            {location.venue || location.city || t('spynRecord.unknownLocation')}
+          </Text>
+          {location.is_valid_venue && (
+            <View style={styles.verifiedBadge}>
+              <Ionicons name="checkmark-circle" size={12} color={GREEN_COLOR} />
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Timer */}
       <View style={styles.timerContainer}>
         <Text style={styles.timerText}>{formatDuration(recordingDuration)}</Text>
