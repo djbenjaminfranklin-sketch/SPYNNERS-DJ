@@ -1639,6 +1639,26 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.confirmReject': 'Rejeter ce track ?',
     'admin.confirmRejectMsg': 'Voulez-vous vraiment rejeter "{title}" ?',
     
+    // Admin Downloads
+    'admin.downloads': 'Téléchargements',
+    'admin.downloadHistory': 'Historique des téléchargements',
+    'admin.totalDownloads': 'Total téléchargements',
+    'admin.uniqueDjs': 'DJs uniques',
+    'admin.tracksDownloaded': 'Tracks téléchargées',
+    'admin.filterByDate': 'Filtre par date',
+    'admin.selectDates': 'Sélectionner les dates',
+    'admin.start': 'Début',
+    'admin.end': 'Fin',
+    'admin.startDate': 'Date de début',
+    'admin.endDate': 'Date de fin',
+    'admin.history': 'Historique',
+    'admin.downloadPdf': 'Télécharger PDF',
+    'admin.pdfDownloaded': 'PDF téléchargé avec succès !',
+    'admin.downloadPdfDialog': 'Télécharger le rapport PDF',
+    'admin.pdfSaved': 'PDF sauvegardé :',
+    'admin.exportError': 'Erreur d\'export',
+    'admin.searchPlaceholder': 'Rechercher...',
+    
     // Radar
     'radar.messageSent': 'Message envoyé !',
     'radar.messageSentTo': 'Votre message a été envoyé à {name}',
