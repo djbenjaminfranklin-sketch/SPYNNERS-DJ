@@ -677,17 +677,28 @@ export default function SpynScreen() {
 
   const performNativeRecognition = async () => {
     try {
+      setDebugLog('🎤 Démarrage enregistrement...');
+      
       const { granted } = await Audio.requestPermissionsAsync();
       if (!granted) {
         console.log('[SPYN] Audio permission not granted');
+        setDebugLog('❌ Permission micro refusée');
         return;
       }
 
+      // Configure audio session with better settings for external input
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        // These help iOS prioritize external audio devices
+        interruptionModeIOS: 1, // DoNotMix
+        interruptionModeAndroid: 1,
       });
 
+      setDebugLog('🎧 Enregistrement en cours (8s)...');
+
+      // Use HIGH_QUALITY preset for best ACRCloud compatibility
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
@@ -699,6 +710,8 @@ export default function SpynScreen() {
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
       console.log('[SPYN] Native recording stopped, URI:', uri);
+      
+      setDebugLog('📤 Envoi à ACRCloud...');
 
       if (uri) {
         try {
@@ -708,6 +721,10 @@ export default function SpynScreen() {
             // Modern approach: use fetch + blob
             const response = await fetch(uri);
             const blob = await response.blob();
+            const blobSize = blob.size;
+            console.log('[SPYN] Audio blob size:', blobSize, 'bytes');
+            setDebugLog(`📊 Audio: ${Math.round(blobSize / 1024)} KB`);
+            
             audioBase64 = await new Promise<string>((resolve, reject) => {
               const reader = new FileReader();
               reader.onloadend = () => {
