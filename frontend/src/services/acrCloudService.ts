@@ -77,19 +77,43 @@ async function identifyAudio(
     console.log(`[ACRCloud] Creating signature for ${mode} mode...`);
     const signature = createSignature(stringToSign, config.accessSecret);
     
-    // Prepare form data
+    // Calculate sample bytes from base64
+    const sampleBytes = Math.floor(audioBase64.length * 0.75); // Approximate size from base64
+    
+    // Prepare form data - use base64 directly for React Native compatibility
     const formData = new FormData();
     
-    // Convert base64 to blob for the audio sample
-    const binaryString = atob(audioBase64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+    // On React Native, we can't create Blob from ArrayBuffer
+    // Instead, send the base64 data directly as a string field
+    // ACRCloud accepts base64 encoded audio in the 'sample' field
+    if (Platform.OS === 'web') {
+      // Web: Convert base64 to blob
+      try {
+        const binaryString = atob(audioBase64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const audioBlob = new Blob([bytes], { type: 'audio/mp4' });
+        formData.append('sample', audioBlob, 'audio.m4a');
+        formData.append('sample_bytes', bytes.length.toString());
+      } catch (blobError) {
+        console.log('[ACRCloud] Blob creation failed, using base64 fallback');
+        // Fallback: send as base64
+        formData.append('sample', audioBase64);
+        formData.append('sample_bytes', sampleBytes.toString());
+      }
+    } else {
+      // React Native: Use a different approach
+      // Create a file-like object that React Native's FormData can handle
+      console.log('[ACRCloud] Using React Native FormData approach...');
+      
+      // For React Native, we need to use uri-based approach or send base64
+      // ACRCloud API supports receiving audio as base64 in sample field
+      formData.append('sample', audioBase64);
+      formData.append('sample_bytes', sampleBytes.toString());
     }
-    const audioBlob = new Blob([bytes], { type: 'audio/mp4' });
     
-    formData.append('sample', audioBlob, 'audio.m4a');
-    formData.append('sample_bytes', bytes.length.toString());
     formData.append('access_key', config.accessKey);
     formData.append('data_type', dataType);
     formData.append('signature_version', signatureVersion);
@@ -98,6 +122,7 @@ async function identifyAudio(
     
     const url = `https://${config.host}${httpUri}`;
     console.log(`[ACRCloud] Sending request to ${mode} API: ${url}`);
+    console.log(`[ACRCloud] Sample bytes: ${sampleBytes}`);
     
     const response = await fetch(url, {
       method: 'POST',
