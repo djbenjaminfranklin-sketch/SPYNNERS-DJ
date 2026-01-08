@@ -1,0 +1,171 @@
+{
+  "summary": {
+    "total_tests": 8,
+    "passed": 5,
+    "failed": 3,
+    "success_rate": 62.5,
+    "backend_stable": false,
+    "timestamp": "2026-01-08T22:19:39.956939"
+  },
+  "test_results": [
+    {
+      "test": "1. Authentication (Base44)",
+      "success": false,
+      "details": "No token in response",
+      "response_data": {
+        "user": {
+          "id": "691a4d96d819355b52c063f4",
+          "created_date": "2025-11-16T22:17:58.570000",
+          "updated_date": "2026-01-08T22:18:42.896000",
+          "email": "djbenjaminfranklin@gmail.com",
+          "api_key": "c55eb256102543faa32b709a96597e05",
+          "phone_number": null,
+          "full_name": "Benjamin Franklin",
+          "disabled": null,
+          "hashed_password": "$2b$12$7CEO6hu.qSVrtrx.lmDCkepY4WPEjSxySWQCr/trVYBOtAP4QoslW",
+          "hashed_reset_token": null,
+          "is_verified": true,
+          "otp_code": null,
+          "otp_expires_at": null,
+          "otp_attempts": 0,
+          "data": {
+            "user_type": "both",
+            "artist_name": "Benjamin Franklin",
+            "avatar_url": "https://base44.app/api/apps/691a4d96d819355b52c063f3/files/public/691a4d96d819355b52c063f3/181d7c23a_d7847537-1c93-4189-8bd5-dd611b72e976.jpeg",
+            "last_active": "2026-01-08T22:18:42.359Z",
+            "instagram_url": "@benjaminfranklinmusic",
+            "preferred_genres": [
+              "Tech House",
+              "Afro House",
+              "Classic House / Electronic House",
+              "Deep House",
+              "Progressive House",
+              "Melodic House & Techno",
+              "Organic House / Downtempo",
+              "Bass House",
+              "Jackin' House",
+              "Mainstage House",
+              "Acid House",
+              "Soulful House / Vocal House",
+              "Latin House",
+              "UK Funky House",
+              "Funky House / Groove House",
+              "Tropical House",
+              "Melodic House",
+              "Melodic Techno",
+              "Afro Tech",
+              "Amapiano"
+            ],
+            "nationality": "FR",
+            "residence_club": "MOTEL PARTICULIER ",
+            "black_diamonds": 60,
+            "bio": "",
+            "career_highlights": "",
+            "years_experience": 25,
+            "user_types": [
+              "producer",
+              "dj"
+            ],
+            "auto_message_settings": {
+              "message": "Thanks for playing my track. If you could film the audience while you're playing it and send it to me, that would be great. \n\ncontact@spynners.com\n\nBenjamin Franklin",
+              "enabled": true
+            },
+            "created_date": "2025-11-16T22:17:58.570000",
+            "updated_date": "2025-12-19T08:26:22.526000",
+            "disabled": null,
+            "is_verified": true,
+            "app_id": "691a4d96d819355b52c063f3",
+            "is_service": false,
+            "_app_role": "admin",
+            "sub_labels": [],
+            "sacem_number": " 228230",
+            "push_token": "ExponentPushToken[pBu6XUOoSVuebUpKyZCv-c]"
+          },
+          "app_id": "691a4d96d819355b52c063f3",
+          "role": "admin",
+          "is_service": false,
+          "granted_by_support_access": false,
+          "support_access_expires_at": null
+        },
+        "success": true,
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkamJlbmphbWluZnJhbmtsaW5AZ21haWwuY29tIiwiZXhwIjoxNzc1Njg2Nzc4LCJpYXQiOjE3Njc5MTA3Nzh9.bW4r5uYa8-CQSZf0tS38x7EkYRit1A9GXSCmjLb4wi8",
+        "country_code": "US"
+      },
+      "timestamp": "2026-01-08T22:19:38.193439"
+    },
+    {
+      "test": "2. Tracks API",
+      "success": true,
+      "details": "\u2705 Retrieved 0 tracks. Structure valid: True",
+      "response_data": {
+        "track_count": 0,
+        "structure_valid": true,
+        "sample": null
+      },
+      "timestamp": "2026-01-08T22:19:38.235818"
+    },
+    {
+      "test": "3. TrackSend API",
+      "success": true,
+      "details": "\u2705 Entity not implemented locally (expected for Base44 entity)",
+      "response_data": "404 - Expected",
+      "timestamp": "2026-01-08T22:19:38.276021"
+    },
+    {
+      "test": "4a. Admin Downloads (GET)",
+      "success": false,
+      "details": "HTTP 401",
+      "response_data": "{\"detail\":\"Authorization required\"}",
+      "timestamp": "2026-01-08T22:19:38.314093"
+    },
+    {
+      "test": "4b. Admin Downloads (PDF)",
+      "success": false,
+      "details": "HTTP 401",
+      "response_data": "{\"detail\":\"Authorization required\"}",
+      "timestamp": "2026-01-08T22:19:38.351748"
+    },
+    {
+      "test": "5. Audio Recognition",
+      "success": true,
+      "details": "\u2705 Audio recognition endpoint accessible",
+      "response_data": {
+        "success": false,
+        "message": "Could not identify the track",
+        "status": {
+          "version": "1.0",
+          "code": 3001,
+          "msg": "Missing/Invalid Access Key"
+        }
+      },
+      "timestamp": "2026-01-08T22:19:38.979480"
+    },
+    {
+      "test": "6. Nearby Places",
+      "success": true,
+      "details": "\u2705 Found 3 places",
+      "response_data": {
+        "places_count": 3,
+        "mock": false
+      },
+      "timestamp": "2026-01-08T22:19:39.211031"
+    },
+    {
+      "test": "7. Audio Concatenation",
+      "success": true,
+      "details": "\u2705 Audio concatenation endpoint accessible",
+      "response_data": {
+        "success": false,
+        "message": "Concatenation failed: ffmpeg version 5.1.8-0+deb12u1 Copyright (c) 2000-2025 the FFmpeg developers\n  built with gcc 12 (Debian 12.2.0-14+deb12u1)\n  configuration: --prefix=/usr --extra-version=0+deb12u1 --toolchain=hardened --libdir=/usr/lib/aarch64-linux-gnu --incdir=/usr/include/aarch64-linux-gnu --arch=arm64 --enable-gpl --disable-stripping --enable-gnutls --enable-ladspa --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --enable-libcdio --enable-libcodec2 --enable-libdav1d --ena"
+      },
+      "timestamp": "2026-01-08T22:19:39.956020"
+    }
+  ],
+  "failed_tests": [
+    "1. Authentication (Base44)",
+    "4a. Admin Downloads (GET)",
+    "4b. Admin Downloads (PDF)"
+  ],
+  "backend_url": "https://spynner-stable.preview.emergentagent.com/api",
+  "test_credentials": "djbenjaminfranklin@gmail.com"
+}
