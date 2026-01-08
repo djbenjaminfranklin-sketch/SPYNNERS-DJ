@@ -850,21 +850,13 @@ export default function SpynScreen() {
         let trackArtist = response.artist || 'Artiste inconnu';
         let coverImage = response.cover_image || '';
         let producerId = '';
-            console.error('[SPYN] Could not fetch track details:', fetchError);
-          }
-        }
-        
-        // Fallback values
-        trackTitle = trackTitle || 'Track identifiée';
-        trackArtist = trackArtist || 'Artiste inconnu';
         
         const trackKey = `${trackTitle}-${trackArtist}`.toLowerCase();
         
         // Check if we already identified this track
         if (!identifiedTracksRef.current.includes(trackKey)) {
-          console.log('[SPYN] ✅ SPYNNERS track identified:', trackKey);
+          console.log(`[SPYN] ✅ Track identified via ${response.mode}:`, trackKey);
           console.log('[SPYN] Cover image URL:', coverImage);
-          console.log('[SPYN] Producer ID:', producerId);
           
           identifiedTracksRef.current.push(trackKey);
           
@@ -872,32 +864,32 @@ export default function SpynScreen() {
             success: true,
             title: trackTitle,
             artist: trackArtist,
-            album: response.album || response.track_album || '',
-            genre: response.genre || response.track_genre || '',
+            album: response.album || '',
+            genre: response.genre || '',
             cover_image: coverImage,
             score: response.score || 100,
             time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-            id: response.spynners_track_id,
+            id: response.acr_id, // Use ACRCloud ID
             producer_id: producerId,
           };
 
           setCurrentTrack(trackResult);
           setIdentifiedTracks(prev => [trackResult, ...prev]);
-          setDebugLog(`✅ ${trackTitle}`);
+          setDebugLog(`✅ ${trackTitle} (${response.mode})`);
           
           // Save track to TrackPlay entity for PDF reports
           if (session?.id) {
             try {
               await base44SessionTracks.saveSessionTrack({
                 session_mix_id: session.id,
-                track_id: response.spynners_track_id,
+                track_id: response.acr_id || '',
                 track_title: trackTitle,
                 track_artist: trackArtist,
-                track_album: response.album || response.track_album || '',
-                track_genre: response.genre || response.track_genre || '',
+                track_album: response.album || '',
+                track_genre: response.genre || '',
                 track_cover: coverImage,
                 producer_id: producerId,
-                producer_email: response.producer_email,
+                producer_email: '',
                 played_at: new Date().toISOString(),
                 dj_id: user?.id || '',
                 dj_name: user?.full_name || 'DJ',
