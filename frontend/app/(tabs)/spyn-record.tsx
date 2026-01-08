@@ -1126,7 +1126,7 @@ export default function SpynRecordScreen() {
                 timestamp: formatDuration(elapsedTime),
                 elapsedTime,
                 coverImage: coverImage,
-                spynnersTrackId: response.spynners_track_id,
+                spynnersTrackId: response.acr_id, // Use ACRCloud ID
                 producerId: producerId,
               };
               
@@ -1140,9 +1140,9 @@ export default function SpynRecordScreen() {
                 return updatedTracks;
               });
               
-              setCurrentAnalysis(`✅ ${response.title}`);
+              setCurrentAnalysis(`✅ ${trackTitle} (${response.mode})`);
               
-              console.log('[SPYN Record] ✅ NEW Track identified:', newTrack.title, '- Total:', identifiedTracksRef.current.length);
+              console.log('[SPYN Record] ✅ NEW Track identified:', newTrack.title, 'via', response.mode, '- Total:', identifiedTracksRef.current.length);
               
               // Send email immediately to the producer
               sendEmailForTrack(newTrack);
