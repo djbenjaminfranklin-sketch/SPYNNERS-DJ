@@ -40,7 +40,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import offlineService from '../../src/services/offlineService';
 import { base44Spyn, base44Tracks } from '../../src/services/base44Api';
-import { recognizeAudioHybrid, ACRCloudResult } from '../../src/services/acrCloudService';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
