@@ -1350,27 +1350,6 @@ export default function SpynRecordScreen() {
             const coverImage = response.cover_image || '';
             const producerId = '';
             
-            // If we have track ID but no title, fetch track details from Base44
-            if (!trackTitle && response.spynners_track_id) {
-              console.log('[SPYN Record] Track ID found but no title - fetching track details...');
-              try {
-                const trackDetails = await base44Tracks.getById(response.spynners_track_id);
-                if (trackDetails) {
-                  trackTitle = trackDetails.title || 'Track identifiée';
-                  trackArtist = trackDetails.producer_name || trackDetails.artist_name || 'Artiste inconnu';
-                  coverImage = trackDetails.artwork_url || trackDetails.cover_image || coverImage;
-                  producerId = trackDetails.producer_id || producerId;
-                  console.log('[SPYN Record] ✅ Track details fetched:', trackTitle, 'by', trackArtist);
-                }
-              } catch (fetchError) {
-                console.error('[SPYN Record] Could not fetch track details:', fetchError);
-              }
-            }
-            
-            // Fallback values
-            trackTitle = trackTitle || 'Track identifiée';
-            trackArtist = trackArtist || 'Artiste inconnu';
-            
             const trackKey = trackTitle.toLowerCase();
             if (!detectedTitles.has(trackKey)) {
               detectedTitles.add(trackKey);
