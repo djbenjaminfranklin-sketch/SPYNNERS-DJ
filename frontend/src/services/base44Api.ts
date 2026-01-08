@@ -1944,6 +1944,18 @@ export const base44Notifications2 = {
 
 // ==================== SPYN FUNCTIONS (ACRCloud, Places, Diamonds) ====================
 
+// Helper to get auth token
+const getAuthToken = async (): Promise<string | null> => {
+  try {
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    const token = await AsyncStorage.getItem('auth_token');
+    return token;
+  } catch (e) {
+    console.log('[base44Spyn] Could not get auth token:', e);
+    return null;
+  }
+};
+
 export const base44Spyn = {
   /**
    * Recognize audio using ACRCloud via Base44
@@ -1959,11 +1971,17 @@ export const base44Spyn = {
     try {
       console.log('[base44Spyn] Calling recognizeAudio function...');
       
+      const token = await getAuthToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(
         `https://spynners.base44.app/api/functions/recognizeAudio`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             audio_data: params.audio_data,
             sample_rate: params.sample_rate || 44100,
@@ -1995,11 +2013,17 @@ export const base44Spyn = {
     try {
       console.log('[base44Spyn] Calling getNearbyPlaces function...');
       
+      const token = await getAuthToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(
         `https://spynners.base44.app/api/functions/getNearbyPlaces`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             latitude: params.latitude,
             longitude: params.longitude,
@@ -2031,11 +2055,17 @@ export const base44Spyn = {
     try {
       console.log('[base44Spyn] Calling awardDiamond function...');
       
+      const token = await getAuthToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(
         `https://spynners.base44.app/api/functions/awardDiamond`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             producer_email: params.producer_email,
             track_title: params.track_title,
