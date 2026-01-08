@@ -869,8 +869,8 @@ export default function SpynScreen() {
         // Check if we already identified this track
         if (!identifiedTracksRef.current.includes(trackKey)) {
           console.log('[SPYN] ✅ SPYNNERS track identified:', trackKey);
-          console.log('[SPYN] Cover image URL:', response.cover_image);
-          console.log('[SPYN] Producer email:', response.producer_email);
+          console.log('[SPYN] Cover image URL:', coverImage);
+          console.log('[SPYN] Producer ID:', producerId);
           
           identifiedTracksRef.current.push(trackKey);
           
@@ -880,15 +880,16 @@ export default function SpynScreen() {
             artist: trackArtist,
             album: response.album || response.track_album || '',
             genre: response.genre || response.track_genre || '',
-            cover_image: response.cover_image || response.artwork_url || '',
+            cover_image: coverImage,
             score: response.score || 100,
             time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
             id: response.spynners_track_id,
-            producer_id: response.producer_id,
+            producer_id: producerId,
           };
 
           setCurrentTrack(trackResult);
           setIdentifiedTracks(prev => [trackResult, ...prev]);
+          setDebugLog(`✅ ${trackTitle}`);
           
           // Save track to TrackPlay entity for PDF reports
           if (session?.id) {
@@ -900,8 +901,8 @@ export default function SpynScreen() {
                 track_artist: trackArtist,
                 track_album: response.album || response.track_album || '',
                 track_genre: response.genre || response.track_genre || '',
-                track_cover: response.cover_image || response.artwork_url || '',
-                producer_id: response.producer_id,
+                track_cover: coverImage,
+                producer_id: producerId,
                 producer_email: response.producer_email,
                 played_at: new Date().toISOString(),
                 dj_id: user?.id || '',
