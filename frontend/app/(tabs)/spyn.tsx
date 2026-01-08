@@ -896,20 +896,20 @@ export default function SpynScreen() {
             cover_image: coverImage,
             score: response.score || 100,
             time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-            id: response.acr_id, // Use ACRCloud ID
+            id: trackId,
             producer_id: producerId,
           };
 
           setCurrentTrack(trackResult);
           setIdentifiedTracks(prev => [trackResult, ...prev]);
-          setDebugLog(`✅ ${trackTitle} (${response.mode})`);
+          setDebugLog(`✅ ${trackTitle}`);
           
           // Save track to TrackPlay entity for PDF reports
           if (session?.id) {
             try {
               await base44SessionTracks.saveSessionTrack({
                 session_mix_id: session.id,
-                track_id: response.acr_id || '',
+                track_id: trackId,
                 track_title: trackTitle,
                 track_artist: trackArtist,
                 track_album: response.album || '',
@@ -935,9 +935,9 @@ export default function SpynScreen() {
         } else {
           console.log('[SPYN] Track already identified:', trackKey);
         }
-      } else if (response.success && response.title) {
-        // Track identified by ACRCloud but NOT in Spynners
-        console.log('[SPYN] ⚠️ Track NOT in Spynners:', response.title, 'by', response.artist);
+      } else {
+        // No track found
+        console.log('[SPYN] No track identified');
       } else {
         console.log('[SPYN] No track identified in this cycle');
       }
