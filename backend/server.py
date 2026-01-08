@@ -756,9 +756,15 @@ async def concatenate_audio(request: ConcatenateAudioRequest):
             # Output file
             output_path = os.path.join(temp_dir, f"concatenated.{request.output_format}")
             
+            # Find ffmpeg - try multiple paths
+            ffmpeg_path = '/usr/bin/ffmpeg'
+            if not os.path.exists(ffmpeg_path):
+                import shutil
+                ffmpeg_path = shutil.which('ffmpeg') or 'ffmpeg'
+            
             # Run ffmpeg concatenation
             cmd = [
-                'ffmpeg', '-y', '-f', 'concat', '-safe', '0', '-i', concat_file_path,
+                ffmpeg_path, '-y', '-f', 'concat', '-safe', '0', '-i', concat_file_path,
                 '-c', 'copy',  # Copy streams without re-encoding for speed
                 output_path
             ]
