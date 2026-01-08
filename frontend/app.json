@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.abbas.spynners",
-      "buildNumber": "23",
+      "buildNumber": "24",
       "associatedDomains": [
         "applinks:spynners.com",
         "webcredentials:spynners.com"
