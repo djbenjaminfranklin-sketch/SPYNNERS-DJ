@@ -474,38 +474,43 @@ export default function SpynRecordScreen() {
               interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
             });
             
-            // Check if external input is available by examining audio session
-            // On iOS, when USB/Lightning audio is connected, it becomes the default input
-            // We can detect this by attempting a brief recording test
+            // Test audio recording to verify input is working
+            // Unfortunately, expo-av doesn't expose the actual input device name
+            // iOS automatically uses connected USB/Lightning audio if available
             try {
-              console.log('[SPYN Record] Testing for external audio input...');
+              console.log('[SPYN Record] Testing audio input...');
               const { recording: testRecording } = await Audio.Recording.createAsync(
                 Audio.RecordingOptionsPresets.HIGH_QUALITY
               );
               
-              // Get the recording status to check input
-              const testStatus = await testRecording.getStatusAsync();
-              console.log('[SPYN Record] Test recording status:', testStatus);
+              // Record for a brief moment to check if we're getting audio
+              await new Promise(resolve => setTimeout(resolve, 500));
               
-              // Stop and unload the test recording
+              const testStatus = await testRecording.getStatusAsync();
+              console.log('[SPYN Record] Test recording status:', JSON.stringify(testStatus));
+              
+              // Check metering to see if we're capturing audio
+              const metering = testStatus.metering || -160;
+              console.log('[SPYN Record] Audio metering level:', metering);
+              
               await testRecording.stopAndUnloadAsync();
               
-              // If we got here without error, audio input is working
-              // Check if an external device is connected (iOS will auto-route)
-              // Unfortunately, expo-av doesn't expose the actual input device name
-              // But we can inform the user that the system will use any connected device
-              
-              // For now, we'll show a more informative message
-              // In a real app, you might use a native module to query AVAudioSession.availableInputs
-              setAudioSource('internal');
-              setAudioSourceName('Entrée audio active - Branchez votre interface');
-              console.log('[SPYN Record] ✅ Audio input configured - external devices will be used if connected');
+              // If metering is above -100 dB, we're likely getting audio from something
+              if (metering > -100) {
+                setAudioSource('usb');
+                setAudioSourceName(`🎛️ Audio détecté (${Math.round(metering)} dB)`);
+                console.log('[SPYN Record] ✅ Audio signal detected - external device likely connected');
+              } else {
+                // Very low audio level - might be internal mic with no signal
+                setAudioSource('internal');
+                setAudioSourceName('Micro interne actif - Branchez USB pour table de mix');
+                console.log('[SPYN Record] ⚠️ Low audio level - using internal mic or no signal');
+              }
               
             } catch (testError: any) {
               console.log('[SPYN Record] Test recording error:', testError?.message);
-              // Even if test fails, still show that audio is configured
               setAudioSource('internal');
-              setAudioSourceName(t('spynRecord.audioSourceAuto'));
+              setAudioSourceName('Audio prêt - Connectez votre interface');
             }
           } else {
             setAudioSource('internal');
