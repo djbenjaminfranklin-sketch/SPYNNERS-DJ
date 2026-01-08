@@ -312,22 +312,59 @@ export default function SpynScreen() {
     try {
       console.log('[SPYN] Requesting microphone permission on page load...');
       setMicPermissionRequested(true);
+      setDebugLog('Demande permission micro...');
       
       if (Platform.OS === 'web') {
-        // Web: Request media permission
+        // Web: Request media permission and detect audio sources
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Check what audio device is being used
+        const audioTrack = stream.getAudioTracks()[0];
+        if (audioTrack) {
+          const label = audioTrack.label || 'Micro par défaut';
+          const isExternal = !label.toLowerCase().includes('built-in') && 
+                            !label.toLowerCase().includes('internal') &&
+                            !label.toLowerCase().includes('default');
+          setAudioSourceInfo(label);
+          setIsExternalAudio(isExternal);
+          setDebugLog(`Source: ${label} ${isExternal ? '(EXTERNE ✓)' : '(interne)'}`);
+          console.log('[SPYN] Web audio source:', label, isExternal ? '(EXTERNAL)' : '(internal)');
+        }
+        
         stream.getTracks().forEach(track => track.stop()); // Stop immediately, just wanted permission
         setMicPermission(true);
         console.log('[SPYN] Web microphone permission granted');
       } else {
-        // Native: Use expo-av
+        // Native: Use expo-av with proper audio session configuration
         const { granted } = await Audio.requestPermissionsAsync();
         setMicPermission(granted);
         console.log('[SPYN] Native microphone permission:', granted ? 'granted' : 'denied');
+        
+        if (granted) {
+          // Configure audio session for external input priority on iOS
+          setDebugLog('Configuration audio iOS...');
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: true,
+            playsInSilentModeIOS: true,
+            staysActiveInBackground: true,
+            // iOS should automatically use external input if connected
+          });
+          
+          // On iOS, we can't directly query the input device name via expo-av
+          // But we can inform the user about the expected behavior
+          setAudioSourceInfo('iOS - Entrée auto');
+          setDebugLog('iOS: Branchez votre interface USB');
+          
+          // Note: On iOS, when a USB/Lightning audio interface is connected,
+          // the system automatically routes audio input through it.
+          // There's no way to force this via expo-av, it's handled by iOS.
+          console.log('[SPYN] Native audio mode configured for external input priority');
+        }
       }
     } catch (error) {
       console.error('[SPYN] Microphone permission error:', error);
       setMicPermission(false);
+      setDebugLog('Erreur permission micro');
     }
   };
 
