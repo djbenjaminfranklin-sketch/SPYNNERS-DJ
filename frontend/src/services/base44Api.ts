@@ -1944,9 +1944,7 @@ export const base44Notifications2 = {
 
 // ==================== SPYN FUNCTIONS (ACRCloud, Places, Diamonds) ====================
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Helper to get auth token
+// Helper to get auth token for SPYN functions
 const getSpynAuthToken = async (): Promise<string | null> => {
   try {
     const token = await AsyncStorage.getItem('auth_token');
