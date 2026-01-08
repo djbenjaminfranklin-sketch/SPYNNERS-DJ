@@ -53,10 +53,15 @@ const RECOGNITION_INTERVAL = 12000; // 12 seconds between recognition cycles
 const RECORDING_DURATION = 8000; // 8 seconds of recording
 
 // Venue types that qualify for Black Diamond
+// STRICT venue types for Black Diamond - only real nightlife/entertainment venues
+// Removed 'establishment', 'food', 'point_of_interest' as they are too generic
 const VALID_VENUE_TYPES = [
-  'night_club', 'bar', 'restaurant', 'cafe', 'casino',
-  'establishment', 'food', 'point_of_interest', 'event_venue',
-  'nightclub', 'club', 'lounge', 'pub', 'disco'
+  'night_club', 'nightclub', 'club', 'disco', 'discotheque',
+  'bar', 'pub', 'lounge', 'cocktail_bar', 'wine_bar',
+  'casino', 'event_venue', 'concert_hall', 'music_venue',
+  'dance_club', 'karaoke', 'jazz_club'
+  // Removed: 'restaurant', 'cafe', 'establishment', 'food', 'point_of_interest'
+  // These are too generic and can match homes or any business
 ];
 
 interface TrackResult {
