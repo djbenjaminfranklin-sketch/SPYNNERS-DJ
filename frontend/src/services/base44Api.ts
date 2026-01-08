@@ -1376,9 +1376,12 @@ export const base44Admin = {
 
   async rejectTrack(trackId: string, reason?: string): Promise<any> {
     try {
-      console.log('[Admin] Calling reject endpoint for track:', trackId);
-      const response = await mobileApi.put(`/api/admin/tracks/${trackId}/reject`, null, {
-        params: { reason: reason || 'Rejeté par l\'admin' }
+      console.log('[Admin] Rejecting track via Base44:', trackId);
+      // Update the track status directly via Base44 entity API
+      const response = await mobileApi.put(`/api/base44/entities/Track/${trackId}`, {
+        status: 'rejected',
+        rejection_reason: reason || 'Rejeté par l\'admin',
+        rejected_at: new Date().toISOString(),
       });
       return response.data;
     } catch (error) {
