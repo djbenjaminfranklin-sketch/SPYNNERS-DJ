@@ -1,7 +1,7 @@
 /**
  * SPYN Record - Professional DJ Set Recording
  * Records high-quality audio from mixer input, analyzes tracks in real-time
- * Saves MP3 320kbps locally to device
+ * Saves M4A (AAC) 320kbps locally to device - high quality format compatible with all devices
  * Supports USB audio interfaces and offline mode
  */
 
