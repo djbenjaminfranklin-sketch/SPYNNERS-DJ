@@ -1207,8 +1207,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerLogo: {
-    width: 120,
-    height: 35,
+    width: 140,
+    height: 40,
   },
   logoText: {
     fontSize: 22,
