@@ -1844,6 +1844,118 @@ export const base44Messages = {
   },
 };
 
+// ==================== TRACK SEND SERVICE ====================
+// Used for sending tracks internally between users
+
+export interface TrackSend {
+  id?: string;
+  _id?: string;
+  track_id: string;
+  track_title?: string;
+  track_producer_name?: string;
+  track_artwork_url?: string;
+  track_genre?: string;
+  sender_id: string;
+  sender_name?: string;
+  sender_avatar?: string;
+  receiver_id: string;
+  receiver_name?: string;
+  message?: string;
+  viewed: boolean;
+  created_at?: string;
+}
+
+export const base44TrackSend = {
+  /**
+   * Send a track to another user
+   */
+  async create(data: Omit<TrackSend, 'id' | '_id' | 'created_at'>): Promise<TrackSend | null> {
+    try {
+      console.log('[TrackSend] Creating track send:', data.track_title, 'to', data.receiver_name);
+      const response = await mobileApi.post('/api/base44/entities/TrackSend', {
+        ...data,
+        viewed: false,
+        created_at: new Date().toISOString(),
+      });
+      console.log('[TrackSend] Track sent successfully');
+      return response.data;
+    } catch (error) {
+      console.error('[TrackSend] Error sending track:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get tracks received by a user
+   */
+  async getReceived(userId: string): Promise<TrackSend[]> {
+    try {
+      console.log('[TrackSend] Loading received tracks for user:', userId);
+      const response = await mobileApi.get(`/api/base44/entities/TrackSend?receiver_id=${userId}&limit=100`);
+      const data = response.data;
+      let tracks: TrackSend[] = [];
+      if (Array.isArray(data)) tracks = data;
+      else if (data?.items) tracks = data.items;
+      
+      // Sort by created_at descending (newest first)
+      tracks.sort((a, b) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+      
+      console.log('[TrackSend] Loaded', tracks.length, 'received tracks');
+      return tracks;
+    } catch (error) {
+      console.error('[TrackSend] Error getting received tracks:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get tracks sent by a user
+   */
+  async getSent(userId: string): Promise<TrackSend[]> {
+    try {
+      const response = await mobileApi.get(`/api/base44/entities/TrackSend?sender_id=${userId}&limit=100`);
+      const data = response.data;
+      if (Array.isArray(data)) return data;
+      if (data?.items) return data.items;
+      return [];
+    } catch (error) {
+      console.error('[TrackSend] Error getting sent tracks:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Mark a track as viewed
+   */
+  async markAsViewed(trackSendId: string): Promise<boolean> {
+    try {
+      await mobileApi.put(`/api/base44/entities/TrackSend/${trackSendId}`, {
+        viewed: true,
+      });
+      return true;
+    } catch (error) {
+      console.error('[TrackSend] Error marking as viewed:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Get unviewed count
+   */
+  async getUnviewedCount(userId: string): Promise<number> {
+    try {
+      const received = await this.getReceived(userId);
+      return received.filter(t => !t.viewed).length;
+    } catch (error) {
+      return 0;
+    }
+  },
+};
+
 // ==================== NOTIFICATION SERVICE ====================
 
 export interface Notification {
