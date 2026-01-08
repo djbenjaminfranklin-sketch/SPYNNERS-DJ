@@ -729,6 +729,9 @@ export default function SpynRecordScreen() {
         await startNativeRecording();
       }
       
+      // Keep screen awake during recording
+      activateKeepAwakeAsync('spyn-record-session').catch(e => console.log('[SPYN Record] Keep awake error:', e));
+      
       setIsRecording(true);
       isRecordingRef.current = true; // Also update ref for closures
       setIsPaused(false);
