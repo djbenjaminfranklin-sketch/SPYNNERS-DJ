@@ -129,7 +129,7 @@ export default function ReceivedScreen() {
       </LinearGradient>
 
       {/* Track List */}
-      {tracks.length === 0 ? (
+      {receivedTracks.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="mail-outline" size={80} color={Colors.textMuted} />
           <Text style={styles.emptyTitle}>{t('page.noReceivedTracks')}</Text>
@@ -139,7 +139,7 @@ export default function ReceivedScreen() {
         </View>
       ) : (
         <FlatList
-          data={tracks}
+          data={receivedTracks}
           keyExtractor={(item) => item.id || item._id || Math.random().toString()}
           renderItem={renderTrack}
           contentContainerStyle={styles.listContent}
