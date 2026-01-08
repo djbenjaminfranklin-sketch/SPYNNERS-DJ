@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-SPYNNERS Backend API Test Suite
-Tests all backend endpoints using the production URL
+SPYNNERS Backend API Testing Suite - iOS Native Build Preparation
+Tests critical APIs as specified in the review request before iOS native build
 """
 
 import requests
 import json
 import sys
 import os
+import base64
 from datetime import datetime
 
 # Get backend URL from frontend .env file
@@ -24,7 +25,13 @@ def get_backend_url():
 BASE_URL = get_backend_url()
 API_URL = f"{BASE_URL}/api"
 
-print(f"Testing SPYNNERS API at: {API_URL}")
+# Test credentials from review request
+TEST_EMAIL = "djbenjaminfranklin@gmail.com"
+TEST_PASSWORD = "Elsamila1979"
+
+print(f"🚀 SPYNNERS iOS Native Build - Critical API Testing")
+print(f"📡 Backend URL: {API_URL}")
+print(f"🔑 Test Credentials: {TEST_EMAIL}")
 print("=" * 60)
 
 # Test results tracking
