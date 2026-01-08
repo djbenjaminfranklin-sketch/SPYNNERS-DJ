@@ -204,11 +204,11 @@ export default function AnalyticsScreen() {
         });
       });
 
-      // Sort by plays for top tracks - ONLY show approved tracks
+      // Sort by plays for top tracks - ONLY show approved tracks - STRICT
       const approvedTrackStats = trackStats.filter(t => 
         t.status?.toLowerCase() === 'approved' || 
-        t.status?.toLowerCase() === 'active' ||
-        !t.status // No status usually means approved
+        t.status?.toLowerCase() === 'active'
+        // Removed: !t.status - no status should NOT be considered approved
       );
       approvedTrackStats.sort((a, b) => b.plays - a.plays);
       setTopTracks(approvedTrackStats.slice(0, 5));
