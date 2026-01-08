@@ -198,19 +198,9 @@ export default function HomeScreen() {
       console.log('[Home] Loading tracks...');
       console.log('[Home] Filters - Genre:', selectedGenre, 'Energy:', selectedEnergy, 'VIP:', showVIPOnly);
       
-      // Build server-side filters for better performance
-      const filters: any = { limit: 200 };
-      
-      // Add server-side filters if available
-      if (selectedGenre !== 'All Genres') {
-        filters.genre = selectedGenre;
-      }
-      if (selectedEnergy !== 'All Energy Levels') {
-        filters.energy_level = selectedEnergy.toLowerCase().replace(' ', '_');
-      }
-      if (showVIPOnly) {
-        filters.is_vip = true;
-      }
+      // Load ALL tracks - filter client-side for accuracy
+      // Base44 server-side filters may not work correctly
+      const filters: any = { limit: 1000 };
       
       const sortMap: Record<string, string> = {
         'Recently Added': '-created_date',
@@ -230,12 +220,17 @@ export default function HomeScreen() {
         );
         console.log('[Home] Approved tracks:', filteredTracks.length);
         
-        // Step 2: Apply genre filter CLIENT-SIDE for accuracy (double check)
+        // Step 2: Apply VIP filter FIRST (most restrictive)
+        if (showVIPOnly) {
+          filteredTracks = filteredTracks.filter((track: Track) => track.is_vip === true);
+          console.log('[Home] After VIP filter:', filteredTracks.length, 'VIP tracks');
+        }
+        
+        // Step 3: Apply genre filter CLIENT-SIDE
         if (selectedGenre !== 'All Genres') {
           const genreLower = selectedGenre.toLowerCase();
           filteredTracks = filteredTracks.filter((track: Track) => {
             const trackGenre = (track.genre || '').toLowerCase();
-            // Exact match or contains (for "Afro House" matching "afro house")
             return trackGenre === genreLower || 
                    trackGenre.includes(genreLower) ||
                    genreLower.includes(trackGenre);
@@ -243,7 +238,7 @@ export default function HomeScreen() {
           console.log('[Home] After genre filter:', filteredTracks.length, 'tracks for', selectedGenre);
         }
         
-        // Step 3: Apply energy filter CLIENT-SIDE (double check)
+        // Step 4: Apply energy filter CLIENT-SIDE
         if (selectedEnergy !== 'All Energy Levels') {
           const energyLower = selectedEnergy.toLowerCase().replace(' ', '_');
           filteredTracks = filteredTracks.filter((track: Track) => {
@@ -251,12 +246,6 @@ export default function HomeScreen() {
             return trackEnergy === energyLower;
           });
           console.log('[Home] After energy filter:', filteredTracks.length, 'tracks');
-        }
-        
-        // Step 4: Apply VIP filter CLIENT-SIDE (double check)
-        if (showVIPOnly) {
-          filteredTracks = filteredTracks.filter((track: Track) => track.is_vip === true);
-          console.log('[Home] After VIP filter:', filteredTracks.length, 'tracks');
         }
         
         // Step 5: Sort client-side
@@ -268,6 +257,24 @@ export default function HomeScreen() {
               return (b.average_rating || b.rating || 0) - (a.average_rating || a.rating || 0);
             case 'Oldest':
               return new Date(a.created_date || 0).getTime() - new Date(b.created_date || 0).getTime();
+            default: // Recently Added
+              return new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime();
+          }
+        });
+        
+        console.log('[Home] Final filtered tracks:', filteredTracks.length);
+        setTracks(filteredTracks);
+      } else {
+        console.log('[Home] No tracks from API, showing demo tracks');
+        setTracks(getDemoTracks());
+      }
+    } catch (error) {
+      console.error('[Home] Error loading tracks:', error);
+      setTracks(getDemoTracks());
+    } finally {
+      setLoading(false);
+    }
+  };
             default: // Recently Added
               return new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime();
           }
