@@ -82,19 +82,21 @@ def test_authentication():
         
         if response.status_code == 200:
             data = response.json()
-            if data.get("token"):
-                auth_token = data["token"]
+            # Check for both 'token' and 'access_token' fields
+            token = data.get("token") or data.get("access_token")
+            if token:
+                auth_token = token
                 # Check black diamonds as mentioned in test_result.md
                 black_diamonds = data.get("user", {}).get("data", {}).get("black_diamonds", 0)
                 log_test(
                     "1. Authentication (Base44)", 
                     True, 
                     f"✅ Token received. Black diamonds: {black_diamonds}",
-                    {"has_token": True, "black_diamonds": black_diamonds}
+                    {"has_token": True, "black_diamonds": black_diamonds, "token_type": "access_token" if data.get("access_token") else "token"}
                 )
                 return True
             else:
-                log_test("1. Authentication (Base44)", False, "No token in response", data)
+                log_test("1. Authentication (Base44)", False, "No token or access_token in response", data)
                 return False
         else:
             # Try local fallback
@@ -105,8 +107,9 @@ def test_authentication():
             )
             if response.status_code == 200:
                 data = response.json()
-                if data.get("token"):
-                    auth_token = data["token"]
+                token = data.get("token") or data.get("access_token")
+                if token:
+                    auth_token = token
                     log_test("1. Authentication (Local Fallback)", True, "✅ Token received (local)", data)
                     return True
             
