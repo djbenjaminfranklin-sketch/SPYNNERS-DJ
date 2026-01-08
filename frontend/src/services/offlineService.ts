@@ -27,7 +27,7 @@ const getBackendUrl = () => {
   }
   
   // Fallback
-  return 'https://stable-app-deploy.preview.emergentagent.com';
+  return 'https://spynner-stable.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();

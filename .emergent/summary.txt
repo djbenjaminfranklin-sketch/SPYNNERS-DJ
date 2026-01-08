@@ -1,355 +1,217 @@
 <analysis>
-**original_problem_statement**: The user is trying to publish a stable iOS application to the App Store but is facing numerous critical issues. The session started with resolving a recurring Redundant Binary Upload error, which was a symptom of a flawed build process. After resolving build issues, a new version (build 19) was released to TestFlight, revealing a cascade of production-only bugs: multiple pages crashing, incorrect data being displayed, and non-functional features.
+<original_problem_statement>
+The user is trying to finalize a stable iOS application. The session began with fixing a cascade of bugs that appeared after a major architectural migration to Base44 cloud functions. The primary goal is to resolve all outstanding issues reported by the user to achieve a production-ready state.
 
-The core problem was that the app, in a production environment, could not access the local development backend it relied on. This led to a major architectural shift to migrate all backend-dependent features to Base44 cloud functions.
-
-The user's subsequent requests were:
-1.  Fix all production crashes (Admin pages, etc.).
-2.  Fix data integrity issues (e.g., Track Radar showing 172 tracks instead of 26).
-3.  Fix broken features (e.g., no audio on upload, player not working in rankings).
-4.  Implement push notifications for new messages.
-5.  Migrate the SPYN (ACRCloud audio recognition) feature to Base44 cloud functions to fix Connection Error on mobile.
-6.  Resolve a critical crash on startup issue affecting all recent builds (builds 22 through 27) on TestFlight, despite the app working on Expo Go.
-7.  Replace the logo on the login screen.
+Most recently, the user provided a comprehensive list of bugs after the agent performed several fixes:
+1.  **Admin VIP Crash**: The VIP page in the admin section crashes the app.
+2.  **Download Page Bug**: On the Download page, filtering by date produces an empty file, and the Download button text is not translated (telechargement).
+3.  **Performance**: The app is generally slow to load.
+4.  **UI Issues**:
+    *   The logo in the top-left header is too small.
+    *   In SPYN and SPYN Record, a track is sometimes identified without a cover or name.
+    *   The SPYN Record end-of-session modal closes immediately after appearing.
+5.  **Feature Bugs**:
+    *   Push notifications are not working (no sound or badge on receipt).
+    *   SPYN Record does not capture the user's location.
+    *   The Fin (End) button in SPYN and SPYN Record does not correctly stop the session.
+    *   External microphone is still not properly detected or used in SPYN Record.
+    *   The app does not prompt to save the recorded mix to the phone.
+    *   The logo should be used for the app icon on the phone's home screen.
+    *   The logo should appear on the pre-login/signup screen.
+</original_problem_statement>
 
 **User's preferred language**: Français (French). The next agent MUST respond in French.
 
 **what currently exists?**
-The application has been almost entirely refactored to use Base44 as its backend, removing the dependency on an inaccessible local Python server. Numerous production bugs related to this migration have been addressed. The SPYN audio recognition feature was migrated to Base44 and debugged.
+The application's architecture has been solidified to use Base44 as its exclusive backend, including for ACRCloud audio recognition, after a long and error-prone detour attempting to implement direct client-side calls and a local Python proxy. This architectural decision is now stable.
 
-However, the application is in a **critical state**. All recent builds (22-27) crash immediately upon opening on a physical device (TestFlight), even though they work correctly in the Expo Go simulator. The agent's last actions were to identify and fix the likely causes of this native-specific crash:
-1.  A  polyfill () was moved to the root layout file () to ensure it loads first.
-2.  All push notification logic, which was the primary suspect for the crashes, was **completely removed** from the codebase to create a stable baseline.
-3.  The data mapping for the SPYN (ACRCloud) response was corrected in .
+The agent was in the middle of a rapid-fire bug-fixing session based on the user's latest comprehensive list. Several fixes have been implemented in the code but have **not been tested or verified by the user**. The app is in a functional but buggy state on Expo Go.
 
 **Last working item**:
--   Last item agent was working: Fixing the data mapping from the  Base44 function. The API returned fields like  and , but the client-side code in  was expecting  and . The agent corrected these mappings.
--   Status: IN PROGRESS (The code has been changed, but the user has not yet verified the fix on Expo Go).
+-   Last item agent was working: The agent was working through a large list of bugs provided by the user in message #592. The agent attempted several fixes in a single batch, including enlarging the header logo, migrating the Admin VIP page to Base44, and preventing the SPYN Record modal from closing prematurely. The session ended while the agent was in the middle of these fixes.
+-   Status: IN PROGRESS
 -   Agent Testing Done: N
--   Which testing method agent to use? The user needs to test this on **Expo Go** to confirm the SPYN feature now correctly identifies and displays track information.
+-   Which testing method agent to use? The user needs to manually test on Expo Go. The next agent should guide the user through testing each of the recently addressed issues one by one.
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: iOS App Crashes on Startup in TestFlight Build (P0 - CRITICAL BLOCKER)**
-    -   **Description**: Builds 22 through 27 crash immediately on a physical device. The app works correctly in Expo Go, indicating a native-specific build issue. This is the highest priority issue blocking any further progress.
-    -   **Attempted fixes**:
-        1.  (Failed) Added extensive  blocks to push notification code.
-        2.  (Failed) Added  to  plugins.
-        3.  (Failed) Removed all module-level calls to .
-        4.  (In Progress) **Completely removed all push notification logic** from  and other files to simplify the build.
-        5.  (In Progress) Moved the critical polyfill  to the app's entry point () as it must be the very first import.
+-   **Issue 1: Admin VIP Page Crashes (P0)**
+    -   **Description**: The  page crashes the app. The previous agent diagnosed this was due to the page trying to access a local backend URL that is unavailable on mobile.
+    -   **Attempted fixes**: The agent modified  to use  and  instead of direct  calls to the local backend. This fix has not been tested.
     -   **Next debug checklist**:
-        1.  Have the user **test the current state on Expo Go one more time** to confirm it is still stable after the latest SPYN data mapping fixes.
-        2.  If Expo Go is stable, guide the user to create **Build 28**. This build will contain the polyfill move and the complete removal of push notification code.
-        3.  The user must test Build 28 on TestFlight. If it still crashes, the next step is to perform a  or manually compare the file differences between the last working build (19) and the current state to find the exact breaking change.
-    -   **Why fix this issue and what will be achieved with the fix?**: The app is unusable in its current state. Fixing this will provide a stable baseline to build upon and allow testing of other features on a real device.
-    -   **Status**: IN PROGRESS
-    -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: Frontend (requires a new iOS build and TestFlight testing).
-    -   **Blocked on other issue**: None. This is the main blocker.
+        1.  Ask the user to navigate to the Admin VIP page on Expo Go.
+        2.  Verify that it no longer crashes.
+        3.  Verify that it correctly loads and displays VIP track data from Base44.
+    -   **Status**: USER VERIFICATION PENDING
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Frontend (manual test on Expo Go).
 
--   **Issue 2: SPYN (ACRCloud) Feature Not Fully Verified (P1)**
-    -   **Description**: The user reported that ACRCloud was not identifying tracks on Expo Go. The agent found the API was working but the data mapping was incorrect. The agent fixed the mapping but this has not been tested by the user.
-    -   **Attempted fixes**: Added debug alerts to inspect the API response; corrected the object keys being read in  (e.g., ).
+-   **Issue 2: SPYN Record - End-Session Modal Closes Immediately (P1)**
+    -   **Description**: When a SPYN Record session is stopped, the confirmation modal appears and then immediately disappears, preventing the user from saving the mix.
+    -   **Attempted fixes**: The agent identified that  was being called at the beginning of the  function in . The agent moved this call to the end of the function, after the save/share logic has been executed.
     -   **Next debug checklist**:
-        1.  Instruct the user to test the SPYN feature on Expo Go **with music playing**.
-        2.  Confirm that it no longer shows rate limit exceeded and now correctly displays the identified track's title and artist.
+        1.  Ask the user to start and stop a SPYN Record session.
+        2.  Verify that the end-session modal stays open.
+        3.  Verify that confirming the modal correctly triggers the save/share dialog.
     -   **Status**: USER VERIFICATION PENDING
     -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: Frontend (on Expo Go).
+    -   **Should Test frontend/backend/both after fix?**: Frontend (manual test on Expo Go).
 
--   **Issue 3: Recurring iOS Build/Submission Failures (P2)**
-    -   **Description**: The user has a fundamental misunderstanding of the usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]
-           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
-           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare]
-           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]
-           [--super-prefix=<path>] [--config-env=<name>=<envvar>]
-           <command> [<args>]
-
-These are common Git commands used in various situations:
-
-start a working area (see also: git help tutorial)
-   clone     Clone a repository into a new directory
-   init      Create an empty Git repository or reinitialize an existing one
-
-work on the current change (see also: git help everyday)
-   add       Add file contents to the index
-   mv        Move or rename a file, a directory, or a symlink
-   restore   Restore working tree files
-   rm        Remove files from the working tree and from the index
-
-examine the history and state (see also: git help revisions)
-   bisect    Use binary search to find the commit that introduced a bug
-   diff      Show changes between commits, commit and working tree, etc
-   grep      Print lines matching a pattern
-   log       Show commit logs
-   show      Show various types of objects
-   status    Show the working tree status
-
-grow, mark and tweak your common history
-   branch    List, create, or delete branches
-   commit    Record changes to the repository
-   merge     Join two or more development histories together
-   rebase    Reapply commits on top of another base tip
-   reset     Reset current HEAD to the specified state
-   switch    Switch branches
-   tag       Create, list, delete or verify a tag object signed with GPG
-
-collaborate (see also: git help workflows)
-   fetch     Download objects and refs from another repository
-   pull      Fetch from and integrate with another repository or a local branch
-   push      Update remote refs along with associated objects
-
-'git help -a' and 'git help -g' list available subcommands and some
-concept guides. See 'git help <command>' or 'git help <concept>'
-to read about a specific subcommand or concept.
-See 'git help git' for an overview of the system. and An Expo user account is required to proceed.
-
-Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username workflow. They repeatedly: a) fail to On branch main
-Untracked files:
-  (use "git add <file>..." to include in what will be committed)
-	.metro-cache/cache/11/f86ab5d95f226802a5d3ae73b006048eff6a33340271db724cd4397dc4af1903209c0b
-	.metro-cache/cache/6c/3a2f5e717d26bfc313042d37bc70268eff6a33340271db724cd4397dc4af1903209c0b
-	yarn.lock
-	../spynners-temp/__MACOSX/spynners-app-complet/._yarn.lock
-	../spynners-temp/spynners-app-complet/yarn.lock
-
-nothing added to commit but untracked files present (use "git add" to track) and  changes before building, b) build using an outdated commit, and c) try to submit an IPA with a  that has already been uploaded to App Store Connect, causing a Redundant Binary Upload error. The  in  also caused significant confusion.
-    -   **Attempted fixes**: The agent has explained the process multiple times and provided step-by-step commands. The agent also guided the user to use An Expo user account is required to proceed.
-
-Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username to manage the remote version number.
-    -   **Next debug checklist**: For the next build (28), the agent must provide extremely clear, step-by-step instructions: 1. , 2. An Expo user account is required to proceed.
-
-Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username (enter 28), 3. An Expo user account is required to proceed.
-
-Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username.
-    -   **Why fix this issue and what will be achieved with the fix?**: This is a process issue that wastes time and money (paid build minutes). Resolving the user's understanding is key to successful deployments.
-    -   **Status**: BLOCKED (on user understanding)
+-   **Issue 3: Push Notifications Not Working (P1)**
+    -   **Description**: The user reports no sound or badge when receiving a track, despite the agent re-implementing the push notification logic.
+    -   **Attempted fixes**: The agent re-added the  plugin to  and restored the notification registration logic in  by adding the missing  statements.
+    -   **Next debug checklist**:
+        1.  Explain to the user that push notifications can only be fully tested on a TestFlight build, not Expo Go.
+        2.  Review the code in  to ensure  is configured to play a sound and show a badge.
+        3.  Check the Base44 function responsible for sending notifications to ensure it's setting the  and  properties.
+        4.  Plan for a new build once other critical bugs are resolved.
+    -   **Status**: IN PROGRESS
     -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: NA (Process issue).
+    -   **Should Test frontend/backend/both after fix?**: Frontend (requires new iOS build).
+
+-   **Issue 4: SPYN/SPYN Record - Track Identified Without Details (P2 - Recurring)**
+    -   **Description**: Sometimes a track is identified (track identifiée) but the cover art and name do not appear. This is a recurring issue.
+    -   **Attempted fixes**: This was previously fixed by adding logic to both  and  to fetch track details from the  entity if the recognition API call returns a  but no  or . The user's latest report indicates this fix may be incomplete or has regressed.
+    -   **Next debug checklist**:
+        1.  Review the  function in  and the equivalent logic in .
+        2.  Add debug logs to see the exact response from the  Base44 function.
+        3.  Ensure the fallback logic to call  is always triggered when  is null or empty.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Frontend (manual test on Expo Go).
+
+-   **Issue 5: Download Page Bugs (P2)**
+    -   **Description**: The download page has two issues: the generated file from a date filter is empty, and the Download button text is not translated.
+    -   **Attempted fixes**: None.
+    -   **Next debug checklist**:
+        1.  Investigate the file generation logic, likely involving a backend endpoint, to see why it's returning an empty file for date-filtered requests.
+        2.  Find the telechargement text in the relevant component and replace it with a key from the i18n translation files (e.g., ).
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Both.
+
+-   **Issue 6: SPYN Record - Location Not Captured (P2)**
+    -   **Description**: The location is not being recorded or displayed during a SPYN Record session.
+    -   **Attempted fixes**: None. The agent was investigating the  function in  when the session ended.
+    -   **Next debug checklist**:
+        1.  Verify that  and  are being called when a SPYN Record session starts.
+        2.  Add debug logs to check the result of .
+        3.  Ensure the location data is being passed in the  call.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Frontend (manual test on Expo Go).
+
+-   **Issue 7: SPYN/SPYN Record - Fin Button Bug (P2)**
+    -   **Description**: Pressing the Fin (End) button does not reliably stop the recognition session.
+    -   **Attempted fixes**: The agent added  to the  function in . The issue in  was linked to the modal closing prematurely, which has also been addressed. The fix is not fully verified.
+    -   **Next debug checklist**:
+        1.  Ask the user to test stopping sessions in both SPYN and SPYN Record.
+        2.  Review the state management (, ) in both components to ensure all loops and timers are cleared correctly in the stop functions.
+    -   **Status**: USER VERIFICATION PENDING
+    -   **Is recurring issue?**: Y
+    -   **Should Test frontend/backend/both after fix?**: Frontend (manual test on Expo Go).
+
+-   **Issue 8: General App Slowness (P3)**
+    -   **Description**: The user reports that the app is generally slow to load.
+    -   **Attempted fixes**: None.
+    -   **Next debug checklist**:
+        1.  Analyze the initial data loading in  and other main screens. Look for large, unpaginated API calls.
+        2.  Use the Expo dev tools profiler to identify any long-running functions or heavy re-renders on the main thread.
+        3.  Consider adding placeholders or skeleton loaders to improve perceived performance.
+    -   **Status**: NOT STARTED
+    -   **Is recurring issue?**: N
+    -   **Should Test frontend/backend/both after fix?**: Frontend.
 
 **In progress Task List**:
--   There are no in-progress tasks other than fixing the critical issues listed above.
+- The agent was in the middle of a large bug bash. All the issues listed above under USER VERIFICATION PENDING are technically in progress.
 
 **Upcoming and Future Tasks**
--   **Upcoming Tasks**:
-    -   **P0: Re-implement Push Notifications**: Once a stable build is achieved and verified by the user, the push notification feature needs to be re-implemented from scratch, following best practices to avoid native crashes (ensure plugin is in , initialize listeners inside a  in a component, not at the module level).
-    -   **P1: Verify USB Audio Input on Pioneer V10**: The agent cannot test this. Once a stable build is on the user's device, they need to test if the SPYN Record feature can capture audio from their mixing desk via USB.
--   **Future Tasks**:
-    -   **P2: Address Scalability Concerns (from ChatGPT analysis)**:
-        -   Implement strict pagination on all API calls that fetch lists ().
-        -   Normalize API responses in the frontend to decouple the UI from the exact Base44 schema.
-        -   Implement anti-spam/anti-fake measures for the SPYN feature to protect data integrity.
+- **P0: Build and Test a New iOS Version on TestFlight**: Once the critical Expo Go bugs are resolved and verified by the user, a new build must be created to test the push notification fixes and the new app icon on a real device.
+- **P1: Full Test of SPYN Record External Mic**: The underlying issue of detecting and using an external USB mic was never fully resolved, only worked around. Once a stable build is on the user's device, this needs to be tested with their Pioneer V10 hardware.
 
 **Completed work in this session**
--   **Architecture Migration**: Migrated the SPYN and SPYN-Record features from the defunct Python backend to Base44 cloud functions (, , ).
--   **Authentication Fix**: Updated all SPYN-related API calls to include the user's  header, fixing an Authentication required error.
--   **API Path Correction**: Fixed incorrect Base44 function invocation paths (from  to ).
--   **SPYN Debugging**: Diagnosed and worked around a temporary Rate limit exceeded error from the Base44 API. Corrected the data mapping in the client to handle the actual API response structure.
--   **Native Crash Investigation**:
-    -   Identified and removed all push notification logic as the primary suspect for the app crash.
-    -   Identified that  was missing from  plugins (though this was reverted when the feature was removed).
-    -   Identified and removed multiple module-level calls to .
-    -   Identified and moved the  polyfill to the app's entry point ().
--   **UI Change**: Replaced the logo image on the login screen.
--   **User Process Debugging**: Diagnosed and provided solutions for the user's recurring usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]
-           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
-           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare]
-           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]
-           [--super-prefix=<path>] [--config-env=<name>=<envvar>]
-           <command> [<args>]
-
-These are common Git commands used in various situations:
-
-start a working area (see also: git help tutorial)
-   clone     Clone a repository into a new directory
-   init      Create an empty Git repository or reinitialize an existing one
-
-work on the current change (see also: git help everyday)
-   add       Add file contents to the index
-   mv        Move or rename a file, a directory, or a symlink
-   restore   Restore working tree files
-   rm        Remove files from the working tree and from the index
-
-examine the history and state (see also: git help revisions)
-   bisect    Use binary search to find the commit that introduced a bug
-   diff      Show changes between commits, commit and working tree, etc
-   grep      Print lines matching a pattern
-   log       Show commit logs
-   show      Show various types of objects
-   status    Show the working tree status
-
-grow, mark and tweak your common history
-   branch    List, create, or delete branches
-   commit    Record changes to the repository
-   merge     Join two or more development histories together
-   rebase    Reapply commits on top of another base tip
-   reset     Reset current HEAD to the specified state
-   switch    Switch branches
-   tag       Create, list, delete or verify a tag object signed with GPG
-
-collaborate (see also: git help workflows)
-   fetch     Download objects and refs from another repository
-   pull      Fetch from and integrate with another repository or a local branch
-   push      Update remote refs along with associated objects
-
-'git help -a' and 'git help -g' list available subcommands and some
-concept guides. See 'git help <command>' or 'git help <concept>'
-to read about a specific subcommand or concept.
-See 'git help git' for an overview of the system./An Expo user account is required to proceed.
-
-Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username workflow issues, including the  problem in .
+- **Architecture**: **Crucially**, reverted from a flawed attempt at direct ACRCloud integration back to using the proven  cloud function, aligning the mobile app with the working website architecture.
+- **Features**:
+  - Re-implemented push notification registration logic in  and .
+  - Set the app icon to  in .
+- **UI/UX**:
+  - Replaced the SPYNNERS header text on the home screen with the logo image ().
+  - Attempted to increase the logo size ().
+  - Confirmed the logo is already present on login and signup pages.
+- **Bug Fixes**:
+  - **Recognition Interval**: Changed recognition interval to 10 seconds in  and .
+  - **Fin Button**: Attempted a fix for the stop button in .
+  - **Save Mix Prompt**: Investigated and confirmed the logic for saving the mix at the end of a SPYN Record session exists.
+  - **Analytics/Radar Count**: Corrected the filtering logic in , , and  to only show approved tracks belonging to the user. This was verified by the user.
+  - **False Positive Location**: Tightened the  in  to prevent awarding Black Diamonds at home.
+  - **M4A vs. MP3**: Corrected UI text in  to show M4A instead of MP3.
 
 **Earlier issues found/mentioned but not fixed**
-- All major issues reported by the user have been addressed or are currently being worked on. The only outstanding item is the physical hardware test.
-   - **Issue 1: USB audio detection with Pioneer V10**
-     - **Debug checklist**: This can only be tested by the user on a physical device with a stable build. The user needs to connect their hardware and attempt to use the SPYN Record feature.
-     - **Why to solve this issue and what will be achieved with this?**: This is a core feature of the SPYN Record functionality for professional DJs.
-     - **Should Test frontend/backend/both after fix**: Frontend (user-tested).
-
-**Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork**: The Redundant Binary Upload error and the user's misunderstanding of the On branch main
-Untracked files:
-  (use "git add <file>..." to include in what will be committed)
-	.metro-cache/cache/11/f86ab5d95f226802a5d3ae73b006048eff6a33340271db724cd4397dc4af1903209c0b
-	.metro-cache/cache/6c/3a2f5e717d26bfc313042d37bc70268eff6a33340271db724cd4397dc4af1903209c0b
-	yarn.lock
-	../spynners-temp/__MACOSX/spynners-app-complet/._yarn.lock
-	../spynners-temp/spynners-app-complet/yarn.lock
-
-nothing added to commit but untracked files present (use "git add" to track) -> An Expo user account is required to proceed.
-
-Log in to EAS with email or username (exit and run eas login --help to see other login options)
-Input is required, but stdin is not readable. Failed to display prompt: Email or username flow was a known issue from the previous fork.
--   **Recurrence count**: High (occurred at least 5-6 times this session).
--   **Status**: BLOCKED (on user process/understanding).
+- All known issues are captured in the pending list. The most persistent one is the flaky detection of external audio hardware on iOS, which is a limitation of .
 
 **Code Architecture**
-expo-notifications
+recognizeAudioexpo-notifications
 
 **Key Technical Concepts**
--   **Backend-as-a-Service (BaaS) Migration**: The app is now fully dependent on Base44 for all backend logic, including authentication, data storage, and third-party integrations like ACRCloud.
--   **Native vs. Expo Go Debugging**: This session highlighted the critical differences between the two environments. Crashes in the native build that do not occur in Expo Go often point to issues with native module configuration (plugins in ) or polyfills.
--   **React Native Polyfills**: The  polyfill for the  API is essential and must be imported at the application's entry point to prevent native crashes.
--   **EAS Build and Submit Workflow**: Deep dive into failure modes, including usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]
-           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
-           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare]
-           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]
-           [--super-prefix=<path>] [--config-env=<name>=<envvar>]
-           <command> [<args>]
-
-These are common Git commands used in various situations:
-
-start a working area (see also: git help tutorial)
-   clone     Clone a repository into a new directory
-   init      Create an empty Git repository or reinitialize an existing one
-
-work on the current change (see also: git help everyday)
-   add       Add file contents to the index
-   mv        Move or rename a file, a directory, or a symlink
-   restore   Restore working tree files
-   rm        Remove files from the working tree and from the index
-
-examine the history and state (see also: git help revisions)
-   bisect    Use binary search to find the commit that introduced a bug
-   diff      Show changes between commits, commit and working tree, etc
-   grep      Print lines matching a pattern
-   log       Show commit logs
-   show      Show various types of objects
-   status    Show the working tree status
-
-grow, mark and tweak your common history
-   branch    List, create, or delete branches
-   commit    Record changes to the repository
-   merge     Join two or more development histories together
-   rebase    Reapply commits on top of another base tip
-   reset     Reset current HEAD to the specified state
-   switch    Switch branches
-   tag       Create, list, delete or verify a tag object signed with GPG
-
-collaborate (see also: git help workflows)
-   fetch     Download objects and refs from another repository
-   pull      Fetch from and integrate with another repository or a local branch
-   push      Update remote refs along with associated objects
-
-'git help -a' and 'git help -g' list available subcommands and some
-concept guides. See 'git help <command>' or 'git help <concept>'
-to read about a specific subcommand or concept.
-See 'git help git' for an overview of the system. hygiene,  management, and the significance of  in .
--   **API Authentication**: Implemented sending of a  token in  headers for authenticated API endpoints.
-
-**key DB schema**
-- No changes to the DB schema were made in this session. The focus was on client-side and cloud function implementation.
-
-**changes in tech stack**
-- The application is now architecturally backendless from the perspective of self-hosted code, relying entirely on Base44.
+-   **Backend-as-a-Service (BaaS)**: The app is now fully committed to using Base44 for all backend services. The agent learned the hard way that trying to bypass this for direct 3rd-party API calls from React Native is fraught with platform-specific peril (e.g., / issues).
+-   **Push Notifications (Expo)**: Re-implemented using  plugin and registration logic inside a React Context. Requires a new native build to test.
+-   **State Management and UI Updates**: Several bugs were related to React state not updating the UI as expected (e.g., stop buttons not working, modals closing). This points to complex state interactions (e.g., using both  and  for session status) that need careful handling.
+-   **Expo App Configuration**: Modified  to change the app icon and add the notifications plugin.
 
 **All files of reference**
--   : **Crucial**. Now contains the import for the  polyfill, which is a key part of the crash fix.
--   : **Crucial**. Was heavily modified to add push notifications, which caused crashes. It has now been reverted to a simpler state **without any notification code** to ensure stability.
--   : The central point of communication with the backend. Contains all the new SPYN function calls and the logic to attach the authentication token.
--   : Contains the client logic for ACRCloud recognition, which was heavily debugged and modified.
--   : The source of truth for the  and native plugins. The agent must ensure the user modifies this correctly before building.
+-   : Core SPYN feature. Contains recognition logic.
+-   : SPYN Record feature. Contains recording, recognition, and session finalization logic.
+-   : The page that was crashing and has been refactored.
+-   : Location of the push notification registration.
+-   : Defines the app icon and native plugins. Needs to be correct before the next build.
 
 **Areas that need refactoring**:
--    needs to be refactored to safely re-introduce push notification logic in a future task.
--   As per the ChatGPT analysis, many components that fetch data could be refactored to use a more robust pagination and data normalization strategy instead of fetching large lists.
-
-**key api endpoints**
-All backend logic now goes through Base44 cloud functions. The key new endpoints are:
--   
--   
--   
+-   : This file is a relic of a failed implementation path. It should be either deleted or cleaned up to avoid confusion. The current implementation relies on .
+-   State management in  and  is complex, using a mix of  and  to control session state. This is likely the root cause of the buggy Fin button and could be simplified.
 
 **Critical Info for New Agent**
 -   **Langue**: La communication doit être en **français**.
--   **CRASH ON STARTUP IS THE #1 PRIORITY**: Do not work on anything else until a build successfully runs on the user's device without crashing. The last attempt to fix this involved moving a polyfill and completely removing push notification code. The next step is to guide the user to create **Build 28** with these changes.
--   **Expo Go is not a reliable test for production**: The app works on Expo Go but crashes in the standalone build. This points to a native configuration or module loading issue. The polyfill is the current main suspect.
--   **Push Notifications are DISABLED**: To fix the crash, all push notification code was removed. Do not attempt to work on it until a stable build is confirmed. It is a future task.
--   **User's Build Process is Flaky**: Be extremely clear and prescriptive with build instructions. The user often forgets to commit, builds the wrong code, or submits the wrong build. Guide them step-by-step for every single build.
+-   **PRIORITY**: Your main goal is to systematically fix the bugs listed by the user in message #592. Verify the fixes the previous agent just implemented before starting new work.
+-   **ARCHITECTURE IS SET**: Do NOT attempt to call ACRCloud directly from the client again. The correct, working architecture is to call the  function via the Base44 API, as defined in . The previous agent wasted a lot of time on this.
+-   **TESTING**: Push notifications and the app icon will require a new native build (An Expo user account is required to proceed.
 
-**documents created in this job**
-- None.
+Log in to EAS with email or username (exit and run eas login --help to see other login options)
+Input is required, but stdin is not readable. Failed to display prompt: Email or username). All other bugs should be tested on Expo Go first. Guide the user through testing each fix.
+-   **RECURRING BUGS**: Be aware that several bugs have recurred after being fixed (modal closing, track details missing). This implies the fixes were incomplete or brittle. Be thorough in your debugging and testing. The agent was in the middle of a batch-fix session; you must pick up where they left off and verify everything.
 
 **Last 10 User Messages and any pending HUMAN messages**
-- 10. (LATEST) j ai encore rate limit , mais cest pas plutot une rate limlit de base 44? - User is experiencing a rate limit on the SPYN feature and correctly suspects it might be from Base44, not their own ACRCloud account. (RESOLVED - was temporary)
-- 9. je reessaye - User will try the SPYN feature again after the agent suggested the rate limit might have passed. (IN PROGRESS)
-- 8. Et est-ce que ça serait pas mieux pour ACR Cloud de passer directement avec les codes, les API, les keys, etc ? - User asks about the security trade-offs of calling ACRCloud directly vs. via Base44. (RESOLVED)
-- 7. User provides a screenshot showing the SPYN feature is hitting a Rate limit exceeded error. (IN PROGRESS)
-- 6. Je sais pas comment ouvrir une console sur Expo Go sur un téléphone portable. - User doesn't know how to see console logs from Expo Go. (RESOLVED - agent switched to using UI feedback).
-- 5. Quand jappuie sur le bouton, tout se passe bien. Quelques secondes après, y a marqué analyse, mais en fait, il nanalyse rien du tout puisquil nidentifie pas de track. - User provides excellent UI feedback for the broken SPYN feature. (IN PROGRESS)
-- 4. soit sur ne dis pas peut etre , sur expo go ca crash pas mais par contre je sais pas si t as fais quelque chose avec acrcloud parce que ca identifie plus les tracks - User confirms Expo Go doesn't crash after the polyfill fix, but now reports the SPYN/ACRCloud feature is broken. (IN PROGRESS)
-- 3. build 27 - User confirms the crash is happening on the TestFlight build 27. (IN PROGRESS)
-- 2. ca crash encore donc cest pas du tout ce que tu pensais - User reports the build 27, which included the logo change, still crashes. (IN PROGRESS)
-- 1. User provides an image for a new login logo. (RESOLVED)
+- 10. (LATEST) recapitulatif... - **CRITICAL**: User provides a comprehensive list of 8 major outstanding bugs, which should be the primary focus for the next agent. (IN PROGRESS)
+- 9. on test - User is ready to test the changes. (COMPLETED)
+- 8. Est-ce que tu as réparé aussi la notification push... - User asks about push notifications, confirming they should be re-implemented. (COMPLETED)
+- 7. Et je veux que ça soit ce logo quil y a sur le, la petite icône de lapplication... - User requests the logo be used as the app icon. (COMPLETED)
+- 6. Je sais quil est sur la page login, mais je parle davant... - User clarifies which page they want the logo on (pre-login/signup). (COMPLETED)
+- 5. Sur la page où on vient senregistrer..." - User requests the new logo on the signup page and in the header. (COMPLETED)
+- 4. "et n oublies pas quil faut que le mix demande a s enregistrer dans le telephone" - User reminds agent to ensure the save-mix feature works. (IN PROGRESS)
+- 3. "continu" - User is waiting for the agent to continue fixing bugs. (COMPLETED)
+- 2. "Alors maintenant, cest bon, ça identifie les tracks... - User confirms recognition works but reports the 10-second interval and Fin button bugs. (COMPLETED)
+- 1. URL de votre fonction cloud... - User provides crucial info that the website uses the Base44 SDK, which was the key to solving the recognition bug. (COMPLETED)
 
 **Project Health Check:**
--   **Broken**: The production iOS build is not functional, as it crashes on startup. This is a critical failure.
--   **Mocked**: No features are mocked.
+-   **Broken**: The app has multiple high-priority functional bugs reported by the user, including a crashing page (Admin VIP), non-functional notifications, and broken core features (SPYN Record).
 
 **3rd Party Integrations**
 -   **Spynners / Base44**: Primary Backend-as-a-Service (BaaS) for data, auth, and cloud functions.
 -   **@base44/sdk**: Official SDK for interacting with Base44.
 -   **Expo Application Services (EAS)**: For building and submitting the app.
--   **ACRCloud**: Used for audio recognition via a Base44 cloud function. User has a Premium (unlimited) account.
+-   **ACRCloud**: Used for audio recognition via a Base44 cloud function.
 -   **Google Places**: Used for finding nearby venues via a Base44 cloud function.
+-   **crypto-js**: Installed to attempt HMAC-SHA1 signing, but this implementation path was abandoned. It can likely be removed.
 
 **Testing status**
--   Testing agent used after significant changes: YES, the agent used the web-based frontend testing agent multiple times to verify pages load without crashing. However, this was insufficient to catch the native crash.
--   Troubleshoot agent used after agent stuck in loop: YES, the troubleshoot agent was used twice and correctly identified the root causes of the native crashes (push notification implementation).
+-   Testing agent used after significant changes: NO
+-   Troubleshoot agent used after agent stuck in loop: NO (but should have been used during the direct ACRCloud implementation detour).
 -   Test files created: []
--   Known regressions: The entire app crashes on startup in a native build, which is a major regression from build 19.
+-   Known regressions: Track identified without details and Modal closes immediately are both recurring bugs.
 
 **Credentials to test flow:**
 -   **Email:** 
 -   **Password:** 
 
 **What agent forgot to execute**
-- The agent's main struggle was diagnosing the native-specific crash. While many attempts were made, the core issue persisted for a long time. The agent did not initially identify that a polyfill like  needs to be at the absolute entry point of the app, which is a common pitfall. The agent also did not check for the  plugin in  until the  pointed it out. All other user requests were addressed.
-
+The agent got stuck in a major rabbit hole trying to implement a direct ACRCloud call from the client, ignoring React Native's limitations and the fact that a working Base44 function already existed. This wasted significant time. The agent then rushed to fix a long list of bugs from the user and did not stop to verify each fix individually, leaving the current state uncertain. The agent did not address the user's report of telechargement not being translated.
 </analysis>

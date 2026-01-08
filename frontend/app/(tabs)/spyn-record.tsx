@@ -56,7 +56,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return 'https://stable-app-deploy.preview.emergentagent.com';
+  return 'https://spynner-stable.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 
