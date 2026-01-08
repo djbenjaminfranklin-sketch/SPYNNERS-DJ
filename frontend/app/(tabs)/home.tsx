@@ -1206,6 +1206,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  headerLogo: {
+    width: 120,
+    height: 35,
+  },
   logoText: {
     fontSize: 22,
     fontWeight: '700',
