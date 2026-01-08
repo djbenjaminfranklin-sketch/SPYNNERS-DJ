@@ -2012,7 +2012,7 @@ export const base44Spyn = {
     try {
       console.log('[base44Spyn] Calling getNearbyPlaces function...');
       
-      const token = await getAuthToken();
+      const token = await getSpynAuthToken();
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
