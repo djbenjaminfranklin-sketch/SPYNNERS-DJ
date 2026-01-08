@@ -350,8 +350,8 @@ export default function AdminDownloads() {
           <Ionicons name="download" size={24} color="#00BFA5" />
         </View>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Téléchargements</Text>
-          <Text style={styles.headerSubtitle}>Historique des téléchargements</Text>
+          <Text style={styles.headerTitle}>{t('admin.downloads')}</Text>
+          <Text style={styles.headerSubtitle}>{t('admin.downloadHistory')}</Text>
         </View>
       </View>
 
@@ -364,17 +364,17 @@ export default function AdminDownloads() {
           <View style={styles.statCard}>
             <Ionicons name="download" size={24} color="#00BFA5" />
             <Text style={styles.statNumber}>{stats.total}</Text>
-            <Text style={styles.statLabel}>Total téléchargements</Text>
+            <Text style={styles.statLabel}>{t('admin.totalDownloads')}</Text>
           </View>
           <View style={styles.statCard}>
             <Ionicons name="people" size={24} color="#2196F3" />
             <Text style={styles.statNumber}>{stats.unique_djs}</Text>
-            <Text style={styles.statLabel}>DJs uniques</Text>
+            <Text style={styles.statLabel}>{t('admin.uniqueDjs')}</Text>
           </View>
           <View style={styles.statCard}>
             <Ionicons name="musical-note" size={24} color="#FF9800" />
             <Text style={styles.statNumber}>{stats.tracks_downloaded}</Text>
-            <Text style={styles.statLabel}>Tracks téléchargées</Text>
+            <Text style={styles.statLabel}>{t('admin.tracksDownloaded')}</Text>
           </View>
         </View>
 
