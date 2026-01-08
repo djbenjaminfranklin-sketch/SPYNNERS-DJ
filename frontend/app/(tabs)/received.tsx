@@ -68,18 +68,8 @@ export default function ReceivedScreen() {
     setRefreshing(false);
   };
 
-  const getCoverImageUrl = (track: Track): string | null => {
-    const url = track.artwork_url || track.cover_image;
-    if (url && url.startsWith('http')) return url;
-    return null;
-  };
-
-  const getArtistName = (track: Track): string => {
-    return track.producer_name || track.artist_name || 'Unknown Artist';
-  };
-
-  const renderTrack = ({ item }: { item: Track }) => {
-    const coverUrl = getCoverImageUrl(item);
+  const renderTrack = ({ item }: { item: TrackSend }) => {
+    const coverUrl = item.track_artwork_url;
     
     return (
       <View style={styles.trackCard}>
@@ -94,9 +84,16 @@ export default function ReceivedScreen() {
         </View>
 
         <View style={styles.trackInfo}>
-          <Text style={styles.trackTitle} numberOfLines={1}>{item.title}</Text>
-          <Text style={styles.trackArtist} numberOfLines={1}>{getArtistName(item)}</Text>
-          <Text style={styles.trackMeta}>{item.genre}</Text>
+          <Text style={styles.trackTitle} numberOfLines={1}>{item.track_title}</Text>
+          <Text style={styles.trackArtist} numberOfLines={1}>{item.track_producer_name || 'Unknown Artist'}</Text>
+          <View style={styles.senderInfo}>
+            <Ionicons name="person" size={12} color={Colors.textMuted} />
+            <Text style={styles.senderText}>De: {item.sender_name}</Text>
+          </View>
+          {item.message && (
+            <Text style={styles.messageText} numberOfLines={1}>"{item.message}"</Text>
+          )}
+          <Text style={styles.trackMeta}>{item.track_genre}</Text>
         </View>
 
         <View style={styles.actions}>
