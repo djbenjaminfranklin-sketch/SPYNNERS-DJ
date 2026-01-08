@@ -43,21 +43,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     loadStoredAuth();
     
-    // Set up notification listeners
-    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
-      console.log('[AuthContext] Notification received:', notification.request.content.title);
-    });
+    // Delay notification listener setup to not block app startup
+    // and wrap in try-catch to prevent crashes
+    const setupNotificationListeners = async () => {
+      try {
+        // Wait for app to be fully initialized
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Only set up listeners on native platforms
+        if (Platform.OS === 'web') {
+          console.log('[AuthContext] Skipping notification listeners on web');
+          return;
+        }
+        
+        console.log('[AuthContext] Setting up notification listeners...');
+        
+        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+          console.log('[AuthContext] Notification received:', notification?.request?.content?.title);
+        });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('[AuthContext] Notification tapped:', response.notification.request.content.data);
-    });
+        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+          console.log('[AuthContext] Notification tapped:', response?.notification?.request?.content?.data);
+        });
+        
+        console.log('[AuthContext] Notification listeners set up successfully');
+      } catch (error) {
+        console.log('[AuthContext] Failed to set up notification listeners (non-fatal):', error);
+      }
+    };
+    
+    setupNotificationListeners();
 
     return () => {
-      if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(notificationListener.current);
-      }
-      if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
+      try {
+        if (notificationListener.current) {
+          Notifications.removeNotificationSubscription(notificationListener.current);
+        }
+        if (responseListener.current) {
+          Notifications.removeNotificationSubscription(responseListener.current);
+        }
+      } catch (e) {
+        console.log('[AuthContext] Error cleaning up notification listeners:', e);
       }
     };
   }, []);
