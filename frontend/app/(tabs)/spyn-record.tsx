@@ -247,11 +247,27 @@ export default function SpynRecordScreen() {
       let venueTypes: string[] = [];
       let isValidVenue = false;
       
-      // Valid venue types for Black Diamond
+      // Valid venue types for Black Diamond - STRICT list
       const VALID_VENUE_TYPES = [
-        'night_club', 'bar', 'restaurant', 'cafe', 'casino',
-        'establishment', 'food', 'point_of_interest', 'event_venue',
-        'nightclub', 'club', 'lounge', 'pub', 'disco'
+        'night_club', 'nightclub', 'club', 'disco', 'discotheque',
+        'bar', 'pub', 'lounge', 'cocktail_bar', 'wine_bar',
+        'casino', 'event_venue', 'concert_hall', 'music_venue',
+        'dance_club', 'karaoke', 'jazz_club'
+      ];
+      
+      // Types that should NEVER receive Black Diamond
+      const EXCLUDED_VENUE_TYPES = [
+        'home', 'house', 'residence', 'residential', 'apartment', 'flat',
+        'lodging', 'hotel', 'motel', 'hostel', 'guest_house',
+        'store', 'shop', 'shopping', 'supermarket', 'grocery',
+        'office', 'workplace', 'bank', 'atm', 'post_office',
+        'school', 'university', 'hospital', 'pharmacy', 'doctor',
+        'parking', 'gas_station', 'car_wash', 'car_repair',
+        'gym', 'spa', 'beauty_salon', 'hair_care',
+        'real_estate_agency', 'insurance_agency', 'lawyer',
+        'church', 'mosque', 'synagogue', 'temple', 'cemetery',
+        'locality', 'political', 'sublocality', 'street_address', 'route',
+        'neighborhood', 'premise', 'subpremise', 'natural_feature', 'park'
       ];
       
       // Try to get venue from Base44 getNearbyPlaces function (Google Places)
@@ -271,27 +287,66 @@ export default function SpynRecordScreen() {
           venueName = placesResponse.venue;
           venueType = placesResponse.venue_type || placesResponse.types?.[0];
           venueTypes = placesResponse.types || [];
-          console.log('[SPYN Record] Got venue name:', venueName);
+          console.log('[SPYN Record] Got venue name:', venueName, 'types:', venueTypes);
           
-          // Check if it's a valid venue for Black Diamond
-          isValidVenue = venueTypes.some((type: string) => 
-            VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+          // Check if venue is EXCLUDED (home, office, etc.)
+          const isExcluded = venueTypes.some((type: string) => 
+            EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
+          
+          if (isExcluded) {
+            console.log('[SPYN Record] ❌ Venue EXCLUDED - is a residence/office/etc');
+            isValidVenue = false;
+          } else {
+            // Check if it's a valid venue for Black Diamond
+            isValidVenue = venueTypes.some((type: string) => 
+              VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+            );
+          }
+          console.log('[SPYN Record] Venue validation:', isValidVenue ? 'VALID VENUE ✓' : 'NOT A VALID VENUE');
         } else if (placesResponse.places && placesResponse.places.length > 0) {
           // Handle array of places response
           const nearestPlace = placesResponse.places[0];
           venueName = nearestPlace.name;
           venueType = nearestPlace.category || nearestPlace.type;
-          venueTypes = nearestPlace.categories || [venueType];
-          isValidVenue = true;
-          console.log('[SPYN Record] Got venue from places array:', venueName);
+          venueTypes = nearestPlace.categories || [venueType].filter(Boolean);
+          console.log('[SPYN Record] Got venue from places array:', venueName, 'types:', venueTypes);
+          
+          // Check if venue is EXCLUDED
+          const isExcluded = venueTypes.some((type: string) => 
+            EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
+          );
+          
+          if (isExcluded) {
+            console.log('[SPYN Record] ❌ Venue EXCLUDED');
+            isValidVenue = false;
+          } else {
+            isValidVenue = venueTypes.some((type: string) => 
+              VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+            );
+          }
+          console.log('[SPYN Record] Venue validation:', isValidVenue ? 'VALID VENUE ✓' : 'NOT A VALID VENUE');
         } else if (placesResponse.name) {
           // Direct venue object response
           venueName = placesResponse.name;
           venueType = placesResponse.type || placesResponse.category;
-          venueTypes = placesResponse.types || [venueType];
-          isValidVenue = true;
-          console.log('[SPYN Record] Got direct venue:', venueName);
+          venueTypes = placesResponse.types || [venueType].filter(Boolean);
+          console.log('[SPYN Record] Got direct venue:', venueName, 'types:', venueTypes);
+          
+          // Check if venue is EXCLUDED
+          const isExcluded = venueTypes.some((type: string) => 
+            EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
+          );
+          
+          if (isExcluded) {
+            console.log('[SPYN Record] ❌ Venue EXCLUDED');
+            isValidVenue = false;
+          } else {
+            isValidVenue = venueTypes.some((type: string) => 
+              VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
+            );
+          }
+          console.log('[SPYN Record] Venue validation:', isValidVenue ? 'VALID VENUE ✓' : 'NOT A VALID VENUE');
         }
       } catch (e: any) {
         console.log('[SPYN Record] Places lookup failed:', e?.message || e, '- using reverse geocoding');
