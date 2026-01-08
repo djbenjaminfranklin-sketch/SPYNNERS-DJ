@@ -2,29 +2,31 @@
  * ACRCloud Direct Recognition Service
  * 
  * NOTE: Due to React Native limitations with FormData and Blob,
- * we use Base44 cloud functions as proxy for ACRCloud on mobile.
+ * we use the local backend as proxy for ACRCloud on mobile.
  * On web, we can call ACRCloud directly.
  * 
- * Hybrid mode:
- * 1. OFFLINE (priority) - Our Spynners catalog, fast, no limits
- * 2. ONLINE (fallback) - Global ACRCloud catalog
+ * Both OFFLINE and ONLINE modes use the Spynners catalog.
+ * OFFLINE = Primary key
+ * ONLINE = Fallback key (same Spynners catalog)
  */
 
 import CryptoJS from 'crypto-js';
 import { Platform } from 'react-native';
 
-// ACRCloud Credentials
+// ACRCloud Credentials - Both point to Spynners catalog
 const OFFLINE_CONFIG = {
   accessKey: 'dec6f0f58197fbc70adf09d41f7451f3',
   accessSecret: 'qW762evL3yc6MtfPijAZ0xFDcl1ilj81mEzsEr4W',
   bucketId: '20849',
   host: 'identify-eu-west-1.acrcloud.com',
+  name: 'Spynners Primary',
 };
 
 const ONLINE_CONFIG = {
   accessKey: 'c1781c9b84de62679ca8b1f11796e31a',
   accessSecret: 'ik9dGvBZBCTaY7n15ThmfH5IXW9OXjO8A1Qpbv8J',
   host: 'identify-eu-west-1.acrcloud.com',
+  name: 'Spynners Fallback',
 };
 
 export interface ACRCloudResult {
