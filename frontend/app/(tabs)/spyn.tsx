@@ -824,55 +824,32 @@ export default function SpynScreen() {
       return;
     }
     
-    // ONLINE MODE: Send to ACRCloud via Base44
+    // ONLINE MODE: Send directly to ACRCloud (hybrid: OFFLINE catalog first, then ONLINE)
     try {
-      console.log('[SPYN] Sending audio to ACRCloud via Base44...');
+      console.log('[SPYN] 🎵 Sending audio to ACRCloud (hybrid mode)...');
       setDebugLog('🔍 Analyse ACRCloud...');
       
-      const response = await base44Spyn.recognizeAudio({
-        audio_data: audioBase64,
-        sample_rate: 44100,
-        channels: 1,
-        location: location,
-        dj_id: user?.id,
-        dj_name: user?.full_name,
-      });
+      // Direct ACRCloud recognition - no more Base44 intermediary!
+      const response = await recognizeAudioHybrid(audioBase64);
 
       console.log('[SPYN] ACRCloud Response:', JSON.stringify(response, null, 2));
 
       // Show response in debug log
-      if (response.error) {
+      if (response.error && !response.found) {
         setDebugLog(`❌ Erreur: ${response.error}`);
-      } else if (response.found && response.spynners_track_id) {
-        setDebugLog(`✅ Track: ${response.title || 'Trouvée'}`);
-      } else if (response.external_title) {
-        setDebugLog(`⚠️ Pas dans Spynners: ${response.external_title}`);
+      } else if (response.found && response.title) {
+        setDebugLog(`✅ ${response.title} (${response.mode})`);
       } else {
         setDebugLog('🎵 Aucune track identifiée');
       }
 
-      // ONLY show tracks that are found in Spynners database
-      if (response.success && response.found && response.spynners_track_id) {
-        // Get title from various possible fields
-        let trackTitle = response.title || response.external_title || response.track_title;
-        let trackArtist = response.artist || response.external_artist || response.track_artist;
-        let coverImage = response.cover_image || response.artwork_url || '';
-        let producerId = response.producer_id;
-        
-        // If we have track ID but no title, fetch track details from Base44
-        if (!trackTitle && response.spynners_track_id) {
-          console.log('[SPYN] Track ID found but no title - fetching track details...');
-          setDebugLog('📖 Récupération infos track...');
-          try {
-            const trackDetails = await base44Tracks.getById(response.spynners_track_id);
-            if (trackDetails) {
-              trackTitle = trackDetails.title || 'Track identifiée';
-              trackArtist = trackDetails.producer_name || trackDetails.artist_name || 'Artiste inconnu';
-              coverImage = trackDetails.artwork_url || trackDetails.cover_image || coverImage;
-              producerId = trackDetails.producer_id || producerId;
-              console.log('[SPYN] ✅ Track details fetched:', trackTitle, 'by', trackArtist);
-            }
-          } catch (fetchError) {
+      // Show tracks that are found (either in OFFLINE Spynners catalog or ONLINE global)
+      if (response.success && response.found && response.title) {
+        // Get title and artist directly from ACRCloud response
+        let trackTitle = response.title;
+        let trackArtist = response.artist || 'Artiste inconnu';
+        let coverImage = response.cover_image || '';
+        let producerId = '';
             console.error('[SPYN] Could not fetch track details:', fetchError);
           }
         }
