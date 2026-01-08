@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { base44Auth, base44Users, User } from '../services/base44Api';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
+import { base44Auth, base44Users, base44PushNotifications, User } from '../services/base44Api';
 
 interface AuthContextType {
   user: User | null;
