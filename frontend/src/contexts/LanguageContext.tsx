@@ -806,6 +806,26 @@ const translations: Record<Language, Record<string, string>> = {
     'admin.confirmReject': 'Reject this track?',
     'admin.confirmRejectMsg': 'Are you sure you want to reject "{title}"?',
     
+    // Admin Downloads
+    'admin.downloads': 'Downloads',
+    'admin.downloadHistory': 'Downloads History',
+    'admin.totalDownloads': 'Total Downloads',
+    'admin.uniqueDjs': 'Unique DJs',
+    'admin.tracksDownloaded': 'Tracks Downloaded',
+    'admin.filterByDate': 'Filter by Date',
+    'admin.selectDates': 'Select dates',
+    'admin.start': 'Start',
+    'admin.end': 'End',
+    'admin.startDate': 'Start Date',
+    'admin.endDate': 'End Date',
+    'admin.history': 'History',
+    'admin.downloadPdf': 'Download PDF',
+    'admin.pdfDownloaded': 'PDF downloaded successfully!',
+    'admin.downloadPdfDialog': 'Download PDF Report',
+    'admin.pdfSaved': 'PDF saved:',
+    'admin.exportError': 'Export error',
+    'admin.searchPlaceholder': 'Search...',
+    
     // Radar
     'radar.messageSent': 'Message sent!',
     'radar.messageSentTo': 'Your message was sent to {name}',
