@@ -168,7 +168,7 @@ export default function SpynScreen() {
   // Debug log state (visible on screen)
   const [debugLog, setDebugLog] = useState<string>('');
   
-  // Offline mode state
+  // Offline mode state - ALWAYS start ONLINE
   const [isOffline, setIsOffline] = useState(false);
   const [offlineRecordingsCount, setOfflineRecordingsCount] = useState(0);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
