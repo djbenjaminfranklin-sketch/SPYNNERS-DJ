@@ -1,32 +1,110 @@
 /**
- * ACRCloud Direct Recognition Service
+ * ACRCloud Recognition Service via Base44
  * 
- * NOTE: Due to React Native limitations with FormData and Blob,
- * we use the local backend as proxy for ACRCloud on mobile.
- * On web, we can call ACRCloud directly.
- * 
- * Both OFFLINE and ONLINE modes use the Spynners catalog.
- * OFFLINE = Primary key
- * ONLINE = Fallback key (same Spynners catalog)
+ * Uses the Base44 cloud function 'recognizeAudio' which handles
+ * ACRCloud integration server-side (same as the website).
  */
 
-import CryptoJS from 'crypto-js';
 import { Platform } from 'react-native';
 
-// ACRCloud Credentials - Both point to Spynners catalog
-const OFFLINE_CONFIG = {
-  accessKey: 'dec6f0f58197fbc70adf09d41f7451f3',
-  accessSecret: 'qW762evL3yc6MtfPijAZ0xFDcl1ilj81mEzsEr4W',
-  bucketId: '20849',
-  host: 'identify-eu-west-1.acrcloud.com',
-  name: 'Spynners Primary',
-};
+// Base44 API configuration
+const BASE44_APP_ID = process.env.EXPO_PUBLIC_BASE44_APP_ID || 'spynners';
+const BASE44_API_URL = 'https://spynners.base44.app';
 
-const ONLINE_CONFIG = {
-  accessKey: 'c1781c9b84de62679ca8b1f11796e31a',
-  accessSecret: 'ik9dGvBZBCTaY7n15ThmfH5IXW9OXjO8A1Qpbv8J',
-  host: 'identify-eu-west-1.acrcloud.com',
-  name: 'Spynners Fallback',
+export interface ACRCloudResult {
+  success: boolean;
+  found: boolean;
+  title?: string;
+  artist?: string;
+  album?: string;
+  genre?: string;
+  cover_image?: string;
+  score?: number;
+  mode: 'offline' | 'online' | 'none';
+  acr_id?: string;
+  spynners_track_id?: string;
+  producer_id?: string;
+  external_ids?: {
+    isrc?: string;
+    upc?: string;
+  };
+  error?: string;
+}
+
+/**
+ * Call Base44 recognizeAudio function (same as website)
+ */
+export async function recognizeAudioHybrid(audioBase64: string): Promise<ACRCloudResult> {
+  console.log('[ACRCloud] Starting recognition via Base44...');
+  console.log('[ACRCloud] Audio data length:', audioBase64.length, 'Platform:', Platform.OS);
+  
+  try {
+    // Call Base44 function directly - same as website does
+    const response = await fetch(`${BASE44_API_URL}/api/functions/recognizeAudio`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Base44-App-Id': BASE44_APP_ID,
+      },
+      body: JSON.stringify({
+        audio_data: audioBase64,
+        sample_rate: 48000,
+        channels: 2,
+      }),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[ACRCloud] Base44 error:', response.status, errorText);
+      throw new Error(`Base44 error: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log('[ACRCloud] Base44 response:', JSON.stringify(result).substring(0, 300));
+    
+    // Parse response - Base44 function returns data in 'data' field
+    const data = result.data || result;
+    
+    if (data.success && data.found) {
+      // Track found
+      return {
+        success: true,
+        found: true,
+        title: data.title || data.external_metadata?.title,
+        artist: data.artist || data.external_metadata?.artist,
+        album: data.album,
+        genre: data.genre,
+        cover_image: data.cover_image || data.artwork_url,
+        score: data.score,
+        mode: data.mode || 'offline',
+        acr_id: data.acr_id,
+        spynners_track_id: data.spynners_track_id,
+        producer_id: data.producer_id,
+        external_ids: data.external_ids,
+      };
+    }
+    
+    // No match found
+    return {
+      success: true,
+      found: false,
+      mode: 'none',
+      error: data.message || data.error || 'No track found',
+    };
+    
+  } catch (error: any) {
+    console.error('[ACRCloud] Recognition error:', error?.message || error);
+    return {
+      success: false,
+      found: false,
+      mode: 'none',
+      error: error?.message || 'Recognition failed',
+    };
+  }
+}
+
+export default {
+  recognizeAudioHybrid,
 };
 
 export interface ACRCloudResult {
