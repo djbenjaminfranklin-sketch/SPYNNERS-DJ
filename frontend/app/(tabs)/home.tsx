@@ -215,19 +215,14 @@ export default function HomeScreen() {
       console.log('[Home] Tracks loaded:', result?.length || 0);
       
       if (result && result.length > 0) {
-        // Filter ONLY approved tracks
+        // Filter ONLY approved tracks - STRICT: never show rejected or pending
         const approvedTracks = result.filter((track: Track) => 
           track.status === 'approved' || track.is_approved === true
         );
-        console.log('[Home] Approved tracks:', approvedTracks.length);
+        console.log('[Home] Approved tracks:', approvedTracks.length, '/', result.length);
         
-        // If no approved tracks but we got results, show all (API might not have status field)
-        if (approvedTracks.length === 0 && result.length > 0) {
-          console.log('[Home] No approved tracks found, showing all returned tracks');
-          setTracks(result);
-        } else {
-          setTracks(approvedTracks);
-        }
+        // Only show approved tracks, even if it's an empty list
+        setTracks(approvedTracks);
       } else {
         console.log('[Home] No tracks from API, showing demo tracks');
         setTracks(getDemoTracks());
