@@ -124,7 +124,7 @@ export default function ReceivedScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('page.receivedTracks')}</Text>
+        <Text style={styles.headerTitle}>{"🔴 TEST MODIF 🔴"}</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
