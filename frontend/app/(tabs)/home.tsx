@@ -524,9 +524,18 @@ export default function HomeScreen() {
       
       setMembersList(filteredUsers);
       console.log('[SendTrack] Available members:', filteredUsers.length);
+      
+      // Show alert if no members found
+      if (filteredUsers.length === 0) {
+        Alert.alert(
+          'Aucun membre',
+          'Impossible de charger la liste des membres. Vérifiez votre connexion.',
+          [{ text: 'OK' }]
+        );
+      }
     } catch (error) {
       console.error('Error loading members:', error);
-      Alert.alert('Error', 'Could not load members');
+      Alert.alert('Erreur', 'Impossible de charger les membres. Vérifiez votre connexion.');
     } finally {
       setLoadingMembers(false);
     }

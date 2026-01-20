@@ -855,7 +855,7 @@ export default function SpynRecordScreen() {
       }, 1000);
       
       // Start waveform updates
-      waveformIntervalRef.current = setInterval(updateWaveform, 30); // 30ms for smooth animation
+      waveformIntervalRef.current = setInterval(updateWaveform, 50); // 50ms for balanced performance
       
       // Start periodic analysis during recording (every 30 seconds)
       // This allows tracks to be identified and displayed in real-time
@@ -1861,15 +1861,15 @@ export default function SpynRecordScreen() {
             if (response.data.success) {
               console.log('[SPYN Record] Concatenation successful, size:', response.data.size);
               
-              // Save the concatenated audio file
-              const cacheDir = LegacyFileSystem.cacheDirectory || '';
-              const concatenatedPath = `${cacheDir}concatenated_mix_${Date.now()}.m4a`;
+              // Save the concatenated audio file to PERMANENT storage (not cache)
+              const permanentDir = LegacyFileSystem.documentDirectory || '';
+              const concatenatedPath = `${permanentDir}mix_${Date.now()}.m4a`;
               
               await LegacyFileSystem.writeAsStringAsync(concatenatedPath, response.data.audio_base64, {
                 encoding: LegacyFileSystem.EncodingType.Base64,
               });
               
-              console.log('[SPYN Record] Concatenated file saved to:', concatenatedPath);
+              console.log('[SPYN Record] ✅ Concatenated file saved to PERMANENT storage:', concatenatedPath);
               
               // Clean up individual segments
               for (const segmentUri of recordingSegmentsRef.current) {
@@ -1896,8 +1896,23 @@ export default function SpynRecordScreen() {
           return finalUri || '';
         }
       } else if (recordingSegmentsRef.current.length === 1) {
-        // Only one segment, return it directly
-        return recordingSegmentsRef.current[0];
+        // Only one segment - copy to permanent storage
+        const originalUri = recordingSegmentsRef.current[0];
+        const permanentDir = LegacyFileSystem.documentDirectory || '';
+        const permanentPath = `${permanentDir}mix_${Date.now()}.m4a`;
+        
+        try {
+          await LegacyFileSystem.copyAsync({
+            from: originalUri,
+            to: permanentPath,
+          });
+          console.log('[SPYN Record] ✅ Single segment copied to PERMANENT storage:', permanentPath);
+          recordingSegmentsRef.current = [];
+          return permanentPath;
+        } catch (copyError) {
+          console.error('[SPYN Record] Copy to permanent storage failed:', copyError);
+          return originalUri; // Fallback to original
+        }
       }
       
       return finalUri || '';

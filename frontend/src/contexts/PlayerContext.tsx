@@ -1,6 +1,9 @@
-import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
 import { Audio } from 'expo-av';
+import { Platform } from 'react-native';
 import { Track } from '../services/base44Api';
+import { playerEventEmitter } from '../services/playerEventEmitter';
+import { updateNowPlaying, updatePlaybackState, clearNowPlaying } from '../services/trackPlayerService';
 
 interface PlayerContextType {
   currentTrack: Track | null;
@@ -35,6 +38,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   
   // Reference for current track (for use in callbacks)
   const currentTrackRef = useRef<Track | null>(null);
+  
+  // Reference for queue (for use in callbacks)
+  const queueRef = useRef<Track[]>([]);
+  const currentIndexRef = useRef<number>(0);
+  
+  // Keep refs in sync with state
+  useEffect(() => {
+    queueRef.current = queue;
+  }, [queue]);
+  
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -45,6 +61,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       if (previewTimeoutRef.current) {
         clearTimeout(previewTimeoutRef.current);
       }
+      // Clear event listeners
+      playerEventEmitter.clear();
     };
   }, []);
 
@@ -63,26 +81,134 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       }
       
       // Check if we've reached the VIP preview end (use ref for current value)
+      // IMPORTANT: Only apply VIP logic if track is EXPLICITLY marked as VIP with valid preview times
       const track = currentTrackRef.current;
-      if (track?.is_vip && track?.vip_preview_start !== undefined && track?.vip_preview_end !== undefined) {
-        const previewStartMs = track.vip_preview_start * 1000;
+      const isVipTrack = track?.is_vip === true;
+      const hasValidPreview = track?.vip_preview_start !== undefined && 
+                              track?.vip_preview_start !== null &&
+                              track?.vip_preview_start > 0 &&
+                              track?.vip_preview_end !== undefined && 
+                              track?.vip_preview_end !== null &&
+                              track?.vip_preview_end > 0 &&
+                              track?.vip_preview_end > track?.vip_preview_start;
+      
+      if (isVipTrack && hasValidPreview) {
         const previewEndMs = track.vip_preview_end * 1000;
         
-        // Only check if position is within the valid preview range
-        if (status.positionMillis >= previewStartMs && status.positionMillis >= previewEndMs && status.isPlaying) {
+        // Stop only when we reach the preview end
+        if (status.positionMillis >= previewEndMs && status.isPlaying) {
           console.log('[Player] VIP preview ended at', status.positionMillis / 1000, 'seconds (end:', track.vip_preview_end, ')');
-          // Stop playback at preview end
           soundRef.current?.pauseAsync();
           setIsPlaying(false);
         }
       }
       
       if (status.didJustFinish) {
+        console.log('[Player] Track finished, auto-playing next...');
         setIsPlaying(false);
         setPlaybackPosition(0);
+        
+        // Auto-play next track if there's a queue
+        if (queueRef.current.length > 1) {
+          const nextIndex = (currentIndexRef.current + 1) % queueRef.current.length;
+          console.log('[Player] Auto-playing next track, index:', nextIndex);
+          currentIndexRef.current = nextIndex;
+          setCurrentIndex(nextIndex);
+          // Small delay before playing next track for smoother transition
+          setTimeout(() => {
+            playTrackInternal(queueRef.current[nextIndex]);
+          }, 500);
+        }
       }
     }
   };
+
+  // ========== LOCK SCREEN REMOTE CONTROL HANDLERS ==========
+  // These functions are called when the user interacts with the iOS lock screen
+  // or Control Center. They control expo-av, NOT TrackPlayer.
+  
+  const handleRemotePlay = useCallback(async () => {
+    console.log('[Player] Remote play command received');
+    if (soundRef.current) {
+      try {
+        await soundRef.current.playAsync();
+        setIsPlaying(true);
+        // Update lock screen state
+        if (Platform.OS === 'ios') {
+          updatePlaybackState(true);
+        }
+      } catch (error) {
+        console.error('[Player] Remote play error:', error);
+      }
+    }
+  }, []);
+
+  const handleRemotePause = useCallback(async () => {
+    console.log('[Player] Remote pause command received');
+    if (soundRef.current) {
+      try {
+        await soundRef.current.pauseAsync();
+        setIsPlaying(false);
+        // Update lock screen state
+        if (Platform.OS === 'ios') {
+          updatePlaybackState(false);
+        }
+      } catch (error) {
+        console.error('[Player] Remote pause error:', error);
+      }
+    }
+  }, []);
+
+  const handleRemoteStop = useCallback(async () => {
+    console.log('[Player] Remote stop command received');
+    await closePlayer();
+  }, []);
+
+  const handleRemoteSeek = useCallback(async (positionMs: number) => {
+    console.log('[Player] Remote seek command received:', positionMs);
+    await seekTo(positionMs);
+  }, []);
+
+  // Subscribe to lock screen events
+  useEffect(() => {
+    console.log('[Player] Setting up lock screen event listeners');
+    
+    playerEventEmitter.on('play', handleRemotePlay);
+    playerEventEmitter.on('pause', handleRemotePause);
+    playerEventEmitter.on('stop', handleRemoteStop);
+    playerEventEmitter.on('seek', handleRemoteSeek);
+    
+    // For next/previous, we need to use refs since the queue state might not be current
+    const handleRemoteNext = async () => {
+      console.log('[Player] Remote next command received');
+      if (queueRef.current.length <= 1) return;
+      const nextIndex = (currentIndexRef.current + 1) % queueRef.current.length;
+      setCurrentIndex(nextIndex);
+      await playTrackInternal(queueRef.current[nextIndex]);
+    };
+    
+    const handleRemotePrevious = async () => {
+      console.log('[Player] Remote previous command received');
+      if (queueRef.current.length <= 1) return;
+      const prevIndex = currentIndexRef.current > 0 ? currentIndexRef.current - 1 : queueRef.current.length - 1;
+      setCurrentIndex(prevIndex);
+      await playTrackInternal(queueRef.current[prevIndex]);
+    };
+    
+    playerEventEmitter.on('next', handleRemoteNext);
+    playerEventEmitter.on('previous', handleRemotePrevious);
+    
+    return () => {
+      playerEventEmitter.off('play', handleRemotePlay);
+      playerEventEmitter.off('pause', handleRemotePause);
+      playerEventEmitter.off('stop', handleRemoteStop);
+      playerEventEmitter.off('seek', handleRemoteSeek);
+      playerEventEmitter.off('next', handleRemoteNext);
+      playerEventEmitter.off('previous', handleRemotePrevious);
+    };
+  }, [handleRemotePlay, handleRemotePause, handleRemoteStop, handleRemoteSeek]);
+
+  // ========== END LOCK SCREEN HANDLERS ==========
 
   // Flag to prevent concurrent playTrack calls
   const isLoadingTrackRef = useRef(false);
@@ -148,12 +274,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Configure audio mode
+      // Configure audio mode for iOS and Android
+      // iOS requires specific settings for reliable playback
       await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
         shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        allowsRecordingIOS: false,
+        interruptionModeIOS: 1, // Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX = 1
+        interruptionModeAndroid: 1, // Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX = 1
       });
+      console.log('[Player] Audio mode configured for iOS/Android');
 
       // Determine initial position for VIP tracks
       let initialPositionMs = 0;
@@ -188,10 +320,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         console.log('[Player] Seeking complete, VIP check enabled');
       }, 1000);
       
-      // Set timeout for VIP preview end
-      if (track.is_vip && track.vip_preview_start !== undefined && track.vip_preview_end !== undefined) {
+      // Set timeout for VIP preview end - ONLY for valid VIP tracks
+      const isVipTrack = track.is_vip === true;
+      const hasValidPreview = track.vip_preview_start !== undefined && 
+                              track.vip_preview_start !== null &&
+                              track.vip_preview_start > 0 &&
+                              track.vip_preview_end !== undefined && 
+                              track.vip_preview_end !== null &&
+                              track.vip_preview_end > 0 &&
+                              track.vip_preview_end > track.vip_preview_start;
+      
+      if (isVipTrack && hasValidPreview) {
         const previewDurationMs = (track.vip_preview_end - track.vip_preview_start) * 1000;
-        console.log('[Player] VIP preview duration:', previewDurationMs / 1000, 'seconds');
+        console.log('[Player] VIP track - preview duration:', previewDurationMs / 1000, 'seconds');
         
         previewTimeoutRef.current = setTimeout(async () => {
           console.log('[Player] VIP preview timeout reached');
@@ -200,9 +341,32 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
             setIsPlaying(false);
           }
         }, previewDurationMs);
+      } else {
+        console.log('[Player] Normal track (not VIP) - no preview limit');
       }
       
       console.log('[Player] Playing:', track.title);
+      
+      // Update iOS lock screen / Control Center with track info
+      if (Platform.OS === 'ios') {
+        const trackId = track.id || track._id || '';
+        const artistName = track.producer_name || track.artist_name || 'Unknown Artist';
+        const artworkUrl = track.artwork_url || track.cover_image;
+        
+        try {
+          await updateNowPlaying({
+            id: trackId,
+            title: track.title,
+            artist: artistName,
+            artwork: artworkUrl,
+            duration: playbackDuration / 1000, // Convert ms to seconds
+          });
+          await updatePlaybackState(true, initialPositionMs);
+          console.log('[Player] Lock screen updated for:', track.title);
+        } catch (lockScreenError) {
+          console.log('[Player] Lock screen update failed (non-fatal):', lockScreenError);
+        }
+      }
     } catch (error) {
       console.error('[Player] Error playing track:', error);
     } finally {
@@ -233,10 +397,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Configure audio mode for iOS and Android
       await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
         staysActiveInBackground: true,
         shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        allowsRecordingIOS: false,
+        interruptionModeIOS: 1,
+        interruptionModeAndroid: 1,
       });
 
       const { sound } = await Audio.Sound.createAsync(
@@ -246,11 +415,31 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       );
 
       soundRef.current = sound;
+      currentTrackRef.current = track; // Update ref for callbacks
       setCurrentTrack(track);
       setIsPlaying(true);
       setPlaybackPosition(0);
       
       console.log('[Player] Playing (internal):', track.title);
+      
+      // Update iOS lock screen
+      if (Platform.OS === 'ios') {
+        const trackId = track.id || track._id || '';
+        const artistName = track.producer_name || track.artist_name || 'Unknown Artist';
+        const artworkUrl = track.artwork_url || track.cover_image;
+        
+        try {
+          await updateNowPlaying({
+            id: trackId,
+            title: track.title,
+            artist: artistName,
+            artwork: artworkUrl,
+          });
+          await updatePlaybackState(true, 0);
+        } catch (e) {
+          console.log('[Player] Lock screen update failed (non-fatal)');
+        }
+      }
     } catch (error) {
       console.error('[Player] Error playing track:', error);
     } finally {
@@ -275,16 +464,51 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   };
 
   const togglePlayPause = async () => {
-    if (!soundRef.current) return;
+    if (!soundRef.current) {
+      console.log('[Player] togglePlayPause: No sound loaded');
+      return;
+    }
     
     try {
-      if (isPlaying) {
+      // Get the actual status from the sound object (more reliable than state on iOS)
+      const status = await soundRef.current.getStatusAsync();
+      console.log('[Player] togglePlayPause - Current status:', status.isLoaded ? (status.isPlaying ? 'playing' : 'paused') : 'not loaded');
+      
+      if (!status.isLoaded) {
+        console.log('[Player] Sound not loaded, cannot toggle');
+        return;
+      }
+      
+      if (status.isPlaying) {
+        console.log('[Player] Pausing...');
         await soundRef.current.pauseAsync();
+        // Immediately update state for responsive UI (don't wait for callback)
+        setIsPlaying(false);
+        // Update lock screen
+        if (Platform.OS === 'ios') {
+          updatePlaybackState(false, status.positionMillis);
+        }
       } else {
+        console.log('[Player] Playing...');
         await soundRef.current.playAsync();
+        // Immediately update state for responsive UI (don't wait for callback)
+        setIsPlaying(true);
+        // Update lock screen
+        if (Platform.OS === 'ios') {
+          updatePlaybackState(true, status.positionMillis);
+        }
       }
     } catch (error) {
       console.error('[Player] Error toggling play/pause:', error);
+      // Try to recover by getting current status
+      try {
+        const status = await soundRef.current?.getStatusAsync();
+        if (status?.isLoaded) {
+          setIsPlaying(status.isPlaying);
+        }
+      } catch (e) {
+        // Ignore recovery error
+      }
     }
   };
 
@@ -311,9 +535,19 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         soundRef.current = null;
       }
       setCurrentTrack(null);
+      currentTrackRef.current = null;
       setIsPlaying(false);
       setPlaybackPosition(0);
       setPlaybackDuration(0);
+      
+      // Clear iOS lock screen
+      if (Platform.OS === 'ios') {
+        try {
+          await clearNowPlaying();
+        } catch (e) {
+          console.log('[Player] Clear lock screen failed (non-fatal)');
+        }
+      }
     } catch (error) {
       console.error('[Player] Error closing:', error);
     }
