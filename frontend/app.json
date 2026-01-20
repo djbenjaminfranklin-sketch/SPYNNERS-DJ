@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.abbas.spynners",
-      "buildNumber": "61",
+      "buildNumber": "63",
       "associatedDomains": [
         "applinks:spynners.com",
         "webcredentials:spynners.com"
@@ -23,7 +23,8 @@
         "NSLocationWhenInUseUsageDescription": "SPYNNERS utilise votre position pour trouver les clubs et événements DJ à proximité.",
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
-          "audio"
+          "audio",
+          "remote-notification"
         ],
         "NSAppleMusicUsageDescription": "SPYNNERS peut accéder à Apple Music pour enrichir les informations des morceaux identifiés."
       },
@@ -44,7 +45,10 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.FOREGROUND_SERVICE",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -54,6 +58,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/withUSBAudioDetection",
       [
         "expo-location",
         {
@@ -79,7 +84,9 @@
         "expo-notifications",
         {
           "icon": "./assets/images/spynners-logo.png",
-          "color": "#00D4FF"
+          "color": "#00D4FF",
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": true
         }
       ]
     ],
@@ -88,7 +95,7 @@
     },
     "extra": {
       "router": {},
-      "backendUrl": "https://spynner-stable.preview.emergentagent.com",
+      "backendUrl": "https://djspyn.preview.emergentagent.com",
       "base44AppId": "691a4d96d819355b52c063f3",
       "acrcloudHost": "identify-eu-west-1.acrcloud.com",
       "eas": {

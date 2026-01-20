@@ -21,8 +21,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage, LANGUAGES, Language } from '../../src/contexts/LanguageContext';
 import { usePlayer } from '../../src/contexts/PlayerContext';
+import { useNotifications } from '../../src/contexts/NotificationContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
-import { base44Tracks, base44Playlists, base44Notifications2, base44Users, base44TrackSend, Track, Notification } from '../../src/services/base44Api';
+import { base44Tracks, base44Playlists, base44Notifications2, base44Users, base44TrackSend, base44PushNotifications, Track, Notification } from '../../src/services/base44Api';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import NotificationModal from '../../src/components/NotificationModal';
@@ -606,6 +607,21 @@ export default function HomeScreen() {
       setShowSendTrackModal(false);
       setSelectedTrackForSend(null);
       setMemberSearchQuery('');
+      
+      // Send push notification to recipient
+      console.log('[SendTrack] Sending push notification to:', memberId);
+      base44PushNotifications.sendPushNotification({
+        recipientUserId: memberId,
+        senderName: user?.full_name || user?.name || 'Someone',
+        messageContent: `🎵 New track: "${selectedTrackForSend.title}"`,
+        messageId: trackId,
+      }).then(success => {
+        if (success) {
+          console.log('[SendTrack] Push notification sent successfully');
+        }
+      }).catch(err => {
+        console.log('[SendTrack] Push notification error:', err);
+      });
     } catch (error) {
       console.error('Error sending track:', error);
       Alert.alert(t('common.error'), t('common.couldNotSendTrack'));
@@ -784,33 +800,18 @@ export default function HomeScreen() {
     return track.average_rating || track.rating || 0;
   };
 
-  // Notification state
-  const [notificationCount, setNotificationCount] = useState(0);
+  // Use notification context for real-time updates
+  const { unreadCount: notificationCount, refreshUnreadCount, clearNotifications } = useNotifications();
   
-  // Load notifications count - refresh every 30 seconds
+  // Refresh notifications when user changes
   useEffect(() => {
-    loadNotifications();
-    
-    // Set up interval to refresh notifications every 30 seconds
-    const notifInterval = setInterval(() => {
-      loadNotifications();
-    }, 30000);
-    
-    return () => clearInterval(notifInterval);
-  }, [user]);
-
-  const loadNotifications = async () => {
-    try {
+    if (user) {
       const userId = user?.id || user?._id || '';
       if (userId) {
-        const count = await base44Notifications2.getUnreadCount(userId);
-        setNotificationCount(count);
-        console.log('[Home] Notification count:', count);
+        refreshUnreadCount(userId);
       }
-    } catch (error) {
-      console.error('[Home] Error loading notifications:', error);
     }
-  };
+  }, [user, refreshUnreadCount]);
 
   // Get current language info
   const currentLang = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
