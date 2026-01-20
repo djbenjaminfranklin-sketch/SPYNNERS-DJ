@@ -2184,19 +2184,34 @@ export const base44TrackSend = {
         console.log('[TrackSend] Could not fetch tracks via base44Tracks.list:', e);
       }
       
-      // Create a map for fast lookup by ID
-      const trackMap = new Map<string, Track>();
+      // Create maps for fast lookup by ID AND by title (fallback)
+      const trackMapById = new Map<string, Track>();
+      const trackMapByTitle = new Map<string, Track>();
       allTracks.forEach(track => {
         const id = track.id || track._id || '';
-        if (id) trackMap.set(id, track);
+        if (id) trackMapById.set(id, track);
+        // Also map by title (normalized lowercase) for fallback matching
+        const title = (track.title || '').toLowerCase().trim();
+        if (title) trackMapByTitle.set(title, track);
       });
       
-      console.log('[TrackSend] Track map size:', trackMap.size);
+      console.log('[TrackSend] Track maps: byId=', trackMapById.size, 'byTitle=', trackMapByTitle.size);
       
       // Enrich each TrackSend with audio_url from the track map
       const enrichedTracks = tracks.map((trackSend) => {
-        if (trackSend.track_id && !trackSend.track_audio_url) {
-          const trackData = trackMap.get(trackSend.track_id);
+        if (!trackSend.track_audio_url) {
+          // Try to find by ID first
+          let trackData = trackSend.track_id ? trackMapById.get(trackSend.track_id) : null;
+          
+          // Fallback: try to find by title
+          if (!trackData && trackSend.track_title) {
+            const normalizedTitle = trackSend.track_title.toLowerCase().trim();
+            trackData = trackMapByTitle.get(normalizedTitle);
+            if (trackData) {
+              console.log('[TrackSend] Found track by TITLE match:', trackSend.track_title);
+            }
+          }
+          
           if (trackData?.audio_url) {
             console.log('[TrackSend] Enriched track:', trackSend.track_title, 'with audio URL');
             return {
@@ -2208,7 +2223,7 @@ export const base44TrackSend = {
               track_genre: trackSend.track_genre || trackData.genre,
             };
           } else {
-            console.log('[TrackSend] Could not find track in map:', trackSend.track_id, trackSend.track_title);
+            console.log('[TrackSend] Could not find track:', trackSend.track_id, trackSend.track_title);
           }
         }
         return trackSend;
