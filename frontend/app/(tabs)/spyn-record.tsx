@@ -171,6 +171,10 @@ export default function SpynRecordScreen() {
   // VU Meter levels
   const [vuLevels, setVuLevels] = useState<{left: number, right: number}>({left: 0, right: 0});
   
+  // Real audio metering level from recording (for native platforms)
+  const currentMeteringRef = useRef<number>(-160); // dB level, -160 = silence
+  const meteringHistoryRef = useRef<number[]>([]); // History for waveform display
+  
   // Refs
   const recordingRef = useRef<Audio.Recording | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -729,46 +733,62 @@ export default function SpynRecordScreen() {
       const rightLevel = Math.min(100, avgLevel + (Math.random() * 10 - 5));
       setVuLevels({ left: leftLevel, right: rightLevel });
     } else if (isRecordingRef.current && !isPaused) {
-      // For native mobile: Generate animated waveform based on recording status
-      // This provides visual feedback even though we can't access real audio data
+      // For native mobile: Use REAL metering data from recording
+      // Get the current metering level (stored by the metering interval)
+      const currentDb = currentMeteringRef.current;
+      
+      // Convert dB to percentage (dB range: -160 to 0)
+      // -160 dB = silence, -20 dB = loud, 0 dB = max
+      const normalizedLevel = Math.max(0, Math.min(100, ((currentDb + 60) / 60) * 100));
+      
+      // Add to history for waveform display
+      meteringHistoryRef.current.push(normalizedLevel);
+      
+      // Keep only last 40 values for the waveform
+      if (meteringHistoryRef.current.length > 40) {
+        meteringHistoryRef.current.shift();
+      }
+      
+      // Generate bars from metering history
       const bars: WaveformBar[] = [];
-      const time = Date.now() / 1000;
+      const history = meteringHistoryRef.current;
       
       for (let i = 0; i < 40; i++) {
-        // Create a wave pattern that looks like real audio
-        const wave1 = Math.sin(time * 2 + i * 0.3) * 30;
-        const wave2 = Math.sin(time * 3.5 + i * 0.2) * 20;
-        const wave3 = Math.sin(time * 1.2 + i * 0.5) * 15;
-        const noise = Math.random() * 15;
+        // Use history value if available, otherwise use low value
+        const historyIndex = history.length - 40 + i;
+        const level = historyIndex >= 0 ? history[historyIndex] : 0;
         
-        // Combine waves for more natural look
-        const baseHeight = 25 + wave1 + wave2 + wave3 + noise;
-        const height = Math.max(8, Math.min(85, baseHeight));
+        // Add small variation for visual interest but keep it based on real data
+        const variation = (Math.random() - 0.5) * 5;
+        const height = Math.max(3, Math.min(90, level + variation));
         
         // Color based on intensity
         let color = CYAN_COLOR;
-        if (height > 65) color = PINK_COLOR;
+        if (height > 70) color = PINK_COLOR;
         else if (height > 50) color = ORANGE_COLOR;
-        else if (height > 35) color = GREEN_COLOR;
+        else if (height > 30) color = GREEN_COLOR;
         
         bars.push({ height, color });
       }
       
       setWaveformData(bars);
       
-      // Update VU meter levels for native
-      const avgLevel = bars.reduce((sum, bar) => sum + bar.height, 0) / bars.length;
-      const leftLevel = Math.min(100, avgLevel + (Math.random() * 10 - 5));
-      const rightLevel = Math.min(100, avgLevel + (Math.random() * 10 - 5));
+      // Update VU meter levels based on REAL metering
+      const leftLevel = Math.min(100, normalizedLevel + (Math.random() * 3 - 1.5));
+      const rightLevel = Math.min(100, normalizedLevel + (Math.random() * 3 - 1.5));
       setVuLevels({ left: leftLevel, right: rightLevel });
     } else {
-      // Not recording - show static low bars
+      // Not recording - show static low bars (silence)
       const bars: WaveformBar[] = [];
       for (let i = 0; i < 40; i++) {
-        bars.push({ height: 5, color: CYAN_COLOR });
+        bars.push({ height: 3, color: '#333' });
       }
       setWaveformData(bars);
       setVuLevels({ left: 0, right: 0 });
+      
+      // Clear metering history when not recording
+      meteringHistoryRef.current = [];
+      currentMeteringRef.current = -160;
     }
   }, [isPaused]);
 
@@ -1009,14 +1029,24 @@ export default function SpynRecordScreen() {
       // Wait a bit more before creating new recording
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Use the modern API - createAsync with HIGH_QUALITY preset (same as SPYN)
-      console.log('[SPYN Record] Creating recording...');
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      // Use the modern API - createAsync with HIGH_QUALITY preset + METERING ENABLED
+      console.log('[SPYN Record] Creating recording with metering enabled...');
+      const recordingOptions = {
+        ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+        isMeteringEnabled: true, // Enable metering for real waveform
+      };
+      const { recording } = await Audio.Recording.createAsync(recordingOptions);
       recordingRef.current = recording;
       
-      console.log('[SPYN Record] ✅ Native recording started successfully, recording object:', !!recording);
+      // Set up metering updates for real-time waveform
+      recording.setOnRecordingStatusUpdate((status) => {
+        if (status.isRecording && status.metering !== undefined) {
+          // Store the current metering level for waveform display
+          currentMeteringRef.current = status.metering;
+        }
+      });
+      
+      console.log('[SPYN Record] ✅ Native recording started with metering, recording object:', !!recording);
     } catch (error: any) {
       console.error('[SPYN Record] ❌ Native recording error:', error?.message || error);
       
@@ -1035,11 +1065,21 @@ export default function SpynRecordScreen() {
           });
           await new Promise(resolve => setTimeout(resolve, 300));
           
-          const { recording } = await Audio.Recording.createAsync(
-            Audio.RecordingOptionsPresets.HIGH_QUALITY
-          );
+          const retryRecordingOptions = {
+            ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+            isMeteringEnabled: true,
+          };
+          const { recording } = await Audio.Recording.createAsync(retryRecordingOptions);
           recordingRef.current = recording;
-          console.log('[SPYN Record] ✅ Recovery successful!');
+          
+          // Set up metering updates
+          recording.setOnRecordingStatusUpdate((status) => {
+            if (status.isRecording && status.metering !== undefined) {
+              currentMeteringRef.current = status.metering;
+            }
+          });
+          
+          console.log('[SPYN Record] ✅ Recovery successful with metering!');
           return;
         } catch (retryError) {
           console.error('[SPYN Record] Recovery failed:', retryError);
@@ -1154,7 +1194,7 @@ export default function SpynRecordScreen() {
             
             // 4. Restart recording if still in recording mode
             if (isRecordingRef.current) {
-              console.log('[SPYN Record] Restarting recording...');
+              console.log('[SPYN Record] Restarting recording with metering...');
               try {
                 await Audio.setAudioModeAsync({
                   allowsRecordingIOS: true,
@@ -1164,11 +1204,21 @@ export default function SpynRecordScreen() {
                 // Small delay before creating new recording
                 await new Promise(resolve => setTimeout(resolve, 100));
                 
-                const { recording: newRecording } = await Audio.Recording.createAsync(
-                  Audio.RecordingOptionsPresets.HIGH_QUALITY
-                );
+                const newRecordingOptions = {
+                  ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+                  isMeteringEnabled: true,
+                };
+                const { recording: newRecording } = await Audio.Recording.createAsync(newRecordingOptions);
                 recordingRef.current = newRecording;
-                console.log('[SPYN Record] Recording restarted successfully');
+                
+                // Set up metering updates for the new recording
+                newRecording.setOnRecordingStatusUpdate((status) => {
+                  if (status.isRecording && status.metering !== undefined) {
+                    currentMeteringRef.current = status.metering;
+                  }
+                });
+                
+                console.log('[SPYN Record] Recording restarted with metering successfully');
               } catch (restartErr) {
                 console.error('[SPYN Record] Restart error:', restartErr);
                 // If restart fails, stop the session
