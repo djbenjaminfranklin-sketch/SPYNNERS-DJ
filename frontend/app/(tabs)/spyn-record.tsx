@@ -41,6 +41,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import offlineService from '../../src/services/offlineService';
 import { base44Spyn, base44Tracks } from '../../src/services/base44Api';
+import { saveLocalMix } from '../profile/my-mixes';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -57,7 +58,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return 'https://spynner-stable.preview.emergentagent.com';
+  return 'https://trackmix-6.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 
@@ -191,7 +192,6 @@ export default function SpynRecordScreen() {
     requestPermissions();
     detectAudioSources();
     initOfflineService();
-    requestLocationPermission();
     
     // Listen for device changes (plug/unplug)
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices) {
@@ -215,6 +215,14 @@ export default function SpynRecordScreen() {
       }
     };
   }, []);
+
+  // Request location AFTER auth is ready (token available)
+  useEffect(() => {
+    if (token) {
+      console.log('[SPYN Record] Auth token available, requesting location permission...');
+      requestLocationPermission();
+    }
+  }, [token]);
 
   // ==================== LOCATION ====================
 
@@ -271,14 +279,43 @@ export default function SpynRecordScreen() {
         'neighborhood', 'premise', 'subpremise', 'natural_feature', 'park'
       ];
       
-      // Try to get venue from Base44 getNearbyPlaces function (Google Places)
+      // Try Google Places FIRST, fallback to Foursquare (same as website)
       try {
-        console.log('[SPYN Record] Calling getNearbyPlaces for:', lat, lng);
-        const placesResponse = await base44Spyn.getNearbyPlaces({
-          latitude: lat,
-          longitude: lng,
-          radius: 1000,
-        });
+        console.log('[SPYN Record] Trying Google Places for:', lat, lng);
+        
+        // Add timeout to prevent UI freeze
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 8000)
+        );
+        
+        // Try Google Places first
+        let placesResponse: any = null;
+        try {
+          const placesPromise = base44Spyn.getNearbyPlaces({
+            latitude: lat,
+            longitude: lng,
+            radius: 1000,
+          });
+          placesResponse = await Promise.race([placesPromise, timeoutPromise]) as any;
+          console.log('[SPYN Record] Google Places response:', JSON.stringify(placesResponse));
+        } catch (gpError) {
+          console.log('[SPYN Record] Google Places failed, trying Foursquare...');
+        }
+        
+        // Fallback to Foursquare if Google Places failed or returned no venue
+        if (!placesResponse || placesResponse.error || (!placesResponse.venue && !placesResponse.places?.length)) {
+          try {
+            const foursquarePromise = base44Spyn.findNearbyVenueFoursquare({
+              latitude: lat,
+              longitude: lng,
+              radius: 500,
+            });
+            placesResponse = await Promise.race([foursquarePromise, timeoutPromise]) as any;
+            console.log('[SPYN Record] Foursquare response:', JSON.stringify(placesResponse));
+          } catch (fsError) {
+            console.log('[SPYN Record] Foursquare also failed');
+          }
+        }
         
         console.log('[SPYN Record] getNearbyPlaces response:', JSON.stringify(placesResponse));
         
@@ -399,11 +436,11 @@ export default function SpynRecordScreen() {
       
       if (pendingCount > 0 && !isOffline) {
         Alert.alert(
-          'Sessions en attente',
-          `Vous avez ${pendingCount} session(s) à synchroniser. Voulez-vous les synchroniser maintenant ?`,
+          'Pending Sessions',
+          `You have ${pendingCount} session(s) to sync. Do you want to sync them now?`,
           [
-            { text: 'Plus tard', style: 'cancel' },
-            { text: 'Synchroniser', onPress: syncAllOfflineSessions }
+            { text: 'Later', style: 'cancel' },
+            { text: 'Sync', onPress: syncAllOfflineSessions }
           ]
         );
       }
@@ -415,14 +452,14 @@ export default function SpynRecordScreen() {
   // Sync all offline sessions
   const syncAllOfflineSessions = async () => {
     try {
-      setCurrentAnalysis('Synchronisation en cours...');
+      setCurrentAnalysis('Syncing...');
       const result = await offlineService.syncPendingSessions(token || '');
       
       if (result.synced > 0) {
-        Alert.alert('Succès', `${result.synced} session(s) synchronisée(s) !`);
+        Alert.alert('Success', `${result.synced} session(s) synced!`);
       }
       if (result.failed > 0) {
-        Alert.alert('Attention', `${result.failed} session(s) ont échoué. Réessayez plus tard.`);
+        Alert.alert('Warning', `${result.failed} session(s) failed. Try again later.`);
       }
       
       // Update pending count
@@ -430,7 +467,7 @@ export default function SpynRecordScreen() {
       setPendingSyncCount(pendingCount);
     } catch (error) {
       console.error('[SPYN Record] Sync error:', error);
-      Alert.alert('Erreur', 'Impossible de synchroniser les sessions.');
+      Alert.alert('Error', 'Could not sync sessions.');
     } finally {
       setCurrentAnalysis('');
     }
@@ -606,7 +643,7 @@ export default function SpynRecordScreen() {
           staysActiveInBackground: true,
         });
       } else {
-        Alert.alert('Permission requise', 'L\'accès au microphone est nécessaire pour enregistrer.');
+        Alert.alert('Permission Required', 'Microphone access is needed to record.');
       }
     } catch (error) {
       console.error('Permission error:', error);
@@ -906,11 +943,11 @@ export default function SpynRecordScreen() {
     } catch (error: any) {
       console.error('[SPYN Record] ❌ Web recording error:', error);
       if (error.name === 'NotAllowedError') {
-        Alert.alert('Permission refusée', 'Vous devez autoriser l\'accès au microphone pour enregistrer.');
+        Alert.alert('Permission Denied', 'You must allow microphone access to record.');
       } else if (error.name === 'NotFoundError') {
-        Alert.alert('Microphone non trouvé', 'Aucun microphone n\'a été détecté.');
+        Alert.alert('Microphone Not Found', 'No microphone was detected.');
       } else {
-        Alert.alert('Erreur', `Impossible d'accéder au microphone: ${error.message}`);
+        Alert.alert('Error', `Could not access microphone: ${error.message}`);
       }
       throw error;
     }
@@ -940,7 +977,7 @@ export default function SpynRecordScreen() {
       
       if (!granted) {
         console.log('[SPYN Record] Audio permission not granted');
-        Alert.alert('Permission requise', 'L\'accès au microphone est nécessaire');
+        Alert.alert('Permission Required', 'Microphone access is needed');
         throw new Error('Permission not granted');
       }
       
@@ -992,7 +1029,7 @@ export default function SpynRecordScreen() {
         }
       }
       
-      Alert.alert('Erreur', `Impossible de démarrer l'enregistrement: ${error?.message || 'Erreur inconnue'}`);
+      Alert.alert('Error', `Could not start recording: ${error?.message || 'Unknown error'}`);
       throw error;
     }
   };
@@ -1120,7 +1157,7 @@ export default function SpynRecordScreen() {
                 // If restart fails, stop the session
                 setIsRecording(false);
                 isRecordingRef.current = false;
-                Alert.alert('Erreur', 'Impossible de continuer l\'enregistrement. Session sauvegardée.');
+                Alert.alert('Error', 'Could not continue recording. Session saved.');
               }
             }
           } catch (err) {
@@ -1570,7 +1607,25 @@ export default function SpynRecordScreen() {
         console.log('[SPYN Record] Session completed - not saving to offline storage');
         console.log('[SPYN Record] Session data:', JSON.stringify(sessionData, null, 2));
         
-        // TODO: In the future, send session to Spynners API here
+        // AUTO-SAVE to My Mixes (Local Storage)
+        try {
+          console.log('[SPYN Record] 📤 Saving mix to My Mixes (local)...');
+          await saveLocalMix({
+            user_id: user?.id || user?._id || '',
+            user_name: whoPlayed === 'another' ? otherDjName : (user?.full_name || 'DJ'),
+            audio_url: fileUri, // Local file URI
+            duration: recordingDuration,
+            session_id: sessionData.id,
+            city: location?.city || '',
+            country: location?.country || '',
+            venue: correctedVenue || location?.venue || '',
+            tracks_count: allTracks.length,
+          });
+          console.log('[SPYN Record] ✅ Mix saved to My Mixes');
+        } catch (mixError: any) {
+          console.error('[SPYN Record] ❌ Failed to save mix:', mixError?.message || mixError);
+          // Don't fail the session if mix save fails
+        }
         
         console.log('[SPYN Record] Session saved successfully');
         
@@ -1599,14 +1654,14 @@ export default function SpynRecordScreen() {
         
         // Show completion alert
         Alert.alert(
-          '🎉 Session terminée !',
-          `Durée: ${formatDuration(recordingDuration)}\nTracks identifiés: ${allTracks.length}${saveMix ? '\n\n📁 Le mix a été préparé pour la sauvegarde.' : ''}`,
+          '🎉 Session Complete!',
+          `Duration: ${formatDuration(recordingDuration)}\nTracks identified: ${allTracks.length}${saveMix ? '\n\n📁 The mix has been prepared for saving.' : ''}`,
           [{ text: 'OK' }]
         );
         
       } catch (saveError) {
         console.error('[SPYN Record] Error saving session:', saveError);
-        Alert.alert('Erreur', 'Impossible de sauvegarder la session');
+        Alert.alert('Error', 'Could not save the session');
       }
       
     } catch (error) {
@@ -1742,7 +1797,7 @@ export default function SpynRecordScreen() {
       console.log('[SPYN Record] Saving recording from:', fileUri);
       
       if (!fileUri) {
-        Alert.alert('Erreur', 'Aucun fichier audio à sauvegarder');
+        Alert.alert('Error', 'No audio file to save');
         return;
       }
       
@@ -1758,13 +1813,13 @@ export default function SpynRecordScreen() {
         link.click();
         document.body.removeChild(link);
         
-        Alert.alert('✅ Téléchargement lancé', 'Votre mix a été téléchargé.');
+        Alert.alert('✅ Download Started', 'Your mix has been downloaded.');
       } else {
         // On iOS/Android, share the M4A file directly
         // M4A (AAC) is a high-quality format supported by all devices
         // No conversion needed - M4A is the native iOS recording format
         console.log('[SPYN Record] Preparing M4A file for sharing...');
-        setCurrentAnalysis('Préparation du fichier audio...');
+        setCurrentAnalysis('Preparing audio file...');
         
         try {
           // Copy the file to a properly named location for sharing
@@ -1797,7 +1852,7 @@ export default function SpynRecordScreen() {
     } catch (error: any) {
       console.error('[SPYN Record] Save error:', error);
       setCurrentAnalysis('');
-      Alert.alert('Erreur', `Impossible de sauvegarder: ${error.message || 'Erreur inconnue'}`);
+      Alert.alert('Error', `Could not save: ${error.message || 'Unknown error'}`);
     }
   };
 
