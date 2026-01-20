@@ -6,34 +6,40 @@
  */
 
 import TrackPlayer, { Event, RepeatMode, Capability } from 'react-native-track-player';
+import { playerEventEmitter } from './playerEventEmitter';
 
 export async function PlaybackService() {
   // Remote Play - only triggered by user action on lock screen / Control Center
   TrackPlayer.addEventListener(Event.RemotePlay, () => {
+    playerEventEmitter.emit('play');
     console.log('[TrackPlayer] Remote Play - user pressed play');
     TrackPlayer.play();
   });
 
   // Remote Pause - only triggered by user action
   TrackPlayer.addEventListener(Event.RemotePause, () => {
+    playerEventEmitter.emit('pause');
     console.log('[TrackPlayer] Remote Pause - user pressed pause');
     TrackPlayer.pause();
   });
 
   // Remote Stop
   TrackPlayer.addEventListener(Event.RemoteStop, () => {
+    playerEventEmitter.emit('stop');
     console.log('[TrackPlayer] Remote Stop');
     TrackPlayer.stop();
   });
 
   // Remote Next
   TrackPlayer.addEventListener(Event.RemoteNext, () => {
+    playerEventEmitter.emit('next');
     console.log('[TrackPlayer] Remote Next');
     TrackPlayer.skipToNext();
   });
 
   // Remote Previous
   TrackPlayer.addEventListener(Event.RemotePrevious, () => {
+    playerEventEmitter.emit('previous');
     console.log('[TrackPlayer] Remote Previous');
     TrackPlayer.skipToPrevious();
   });

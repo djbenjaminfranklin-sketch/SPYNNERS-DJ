@@ -1824,6 +1824,7 @@ export default function SpynRecordScreen() {
   };
 
   const stopNativeRecording = async (): Promise<string> => {
+    console.log('[SPYN Record] stopNativeRecording called, recordingRef.current:', !!recordingRef.current, 'segments:', recordingSegmentsRef.current.length);
     if (recordingRef.current) {
       // Stop the final recording segment
       await recordingRef.current.stopAndUnloadAsync();
@@ -1925,6 +1926,22 @@ export default function SpynRecordScreen() {
       }
       
       return finalUri || '';
+    }
+    // Even if no active recording, check if we have segments
+    if (recordingSegmentsRef.current.length > 0) {
+      console.log('[SPYN Record] No active recording but found', recordingSegmentsRef.current.length, 'segments');
+      const lastSegment = recordingSegmentsRef.current[recordingSegmentsRef.current.length - 1];
+      const permanentDir = LegacyFileSystem.documentDirectory || '';
+      const permanentPath = `${permanentDir}mix_${Date.now()}.m4a`;
+      try {
+        await LegacyFileSystem.copyAsync({ from: lastSegment, to: permanentPath });
+        console.log('[SPYN Record] Saved last segment to:', permanentPath);
+        recordingSegmentsRef.current = [];
+        return permanentPath;
+      } catch (e) {
+        console.error('[SPYN Record] Error saving segment:', e);
+        return lastSegment;
+      }
     }
     return '';
   };

@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
+import * as LegacyFileSystem from 'expo-file-system/legacy';
 // SDK removed - causes Hermes crash
 
 // Backend URL for web proxy
@@ -1243,7 +1244,7 @@ export const base44Files = {
       // For local files (audio), convert to base64 and upload
       console.log('[Files] Converting local file to base64...');
       
-      const base64Content = await FileSystem.readAsStringAsync(fileUri, {
+      const base64Content = await LegacyFileSystem.readAsStringAsync(fileUri, {
         encoding: FileSystem.EncodingType.Base64,
       });
       const base64Data = `data:${actualMimeType};base64,${base64Content}`;
@@ -1979,6 +1980,21 @@ export const base44TrackSend = {
       return received.filter(t => !t.viewed).length;
     } catch (error) {
       return 0;
+    }
+  },
+
+  /**
+   * Delete a received track
+   */
+  async delete(trackSendId: string): Promise<boolean> {
+    try {
+      console.log('[TrackSend] Deleting track:', trackSendId);
+      await mobileApi.delete(`/api/base44/entities/TrackSend/${trackSendId}`);
+      console.log('[TrackSend] Track deleted successfully');
+      return true;
+    } catch (error) {
+      console.error('[TrackSend] Error deleting track:', error);
+      return false;
     }
   },
 };

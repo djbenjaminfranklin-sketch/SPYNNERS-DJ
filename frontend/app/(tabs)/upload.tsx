@@ -22,6 +22,15 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
 import base44Api, { base44Tracks, base44Users, base44Files, Track, User } from '../../src/services/base44Api';
 
+// Backend URL for API calls
+const getBackendUrl = () => {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return 'https://djspyn.preview.emergentagent.com';
+};
+const BACKEND_URL = getBackendUrl();
+
 // Genre options - same as spynners.com
 const GENRES = [
   'Afro House', 'Tech House', 'Deep House', 'Melodic House & Techno',
@@ -182,7 +191,7 @@ export default function UploadScreen() {
             const formData = new FormData();
             formData.append('file', blob, file.name);
             
-            const response = await fetch('/api/extract-mp3-metadata', {
+            const response = await fetch(`${BACKEND_URL}/api/extract-mp3-metadata`, {
               method: 'POST',
               body: formData,
             });
@@ -220,7 +229,7 @@ export default function UploadScreen() {
               type: 'audio/mpeg',
             } as any);
             
-            const response = await fetch('/api/extract-mp3-metadata', {
+            const response = await fetch(`${BACKEND_URL}/api/extract-mp3-metadata`, {
               method: 'POST',
               body: formData,
             });
