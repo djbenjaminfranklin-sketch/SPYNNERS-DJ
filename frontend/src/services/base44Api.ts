@@ -2174,18 +2174,14 @@ export const base44TrackSend = {
       if (Array.isArray(data)) tracks = data;
       else if (data?.items) tracks = data.items;
       
-      // Fetch ALL tracks from the working API (same as home page)
+      // Fetch ALL tracks using the SAME method as home page (base44Tracks.list)
       let allTracks: Track[] = [];
       try {
-        const allTracksResponse = await mobileApi.post('/api/tracks/all', { limit: 500, offset: 0 });
-        if (allTracksResponse.data?.tracks) {
-          allTracks = allTracksResponse.data.tracks;
-        } else if (Array.isArray(allTracksResponse.data)) {
-          allTracks = allTracksResponse.data;
-        }
-        console.log('[TrackSend] Fetched', allTracks.length, 'tracks for enrichment');
+        // Use base44Tracks.list() - this works on both mobile and web
+        allTracks = await base44Tracks.list({ limit: 500 });
+        console.log('[TrackSend] Fetched', allTracks.length, 'tracks for enrichment via base44Tracks.list');
       } catch (e) {
-        console.log('[TrackSend] Could not fetch all tracks for enrichment');
+        console.log('[TrackSend] Could not fetch tracks via base44Tracks.list:', e);
       }
       
       // Create a map for fast lookup by ID
@@ -2195,11 +2191,14 @@ export const base44TrackSend = {
         if (id) trackMap.set(id, track);
       });
       
+      console.log('[TrackSend] Track map size:', trackMap.size);
+      
       // Enrich each TrackSend with audio_url from the track map
       const enrichedTracks = tracks.map((trackSend) => {
         if (trackSend.track_id && !trackSend.track_audio_url) {
           const trackData = trackMap.get(trackSend.track_id);
           if (trackData?.audio_url) {
+            console.log('[TrackSend] Enriched track:', trackSend.track_title, 'with audio URL');
             return {
               ...trackSend,
               track_audio_url: trackData.audio_url,
@@ -2208,6 +2207,8 @@ export const base44TrackSend = {
               track_producer_name: trackSend.track_producer_name || trackData.producer_name || trackData.artist_name,
               track_genre: trackSend.track_genre || trackData.genre,
             };
+          } else {
+            console.log('[TrackSend] Could not find track in map:', trackSend.track_id, trackSend.track_title);
           }
         }
         return trackSend;

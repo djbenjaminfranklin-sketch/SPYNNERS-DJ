@@ -108,6 +108,12 @@ export default function ProfileScreen() {
       onPress: () => router.push('/profile/tracks'),
     },
     {
+      icon: 'disc-outline',
+      title: language === 'fr' ? 'Mes Mixes' : 'My Mixes',
+      subtitle: language === 'fr' ? 'Vos enregistrements SPYN Record' : 'Your SPYN Record recordings',
+      onPress: () => router.push('/profile/my-mixes'),
+    },
+    {
       icon: 'cloud-offline-outline',
       title: t('profile.offlineSessions'),
       subtitle: t('profile.offlineSessionsDesc'),
