@@ -1686,42 +1686,58 @@ export default function SpynRecordScreen() {
           
           // Verify file exists before saving
           if (fileUri && fileUri.length > 0) {
+            // Check if file exists
+            let validFileUri = fileUri;
+            let fileExists = false;
+            
             try {
               const fileInfo = await FileSystem.getInfoAsync(fileUri);
               console.log('[SPYN Record] File info before save:', JSON.stringify(fileInfo));
+              fileExists = fileInfo.exists;
               
-              if (!fileInfo.exists) {
-                console.error('[SPYN Record] ❌ Audio file does not exist at:', fileUri);
+              if (!fileExists) {
+                console.log('[SPYN Record] File not found, trying with file:// prefix...');
                 // Try with file:// prefix
                 const fileUriWithPrefix = fileUri.startsWith('file://') ? fileUri : `file://${fileUri}`;
                 const fileInfo2 = await FileSystem.getInfoAsync(fileUriWithPrefix);
-                if (!fileInfo2.exists) {
-                  Alert.alert('Erreur', 'Le fichier audio n\'existe pas');
+                console.log('[SPYN Record] File info with prefix:', JSON.stringify(fileInfo2));
+                if (fileInfo2.exists) {
+                  validFileUri = fileUriWithPrefix;
+                  fileExists = true;
                 }
               }
             } catch (fileCheckError) {
               console.error('[SPYN Record] ❌ Error checking file:', fileCheckError);
             }
             
-            await saveLocalMix({
-              user_id: user?.id || user?._id || '',
-              user_name: whoPlayed === 'another' ? otherDjName : (user?.full_name || 'DJ'),
-              audio_url: fileUri, // Local file URI
-              duration: recordingDuration,
-              session_id: sessionData.id,
-              city: location?.city || '',
-              country: location?.country || '',
-              venue: correctedVenue || location?.venue || '',
-              tracks_count: allTracks.length,
-            });
-            console.log('[SPYN Record] ✅ Mix saved to My Mixes');
-            // Show confirmation to user
-            Alert.alert('✅ Mix sauvegardé', 'Votre mix a été sauvegardé dans My Mixes!');
+            // Only save if file actually exists
+            if (fileExists) {
+              console.log('[SPYN Record] ✅ File exists, proceeding with save...');
+              await saveLocalMix({
+                user_id: user?.id || user?._id || '',
+                user_name: whoPlayed === 'another' ? otherDjName : (user?.full_name || 'DJ'),
+                audio_url: validFileUri, // Use validated file URI
+                duration: recordingDuration,
+                session_id: sessionData.id,
+                city: location?.city || '',
+                country: location?.country || '',
+                venue: correctedVenue || location?.venue || '',
+                tracks_count: allTracks.length,
+              });
+              console.log('[SPYN Record] ✅ Mix saved to My Mixes');
+              // Show confirmation to user
+              Alert.alert('✅ Mix sauvegardé', 'Votre mix a été sauvegardé dans My Mixes!');
+            } else {
+              console.error('[SPYN Record] ❌ Audio file does not exist, cannot save');
+              Alert.alert('Erreur', 'Le fichier audio n\'existe pas. Le mix n\'a pas été sauvegardé.');
+            }
           } else {
             console.error('[SPYN Record] ❌ No fileUri available for saving');
+            Alert.alert('Erreur', 'Aucun fichier audio à sauvegarder.');
           }
         } catch (mixError: any) {
           console.error('[SPYN Record] ❌ Failed to save mix:', mixError?.message || mixError);
+          Alert.alert('Erreur', 'Échec de la sauvegarde: ' + (mixError?.message || 'Erreur inconnue'));
           // Don't fail the session if mix save fails
         }
         
