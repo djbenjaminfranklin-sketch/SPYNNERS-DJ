@@ -772,7 +772,7 @@ export default function SpynScreen() {
         interruptionModeAndroid: 1,
       });
 
-      setDebugLog('🎧 Enregistrement en cours (8s)...');
+      setDebugLog('🎧 Enregistrement en cours (12s)...');
 
       // Use HIGH_QUALITY preset for best ACRCloud compatibility
       const { recording } = await Audio.Recording.createAsync(
