@@ -97,48 +97,6 @@ export async function setupPlayer() {
   return isSetup;
 }
 
-export async function setupPlayer() {
-  let isSetup = false;
-  
-  try {
-    await TrackPlayer.getActiveTrack();
-    isSetup = true;
-    console.log('[TrackPlayer] Player already initialized');
-  } catch {
-    try {
-      await TrackPlayer.setupPlayer({
-        autoHandleInterruptions: false,
-      });
-      
-      await TrackPlayer.updateOptions({
-        capabilities: [
-          Capability.Play,
-          Capability.Pause,
-          Capability.Stop,
-          Capability.SkipToNext,
-          Capability.SkipToPrevious,
-          Capability.SeekTo,
-        ],
-        compactCapabilities: [
-          Capability.Play,
-          Capability.Pause,
-          Capability.SkipToNext,
-        ],
-        progressUpdateEventInterval: 1,
-      });
-      
-      await TrackPlayer.setRepeatMode(RepeatMode.Off);
-      
-      isSetup = true;
-      console.log('[TrackPlayer] Player setup complete');
-    } catch (error) {
-      console.error('[TrackPlayer] Setup error:', error);
-    }
-  }
-  
-  return isSetup;
-}
-
 export async function updateNowPlaying(track: {
   id: string;
   title: string;
