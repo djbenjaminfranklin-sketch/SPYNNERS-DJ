@@ -20,6 +20,7 @@ import { base44TrackSend, TrackSend } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as FileSystem from 'expo-file-system';
+import * as LegacyFileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
 export default function ReceivedScreen() {
@@ -122,10 +123,10 @@ export default function ReceivedScreen() {
         window.open(item.track_audio_url, '_blank');
       } else {
         const filename = `${(item.track_title || 'track').replace(/[^a-zA-Z0-9]/g, '_')}.mp3`;
-        const downloadDir = FileSystem.cacheDirectory;
+        const downloadDir = LegacyFileSystem.cacheDirectory;
         const downloadPath = `${downloadDir}${filename}`;
         console.log('[Received] Downloading to:', downloadPath);
-        const downloadResult = await FileSystem.downloadAsync(
+        const downloadResult = await LegacyFileSystem.downloadAsync(
           item.track_audio_url,
           downloadPath);
         if (downloadResult && downloadResult.uri) {

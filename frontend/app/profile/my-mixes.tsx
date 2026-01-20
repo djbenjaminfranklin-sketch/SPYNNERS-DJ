@@ -17,6 +17,7 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { Colors, BorderRadius } from '../../src/theme/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
+import * as LegacyFileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Audio } from 'expo-av';
 
@@ -96,7 +97,7 @@ export default function MyMixesScreen() {
         let fileExists = false;
         if (mix.audio_url) {
           try {
-            const fileInfo = await FileSystem.getInfoAsync(mix.audio_url);
+            const fileInfo = await LegacyFileSystem.getInfoAsync(mix.audio_url);
             fileExists = fileInfo.exists;
             console.log('[MyMixes] File check:', mix.audio_url, 'exists:', fileExists);
           } catch (e) {
@@ -188,7 +189,7 @@ export default function MyMixesScreen() {
   const checkFileExists = async (uri?: string): Promise<boolean> => {
     if (!uri) return false;
     try {
-      const info = await FileSystem.getInfoAsync(uri);
+      const info = await LegacyFileSystem.getInfoAsync(uri);
       return info.exists;
     } catch {
       return false;
@@ -351,7 +352,7 @@ export default function MyMixesScreen() {
               // Try to delete the audio file
               if (mix.audio_url) {
                 try {
-                  await FileSystem.deleteAsync(mix.audio_url, { idempotent: true });
+                  await LegacyFileSystem.deleteAsync(mix.audio_url, { idempotent: true });
                 } catch {
                   // Ignore file deletion errors
                 }
@@ -525,14 +526,14 @@ export async function saveLocalMix(mix: Omit<LocalMix, 'id' | 'expires_at' | 'cr
       console.log('[MyMixes] Audio is in cache/tmp, copying to permanent storage...');
       
       const fileName = `spyn_mix_${Date.now()}.m4a`;
-      const permanentDir = FileSystem.documentDirectory;
+      const permanentDir = LegacyFileSystem.documentDirectory;
       
       if (permanentDir) {
         const permanentPath = `${permanentDir}${fileName}`;
         
         try {
           // Copy file to permanent storage
-          await FileSystem.copyAsync({
+          await LegacyFileSystem.copyAsync({
             from: mix.audio_url,
             to: permanentPath,
           });
@@ -541,7 +542,7 @@ export async function saveLocalMix(mix: Omit<LocalMix, 'id' | 'expires_at' | 'cr
           console.log('[MyMixes] ✅ Audio copied to permanent storage:', permanentPath);
           
           // Verify the copy
-          const fileInfo = await FileSystem.getInfoAsync(permanentPath);
+          const fileInfo = await LegacyFileSystem.getInfoAsync(permanentPath);
           console.log('[MyMixes] File info after copy:', fileInfo);
         } catch (copyError) {
           console.error('[MyMixes] ❌ Failed to copy audio to permanent storage:', copyError);
