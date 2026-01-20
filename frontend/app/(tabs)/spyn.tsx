@@ -1106,6 +1106,8 @@ export default function SpynScreen() {
       console.log(`[SPYN] ✅ Email sent for: ${track.title}`, response.data);
     } catch (e: any) {
       console.log(`[SPYN] ❌ Email error for: ${track.title}`, e?.response?.data || e.message);
+      console.log(`[SPYN] ❌ Email error status:`, e?.response?.status);
+      console.log(`[SPYN] ❌ Email error full:`, JSON.stringify(e?.response || e));
     }
   };
 

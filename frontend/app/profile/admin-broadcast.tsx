@@ -230,12 +230,15 @@ export default function AdminBroadcast() {
           onPress: async () => {
             setSending(true);
             try {
-              // Call Base44 function directly
+              // Call Spynners API with proper authentication
               const response = await fetch(
-                `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/sendBroadcastEmail`,
+                `https://spynners.com/api/functions/sendBroadcastEmail`,
                 {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                  },
                   body: JSON.stringify({
                     subject: subject.trim(),
                     message: message.trim(),
@@ -262,7 +265,9 @@ export default function AdminBroadcast() {
               }
             } catch (error: any) {
               console.error('[AdminBroadcast] Send error:', error);
-              Alert.alert(t('common.error'), error?.message || t('broadcast.sendFailed'));
+              console.error('[AdminBroadcast] Error response:', error?.response?.data);
+              console.error('[AdminBroadcast] Error status:', error?.response?.status);
+              Alert.alert(t('common.error'), `Erreur: ${error?.message || error?.response?.data?.error || t('broadcast.sendFailed')}`);
             } finally {
               setSending(false);
             }
