@@ -565,6 +565,25 @@ export default function HomeScreen() {
       const userId = user?.id || user?._id || '';
       const trackId = selectedTrackForSend.id || selectedTrackForSend._id || '';
       
+      // Get audio_url - try from track object first, then fetch if missing
+      let audioUrl = selectedTrackForSend.audio_url || selectedTrackForSend.audio_file;
+      
+      // If audio_url is missing, try to fetch the full track details
+      if (!audioUrl && trackId) {
+        console.log('[SendTrack] audio_url missing, fetching full track details...');
+        try {
+          const fullTrack = await base44Tracks.getById(trackId);
+          if (fullTrack) {
+            audioUrl = fullTrack.audio_url || fullTrack.audio_file;
+            console.log('[SendTrack] Got audio_url from full track:', audioUrl ? 'YES' : 'NO');
+          }
+        } catch (e) {
+          console.log('[SendTrack] Could not fetch full track details:', e);
+        }
+      }
+      
+      console.log('[SendTrack] Sending track with audio_url:', audioUrl ? 'YES' : 'NO');
+      
       // Use TrackSend entity to send the track (same as website)
       // IMPORTANT: Include track_audio_url so receiver can play the track!
       await base44TrackSend.create({
@@ -572,7 +591,7 @@ export default function HomeScreen() {
         track_title: selectedTrackForSend.title,
         track_producer_name: selectedTrackForSend.producer_name || selectedTrackForSend.artist_name,
         track_artwork_url: selectedTrackForSend.artwork_url || selectedTrackForSend.cover_image,
-        track_audio_url: selectedTrackForSend.audio_url || selectedTrackForSend.audio_file,
+        track_audio_url: audioUrl,
         track_genre: selectedTrackForSend.genre,
         sender_id: userId,
         sender_name: user?.full_name || user?.name || user?.email || 'Unknown',
