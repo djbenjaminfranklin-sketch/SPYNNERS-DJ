@@ -21,9 +21,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage, LANGUAGES, Language } from '../../src/contexts/LanguageContext';
 import { usePlayer } from '../../src/contexts/PlayerContext';
-import { useNotifications } from '../../src/contexts/NotificationContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
-import { base44Tracks, base44Playlists, base44Notifications2, base44Users, base44TrackSend, base44PushNotifications, Track, Notification } from '../../src/services/base44Api';
+import { base44Tracks, base44Playlists, base44Notifications2, base44Users, base44TrackSend, Track, Notification } from '../../src/services/base44Api';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import NotificationModal from '../../src/components/NotificationModal';
@@ -34,7 +33,6 @@ const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || process.env.EXPO_
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MENU_ITEM_SIZE = (SCREEN_WIDTH - 24 - 40) / 5; // 5 items per row with spacing
 const UNLOCKED_TRACKS_KEY = 'vip_unlocked_tracks'; // Same key as VIP page
-const USER_RATINGS_KEY = 'user_track_ratings'; // Key for storing user's ratings
 
 // Menu items with colors matching spynners.com - 2 rows
 // Labels use translation keys
@@ -57,7 +55,7 @@ const USER_MENU_ITEMS_ROW3 = [
 ];
 
 // Genres (these are API values, keep in English for filtering)
-const GENRE_VALUES = ['All Genres', 'Afro House', 'Tech House', 'Deep House', 'Melodic House & Techno', 'Progressive House', 'Minimal / Deep Tech', 'Bass House', 'Hard Techno', 'Techno (Peak Time)', 'Funky House'];
+const GENRE_VALUES = ['All Genres', 'HOUSE', 'Afro House', 'Afro Tech', 'Amapiano', 'Ambient / Experimental', 'Bass / Club', 'Bass House', 'Brazilian Funk', 'Breaks / Breakbeat / UK Bass', 'Dance / Pop', 'Deep House', 'Downtempo', 'Drum & Bass', 'Dubstep', 'Electro (Classic / Detroit / Modern)', 'Electronica', 'Funky House', 'Hard Dance / Hardcore / Neo Rave', 'Hard Techno', 'Indie Dance', "Jackin' House", 'Latin House', 'Mainstage', 'Melodic House', 'Melodic Techno', 'Minimal / Deep Tech', 'Nu Disco / Disco', 'Organic House', 'Progressive House', 'Psy-Trance', 'Remix', 'Soulful House', 'Tech House', 'Techno (Peak Time / Driving)', 'Techno (Raw / Deep / Hypnotic)', 'Trance (Main Floor)', 'Trance (Raw / Deep / Hypnotic)', 'Trap / Future Bass', 'UK Garage / Bassline'];
 const ENERGY_VALUES = ['All Energy Levels', 'Low', 'Medium', 'High', 'Very High'];
 const SORT_VALUES = ['Recently Added', 'Most Downloaded', 'Top Rated', 'Oldest'];
 
@@ -136,41 +134,6 @@ export default function HomeScreen() {
   // VIP unlocked tracks state (shared with VIP page)
   const [unlockedTracks, setUnlockedTracks] = useState<string[]>([]);
   
-  // User ratings state - stores user's own ratings for immediate UI feedback
-  // Key: trackId, Value: rating (1-5)
-  // Persisted to AsyncStorage so ratings survive app restart
-  const [userRatings, setUserRatings] = useState<Record<string, number>>({});
-  
-  // Load user ratings from AsyncStorage on mount
-  const loadUserRatings = async () => {
-    const userId = user?.id || user?._id || '';
-    if (!userId) return;
-    
-    try {
-      const storedRatings = await AsyncStorage.getItem(`${USER_RATINGS_KEY}_${userId}`);
-      if (storedRatings) {
-        const ratings = JSON.parse(storedRatings);
-        setUserRatings(ratings);
-        console.log('[Home] Loaded user ratings:', Object.keys(ratings).length, 'tracks rated');
-      }
-    } catch (e) {
-      console.log('[Home] Could not load user ratings:', e);
-    }
-  };
-  
-  // Save user ratings to AsyncStorage
-  const saveUserRatings = async (ratings: Record<string, number>) => {
-    const userId = user?.id || user?._id || '';
-    if (!userId) return;
-    
-    try {
-      await AsyncStorage.setItem(`${USER_RATINGS_KEY}_${userId}`, JSON.stringify(ratings));
-      console.log('[Home] Saved user ratings');
-    } catch (e) {
-      console.log('[Home] Could not save user ratings:', e);
-    }
-  };
-  
   // Check if a track is unlocked
   const isTrackUnlocked = (trackId: string): boolean => {
     return unlockedTracks.includes(trackId);
@@ -214,7 +177,6 @@ export default function HomeScreen() {
   // Load unlocked tracks when user changes
   useEffect(() => {
     loadUnlockedTracks();
-    loadUserRatings();
   }, [user]);
 
   useEffect(() => {
@@ -223,7 +185,11 @@ export default function HomeScreen() {
 
   // Reload tracks when filters change
   useEffect(() => {
-    loadTracks();
+    console.log('[Home] Filter changed - reloading with genre:', selectedGenre);
+    const timer = setTimeout(() => {
+      loadTracks();
+    }, 100);
+    return () => clearTimeout(timer);
   }, [selectedGenre, selectedEnergy, showVIPOnly, selectedSort]);
 
   useEffect(() => {
@@ -269,15 +235,18 @@ export default function HomeScreen() {
           console.log('[Home] After VIP filter:', filteredTracks.length, 'VIP tracks');
         }
         
-        // Step 3: Apply genre filter CLIENT-SIDE - STRICT matching
-        if (selectedGenre !== 'All Genres') {
-          const genreLower = selectedGenre.toLowerCase().trim();
+        // Step 3: Apply genre filter CLIENT-SIDE (matching website logic)
+        if (selectedGenre && selectedGenre !== 'All Genres') {
+          const filterGenre = String(decodeURIComponent(selectedGenre)).trim().toLowerCase();
           filteredTracks = filteredTracks.filter((track: Track) => {
-            const trackGenre = (track.genre || '').toLowerCase().trim();
-            // Exact match only - no partial matching to avoid "Afro House" showing "Deep House"
-            return trackGenre === genreLower;
+            const trackGenre = track.genre ? String(track.genre).trim().toLowerCase() : '';
+            const match = trackGenre === filterGenre;
+            if (!match && trackGenre) {
+              console.log('[Home] Genre mismatch:', trackGenre, '!==', filterGenre);
+            }
+            return match;
           });
-          console.log('[Home] After genre filter:', filteredTracks.length, 'tracks for', selectedGenre);
+          console.log('[Home] After genre filter:', filteredTracks.length, 'tracks for', filterGenre);
         }
         
         // Step 4: Apply energy filter CLIENT-SIDE
@@ -341,6 +310,29 @@ export default function HomeScreen() {
       setLoading(false);
     }
   };
+  // Handle rating a track
+  const handleRateTrack = async (trackId: string, rating: number) => {
+    try {
+      console.log('[Home] Rating track:', trackId, 'with', rating, 'stars');
+      await base44Tracks.update(trackId, { 
+        average_rating: rating,
+        rating: rating 
+      });
+      // Update local state immediately for UI feedback
+      setTracks(prevTracks => 
+        prevTracks.map(track => 
+          track.id === trackId 
+            ? { ...track, average_rating: rating, rating: rating }
+            : track
+        )
+      );
+      console.log('[Home] Track rated successfully!');
+    } catch (error) {
+      console.error('[Home] Error rating track:', error);
+    }
+  };
+
+
 
   // Use the global player function - pass all tracks to enable next/previous
   const handlePlayTrack = async (track: Track) => {
@@ -524,18 +516,9 @@ export default function HomeScreen() {
       
       setMembersList(filteredUsers);
       console.log('[SendTrack] Available members:', filteredUsers.length);
-      
-      // Show alert if no members found
-      if (filteredUsers.length === 0) {
-        Alert.alert(
-          'Aucun membre',
-          'Impossible de charger la liste des membres. Vérifiez votre connexion.',
-          [{ text: 'OK' }]
-        );
-      }
     } catch (error) {
       console.error('Error loading members:', error);
-      Alert.alert('Erreur', 'Impossible de charger les membres. Vérifiez votre connexion.');
+      Alert.alert('Error', 'Could not load members');
     } finally {
       setLoadingMembers(false);
     }
@@ -575,33 +558,12 @@ export default function HomeScreen() {
       const userId = user?.id || user?._id || '';
       const trackId = selectedTrackForSend.id || selectedTrackForSend._id || '';
       
-      // Get audio_url - try from track object first, then fetch if missing
-      let audioUrl = selectedTrackForSend.audio_url || selectedTrackForSend.audio_file;
-      
-      // If audio_url is missing, try to fetch the full track details
-      if (!audioUrl && trackId) {
-        console.log('[SendTrack] audio_url missing, fetching full track details...');
-        try {
-          const fullTrack = await base44Tracks.getById(trackId);
-          if (fullTrack) {
-            audioUrl = fullTrack.audio_url || fullTrack.audio_file;
-            console.log('[SendTrack] Got audio_url from full track:', audioUrl ? 'YES' : 'NO');
-          }
-        } catch (e) {
-          console.log('[SendTrack] Could not fetch full track details:', e);
-        }
-      }
-      
-      console.log('[SendTrack] Sending track with audio_url:', audioUrl ? 'YES' : 'NO');
-      
       // Use TrackSend entity to send the track (same as website)
-      // IMPORTANT: Include track_audio_url so receiver can play the track!
       await base44TrackSend.create({
         track_id: trackId,
         track_title: selectedTrackForSend.title,
         track_producer_name: selectedTrackForSend.producer_name || selectedTrackForSend.artist_name,
         track_artwork_url: selectedTrackForSend.artwork_url || selectedTrackForSend.cover_image,
-        track_audio_url: audioUrl,
         track_genre: selectedTrackForSend.genre,
         sender_id: userId,
         sender_name: user?.full_name || user?.name || user?.email || 'Unknown',
@@ -616,21 +578,6 @@ export default function HomeScreen() {
       setShowSendTrackModal(false);
       setSelectedTrackForSend(null);
       setMemberSearchQuery('');
-      
-      // Send push notification to recipient
-      console.log('[SendTrack] Sending push notification to:', memberId);
-      base44PushNotifications.sendPushNotification({
-        recipientUserId: memberId,
-        senderName: user?.full_name || user?.name || 'Someone',
-        messageContent: `🎵 New track: "${selectedTrackForSend.title}"`,
-        messageId: trackId,
-      }).then(success => {
-        if (success) {
-          console.log('[SendTrack] Push notification sent successfully');
-        }
-      }).catch(err => {
-        console.log('[SendTrack] Push notification error:', err);
-      });
     } catch (error) {
       console.error('Error sending track:', error);
       Alert.alert(t('common.error'), t('common.couldNotSendTrack'));
@@ -653,71 +600,21 @@ export default function HomeScreen() {
     router.push('/(tabs)/spyn-record');
   };
 
-  // Handle rating a track - clickable stars with OPTIMISTIC UI UPDATE
-  // Now persists ratings to AsyncStorage so they survive app restart
-  const handleRateTrack = async (track: Track, starRating: number) => {
-    const trackId = track.id || track._id || '';
-    console.log('[Home] Rating track:', trackId, 'with', starRating, 'stars');
-    
-    // OPTIMISTIC UPDATE: Immediately update the UI with the new rating
-    // This makes the stars turn yellow instantly without waiting for the server
-    const newRatings = {
-      ...userRatings,
-      [trackId]: starRating
-    };
-    setUserRatings(newRatings);
-    
-    // Save to AsyncStorage immediately for persistence
-    saveUserRatings(newRatings);
-    
-    try {
-      // Call the API to rate the track (in background)
-      await base44Tracks.rate(trackId, starRating);
-      console.log('[Home] Rating saved successfully to server');
-    } catch (error) {
-      console.error('[Home] Error rating track:', error);
-      // On error, revert the optimistic update
-      const revertedRatings = { ...userRatings };
-      delete revertedRatings[trackId];
-      setUserRatings(revertedRatings);
-      saveUserRatings(revertedRatings);
-      Alert.alert(
-        t('common.error') || 'Error', 
-        t('track.ratingFailed') || 'Could not rate track'
-      );
-    }
-  };
-
-  // Get the rating to display - prioritize user's own rating for immediate feedback
-  const getDisplayRating = (track: Track): number => {
-    const trackId = track.id || track._id || '';
-    // If user has rated this track in this session, show their rating
-    if (userRatings[trackId] !== undefined) {
-      return userRatings[trackId];
-    }
-    // Otherwise show the track's average rating
-    return track.average_rating || track.rating || 0;
-  };
-
-  // Render star rating - now clickable with YELLOW stars!
-  const renderRating = (rating: number = 0, track?: Track) => {
-    // Use the display rating which prioritizes user's own rating
-    const displayRating = track ? getDisplayRating(track) : rating;
-    
+  // Render star rating - CLICKABLE
+  const renderRating = (rating: number = 0, trackId?: string) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
-      const isFilled = i <= displayRating;
       stars.push(
         <TouchableOpacity 
           key={i} 
-          onPress={() => track && handleRateTrack(track, i)}
-          style={{ padding: 2 }}
+          onPress={() => trackId && handleRateTrack(trackId, i)}
+          style={{ padding: 3 }}
           activeOpacity={0.7}
         >
           <Ionicons 
-            name={isFilled ? 'star' : 'star-outline'} 
-            size={16} 
-            color={isFilled ? '#FFD700' : Colors.textMuted} 
+            name={i <= rating ? 'star' : 'star-outline'} 
+            size={22} 
+            color={i <= rating ? '#FFD700' : '#666666'} 
           />
         </TouchableOpacity>
       );
@@ -809,18 +706,33 @@ export default function HomeScreen() {
     return track.average_rating || track.rating || 0;
   };
 
-  // Use notification context for real-time updates
-  const { unreadCount: notificationCount, refreshUnreadCount, clearNotifications } = useNotifications();
+  // Notification state
+  const [notificationCount, setNotificationCount] = useState(0);
   
-  // Refresh notifications when user changes
+  // Load notifications count - refresh every 30 seconds
   useEffect(() => {
-    if (user) {
+    loadNotifications();
+    
+    // Set up interval to refresh notifications every 30 seconds
+    const notifInterval = setInterval(() => {
+      loadNotifications();
+    }, 30000);
+    
+    return () => clearInterval(notifInterval);
+  }, [user]);
+
+  const loadNotifications = async () => {
+    try {
       const userId = user?.id || user?._id || '';
       if (userId) {
-        refreshUnreadCount(userId);
+        const count = await base44Notifications2.getUnreadCount(userId);
+        setNotificationCount(count);
+        console.log('[Home] Notification count:', count);
       }
+    } catch (error) {
+      console.error('[Home] Error loading notifications:', error);
     }
-  }, [user, refreshUnreadCount]);
+  };
 
   // Get current language info
   const currentLang = LANGUAGES.find(l => l.code === language) || LANGUAGES[0];
@@ -1081,7 +993,7 @@ export default function HomeScreen() {
                     </Text>
                   </TouchableOpacity>
                   <Text style={styles.trackBpm}>{track.bpm || '—'} BPM</Text>
-                  {renderRating(rating, track)}
+                  {renderRating(rating, track.id)}
                 </View>
 
                 {/* VIP Badge - Show lock icon if not unlocked */}

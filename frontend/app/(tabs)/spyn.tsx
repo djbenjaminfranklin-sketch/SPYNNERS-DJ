@@ -575,15 +575,6 @@ export default function SpynScreen() {
         console.log('[SPYN] Places lookup failed:', e?.message || e, '- using reverse geocoding');
       }
       
-      // WORKAROUND: If we got a suspicious venue (always same name), ignore it
-      const SUSPICIOUS_VENUES = ['chef hostel', 'chef', 'hostel'];
-      if (venueName && SUSPICIOUS_VENUES.some(s => venueName.toLowerCase().includes(s))) {
-        console.log('[SPYN] ⚠️ Suspicious venue detected:', venueName, '- ignoring and using geocoding');
-        venueName = undefined;
-        venueType = undefined;
-        isValidVenue = false;
-      }
-      
       // Get address via reverse geocoding
       const [address] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
       
@@ -781,7 +772,7 @@ export default function SpynScreen() {
         interruptionModeAndroid: 1,
       });
 
-      setDebugLog('🎧 Enregistrement en cours (12s)...');
+      setDebugLog('🎧 Enregistrement en cours (8s)...');
 
       // Use HIGH_QUALITY preset for best ACRCloud compatibility
       const { recording } = await Audio.Recording.createAsync(
@@ -1106,8 +1097,6 @@ export default function SpynScreen() {
       console.log(`[SPYN] ✅ Email sent for: ${track.title}`, response.data);
     } catch (e: any) {
       console.log(`[SPYN] ❌ Email error for: ${track.title}`, e?.response?.data || e.message);
-      console.log(`[SPYN] ❌ Email error status:`, e?.response?.status);
-      console.log(`[SPYN] ❌ Email error full:`, JSON.stringify(e?.response || e));
     }
   };
 

@@ -11,14 +11,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
-
-// NOTE: @base44/sdk has been REMOVED - it causes crashes on Hermes engine
-// All API calls now use direct fetch/axios to Base44 REST API
+// SDK removed - causes Hermes crash
 
 // Backend URL for web proxy
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || 
   process.env.EXPO_PUBLIC_BACKEND_URL || 
-  'https://trackmix-6.preview.emergentagent.com';
+  'https://spynner-stable.preview.emergentagent.com';
 
 // Direct Base44 API URL for mobile - MUST use app subdomain
 const BASE44_APP_ID = '691a4d96d819355b52c063f3';
@@ -496,28 +494,31 @@ export const base44Auth = {
     try {
       console.log('[Auth] Updating user diamonds:', userId, amount, 'current:', currentBalance);
       
-      // IMPORTANT: Always use backend URL for this endpoint (not Base44 direct)
-      const backendUrl = Constants.expoConfig?.extra?.backendUrl || 
-        process.env.EXPO_PUBLIC_BACKEND_URL || 
-        'https://trackmix-6.preview.emergentagent.com';
+      // Calculate new balance
+      let newBalance: number;
+      if (currentBalance !== undefined) {
+        newBalance = currentBalance + amount;
+      } else {
+        // Fetch current balance if not provided
+        const userResponse = await mobileApi.get(`/api/base44/entities/User/${userId}`);
+        const currentDiamonds = userResponse.data?.black_diamonds || userResponse.data?.diamonds || 0;
+        newBalance = currentDiamonds + amount;
+      }
       
-      const token = await AsyncStorage.getItem('auth_token');
+      // Ensure balance does not go negative
+      if (newBalance < 0) {
+        throw new Error('Insufficient diamonds');
+      }
       
-      const response = await axios.post(`${backendUrl}/api/base44/update-diamonds`, {
-        user_id: userId,
-        amount: amount, // positive to add, negative to deduct
-        current_balance: currentBalance, // pass current balance for reliable calculation
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
-        timeout: 30000,
+      // Update user directly via Base44 API
+      await mobileApi.put(`/api/base44/entities/User/${userId}`, {
+        black_diamonds: newBalance,
       });
-      console.log('[Auth] Diamonds updated:', response.data);
+      
+      console.log('[Auth] Diamonds updated to:', newBalance);
     } catch (error: any) {
       console.error('[Auth] Error updating diamonds:', error?.response?.data || error?.message);
-      throw new Error(error?.response?.data?.detail || 'Failed to update diamonds');
+      throw new Error(error?.response?.data?.detail || error?.message || 'Failed to update diamonds');
     }
   },
 };
@@ -763,163 +764,6 @@ export const base44Tracks = {
     } catch (error) {
       // Silently ignore - this is just for analytics and not critical
       // console.error('[Tracks] Error recording play:', error);
-    }
-  },
-
-  /**
-   * Upload a new track using the /api/apiUploadTrack endpoint
-   * Uses multipart/form-data for file uploads - much more reliable than base64
-   */
-  async uploadTrack(params: {
-    audioFileUri: string;
-    audioFileName: string;
-    artworkFileUri?: string;
-    artworkFileName?: string;
-    title: string;
-    genre?: string;
-    bpm?: number;
-    key?: string;
-    energy_level?: string;
-    mood?: string;
-    description?: string;
-    release_date?: string;
-    isrc?: string;
-    iswc?: string;
-    artist_name?: string;
-    label_name?: string;
-    is_unreleased?: boolean;
-    is_vip?: boolean;
-  }): Promise<{
-    success: boolean;
-    message?: string;
-    track?: {
-      id: string;
-      title: string;
-      status: string;
-      audio_url: string;
-      artwork_url?: string;
-    };
-    error?: string;
-  }> {
-    try {
-      console.log('[Tracks] Starting uploadTrack with multipart/form-data...');
-      console.log('[Tracks] Audio file:', params.audioFileName);
-      console.log('[Tracks] Artwork file:', params.artworkFileName || 'none');
-      
-      // Get auth token
-      let token = '';
-      try {
-        token = await AsyncStorage.getItem(AUTH_TOKEN_KEY) || '';
-      } catch (e) {
-        console.log('[Tracks] Could not get token from storage');
-      }
-      
-      // Create FormData
-      const formData = new FormData();
-      
-      // Add audio file
-      if (Platform.OS !== 'web') {
-        // Mobile: Read file info for FormData
-        const audioMimeType = params.audioFileName.toLowerCase().endsWith('.wav') ? 'audio/wav' : 'audio/mpeg';
-        formData.append('audio_file', {
-          uri: params.audioFileUri,
-          name: params.audioFileName,
-          type: audioMimeType,
-        } as any);
-      } else {
-        // Web: Fetch blob and append
-        const audioResponse = await fetch(params.audioFileUri);
-        const audioBlob = await audioResponse.blob();
-        formData.append('audio_file', audioBlob, params.audioFileName);
-      }
-      
-      // Add artwork file if provided
-      if (params.artworkFileUri && params.artworkFileName) {
-        if (Platform.OS !== 'web') {
-          // Mobile
-          formData.append('artwork_file', {
-            uri: params.artworkFileUri,
-            name: params.artworkFileName,
-            type: 'image/jpeg',
-          } as any);
-        } else {
-          // Web
-          const artworkResponse = await fetch(params.artworkFileUri);
-          const artworkBlob = await artworkResponse.blob();
-          formData.append('artwork_file', artworkBlob, params.artworkFileName);
-        }
-      }
-      
-      // Add metadata
-      formData.append('title', params.title);
-      if (params.genre) formData.append('genre', params.genre);
-      if (params.bpm) formData.append('bpm', params.bpm.toString());
-      if (params.key) formData.append('key', params.key);
-      if (params.energy_level) formData.append('energy_level', params.energy_level);
-      if (params.mood) formData.append('mood', params.mood);
-      if (params.description) formData.append('description', params.description);
-      if (params.release_date) formData.append('release_date', params.release_date);
-      if (params.isrc) formData.append('isrc', params.isrc);
-      if (params.iswc) formData.append('iswc', params.iswc);
-      
-      // Add additional fields that might be useful
-      if (params.artist_name) formData.append('artist_name', params.artist_name);
-      if (params.label_name) formData.append('label_name', params.label_name);
-      if (params.is_unreleased !== undefined) formData.append('is_unreleased', params.is_unreleased.toString());
-      if (params.is_vip !== undefined) formData.append('is_vip', params.is_vip.toString());
-      
-      // Upload URL - using the custom endpoint
-      const uploadUrl = `${BASE44_DIRECT_URL.replace('/api/apps/691a4d96d819355b52c063f3', '')}/api/apiUploadTrack`;
-      console.log('[Tracks] Upload URL:', uploadUrl);
-      
-      // Make the request
-      const response = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: {
-          // Don't set Content-Type - let fetch set it with boundary for multipart
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      });
-      
-      console.log('[Tracks] Upload response status:', response.status);
-      
-      const result = await response.json();
-      console.log('[Tracks] Upload result:', JSON.stringify(result, null, 2));
-      
-      if (!response.ok) {
-        throw new Error(result.error || result.message || `HTTP ${response.status}`);
-      }
-      
-      if (result.success && result.track) {
-        console.log('[Tracks] ✅ Track uploaded successfully!');
-        console.log('[Tracks] Track ID:', result.track.id);
-        console.log('[Tracks] Audio URL:', result.track.audio_url);
-        return result;
-      }
-      
-      // Handle unexpected response format
-      if (result.id || result.track_id) {
-        return {
-          success: true,
-          track: {
-            id: result.id || result.track_id,
-            title: params.title,
-            status: result.status || 'pending',
-            audio_url: result.audio_url || '',
-            artwork_url: result.artwork_url,
-          }
-        };
-      }
-      
-      throw new Error(result.error || result.message || 'Upload failed - unexpected response');
-      
-    } catch (error: any) {
-      console.error('[Tracks] ❌ uploadTrack error:', error.message);
-      return {
-        success: false,
-        error: error.message || 'Upload failed',
-      };
     }
   },
 };
@@ -1353,22 +1197,14 @@ export const base44Playlists = {
 };
 
 // ==================== FILES SERVICE ====================
-// IMPORTANT: This service uses ONLY fetch/axios - NO @base44/sdk (causes Hermes crashes)
 
 export const base44Files = {
-  /**
-   * Upload a file to Base44 storage
-   * Uses expo-file-system on mobile and fetch on web
-   * NO SDK dependency - direct HTTP calls only
-   */
   async upload(fileUri: string, fileName: string, mimeType?: string, authToken?: string): Promise<any> {
     try {
-      console.log('[Files] Starting upload (NO SDK):', { fileName, fileUri: fileUri.substring(0, 100) });
+      console.log('[Files] Starting upload:', { fileName, fileUri: fileUri.substring(0, 100) });
       
-      // Determine mime type from file name if not provided
       const actualMimeType = mimeType || getMimeType(fileName);
       
-      // Get auth token from storage if not provided
       let token = authToken;
       if (!token) {
         try {
@@ -1378,144 +1214,78 @@ export const base44Files = {
         }
       }
       
-      console.log('[Files] Token available:', token ? 'YES' : 'NO');
-      
-      // Convert file to base64 - different approaches for mobile vs web
-      let base64Data = '';
-      
-      if (Platform.OS !== 'web') {
-        // MOBILE: Use expo-file-system for reliable file reading
-        try {
-          console.log('[Files] Mobile: Reading file with expo-file-system...');
-          console.log('[Files] File URI:', fileUri);
-          
-          // Read file as base64 using static import of FileSystem
-          const base64Content = await FileSystem.readAsStringAsync(fileUri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-          
-          // Create data URL
-          base64Data = `data:${actualMimeType};base64,${base64Content}`;
-          console.log('[Files] Mobile: File read successfully, base64 length:', base64Data.length);
-        } catch (fsError: any) {
-          console.error('[Files] Mobile: expo-file-system failed:', fsError.message);
-          
-          // Fallback: try fetch + blob approach
-          console.log('[Files] Mobile: Trying fetch fallback...');
-          try {
-            const response = await fetch(fileUri);
-            const blob = await response.blob();
-            
-            base64Data = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(blob);
-            });
-            console.log('[Files] Mobile: Fetch fallback successful, length:', base64Data.length);
-          } catch (fetchError) {
-            console.error('[Files] Mobile: Fetch fallback also failed:', fetchError);
-            throw new Error(`Failed to read file: ${fsError.message}`);
-          }
-        }
-      } else {
-        // WEB: Use fetch + blob
-        try {
-          console.log('[Files] Web: Reading file with fetch...');
-          const response = await fetch(fileUri);
-          const blob = await response.blob();
-          
-          base64Data = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
-          console.log('[Files] Web: File read successfully, length:', base64Data.length);
-        } catch (webError) {
-          console.error('[Files] Web: Failed to read file:', webError);
-          throw new Error('Failed to read file on web');
-        }
-      }
-      
-      if (!base64Data) {
-        throw new Error('No file data to upload');
-      }
-      
-      // Upload using direct HTTP call to Base44 API (NO SDK)
-      console.log('[Files] Uploading via direct HTTP to Base44...');
-      console.log('[Files] Payload: filename=', fileName, 'mimeType=', actualMimeType, 'base64Length=', base64Data.length);
-      
-      const uploadUrl = `${BASE44_DIRECT_URL}/functions/invoke/publicUploadTrack`;
-      console.log('[Files] Upload URL:', uploadUrl);
-      
-      try {
-        const response = await axios.post(
-          uploadUrl,
+      // For data URIs (like cover images), use the JSON method
+      if (fileUri.startsWith('data:')) {
+        console.log('[Files] Uploading data URI via JSON...');
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const response = await fetch(
+          'https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/publicUploadTrack',
           {
-            file: base64Data,
-            filename: fileName,
-            mimeType: actualMimeType,
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-            },
-            timeout: 180000, // 3 minutes for large files
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity,
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              file: fileUri,
+              filename: fileName,
+              mimeType: actualMimeType,
+            }),
           }
         );
         
-        console.log('[Files] Upload response status:', response.status);
-        console.log('[Files] Upload response data:', JSON.stringify(response.data, null, 2));
-        
-        // Extract file URL from response
-        const result = response.data;
+        const result = await response.json();
         const fileUrl = result?.file_url || result?.fileUrl || result?.url || 
-                       result?.data?.file_url || result?.data?.url ||
-                       result?.result?.file_url || result?.result?.url;
-        
-        if (fileUrl) {
-          console.log('[Files] ✅ Upload successful, file URL:', fileUrl);
-          return { file_url: fileUrl, success: true, ...result };
-        }
-        
-        // If no URL but upload seems successful, construct one
-        if (result?.success || result?.filename || result?.file_id) {
-          const constructedUrl = `https://base44.app/api/apps/691a4d96d819355b52c063f3/files/public/691a4d96d819355b52c063f3/${result.filename || result.file_id || fileName}`;
-          console.log('[Files] ✅ Upload successful, constructed URL:', constructedUrl);
-          return { file_url: constructedUrl, success: true, ...result };
-        }
-        
-        // Check for error in response
-        if (result?.error || result?.message) {
-          throw new Error(result.error || result.message);
-        }
-        
-        throw new Error('Upload completed but no file URL returned');
-        
-      } catch (uploadError: any) {
-        console.error('[Files] ❌ Upload failed:', uploadError.message);
-        
-        if (uploadError.response) {
-          console.error('[Files] Response status:', uploadError.response.status);
-          console.error('[Files] Response data:', JSON.stringify(uploadError.response.data, null, 2));
-          
-          // Extract error message from response
-          const errorMsg = uploadError.response.data?.error || 
-                          uploadError.response.data?.message || 
-                          uploadError.response.data?.detail ||
-                          `HTTP ${uploadError.response.status}`;
-          throw new Error(`Upload failed: ${errorMsg}`);
-        }
-        
-        throw uploadError;
+                       result?.data?.file_url || result?.data?.url;
+        if (fileUrl) return { file_url: fileUrl, success: true, ...result };
+        throw new Error('No file URL in response');
       }
       
+      // For local files (audio), convert to base64 and upload
+      console.log('[Files] Converting local file to base64...');
+      
+      const base64Content = await FileSystem.readAsStringAsync(fileUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const base64Data = `data:${actualMimeType};base64,${base64Content}`;
+      console.log('[Files] File converted, base64 length:', base64Data.length);
+      
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      
+      const response = await fetch(
+        'https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/publicUploadTrack',
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            file: base64Data,
+            filename: fileName,
+            mimeType: actualMimeType,
+          }),
+        }
+      );
+      
+      const result = await response.json();
+      console.log('[Files] Upload result:', JSON.stringify(result, null, 2));
+      
+      const fileUrl = result?.file_url || result?.fileUrl || result?.url || 
+                     result?.data?.file_url || result?.data?.url ||
+                     result?.result?.file_url || result?.result?.url;
+      
+      if (fileUrl) {
+        console.log('[Files] Found file URL:', fileUrl);
+        return { file_url: fileUrl, success: true, ...result };
+      }
+      
+      if (result?.success || result?.filename || result?.file_id) {
+        const constructedUrl = `https://base44.app/api/apps/691a4d96d819355b52c063f3/files/public/691a4d96d819355b52c063f3/${result.filename || result.file_id || fileName}`;
+        console.log('[Files] Constructed URL:', constructedUrl);
+        return { file_url: constructedUrl, success: true, ...result };
+      }
+      
+      throw new Error('No file URL in response: ' + JSON.stringify(result));
     } catch (error: any) {
-      console.error('[Files] ❌ Error in upload:', error.message);
+      console.error('[Files] Error uploading file:', error?.message || error);
       throw error;
     }
   },
@@ -1556,20 +1326,27 @@ export const base44Admin = {
     try {
       console.log('[Admin] Adding', amount, 'diamonds to user:', email);
       
-      // Call the Base44 function directly
-      const response = await fetch(
-        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/invoke/giveBlackDiamonds`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, amount }),
-        }
-      );
+      // Find user by email
+      const usersResponse = await mobileApi.get(`/api/base44/entities/User?email=${encodeURIComponent(email)}`);
+      const users = usersResponse.data?.items || usersResponse.data || [];
+      const user = Array.isArray(users) ? users[0] : users;
       
-      const data = await response.json();
-      console.log('[Admin] addDiamonds response:', data);
-      return data;
-    } catch (error) {
+      if (!user || !user.id && !user._id) {
+        throw new Error('User not found');
+      }
+      
+      const userId = user.id || user._id;
+      const currentDiamonds = user.black_diamonds || user.diamonds || 0;
+      const newBalance = currentDiamonds + amount;
+      
+      // Update user diamonds directly
+      await mobileApi.put(`/api/base44/entities/User/${userId}`, {
+        black_diamonds: newBalance,
+      });
+      
+      console.log('[Admin] Diamonds updated:', currentDiamonds, '->', newBalance);
+      return { success: true, new_balance: newBalance };
+    } catch (error: any) {
       console.error('[Admin] Error adding diamonds:', error);
       throw error;
     }
@@ -1590,48 +1367,8 @@ export const base44Admin = {
 
   async approveTrack(trackId: string): Promise<any> {
     try {
-      console.log('[Admin] Approving track via Base44 DIRECT:', trackId);
-      // Use Base44 direct API to ensure sync with website
-      const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-      const response = await axios.put(
-        `${BASE44_DIRECT_URL}/entities/Track/${trackId}`,
-        {
-          status: 'approved',
-          approved_at: new Date().toISOString(),
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-        }
-      );
-      console.log('[Admin] Track approved successfully, synced with website');
-      
-      // Auto-sync with ACRCloud after approval
-      try {
-        console.log('[Admin] Auto-syncing track to ACRCloud...');
-        const acrResponse = await axios.post(
-          `${BACKEND_URL}/api/base44/functions/invoke/syncTrackToACRCloud`,
-          { trackId: trackId },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-            },
-            timeout: 60000, // 60 seconds timeout for ACRCloud sync
-          }
-        );
-        if (acrResponse.data?.success) {
-          console.log('[Admin] ✅ Track synced to ACRCloud successfully');
-        } else {
-          console.log('[Admin] ⚠️ ACRCloud sync response:', acrResponse.data?.message || 'Unknown response');
-        }
-      } catch (acrError: any) {
-        // Don't fail the approval if ACRCloud sync fails
-        console.error('[Admin] ⚠️ ACRCloud sync failed (track still approved):', acrError?.message || acrError);
-      }
-      
+      console.log('[Admin] Calling approve endpoint for track:', trackId);
+      const response = await mobileApi.put(`/api/admin/tracks/${trackId}/approve`);
       return response.data;
     } catch (error) {
       console.error('[Admin] Error approving track:', error);
@@ -1641,24 +1378,13 @@ export const base44Admin = {
 
   async rejectTrack(trackId: string, reason?: string): Promise<any> {
     try {
-      console.log('[Admin] Rejecting track via Base44 DIRECT:', trackId);
-      // Use Base44 direct API to ensure sync with website
-      const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-      const response = await axios.put(
-        `${BASE44_DIRECT_URL}/entities/Track/${trackId}`,
-        {
-          status: 'rejected',
-          rejection_reason: reason || 'Rejeté par l\'admin',
-          rejected_at: new Date().toISOString(),
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-        }
-      );
-      console.log('[Admin] Track rejected successfully, synced with website');
+      console.log('[Admin] Rejecting track via Base44:', trackId);
+      // Update the track status directly via Base44 entity API
+      const response = await mobileApi.put(`/api/base44/entities/Track/${trackId}`, {
+        status: 'rejected',
+        rejection_reason: reason || 'Rejeté par l\'admin',
+        rejected_at: new Date().toISOString(),
+      });
       return response.data;
     } catch (error) {
       console.error('[Admin] Error rejecting track:', error);
@@ -2130,7 +1856,6 @@ export interface TrackSend {
   track_title?: string;
   track_producer_name?: string;
   track_artwork_url?: string;
-  track_audio_url?: string;  // URL audio du track - AJOUTÉ
   track_genre?: string;
   sender_id: string;
   sender_name?: string;
@@ -2163,7 +1888,7 @@ export const base44TrackSend = {
   },
 
   /**
-   * Get tracks received by a user - enriched with audio URLs
+   * Get tracks received by a user
    */
   async getReceived(userId: string): Promise<TrackSend[]> {
     try {
@@ -2174,70 +1899,15 @@ export const base44TrackSend = {
       if (Array.isArray(data)) tracks = data;
       else if (data?.items) tracks = data.items;
       
-      // Fetch ALL tracks using the SAME method as home page (base44Tracks.list)
-      let allTracks: Track[] = [];
-      try {
-        // Use base44Tracks.list() - this works on both mobile and web
-        allTracks = await base44Tracks.list({ limit: 500 });
-        console.log('[TrackSend] Fetched', allTracks.length, 'tracks for enrichment via base44Tracks.list');
-      } catch (e) {
-        console.log('[TrackSend] Could not fetch tracks via base44Tracks.list:', e);
-      }
-      
-      // Create maps for fast lookup by ID AND by title (fallback)
-      const trackMapById = new Map<string, Track>();
-      const trackMapByTitle = new Map<string, Track>();
-      allTracks.forEach(track => {
-        const id = track.id || track._id || '';
-        if (id) trackMapById.set(id, track);
-        // Also map by title (normalized lowercase) for fallback matching
-        const title = (track.title || '').toLowerCase().trim();
-        if (title) trackMapByTitle.set(title, track);
-      });
-      
-      console.log('[TrackSend] Track maps: byId=', trackMapById.size, 'byTitle=', trackMapByTitle.size);
-      
-      // Enrich each TrackSend with audio_url from the track map
-      const enrichedTracks = tracks.map((trackSend) => {
-        if (!trackSend.track_audio_url) {
-          // Try to find by ID first
-          let trackData = trackSend.track_id ? trackMapById.get(trackSend.track_id) : null;
-          
-          // Fallback: try to find by title
-          if (!trackData && trackSend.track_title) {
-            const normalizedTitle = trackSend.track_title.toLowerCase().trim();
-            trackData = trackMapByTitle.get(normalizedTitle);
-            if (trackData) {
-              console.log('[TrackSend] Found track by TITLE match:', trackSend.track_title);
-            }
-          }
-          
-          if (trackData?.audio_url) {
-            console.log('[TrackSend] Enriched track:', trackSend.track_title, 'with audio URL');
-            return {
-              ...trackSend,
-              track_audio_url: trackData.audio_url,
-              track_artwork_url: trackSend.track_artwork_url || trackData.artwork_url,
-              track_title: trackSend.track_title || trackData.title,
-              track_producer_name: trackSend.track_producer_name || trackData.producer_name || trackData.artist_name,
-              track_genre: trackSend.track_genre || trackData.genre,
-            };
-          } else {
-            console.log('[TrackSend] Could not find track:', trackSend.track_id, trackSend.track_title);
-          }
-        }
-        return trackSend;
-      });
-      
       // Sort by created_at descending (newest first)
-      enrichedTracks.sort((a, b) => {
+      tracks.sort((a, b) => {
         const dateA = new Date(a.created_at || 0).getTime();
         const dateB = new Date(b.created_at || 0).getTime();
         return dateB - dateA;
       });
       
-      console.log('[TrackSend] Loaded', enrichedTracks.length, 'received tracks (enriched with audio URLs)');
-      return enrichedTracks;
+      console.log('[TrackSend] Loaded', tracks.length, 'received tracks');
+      return tracks;
     } catch (error) {
       console.error('[TrackSend] Error getting received tracks:', error);
       return [];
@@ -2271,21 +1941,6 @@ export const base44TrackSend = {
       return true;
     } catch (error) {
       console.error('[TrackSend] Error marking as viewed:', error);
-      return false;
-    }
-  },
-
-  /**
-   * Delete a received track
-   */
-  async delete(trackSendId: string): Promise<boolean> {
-    try {
-      console.log('[TrackSend] Deleting track send:', trackSendId);
-      await mobileApi.delete(`/api/base44/entities/TrackSend/${trackSendId}`);
-      console.log('[TrackSend] Track send deleted successfully');
-      return true;
-    } catch (error) {
-      console.error('[TrackSend] Error deleting track send:', error);
       return false;
     }
   },
@@ -2479,12 +2134,6 @@ export const base44Spyn = {
       console.log('[base44Spyn] Calling getNearbyPlaces function...');
       
       const token = await getSpynAuthToken();
-      console.log('[base44Spyn] Auth token available:', token ? 'YES' : 'NO');
-      
-      if (!token) {
-        console.log('[base44Spyn] ⚠️ No auth token - API may fail');
-      }
-      
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -2505,16 +2154,61 @@ export const base44Spyn = {
       
       const data = await response.json();
       console.log('[base44Spyn] getNearbyPlaces response:', data);
-      
-      // If auth failed, log it clearly
-      if (data.error && data.error.includes('Authentication')) {
-        console.log('[base44Spyn] ❌ Authentication failed for getNearbyPlaces');
-      }
-      
       return data;
     } catch (error) {
       console.error('[base44Spyn] getNearbyPlaces error:', error);
       throw error;
+    }
+  },
+
+  /**
+   * Get nearby places using Foursquare API (fallback)
+   */
+  async getNearbyPlacesFoursquare(params: {
+    latitude: number;
+    longitude: number;
+    radius?: number;
+  }): Promise<any> {
+    try {
+      console.log('[base44Spyn] Calling Foursquare Places API...');
+      
+      const FOURSQUARE_API_KEY = '4ESCR4T5YF22TAQO0GEOFJ04D4YIOHCLZRHFJABNOUJDO2XT';
+      
+      const response = await fetch(
+        `https://api.foursquare.com/v3/places/search?ll=${params.latitude},${params.longitude}&radius=${params.radius || 1000}&categories=10032,10039,10056,10024,10051&limit=5`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': FOURSQUARE_API_KEY,
+          },
+        }
+      );
+      
+      const data = await response.json();
+      console.log('[base44Spyn] Foursquare response:', data);
+      
+      if (data.results && data.results.length > 0) {
+        const place = data.results[0];
+        return {
+          success: true,
+          venue: place.name,
+          venue_type: place.categories?.[0]?.name || 'venue',
+          types: place.categories?.map((c: any) => c.name) || [],
+          source: 'foursquare',
+          places: data.results.map((p: any) => ({
+            name: p.name,
+            category: p.categories?.[0]?.name,
+            categories: p.categories?.map((c: any) => c.name) || [],
+            distance: p.distance,
+          })),
+        };
+      }
+      
+      return { success: false, error: 'No places found' };
+    } catch (error) {
+      console.error('[base44Spyn] Foursquare error:', error);
+      return { success: false, error: String(error) };
     }
   },
 
@@ -2562,159 +2256,6 @@ export const base44Spyn = {
       throw error;
     }
   },
-
-  /**
-   * Get nearby venue using Foursquare API (same as website)
-   * This provides more accurate venue detection for nightclubs/bars
-   */
-  async findNearbyVenueFoursquare(params: {
-    latitude: number;
-    longitude: number;
-  }): Promise<any> {
-    try {
-      console.log('[base44Spyn] Calling findNearbyVenueFoursquare function...');
-      
-      const token = await getSpynAuthToken();
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      const response = await fetch(
-        `https://spynners.base44.app/api/functions/findNearbyVenueFoursquare`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            latitude: params.latitude,
-            longitude: params.longitude,
-          }),
-        }
-      );
-      
-      const data = await response.json();
-      console.log('[base44Spyn] findNearbyVenueFoursquare response:', data);
-      return data;
-    } catch (error) {
-      console.error('[base44Spyn] findNearbyVenueFoursquare error:', error);
-      throw error;
-    }
-  },
-};
-
-// ==================== MIX SERVICE (My Mixes feature) ====================
-
-export interface Mix {
-  id?: string;
-  _id?: string;
-  user_id: string;
-  user_name?: string;
-  audio_url?: string;
-  duration?: number;
-  session_id?: string;
-  city?: string;
-  country?: string;
-  venue?: string;
-  tracks_count?: number;
-  expires_at?: string;
-  created_date?: string;
-}
-
-export const base44Mix = {
-  /**
-   * List mixes for the current user
-   */
-  async list(): Promise<Mix[]> {
-    try {
-      console.log('[Mix] Fetching user mixes...');
-      const token = await getSpynAuthToken();
-      
-      const response = await fetch(
-        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/entities/Mix?sort=-created_date&limit=50`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-        }
-      );
-      
-      const data = await response.json();
-      console.log('[Mix] List response:', data);
-      
-      if (Array.isArray(data)) {
-        return data;
-      }
-      if (data?.items) {
-        return data.items;
-      }
-      return [];
-    } catch (error) {
-      console.error('[Mix] Error listing mixes:', error);
-      return [];
-    }
-  },
-
-  /**
-   * Create a new mix after a SPYN Record session
-   */
-  async create(mix: Partial<Mix>): Promise<Mix | null> {
-    try {
-      console.log('[Mix] Creating new mix...');
-      const token = await getSpynAuthToken();
-      
-      const response = await fetch(
-        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/entities/Mix`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            ...mix,
-            created_date: new Date().toISOString(),
-            // Mixes expire after 24 hours
-            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          }),
-        }
-      );
-      
-      const data = await response.json();
-      console.log('[Mix] Create response:', data);
-      return data;
-    } catch (error) {
-      console.error('[Mix] Error creating mix:', error);
-      return null;
-    }
-  },
-
-  /**
-   * Delete a mix
-   */
-  async delete(mixId: string): Promise<boolean> {
-    try {
-      console.log('[Mix] Deleting mix:', mixId);
-      const token = await getSpynAuthToken();
-      
-      const response = await fetch(
-        `https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/entities/Mix/${mixId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          },
-        }
-      );
-      
-      return response.ok;
-    } catch (error) {
-      console.error('[Mix] Error deleting mix:', error);
-      return false;
-    }
-  },
 };
 
 // ==================== PUSH NOTIFICATIONS SERVICE ====================
@@ -2758,7 +2299,6 @@ export const base44PushNotifications = {
   /**
    * Send a push notification to a specific user
    * Called when sending a message to trigger notification on recipient's device
-   * IMPORTANT: This now sends directly to Expo Push API to ensure sound and vibration work
    */
   async sendPushNotification(params: {
     recipientUserId: string;
@@ -2769,67 +2309,46 @@ export const base44PushNotifications = {
     try {
       console.log('[PushNotifications] Sending push notification to user:', params.recipientUserId);
       
-      // First, get the recipient's push token from the User entity
+      // Get recipient push token from User entity
       let pushToken: string | null = null;
-      
       try {
         const userResponse = await mobileApi.get(`/api/base44/entities/User/${params.recipientUserId}`);
         pushToken = userResponse.data?.push_token || userResponse.data?.expoPushToken;
-        console.log('[PushNotifications] Recipient push token:', pushToken ? 'Found' : 'Not found');
       } catch (e) {
-        console.log('[PushNotifications] Could not fetch recipient user');
+        console.log('[PushNotifications] Could not fetch recipient');
       }
       
-      // If we have a push token, send directly to Expo Push API
+      // Send directly to Expo Push API with sound
       if (pushToken && pushToken.startsWith('ExponentPushToken')) {
-        console.log('[PushNotifications] Sending directly to Expo Push API...');
-        
         const expoPushResponse = await fetch('https://exp.host/--/api/v2/push/send', {
           method: 'POST',
           headers: {
             'Accept': 'application/json',
-            'Accept-encoding': 'gzip, deflate',
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             to: pushToken,
             title: `💬 ${params.senderName}`,
             body: params.messageContent,
-            sound: 'default',           // CRITICAL: This enables sound
-            priority: 'high',           // CRITICAL: This ensures fast delivery
-            channelId: 'messages',      // Android notification channel
-            data: {
-              type: 'message',
-              senderId: params.recipientUserId,
-              messageId: params.messageId || '',
-            },
-            // iOS specific settings
-            _displayInForeground: true,
+            sound: 'default',
+            priority: 'high',
+            channelId: 'messages',
           }),
         });
-        
-        const expoPushResult = await expoPushResponse.json();
-        console.log('[PushNotifications] Expo Push API response:', expoPushResult);
-        
-        if (expoPushResult.data?.status === 'ok' || expoPushResult.data?.[0]?.status === 'ok') {
-          console.log('[PushNotifications] ✅ Notification sent successfully via Expo Push');
-          return true;
-        }
+        const result = await expoPushResponse.json();
+        console.log('[PushNotifications] Expo Push response:', result);
+        return true;
       }
       
-      // Fallback: Call the Base44 function (may not have sound configured)
-      console.log('[PushNotifications] Falling back to Base44 function...');
-      const response = await mobileApi.post('/api/base44/functions/invoke/sendPushNotification', {
+      // Fallback to Base44
+      await mobileApi.post('/api/base44/functions/invoke/sendPushNotification', {
         recipient_user_id: params.recipientUserId,
         sender_name: params.senderName,
         message_content: params.messageContent,
-        message_id: params.messageId || '',
       });
-      
-      console.log('[PushNotifications] Notification sent via Base44:', response.data);
       return true;
     } catch (error: any) {
-      console.error('[PushNotifications] Error sending notification:', error?.message || error);
+      console.error('[PushNotifications] Error:', error?.message);
       return false;
     }
   },
@@ -3165,3 +2684,220 @@ export const base44Api = base44Auth;
 
 // Export mobileApi for direct use
 export { mobileApi };
+
+// ==================== NEW UPLOAD FUNCTION (NO expo-file-system) ====================
+// This function uses multipart/form-data which works natively in React Native
+
+export const uploadTrackMultipart = async (params: {
+  audioFileUri: string;
+  audioFileName: string;
+  artworkFileUri?: string;
+  artworkFileName?: string;
+  title: string;
+  genre?: string;
+  bpm?: number;
+  key?: string;
+  energy_level?: string;
+  mood?: string;
+  description?: string;
+  release_date?: string;
+  isrc?: string;
+  iswc?: string;
+  artist_name?: string;
+  label_name?: string;
+  is_unreleased?: boolean;
+  is_vip?: boolean;
+}): Promise<{ success: boolean; message?: string; track?: any; error?: string }> => {
+  try {
+    console.log('[Upload] Starting multipart upload...');
+    
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    const { Platform } = require('react-native');
+    
+    let token = '';
+    try { token = await AsyncStorage.getItem('auth_token') || ''; } catch (e) {}
+
+    const formData = new FormData();
+
+    // Add audio file
+    const audioMimeType = params.audioFileName.toLowerCase().endsWith('.wav') ? 'audio/wav' : 'audio/mpeg';
+    formData.append('audio_file', {
+      uri: params.audioFileUri,
+      name: params.audioFileName,
+      type: audioMimeType,
+    } as any);
+
+    // Add artwork if provided
+    if (params.artworkFileUri && params.artworkFileName) {
+      formData.append('artwork_file', {
+        uri: params.artworkFileUri,
+        name: params.artworkFileName,
+        type: 'image/jpeg',
+      } as any);
+    }
+
+    // Add metadata
+    formData.append('title', params.title);
+    if (params.genre) formData.append('genre', params.genre);
+    if (params.bpm) formData.append('bpm', params.bpm.toString());
+    if (params.key) formData.append('key', params.key);
+    if (params.energy_level) formData.append('energy_level', params.energy_level);
+    if (params.mood) formData.append('mood', params.mood);
+    if (params.description) formData.append('description', params.description);
+    if (params.release_date) formData.append('release_date', params.release_date);
+    if (params.isrc) formData.append('isrc', params.isrc);
+    if (params.iswc) formData.append('iswc', params.iswc);
+    if (params.artist_name) formData.append('artist_name', params.artist_name);
+    if (params.label_name) formData.append('label_name', params.label_name);
+
+    const uploadUrl = 'https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/apiUploadTrack';
+    console.log('[Upload] URL:', uploadUrl);
+
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: token ? { 'Authorization': 'Bearer ' + token } : {},
+      body: formData,
+    });
+
+    const result = await response.json();
+    console.log('[Upload] Result:', JSON.stringify(result));
+
+    if (!response.ok) {
+      throw new Error(result.error || result.message || 'HTTP ' + response.status);
+    }
+
+    return { success: true, track: result.track || result };
+  } catch (error: any) {
+    console.error('[Upload] Error:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+// ==================== API META SERVICE ====================
+// Unified endpoint for all track operations
+
+const API_META_URL = 'https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/apiMeta';
+
+export const apiMeta = {
+  // Extract metadata from MP3 file
+  async extractMetadata(audioFileUri: string, audioFileName: string, authToken: string): Promise<{
+    success: boolean;
+    metadata?: { title?: string; artist?: string; album?: string; genre?: string; year?: number; bpm?: number; key?: string; duration?: number; cover_image?: string; isrc?: string };
+    error?: string;
+  }> {
+    try {
+      const formData = new FormData();
+      formData.append('action', 'extractMetadata');
+      formData.append('audio_file', { uri: audioFileUri, name: audioFileName, type: 'audio/mpeg' } as any);
+
+      const response = await fetch(API_META_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${authToken}` },
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (result.success) return { success: true, metadata: result.metadata };
+      return { success: false, error: result.error || 'Failed to extract metadata' };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Upload a new track
+  async uploadTrack(params: {
+    audioFileUri: string;
+    audioFileName: string;
+    artworkFileUri?: string;
+    artworkFileName?: string;
+    title: string;
+    genre?: string;
+    bpm?: string;
+    key?: string;
+    energy_level?: string;
+    mood?: string;
+    description?: string;
+  }, authToken: string): Promise<{ success: boolean; track_id?: string; audio_url?: string; artwork_url?: string; error?: string }> {
+    try {
+      const formData = new FormData();
+      formData.append('action', 'uploadTrack');
+      formData.append('audio_file', { uri: params.audioFileUri, name: params.audioFileName, type: 'audio/mpeg' } as any);
+      if (params.artworkFileUri && params.artworkFileName) {
+        formData.append('artwork_file', { uri: params.artworkFileUri, name: params.artworkFileName, type: 'image/jpeg' } as any);
+      }
+      formData.append('title', params.title);
+      if (params.genre) formData.append('genre', params.genre);
+      if (params.bpm) formData.append('bpm', params.bpm);
+      if (params.key) formData.append('key', params.key);
+      if (params.energy_level) formData.append('energy_level', params.energy_level);
+      if (params.mood) formData.append('mood', params.mood);
+      if (params.description) formData.append('description', params.description);
+
+      const response = await fetch(API_META_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${authToken}` },
+        body: formData,
+      });
+
+      return await response.json();
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Get track with stats
+  async getTrack(trackId: string, authToken: string): Promise<{ success: boolean; track?: any; error?: string }> {
+    try {
+      const response = await fetch(API_META_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'getTrack', data: { track_id: trackId } }),
+      });
+      return await response.json();
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Get producer's tracks
+  async getProducerTracks(producerId?: string, authToken?: string): Promise<{ success: boolean; tracks?: any[]; error?: string }> {
+    try {
+      const response = await fetch(API_META_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'getProducerTracks', data: { producer_id: producerId } }),
+      });
+      return await response.json();
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Update track
+  async updateTrack(trackId: string, updates: { title?: string; genre?: string; bpm?: number; key?: string; description?: string }, authToken: string): Promise<{ success: boolean; track?: any; error?: string }> {
+    try {
+      const response = await fetch(API_META_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'updateTrack', data: { track_id: trackId, ...updates } }),
+      });
+      return await response.json();
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Delete track
+  async deleteTrack(trackId: string, authToken: string): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+      const response = await fetch(API_META_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'deleteTrack', data: { track_id: trackId } }),
+      });
+      return await response.json();
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+};

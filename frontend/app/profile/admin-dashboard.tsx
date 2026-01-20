@@ -276,7 +276,7 @@ export default function AdminDashboard() {
       setProcessing(true);
       Alert.alert('Sync ACRCloud', 'Synchronisation en cours...');
       
-      const response = await axios.post(`${BACKEND_URL}/api/admin/sync-acrcloud`, {}, {
+      const response = await axios.post('https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/syncTracksToACRCloud', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -299,7 +299,7 @@ export default function AdminDashboard() {
       Alert.alert('Debug ACRCloud', t('admin.diagnosticStarting'));
       
       // Call the backend function
-      const response = await axios.post(`${BACKEND_URL}/api/admin/debug-acrcloud`, {}, {
+      const response = await axios.post('https://spynners.base44.app/api/apps/691a4d96d819355b52c063f3/functions/debugACRCloud', {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
