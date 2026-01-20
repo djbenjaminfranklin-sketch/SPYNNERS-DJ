@@ -8,22 +8,31 @@ import {
   ActivityIndicator,
   Image,
   RefreshControl,
+  Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import { usePlayer } from '../../src/contexts/PlayerContext';
 import { base44TrackSend, TrackSend } from '../../src/services/base44Api';
 import { Colors } from '../../src/theme/colors';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 export default function ReceivedScreen() {
   const { user, token } = useAuth();
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { playTrack, currentTrack, isPlaying, togglePlayPause } = usePlayer();
+  
   const [receivedTracks, setReceivedTracks] = useState<TrackSend[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (token) {
@@ -68,17 +77,159 @@ export default function ReceivedScreen() {
     setRefreshing(false);
   };
 
+  // Handle play button
+  const handlePlay = async (item: TrackSend) => {
+    if (!item.track_audio_url) {
+      Alert.alert(
+        language === 'fr' ? 'Erreur' : 'Error',
+        language === 'fr' ? 'Fichier audio non disponible' : 'No audio file available'
+      );
+      return;
+    }
+
+    // Check if this track is already playing
+    const trackId = item.track_id || item.id || item._id || '';
+    if (currentTrack?.id === trackId) {
+      // Toggle play/pause
+      togglePlayPause();
+    } else {
+      // Play new track
+      await playTrack({
+        id: trackId,
+        title: item.track_title || 'Unknown Track',
+        artist: item.track_producer_name || 'Unknown Artist',
+        audioUrl: item.track_audio_url,
+        coverImage: item.track_artwork_url,
+        genre: item.track_genre,
+      });
+    }
+  };
+
+  // Handle download button
+  const handleDownload = async (item: TrackSend) => {
+    if (!item.track_audio_url) {
+      Alert.alert(
+        language === 'fr' ? 'Erreur' : 'Error',
+        language === 'fr' ? 'Fichier audio non disponible' : 'No audio file available'
+      );
+      return;
+    }
+
+    const trackId = item.id || item._id || '';
+    setDownloadingId(trackId);
+
+    try {
+      if (Platform.OS === 'web') {
+        // Web: Open URL in new tab or trigger download
+        window.open(item.track_audio_url, '_blank');
+      } else {
+        // Mobile: Download and share
+        const filename = `${(item.track_title || 'track').replace(/[^a-zA-Z0-9]/g, '_')}.mp3`;
+        const downloadDir = FileSystem.documentDirectory;
+        const downloadPath = `${downloadDir}${filename}`;
+
+        console.log('[Received] Downloading to:', downloadPath);
+        
+        // Download the file
+        const downloadResult = await FileSystem.downloadAsync(
+          item.track_audio_url,
+          downloadPath
+        );
+
+        if (downloadResult.status === 200) {
+          console.log('[Received] Download successful:', downloadResult.uri);
+          
+          // Share the file (allows user to save to Files, AirDrop, etc.)
+          if (await Sharing.isAvailableAsync()) {
+            await Sharing.shareAsync(downloadResult.uri, {
+              mimeType: 'audio/mpeg',
+              dialogTitle: language === 'fr' ? 'Sauvegarder le track' : 'Save track',
+            });
+          } else {
+            Alert.alert(
+              language === 'fr' ? 'Succès' : 'Success',
+              language === 'fr' ? 'Track téléchargé' : 'Track downloaded'
+            );
+          }
+        } else {
+          throw new Error('Download failed');
+        }
+      }
+    } catch (error) {
+      console.error('[Received] Download error:', error);
+      Alert.alert(
+        language === 'fr' ? 'Erreur' : 'Error',
+        language === 'fr' ? 'Impossible de télécharger le fichier' : 'Unable to download file'
+      );
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  // Handle delete button
+  const handleDelete = (item: TrackSend) => {
+    const trackId = item.id || item._id || '';
+    
+    Alert.alert(
+      language === 'fr' ? 'Supprimer le track ?' : 'Delete track?',
+      language === 'fr' 
+        ? `Voulez-vous supprimer "${item.track_title || 'ce track'}" de votre liste ?`
+        : `Do you want to remove "${item.track_title || 'this track'}" from your list?`,
+      [
+        { 
+          text: language === 'fr' ? 'Annuler' : 'Cancel', 
+          style: 'cancel' 
+        },
+        {
+          text: language === 'fr' ? 'Supprimer' : 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletingId(trackId);
+            try {
+              const success = await base44TrackSend.delete(trackId);
+              if (success) {
+                // Remove from local state
+                setReceivedTracks(prev => prev.filter(t => (t.id || t._id) !== trackId));
+                console.log('[Received] Track deleted successfully');
+              } else {
+                throw new Error('Delete failed');
+              }
+            } catch (error) {
+              console.error('[Received] Delete error:', error);
+              Alert.alert(
+                language === 'fr' ? 'Erreur' : 'Error',
+                language === 'fr' ? 'Impossible de supprimer le track' : 'Unable to delete track'
+              );
+            } finally {
+              setDeletingId(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderTrack = ({ item }: { item: TrackSend }) => {
     const coverUrl = item.track_artwork_url;
+    const trackId = item.track_id || item.id || item._id || '';
+    const isCurrentTrack = currentTrack?.id === trackId;
+    const isTrackPlaying = isCurrentTrack && isPlaying;
+    const isDownloading = downloadingId === (item.id || item._id);
+    const isDeleting = deletingId === (item.id || item._id);
     
     return (
-      <View style={styles.trackCard}>
+      <View style={[styles.trackCard, isCurrentTrack && styles.trackCardPlaying]}>
         <View style={styles.trackCover}>
           {coverUrl ? (
             <Image source={{ uri: coverUrl }} style={styles.coverImage} />
           ) : (
             <View style={styles.coverPlaceholder}>
               <Ionicons name="musical-notes" size={24} color={Colors.textMuted} />
+            </View>
+          )}
+          {isCurrentTrack && (
+            <View style={styles.nowPlayingBadge}>
+              <Ionicons name="volume-high" size={12} color="#fff" />
             </View>
           )}
         </View>
@@ -97,11 +248,47 @@ export default function ReceivedScreen() {
         </View>
 
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="play" size={20} color={Colors.primary} />
+          {/* Play Button */}
+          <TouchableOpacity 
+            style={[styles.actionButton, isTrackPlaying && styles.actionButtonActive]}
+            onPress={() => handlePlay(item)}
+            disabled={!item.track_audio_url}
+          >
+            <Ionicons 
+              name={isTrackPlaying ? "pause" : "play"} 
+              size={20} 
+              color={isTrackPlaying ? '#fff' : (item.track_audio_url ? Colors.primary : Colors.textMuted)} 
+            />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="download" size={20} color={Colors.textMuted} />
+          
+          {/* Download Button */}
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleDownload(item)}
+            disabled={isDownloading || !item.track_audio_url}
+          >
+            {isDownloading ? (
+              <ActivityIndicator size="small" color={Colors.primary} />
+            ) : (
+              <Ionicons 
+                name="download" 
+                size={20} 
+                color={item.track_audio_url ? Colors.primary : Colors.textMuted} 
+              />
+            )}
+          </TouchableOpacity>
+          
+          {/* Delete Button */}
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleDelete(item)}
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <ActivityIndicator size="small" color="#ff6b6b" />
+            ) : (
+              <Ionicons name="trash" size={20} color="#ff6b6b" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -124,7 +311,7 @@ export default function ReceivedScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{"🔴 TEST MODIF 🔴"}</Text>
+        <Text style={styles.headerTitle}>{t('page.receivedTracks')}</Text>
         <View style={{ width: 40 }} />
       </LinearGradient>
 
@@ -177,12 +364,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  trackCardPlaying: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '15',
+  },
   trackCover: {
     width: 60,
     height: 60,
     borderRadius: 8,
     overflow: 'hidden',
     marginRight: 12,
+    position: 'relative',
   },
   coverImage: { width: '100%', height: '100%' },
   coverPlaceholder: {
@@ -192,6 +384,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  nowPlayingBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    padding: 3,
+  },
   trackInfo: { flex: 1 },
   trackTitle: { fontSize: 15, fontWeight: '600', color: Colors.text },
   trackArtist: { fontSize: 13, color: Colors.primary, marginTop: 2 },
@@ -199,7 +399,7 @@ const styles = StyleSheet.create({
   senderText: { fontSize: 11, color: Colors.textMuted },
   messageText: { fontSize: 11, color: '#888', fontStyle: 'italic', marginTop: 2 },
   trackMeta: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
-  actions: { flexDirection: 'row', gap: 8 },
+  actions: { flexDirection: 'row', gap: 6 },
   actionButton: {
     width: 36,
     height: 36,
@@ -207,6 +407,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  actionButtonActive: {
+    backgroundColor: Colors.primary,
   },
   emptyContainer: {
     flex: 1,
