@@ -42,6 +42,7 @@ import axios from 'axios';
 import offlineService from '../../src/services/offlineService';
 import { base44Spyn, base44Tracks } from '../../src/services/base44Api';
 import { saveLocalMix } from '../profile/my-mixes';
+import useUSBAudio from '../../src/hooks/useUSBAudio';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -58,7 +59,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return 'https://djspyn.preview.emergentagent.com';
+  return 'https://trackmix-6.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 
@@ -118,6 +119,20 @@ export default function SpynRecordScreen() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [hasPermission, setHasPermission] = useState(false);
   
+  // USB Audio detection hook
+  const { isUSBConnected, inputName: usbInputName, checkUSBStatus, isLoading: isUSBLoading } = useUSBAudio({
+    onUSBConnected: (route) => {
+      console.log('[SPYN Record] 🔌 USB Connected:', route.inputName);
+      setAudioSource('usb');
+      setAudioSourceName(route.inputName || 'USB Audio Interface');
+    },
+    onUSBDisconnected: (route) => {
+      console.log('[SPYN Record] 🔌 USB Disconnected');
+      setAudioSource('internal');
+      setAudioSourceName('Microphone interne');
+    },
+  });
+  
   // Audio source state
   const [audioSource, setAudioSource] = useState<'internal' | 'external' | 'usb'>('internal');
   const [audioSourceName, setAudioSourceName] = useState<string>('Microphone interne');
@@ -145,7 +160,6 @@ export default function SpynRecordScreen() {
   const [otherDjName, setOtherDjName] = useState('');
   const [saveMix, setSaveMix] = useState(true);
   const [sessionFileUri, setSessionFileUri] = useState<string>('');
-  const sessionFileUriRef = useRef<string>(''); // Backup ref to prevent async state issues
   const [sessionStartTime, setSessionStartTime] = useState<string>('');
   
   // Location state
@@ -167,9 +181,6 @@ export default function SpynRecordScreen() {
   
   // Waveform
   const [waveformData, setWaveformData] = useState<WaveformBar[]>([]);
-  
-  // VU Meter levels
-  const [vuLevels, setVuLevels] = useState<{left: number, right: number}>({left: 0, right: 0});
   
   // Refs
   const recordingRef = useRef<Audio.Recording | null>(null);
@@ -196,6 +207,16 @@ export default function SpynRecordScreen() {
     requestPermissions();
     detectAudioSources();
     initOfflineService();
+    
+    // Check USB status on mount (native iOS)
+    if (Platform.OS === 'ios') {
+      checkUSBStatus().then((route) => {
+        if (route?.isUSB) {
+          setAudioSource('usb');
+          setAudioSourceName(route.inputName || 'USB Audio Interface');
+        }
+      });
+    }
     
     // Listen for device changes (plug/unplug)
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices) {
@@ -722,12 +743,6 @@ export default function SpynRecordScreen() {
       }
       
       setWaveformData(bars);
-      
-      // Update VU meter levels
-      const avgLevel = bars.reduce((sum, bar) => sum + bar.height, 0) / bars.length;
-      const leftLevel = Math.min(100, avgLevel + (Math.random() * 10 - 5));
-      const rightLevel = Math.min(100, avgLevel + (Math.random() * 10 - 5));
-      setVuLevels({ left: leftLevel, right: rightLevel });
     } else if (isRecordingRef.current && !isPaused) {
       // For native mobile: Generate animated waveform based on recording status
       // This provides visual feedback even though we can't access real audio data
@@ -755,12 +770,6 @@ export default function SpynRecordScreen() {
       }
       
       setWaveformData(bars);
-      
-      // Update VU meter levels for native
-      const avgLevel = bars.reduce((sum, bar) => sum + bar.height, 0) / bars.length;
-      const leftLevel = Math.min(100, avgLevel + (Math.random() * 10 - 5));
-      const rightLevel = Math.min(100, avgLevel + (Math.random() * 10 - 5));
-      setVuLevels({ left: leftLevel, right: rightLevel });
     } else {
       // Not recording - show static low bars
       const bars: WaveformBar[] = [];
@@ -768,7 +777,6 @@ export default function SpynRecordScreen() {
         bars.push({ height: 5, color: CYAN_COLOR });
       }
       setWaveformData(bars);
-      setVuLevels({ left: 0, right: 0 });
     }
   }, [isPaused]);
 
@@ -1423,9 +1431,7 @@ export default function SpynRecordScreen() {
     setIsPaused(false);
     
     // Store the file URI for later processing
-    sessionFileUriRef.current = fileUri; // Store in ref immediately
     setSessionFileUri(fileUri);
-    console.log('[SPYN Record] ✅ Session file URI stored in ref:', fileUri);
     
     // Show the End Session Modal
     setShowEndSessionModal(true);
@@ -1439,8 +1445,7 @@ export default function SpynRecordScreen() {
       setCurrentAnalysis('Analyse en cours...');
       
       let audioBase64ForAnalysis = '';
-      const fileUri = sessionFileUriRef.current || sessionFileUri; // Use ref first, then state
-      console.log('[SPYN Record] Using fileUri for processing:', fileUri, 'from ref:', !!sessionFileUriRef.current);
+      const fileUri = sessionFileUri;
       
       // Read audio for analysis
       if (fileUri) {
@@ -1630,44 +1635,18 @@ export default function SpynRecordScreen() {
         // AUTO-SAVE to My Mixes (Local Storage)
         try {
           console.log('[SPYN Record] 📤 Saving mix to My Mixes (local)...');
-          console.log('[SPYN Record] audio_url for save:', fileUri);
-          console.log('[SPYN Record] fileUri exists:', !!fileUri);
-          console.log('[SPYN Record] fileUri length:', fileUri?.length || 0);
-          
-          // Verify file exists before saving
-          if (fileUri && fileUri.length > 0) {
-            try {
-              const fileInfo = await FileSystem.getInfoAsync(fileUri);
-              console.log('[SPYN Record] File info before save:', JSON.stringify(fileInfo));
-              
-              if (!fileInfo.exists) {
-                console.error('[SPYN Record] ❌ Audio file does not exist at:', fileUri);
-                // Try with file:// prefix
-                const fileUriWithPrefix = fileUri.startsWith('file://') ? fileUri : `file://${fileUri}`;
-                const fileInfo2 = await FileSystem.getInfoAsync(fileUriWithPrefix);
-                if (!fileInfo2.exists) {
-                  Alert.alert('Erreur', 'Le fichier audio n\'existe pas');
-                }
-              }
-            } catch (fileCheckError) {
-              console.error('[SPYN Record] ❌ Error checking file:', fileCheckError);
-            }
-            
-            await saveLocalMix({
-              user_id: user?.id || user?._id || '',
-              user_name: whoPlayed === 'another' ? otherDjName : (user?.full_name || 'DJ'),
-              audio_url: fileUri, // Local file URI
-              duration: recordingDuration,
-              session_id: sessionData.id,
-              city: location?.city || '',
-              country: location?.country || '',
-              venue: correctedVenue || location?.venue || '',
-              tracks_count: allTracks.length,
-            });
-            console.log('[SPYN Record] ✅ Mix saved to My Mixes');
-          } else {
-            console.error('[SPYN Record] ❌ No fileUri available for saving');
-          }
+          await saveLocalMix({
+            user_id: user?.id || user?._id || '',
+            user_name: whoPlayed === 'another' ? otherDjName : (user?.full_name || 'DJ'),
+            audio_url: fileUri, // Local file URI
+            duration: recordingDuration,
+            session_id: sessionData.id,
+            city: location?.city || '',
+            country: location?.country || '',
+            venue: correctedVenue || location?.venue || '',
+            tracks_count: allTracks.length,
+          });
+          console.log('[SPYN Record] ✅ Mix saved to My Mixes');
         } catch (mixError: any) {
           console.error('[SPYN Record] ❌ Failed to save mix:', mixError?.message || mixError);
           // Don't fail the session if mix save fails
@@ -1942,12 +1921,9 @@ export default function SpynRecordScreen() {
     }
   };
 
-  // Render waveform - Pink dots style like original
+  // Render waveform
   const renderWaveform = () => (
     <View style={styles.waveformContainer}>
-      {/* Center dashed line */}
-      <View style={styles.waveformCenterLine} />
-      {/* Waveform bars/dots */}
       {waveformData.map((bar, index) => (
         <View
           key={index}
@@ -1955,7 +1931,7 @@ export default function SpynRecordScreen() {
             styles.waveformBar,
             {
               height: bar.height,
-              backgroundColor: isRecording && !isPaused ? PINK_COLOR : '#333',
+              backgroundColor: isRecording && !isPaused ? bar.color : '#333',
             },
           ]}
         />
@@ -2047,36 +2023,53 @@ export default function SpynRecordScreen() {
           </TouchableOpacity>
         )}
         
-        <View style={[
-          styles.audioSourceBadge,
-          audioSource === 'usb' ? styles.audioSourceUSB : 
-          audioSource === 'external' ? styles.audioSourceExternal : 
-          styles.audioSourceInternal
-        ]}>
-          <Ionicons 
-            name={audioSource === 'usb' ? 'hardware-chip' : audioSource === 'external' ? 'headset' : 'mic'} 
-            size={16} 
-            color={audioSource === 'usb' ? '#00D4FF' : audioSource === 'external' ? GREEN_COLOR : '#888'} 
-          />
-          <Text style={[
-            styles.audioSourceText,
-            (audioSource === 'external' || audioSource === 'usb') && styles.audioSourceTextExternal
-          ]}>
-            {audioSourceName}
-          </Text>
-          {(audioSource === 'external' || audioSource === 'usb') && (
-            <View style={[styles.externalDot, audioSource === 'usb' && styles.usbDot]} />
-          )}
-          {isCheckingUSB && (
-            <Ionicons name="refresh" size={12} color="#666" style={{ marginLeft: 4 }} />
-          )}
+        {/* Audio Source Toggle Buttons */}
+        <View style={styles.audioToggleContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.audioToggleButton,
+              audioSource === 'internal' && styles.audioToggleButtonActive
+            ]}
+            onPress={() => {
+              setAudioSource('internal');
+              setAudioSourceName('Micro interne');
+            }}
+          >
+            <Ionicons name="mic" size={16} color={audioSource === 'internal' ? '#fff' : '#888'} />
+            <Text style={[
+              styles.audioToggleText,
+              audioSource === 'internal' && styles.audioToggleTextActive
+            ]}>Micro</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.audioToggleButton,
+              (audioSource === 'usb' || audioSource === 'external') && styles.audioToggleButtonUSB
+            ]}
+            onPress={() => {
+              setAudioSource('usb');
+              setAudioSourceName('USB / Interface externe');
+              detectAudioSources();
+            }}
+          >
+            <Ionicons name="hardware-chip" size={16} color={(audioSource === 'usb' || audioSource === 'external') ? '#00D4FF' : '#888'} />
+            <Text style={[
+              styles.audioToggleText,
+              (audioSource === 'usb' || audioSource === 'external') && styles.audioToggleTextUSB
+            ]}>USB</Text>
+          </TouchableOpacity>
         </View>
+        
         <TouchableOpacity 
           style={styles.refreshSourceButton}
           onPress={detectAudioSources}
           disabled={isCheckingUSB}
         >
           <Ionicons name="refresh" size={18} color={isCheckingUSB ? '#333' : '#666'} />
+          {isCheckingUSB && (
+            <Ionicons name="sync" size={12} color="#666" style={{ marginLeft: 2 }} />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -2109,53 +2102,6 @@ export default function SpynRecordScreen() {
           </View>
         ) : null}
       </View>
-
-      {/* VU Meter - Horizontal bars like professional DJ equipment */}
-      {isRecording && (
-        <View style={styles.vuMeterContainer}>
-          <Text style={styles.sectionLabel}>VU METER</Text>
-          <View style={styles.vuMetersHorizontal}>
-            {/* Left Channel */}
-            <View style={styles.vuMeterRow}>
-              <Text style={styles.vuLabelH}>L</Text>
-              <View style={styles.vuMeterTrackH}>
-                {/* Green zone (0-60%) */}
-                <View style={[styles.vuMeterSegment, styles.vuGreen, { width: `${Math.min(vuLevels.left, 60)}%` }]} />
-                {/* Yellow zone (60-85%) */}
-                {vuLevels.left > 60 && (
-                  <View style={[styles.vuMeterSegment, styles.vuYellow, { width: `${Math.min(vuLevels.left - 60, 25)}%`, left: '60%' }]} />
-                )}
-                {/* Red zone (85-100%) */}
-                {vuLevels.left > 85 && (
-                  <View style={[styles.vuMeterSegment, styles.vuRed, { width: `${vuLevels.left - 85}%`, left: '85%' }]} />
-                )}
-                {/* Peak indicator - white line */}
-                <View style={[styles.vuPeakIndicator, { left: `${vuLevels.left}%` }]} />
-              </View>
-              <Text style={styles.vuDbValue}>{Math.round(-60 + (vuLevels.left * 0.6))} dB</Text>
-            </View>
-            {/* Right Channel */}
-            <View style={styles.vuMeterRow}>
-              <Text style={styles.vuLabelH}>R</Text>
-              <View style={styles.vuMeterTrackH}>
-                {/* Green zone (0-60%) */}
-                <View style={[styles.vuMeterSegment, styles.vuGreen, { width: `${Math.min(vuLevels.right, 60)}%` }]} />
-                {/* Yellow zone (60-85%) */}
-                {vuLevels.right > 60 && (
-                  <View style={[styles.vuMeterSegment, styles.vuYellow, { width: `${Math.min(vuLevels.right - 60, 25)}%`, left: '60%' }]} />
-                )}
-                {/* Red zone (85-100%) */}
-                {vuLevels.right > 85 && (
-                  <View style={[styles.vuMeterSegment, styles.vuRed, { width: `${vuLevels.right - 85}%`, left: '85%' }]} />
-                )}
-                {/* Peak indicator - white line */}
-                <View style={[styles.vuPeakIndicator, { left: `${vuLevels.right}%` }]} />
-              </View>
-              <Text style={styles.vuDbValue}>{Math.round(-60 + (vuLevels.right * 0.6))} dB</Text>
-            </View>
-          </View>
-        </View>
-      )}
 
       {/* Waveform */}
       <View style={styles.waveformSection}>
@@ -2489,6 +2435,40 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: CYAN_COLOR + '60',
   },
+  audioToggleContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  audioToggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#1a1a1a',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  audioToggleButtonActive: {
+    backgroundColor: PINK_COLOR,
+    borderColor: PINK_COLOR,
+  },
+  audioToggleButtonUSB: {
+    backgroundColor: 'rgba(0, 212, 255, 0.2)',
+    borderColor: CYAN_COLOR,
+  },
+  audioToggleText: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  audioToggleTextActive: {
+    color: '#fff',
+  },
+  audioToggleTextUSB: {
+    color: CYAN_COLOR,
+  },
   audioSourceText: {
     color: '#888',
     fontSize: 12,
@@ -2586,24 +2566,12 @@ const styles = StyleSheet.create({
   },
   waveformContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
     height: 80,
     backgroundColor: '#111',
     borderRadius: 12,
     padding: 10,
-    position: 'relative',
-  },
-  waveformCenterLine: {
-    position: 'absolute',
-    left: 10,
-    right: 10,
-    top: '50%',
-    height: 1,
-    borderStyle: 'dashed',
-    borderWidth: 1,
-    borderColor: PINK_COLOR,
-    opacity: 0.5,
   },
   waveformBar: {
     width: 4,
@@ -3041,98 +3009,5 @@ const styles = StyleSheet.create({
   diamondSubtitle: {
     color: CYAN_COLOR,
     fontSize: 18,
-  },
-  // VU Meter Styles - Horizontal like professional DJ equipment
-  vuMeterContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  vuMetersHorizontal: {
-    backgroundColor: '#111',
-    borderRadius: 12,
-    padding: 16,
-    gap: 12,
-  },
-  vuMeterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  vuLabelH: {
-    color: '#888',
-    fontSize: 14,
-    fontWeight: '700',
-    width: 20,
-  },
-  vuMeterTrackH: {
-    flex: 1,
-    height: 20,
-    backgroundColor: '#1a1a2e',
-    borderRadius: 4,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  vuMeterSegment: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    borderRadius: 2,
-  },
-  vuGreen: {
-    backgroundColor: '#00FF88',
-    left: 0,
-  },
-  vuYellow: {
-    backgroundColor: '#FFB800',
-  },
-  vuRed: {
-    backgroundColor: '#FF006E',
-  },
-  vuPeakIndicator: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 3,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 1,
-  },
-  vuDbValue: {
-    color: '#888',
-    fontSize: 11,
-    fontWeight: '600',
-    width: 50,
-    textAlign: 'right',
-  },
-  // Legacy vertical VU meter styles (kept for reference)
-  vuMeters: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    gap: 20,
-    height: 120,
-    backgroundColor: '#111',
-    borderRadius: 12,
-    padding: 16,
-  },
-  vuMeterColumn: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  vuLabel: {
-    color: '#888',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  vuMeterTrack: {
-    width: 30,
-    height: 80,
-    backgroundColor: '#1a1a2e',
-    borderRadius: 4,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-  },
-  vuMeterFill: {
-    width: '100%',
-    borderRadius: 4,
   },
 });
