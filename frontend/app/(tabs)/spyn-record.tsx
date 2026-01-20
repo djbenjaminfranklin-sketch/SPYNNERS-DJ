@@ -2023,36 +2023,53 @@ export default function SpynRecordScreen() {
           </TouchableOpacity>
         )}
         
-        <View style={[
-          styles.audioSourceBadge,
-          audioSource === 'usb' ? styles.audioSourceUSB : 
-          audioSource === 'external' ? styles.audioSourceExternal : 
-          styles.audioSourceInternal
-        ]}>
-          <Ionicons 
-            name={audioSource === 'usb' ? 'hardware-chip' : audioSource === 'external' ? 'headset' : 'mic'} 
-            size={16} 
-            color={audioSource === 'usb' ? '#00D4FF' : audioSource === 'external' ? GREEN_COLOR : '#888'} 
-          />
-          <Text style={[
-            styles.audioSourceText,
-            (audioSource === 'external' || audioSource === 'usb') && styles.audioSourceTextExternal
-          ]}>
-            {audioSourceName}
-          </Text>
-          {(audioSource === 'external' || audioSource === 'usb') && (
-            <View style={[styles.externalDot, audioSource === 'usb' && styles.usbDot]} />
-          )}
-          {isCheckingUSB && (
-            <Ionicons name="refresh" size={12} color="#666" style={{ marginLeft: 4 }} />
-          )}
+        {/* Audio Source Toggle Buttons */}
+        <View style={styles.audioToggleContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.audioToggleButton,
+              audioSource === 'internal' && styles.audioToggleButtonActive
+            ]}
+            onPress={() => {
+              setAudioSource('internal');
+              setAudioSourceName('Micro interne');
+            }}
+          >
+            <Ionicons name="mic" size={16} color={audioSource === 'internal' ? '#fff' : '#888'} />
+            <Text style={[
+              styles.audioToggleText,
+              audioSource === 'internal' && styles.audioToggleTextActive
+            ]}>Micro</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.audioToggleButton,
+              (audioSource === 'usb' || audioSource === 'external') && styles.audioToggleButtonUSB
+            ]}
+            onPress={() => {
+              setAudioSource('usb');
+              setAudioSourceName('USB / Interface externe');
+              detectAudioSources();
+            }}
+          >
+            <Ionicons name="hardware-chip" size={16} color={(audioSource === 'usb' || audioSource === 'external') ? '#00D4FF' : '#888'} />
+            <Text style={[
+              styles.audioToggleText,
+              (audioSource === 'usb' || audioSource === 'external') && styles.audioToggleTextUSB
+            ]}>USB</Text>
+          </TouchableOpacity>
         </View>
+        
         <TouchableOpacity 
           style={styles.refreshSourceButton}
           onPress={detectAudioSources}
           disabled={isCheckingUSB}
         >
           <Ionicons name="refresh" size={18} color={isCheckingUSB ? '#333' : '#666'} />
+          {isCheckingUSB && (
+            <Ionicons name="sync" size={12} color="#666" style={{ marginLeft: 2 }} />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -2417,6 +2434,40 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 212, 255, 0.15)',
     borderWidth: 1,
     borderColor: CYAN_COLOR + '60',
+  },
+  audioToggleContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  audioToggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#1a1a1a',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  audioToggleButtonActive: {
+    backgroundColor: PINK_COLOR,
+    borderColor: PINK_COLOR,
+  },
+  audioToggleButtonUSB: {
+    backgroundColor: 'rgba(0, 212, 255, 0.2)',
+    borderColor: CYAN_COLOR,
+  },
+  audioToggleText: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  audioToggleTextActive: {
+    color: '#fff',
+  },
+  audioToggleTextUSB: {
+    color: CYAN_COLOR,
   },
   audioSourceText: {
     color: '#888',
