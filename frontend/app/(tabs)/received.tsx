@@ -125,20 +125,13 @@ export default function ReceivedScreen() {
         const downloadDir = FileSystem.cacheDirectory;
         const downloadPath = `${downloadDir}${filename}`;
         console.log('[Received] Downloading to:', downloadPath);
-        const downloadResumable = FileSystem.createDownloadResumable(
+        const downloadResult = await FileSystem.downloadAsync(
           item.track_audio_url,
-          downloadPath,
-          {},
-          (progress) => {
-            const percent = progress.totalBytesWritten / progress.totalBytesExpectedToWrite;
-            console.log('[Received] Progress:', Math.round(percent * 100) + '%');
-          }
-        );
-        const result = await downloadResumable.downloadAsync();
-        if (result && result.uri) {
-          console.log('[Received] Download OK:', result.uri);
+          downloadPath);
+        if (downloadResult && downloadResult.uri) {
+          console.log('[Received] Download OK:', downloadResult.uri);
           if (await Sharing.isAvailableAsync()) {
-            await Sharing.shareAsync(result.uri, {
+            await Sharing.shareAsync(downloadResult.uri, {
               mimeType: 'audio/mpeg',
               dialogTitle: language === 'fr' ? 'Sauvegarder le track' : 'Save track',
             });
