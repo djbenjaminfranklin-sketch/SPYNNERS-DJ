@@ -114,53 +114,44 @@ export default function ReceivedScreen() {
       );
       return;
     }
-
     const trackId = item.id || item._id || '';
     setDownloadingId(trackId);
-
     try {
+      console.log('[Received] Download URL:', item.track_audio_url);
       if (Platform.OS === 'web') {
-        // Web: Open URL in new tab or trigger download
         window.open(item.track_audio_url, '_blank');
       } else {
-        // Mobile: Download and share
         const filename = `${(item.track_title || 'track').replace(/[^a-zA-Z0-9]/g, '_')}.mp3`;
-        const downloadDir = FileSystem.documentDirectory;
+        const downloadDir = FileSystem.cacheDirectory;
         const downloadPath = `${downloadDir}${filename}`;
-
         console.log('[Received] Downloading to:', downloadPath);
-        
-        // Download the file
-        const downloadResult = await FileSystem.downloadAsync(
+        const downloadResumable = FileSystem.createDownloadResumable(
           item.track_audio_url,
-          downloadPath
+          downloadPath,
+          {},
+          (progress) => {
+            const percent = progress.totalBytesWritten / progress.totalBytesExpectedToWrite;
+            console.log('[Received] Progress:', Math.round(percent * 100) + '%');
+          }
         );
-
-        if (downloadResult.status === 200) {
-          console.log('[Received] Download successful:', downloadResult.uri);
-          
-          // Share the file (allows user to save to Files, AirDrop, etc.)
+        const result = await downloadResumable.downloadAsync();
+        if (result && result.uri) {
+          console.log('[Received] Download OK:', result.uri);
           if (await Sharing.isAvailableAsync()) {
-            await Sharing.shareAsync(downloadResult.uri, {
+            await Sharing.shareAsync(result.uri, {
               mimeType: 'audio/mpeg',
               dialogTitle: language === 'fr' ? 'Sauvegarder le track' : 'Save track',
             });
           } else {
-            Alert.alert(
-              language === 'fr' ? 'Succès' : 'Success',
-              language === 'fr' ? 'Track téléchargé' : 'Track downloaded'
-            );
+            Alert.alert(language === 'fr' ? 'Succès' : 'Success', language === 'fr' ? 'Track téléchargé' : 'Track downloaded');
           }
         } else {
-          throw new Error('Download failed');
+          throw new Error('Download returned no result');
         }
       }
-    } catch (error) {
-      console.error('[Received] Download error:', error);
-      Alert.alert(
-        language === 'fr' ? 'Erreur' : 'Error',
-        language === 'fr' ? 'Impossible de télécharger le fichier' : 'Unable to download file'
-      );
+    } catch (error: any) {
+      console.error('[Received] Download error:', error?.message || error);
+      Alert.alert(language === 'fr' ? 'Erreur' : 'Error', `Impossible de télécharger: ${error?.message || 'erreur'}`);
     } finally {
       setDownloadingId(null);
     }
