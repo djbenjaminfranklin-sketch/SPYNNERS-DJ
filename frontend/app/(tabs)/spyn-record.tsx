@@ -42,6 +42,7 @@ import axios from 'axios';
 import offlineService from '../../src/services/offlineService';
 import { base44Spyn, base44Tracks } from '../../src/services/base44Api';
 import { saveLocalMix } from '../profile/my-mixes';
+import useUSBAudio from '../../src/hooks/useUSBAudio';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -118,6 +119,20 @@ export default function SpynRecordScreen() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [hasPermission, setHasPermission] = useState(false);
   
+  // USB Audio detection hook
+  const { isUSBConnected, inputName: usbInputName, checkUSBStatus, isLoading: isUSBLoading } = useUSBAudio({
+    onUSBConnected: (route) => {
+      console.log('[SPYN Record] 🔌 USB Connected:', route.inputName);
+      setAudioSource('usb');
+      setAudioSourceName(route.inputName || 'USB Audio Interface');
+    },
+    onUSBDisconnected: (route) => {
+      console.log('[SPYN Record] 🔌 USB Disconnected');
+      setAudioSource('internal');
+      setAudioSourceName('Microphone interne');
+    },
+  });
+  
   // Audio source state
   const [audioSource, setAudioSource] = useState<'internal' | 'external' | 'usb'>('internal');
   const [audioSourceName, setAudioSourceName] = useState<string>('Microphone interne');
@@ -192,6 +207,16 @@ export default function SpynRecordScreen() {
     requestPermissions();
     detectAudioSources();
     initOfflineService();
+    
+    // Check USB status on mount (native iOS)
+    if (Platform.OS === 'ios') {
+      checkUSBStatus().then((route) => {
+        if (route?.isUSB) {
+          setAudioSource('usb');
+          setAudioSourceName(route.inputName || 'USB Audio Interface');
+        }
+      });
+    }
     
     // Listen for device changes (plug/unplug)
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices) {
