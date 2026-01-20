@@ -708,11 +708,11 @@ export default function SpynRecordScreen() {
       const dataArray = new Uint8Array(bufferLength);
       analyserRef.current.getByteFrequencyData(dataArray);
       
-      // Sample 40 bars from the frequency data
+      // Sample 60 bars from the frequency data for more detail
       const bars: WaveformBar[] = [];
-      const step = Math.floor(bufferLength / 40);
+      const step = Math.floor(bufferLength / 60);
       
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 60; i++) {
         const value = dataArray[i * step] || 0;
         const normalizedHeight = (value / 255) * 100;
         
@@ -744,8 +744,8 @@ export default function SpynRecordScreen() {
       // Add to history for waveform display
       meteringHistoryRef.current.push(normalizedLevel);
       
-      // Keep only last 40 values for the waveform
-      if (meteringHistoryRef.current.length > 40) {
+      // Keep only last 60 values for the waveform
+      if (meteringHistoryRef.current.length > 60) {
         meteringHistoryRef.current.shift();
       }
       
@@ -753,9 +753,9 @@ export default function SpynRecordScreen() {
       const bars: WaveformBar[] = [];
       const history = meteringHistoryRef.current;
       
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 60; i++) {
         // Use history value if available, otherwise use low value
-        const historyIndex = history.length - 40 + i;
+        const historyIndex = history.length - 60 + i;
         const level = historyIndex >= 0 ? history[historyIndex] : 0;
         
         // Add small variation for visual interest but keep it based on real data
@@ -780,8 +780,8 @@ export default function SpynRecordScreen() {
     } else {
       // Not recording - show static low bars (silence)
       const bars: WaveformBar[] = [];
-      for (let i = 0; i < 40; i++) {
-        bars.push({ height: 3, color: '#333' });
+      for (let i = 0; i < 60; i++) {
+        bars.push({ height: 2, color: '#333' });
       }
       setWaveformData(bars);
       setVuLevels({ left: 0, right: 0 });
@@ -1715,6 +1715,8 @@ export default function SpynRecordScreen() {
               tracks_count: allTracks.length,
             });
             console.log('[SPYN Record] ✅ Mix saved to My Mixes');
+            // Show confirmation to user
+            Alert.alert('✅ Mix sauvegardé', 'Votre mix a été sauvegardé dans My Mixes!');
           } else {
             console.error('[SPYN Record] ❌ No fileUri available for saving');
           }
@@ -2708,9 +2710,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   waveformBar: {
-    width: 4,
-    borderRadius: 2,
-    minHeight: 4,
+    width: 2,
+    borderRadius: 1,
+    minHeight: 2,
   },
   controlsContainer: {
     alignItems: 'center',

@@ -86,9 +86,30 @@ export default function VIPScreen() {
       setUserDiamonds(diamonds);
       console.log('[VIP] Final diamonds count:', diamonds);
       
-      // Load VIP tracks
-      const allTracks = await base44Tracks.list({ limit: 200 });
-      const vipTracksList = allTracks.filter((t: Track) => t.is_vip === true);
+      // Load VIP tracks - try both approaches
+      let vipTracksList: Track[] = [];
+      
+      // First try: request VIP tracks directly from API
+      try {
+        const vipDirect = await base44Tracks.list({ limit: 200, is_vip: true });
+        console.log('[VIP] Direct VIP query returned:', vipDirect.length, 'tracks');
+        if (vipDirect.length > 0) {
+          vipTracksList = vipDirect;
+        }
+      } catch (e) {
+        console.log('[VIP] Direct VIP query failed:', e);
+      }
+      
+      // Fallback: filter from all tracks
+      if (vipTracksList.length === 0) {
+        const allTracks = await base44Tracks.list({ limit: 200 });
+        console.log('[VIP] Got', allTracks.length, 'total tracks');
+        vipTracksList = allTracks.filter((t: Track) => t.is_vip === true || t.isVip === true);
+        console.log('[VIP] Filtered VIP tracks:', vipTracksList.length);
+      }
+      
+      // Log all VIP track IDs for debugging
+      console.log('[VIP] VIP track IDs:', vipTracksList.map(t => t.id || t._id));
       setVipTracks(vipTracksList);
       
       // Load user's unlocked tracks - SYNC FROM SERVER + LOCAL STORAGE
@@ -210,15 +231,19 @@ export default function VIPScreen() {
       console.log('[VIP] Unlocking track:', trackId, 'for user:', userId);
       console.log('[VIP] Current diamonds:', userDiamonds);
       
-      // Deduct diamond via API - pass current balance for reliable calculation
+      // Try to deduct diamond via API first
+      let serverUpdateSuccess = false;
       try {
         await base44Api.updateUserDiamonds(userId, -UNLOCK_COST, userDiamonds);
         console.log('[VIP] Diamonds deducted successfully on server');
+        serverUpdateSuccess = true;
       } catch (diamondError: any) {
-        console.log('[VIP] Diamonds API error:', diamondError?.message || diamondError);
-        // Don't continue if the server update failed - show error
-        Alert.alert(t('common.error'), t('vip.diamondUpdateFailed'));
-        return;
+        console.log('[VIP] Diamonds API error (will use local):', diamondError?.message || diamondError);
+        // Continue with local-only unlock if user has enough diamonds locally
+        if (userDiamonds < UNLOCK_COST) {
+          Alert.alert(t('common.error'), t('vip.notEnoughDiamonds'));
+          return;
+        }
       }
       
       // Try to record the purchase (but don't fail if entity doesn't exist)
@@ -246,7 +271,9 @@ export default function VIPScreen() {
       // SAVE TO ASYNC STORAGE (critical for persistence)
       try {
         await AsyncStorage.setItem(`${UNLOCKED_TRACKS_KEY}_${userId}`, JSON.stringify(newUnlockedTracks));
-        console.log('[VIP] Unlocks saved to storage');
+        // Also save the new diamond balance locally
+        await AsyncStorage.setItem(`diamonds_${userId}`, String(userDiamonds - UNLOCK_COST));
+        console.log('[VIP] Unlocks and diamonds saved to storage');
       } catch (storageError) {
         console.log('[VIP] Could not save to storage:', storageError);
       }
