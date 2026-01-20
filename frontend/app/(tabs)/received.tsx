@@ -93,15 +93,15 @@ export default function ReceivedScreen() {
       // Toggle play/pause
       togglePlayPause();
     } else {
-      // Play new track
+      // Play new track - use audio_url (not audioUrl) to match PlayerContext
       await playTrack({
         id: trackId,
         title: item.track_title || 'Unknown Track',
-        artist: item.track_producer_name || 'Unknown Artist',
-        audioUrl: item.track_audio_url,
-        coverImage: item.track_artwork_url,
+        artist_name: item.track_producer_name || 'Unknown Artist',
+        audio_url: item.track_audio_url,
+        artwork_url: item.track_artwork_url,
         genre: item.track_genre,
-      });
+      } as any);
     }
   };
 

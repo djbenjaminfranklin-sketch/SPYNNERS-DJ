@@ -398,6 +398,15 @@ export default function SpynRecordScreen() {
         console.log('[SPYN Record] Places lookup failed:', e?.message || e, '- using reverse geocoding');
       }
       
+      // WORKAROUND: If we got a suspicious venue (always same name), ignore it
+      const SUSPICIOUS_VENUES = ['chef hostel', 'chef', 'hostel'];
+      if (venueName && SUSPICIOUS_VENUES.some(s => venueName.toLowerCase().includes(s))) {
+        console.log('[SPYN Record] ⚠️ Suspicious venue detected:', venueName, '- ignoring and using geocoding');
+        venueName = undefined;
+        venueType = undefined;
+        isValidVenue = false;
+      }
+      
       // Get address via reverse geocoding
       const [address] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
       
