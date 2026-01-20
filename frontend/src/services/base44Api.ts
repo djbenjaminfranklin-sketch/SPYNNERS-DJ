@@ -1899,15 +1899,40 @@ export const base44TrackSend = {
       if (Array.isArray(data)) tracks = data;
       else if (data?.items) tracks = data.items;
       
-      // Sort by created_at descending (newest first)
-      tracks.sort((a, b) => {
-        const dateA = new Date(a.created_at || 0).getTime();
-        const dateB = new Date(b.created_at || 0).getTime();
-        return dateB - dateA;
+      let allTracks: Track[] = [];
+      try {
+        allTracks = await base44Tracks.list({ limit: 500 });
+        console.log('[TrackSend] Fetched', allTracks.length, 'tracks for enrichment');
+      } catch (e) {
+        console.log('[TrackSend] Could not fetch tracks:', e);
+      }
+      
+      const trackMapById = new Map<string, Track>();
+      const trackMapByTitle = new Map<string, Track>();
+      allTracks.forEach(track => {
+        const id = track.id || track._id || '';
+        if (id) trackMapById.set(id, track);
+        const title = (track.title || '').toLowerCase().trim();
+        if (title) trackMapByTitle.set(title, track);
       });
       
-      console.log('[TrackSend] Loaded', tracks.length, 'received tracks');
-      return tracks;
+      const enrichedTracks = tracks.map((trackSend) => {
+        if (!trackSend.track_audio_url) {
+          let trackData = trackSend.track_id ? trackMapById.get(trackSend.track_id) : null;
+          if (!trackData && trackSend.track_title) {
+            const normalizedTitle = trackSend.track_title.toLowerCase().trim();
+            trackData = trackMapByTitle.get(normalizedTitle);
+          }
+          if (trackData?.audio_url) {
+            return { ...trackSend, track_audio_url: trackData.audio_url, track_artwork_url: trackSend.track_artwork_url || trackData.artwork_url };
+          }
+        }
+        return trackSend;
+      });
+      
+      enrichedTracks.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+      console.log('[TrackSend] Loaded', enrichedTracks.length, 'received tracks (enriched)');
+      return enrichedTracks;
     } catch (error) {
       console.error('[TrackSend] Error getting received tracks:', error);
       return [];
