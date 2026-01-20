@@ -96,3 +96,99 @@ export async function setupPlayer() {
   
   return isSetup;
 }
+
+export async function setupPlayer() {
+  let isSetup = false;
+  
+  try {
+    await TrackPlayer.getActiveTrack();
+    isSetup = true;
+    console.log('[TrackPlayer] Player already initialized');
+  } catch {
+    try {
+      await TrackPlayer.setupPlayer({
+        autoHandleInterruptions: false,
+      });
+      
+      await TrackPlayer.updateOptions({
+        capabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.Stop,
+          Capability.SkipToNext,
+          Capability.SkipToPrevious,
+          Capability.SeekTo,
+        ],
+        compactCapabilities: [
+          Capability.Play,
+          Capability.Pause,
+          Capability.SkipToNext,
+        ],
+        progressUpdateEventInterval: 1,
+      });
+      
+      await TrackPlayer.setRepeatMode(RepeatMode.Off);
+      
+      isSetup = true;
+      console.log('[TrackPlayer] Player setup complete');
+    } catch (error) {
+      console.error('[TrackPlayer] Setup error:', error);
+    }
+  }
+  
+  return isSetup;
+}
+
+export async function updateNowPlaying(track: {
+  id: string;
+  title: string;
+  artist: string;
+  artwork?: string;
+  duration?: number;
+  audioUrl?: string;
+}) {
+  try {
+    await TrackPlayer.reset();
+    
+    const silenceDataUrl = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    
+    await TrackPlayer.add({
+      id: track.id,
+      url: track.audioUrl || silenceDataUrl,
+      title: track.title,
+      artist: track.artist,
+      artwork: track.artwork,
+      duration: track.duration,
+    });
+    
+    console.log('[TrackPlayer] Now playing updated:', track.title);
+  } catch (error) {
+    console.error('[TrackPlayer] Error updating now playing:', error);
+  }
+}
+
+export async function updatePlaybackState(isPlaying: boolean, position?: number) {
+  try {
+    if (isPlaying) {
+      await TrackPlayer.setRate(0);
+      await TrackPlayer.play();
+    } else {
+      await TrackPlayer.pause();
+    }
+    
+    if (position !== undefined) {
+      await TrackPlayer.seekTo(position / 1000);
+    }
+  } catch (error) {
+    console.log('[TrackPlayer] State sync error (non-fatal):', error);
+  }
+}
+
+export async function clearNowPlaying() {
+  try {
+    await TrackPlayer.reset();
+    console.log('[TrackPlayer] Now playing cleared');
+  } catch (error) {
+    console.log('[TrackPlayer] Error clearing now playing:', error);
+  }
+}

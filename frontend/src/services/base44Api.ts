@@ -634,7 +634,7 @@ export const base44Tracks = {
       
       // On mobile, use direct Base44 API
       if (Platform.OS !== 'web') {
-        const response = await mobileApi.get(`/entities/Track/${trackId}`);
+        const response = await mobileApi.get(`/api/base44/entities/Track/${trackId}`);
         console.log('[Tracks] Mobile - Got track:', response.data?.title);
         return response.data;
       }
