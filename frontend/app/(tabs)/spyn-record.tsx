@@ -1700,7 +1700,7 @@ export default function SpynRecordScreen() {
             let fileExists = false;
             
             try {
-              const fileInfo = await FileSystem.getInfoAsync(fileUri);
+              const fileInfo = await LegacyFileSystem.getInfoAsync(fileUri);
               console.log('[SPYN Record] File info before save:', JSON.stringify(fileInfo));
               fileExists = fileInfo.exists;
               
@@ -1708,7 +1708,7 @@ export default function SpynRecordScreen() {
                 console.log('[SPYN Record] File not found, trying with file:// prefix...');
                 // Try with file:// prefix
                 const fileUriWithPrefix = fileUri.startsWith('file://') ? fileUri : `file://${fileUri}`;
-                const fileInfo2 = await FileSystem.getInfoAsync(fileUriWithPrefix);
+                const fileInfo2 = await LegacyFileSystem.getInfoAsync(fileUriWithPrefix);
                 console.log('[SPYN Record] File info with prefix:', JSON.stringify(fileInfo2));
                 if (fileInfo2.exists) {
                   validFileUri = fileUriWithPrefix;

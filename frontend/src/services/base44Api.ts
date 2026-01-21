@@ -1245,7 +1245,7 @@ export const base44Files = {
       console.log('[Files] Converting local file to base64...');
       
       const base64Content = await LegacyFileSystem.readAsStringAsync(fileUri, {
-        encoding: FileSystem.EncodingType.Base64,
+        encoding: LegacyFileSystem.EncodingType.Base64,
       });
       const base64Data = `data:${actualMimeType};base64,${base64Content}`;
       console.log('[Files] File converted, base64 length:', base64Data.length);
