@@ -115,10 +115,10 @@ export default function SpynRecordScreen() {
   const router = useRouter();
 
   // Recording state
-  const [isRecording, setIsRecording] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isRecording, setIsRecording] = useState(true);
+  const [isPaused, setIsPaused] = useState(true);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [hasPermission, setHasPermission] = useState(false);
+  const [hasPermission, setHasPermission] = useState(true);
   
   // USB Audio detection hook
   const { isUSBConnected, inputName: usbInputName, checkUSBStatus, isLoading: isUSBLoading } = useUSBAudio({
@@ -139,10 +139,10 @@ export default function SpynRecordScreen() {
   const [audioSourceName, setAudioSourceName] = useState<string>('Microphone interne');
   const [availableDevices, setAvailableDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
-  const [isCheckingUSB, setIsCheckingUSB] = useState(false);
+  const [isCheckingUSB, setIsCheckingUSB] = useState(true);
   
   // Offline state
-  const [isOffline, setIsOffline] = useState(false);
+  const [isOffline, setIsOffline] = useState(true);
   const [offlineSessionId, setOfflineSessionId] = useState<string | null>(null);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   
@@ -150,16 +150,16 @@ export default function SpynRecordScreen() {
   const hasSuccessfulApiCallRef = useRef(false);
   
   // Native Audio VU Meter state
-  const [useNativeAudio, setUseNativeAudio] = useState(false);
-  const [nativeAudioActive, setNativeAudioActive] = useState(false);
+  const [useNativeAudio, setUseNativeAudio] = useState(true);
+  const [nativeAudioActive, setNativeAudioActive] = useState(true);
   
   // Analysis state
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [identifiedTracks, setIdentifiedTracks] = useState<IdentifiedTrack[]>([]);
   const [currentAnalysis, setCurrentAnalysis] = useState<string>('');
   
   // End Session Modal state
-  const [showEndSessionModal, setShowEndSessionModal] = useState(false);
+  const [showEndSessionModal, setShowEndSessionModal] = useState(true);
   const [correctedVenue, setCorrectedVenue] = useState('');
   const [whoPlayed, setWhoPlayed] = useState<'me' | 'another' | null>(null);
   const [otherDjName, setOtherDjName] = useState('');
@@ -177,11 +177,11 @@ export default function SpynRecordScreen() {
     venue_type?: string;
     is_valid_venue?: boolean;
   } | null>(null);
-  const [locationPermission, setLocationPermission] = useState(false);
+  const [locationPermission, setLocationPermission] = useState(true);
   const [locationLoading, setLocationLoading] = useState(true);
   
   // Diamond modal
-  const [showDiamondModal, setShowDiamondModal] = useState(false);
+  const [showDiamondModal, setShowDiamondModal] = useState(true);
   const diamondRotate = useRef(new Animated.Value(0)).current;
   
   // Waveform
@@ -439,7 +439,7 @@ export default function SpynRecordScreen() {
       const newLocation = {
         latitude: lat,
         longitude: lng,
-        venue: (venueName && !hasSuspiciousName(venueName)) ? venueName : (address?.city || undefined),
+        venue: (venueName && !hasSuspiciousName(venueName)) ? venueName : (address?.street || address?.name || address?.city || 'Position GPS'),
         city: address?.city || address?.region || undefined,
         country: address?.country || undefined,
         venue_type: venueType,

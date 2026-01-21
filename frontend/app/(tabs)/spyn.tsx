@@ -587,7 +587,7 @@ export default function SpynScreen() {
       const newLocation: LocationInfo = {
         latitude: lat,
         longitude: lng,
-        venue: (venueName && !hasSuspiciousName(venueName)) ? venueName : (address?.city || undefined),
+        venue: (venueName && !hasSuspiciousName(venueName)) ? venueName : (address?.street || address?.name || address?.city || 'Position GPS'),
         city: address?.city || address?.region || undefined,
         country: address?.country || undefined,
         venue_type: venueType,
