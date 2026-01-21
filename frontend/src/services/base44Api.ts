@@ -1881,6 +1881,20 @@ export const base44TrackSend = {
         created_at: new Date().toISOString(),
       });
       console.log('[TrackSend] Track sent successfully');
+      // Create notification for receiver
+      try {
+        await mobileApi.post('/api/base44/entities/Notification', {
+          user_id: data.receiver_id,
+          type: 'track_received',
+          title: 'New track received',
+          message: `${data.sender_name} sent you a track: ${data.track_title}`,
+          read: false,
+          created_at: new Date().toISOString(),
+        });
+        console.log('[TrackSend] Notification created for receiver');
+      } catch (notifError) {
+        console.log('[TrackSend] Could not create notification:', notifError);
+      }
       return response.data;
     } catch (error) {
       console.error('[TrackSend] Error sending track:', error);

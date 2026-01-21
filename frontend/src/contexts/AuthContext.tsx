@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Request permissions if not already granted
         if (existingStatus !== 'granted') {
           console.log('[AuthContext] Requesting notification permissions...');
-          const { status } = await Notifications.requestPermissionsAsync();
+          const { status } = await Notifications.requestPermissionsAsync({ ios: { allowAlert: true, allowBadge: true, allowSound: true } });
           finalStatus = status;
         }
         
