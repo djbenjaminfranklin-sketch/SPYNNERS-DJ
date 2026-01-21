@@ -43,6 +43,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import offlineService from '../../src/services/offlineService';
 import { base44Spyn, base44Tracks } from '../../src/services/base44Api';
+import { saveLocalMix } from '../profile/my-mixes';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -182,6 +183,9 @@ export default function SpynRecordScreen() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  // Real audio metering for waveform
+  const currentMeteringRef = useRef<number>(-160);
+  const meteringHistoryRef = useRef<number[]>([]);
   
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -801,32 +805,30 @@ export default function SpynRecordScreen() {
       
       setWaveformData(bars);
     } else if (isRecordingRef.current && !isPaused) {
-      // For native mobile: Generate animated waveform based on recording status
-      // This provides visual feedback even though we can't access real audio data
+      // For native mobile: Use REAL metering data from recording
+      const currentDb = currentMeteringRef.current;
+      const normalizedLevel = Math.max(0, Math.min(100, ((currentDb + 60) / 60) * 100));
+      meteringHistoryRef.current.push(normalizedLevel);
+      if (meteringHistoryRef.current.length > 60) {
+        meteringHistoryRef.current.shift();
+      }
       const bars: WaveformBar[] = [];
-      const time = Date.now() / 1000;
-      
-      for (let i = 0; i < 40; i++) {
-        // Create a wave pattern that looks like real audio
-        const wave1 = Math.sin(time * 2 + i * 0.3) * 30;
-        const wave2 = Math.sin(time * 3.5 + i * 0.2) * 20;
-        const wave3 = Math.sin(time * 1.2 + i * 0.5) * 15;
-        const noise = Math.random() * 15;
-        
-        // Combine waves for more natural look
-        const baseHeight = 25 + wave1 + wave2 + wave3 + noise;
-        const height = Math.max(8, Math.min(85, baseHeight));
-        
-        // Color based on intensity
+      const history = meteringHistoryRef.current;
+      for (let i = 0; i < 60; i++) {
+        const historyIndex = history.length - 60 + i;
+        const level = historyIndex >= 0 ? history[historyIndex] : 0;
+        const variation = (Math.random() - 0.5) * 5;
+        const height = Math.max(3, Math.min(90, level + variation));
         let color = CYAN_COLOR;
-        if (height > 65) color = PINK_COLOR;
+        if (height > 70) color = PINK_COLOR;
         else if (height > 50) color = ORANGE_COLOR;
-        else if (height > 35) color = GREEN_COLOR;
-        
+        else if (height > 30) color = GREEN_COLOR;
         bars.push({ height, color });
       }
-      
       setWaveformData(bars);
+      const leftLevel = Math.min(100, normalizedLevel + (Math.random() * 3 - 1.5));
+      const rightLevel = Math.min(100, normalizedLevel + (Math.random() * 3 - 1.5));
+      setVuLevels({ left: leftLevel, right: rightLevel });
     } else {
       // Not recording - show static low bars
       const bars: WaveformBar[] = [];
@@ -1198,6 +1200,7 @@ export default function SpynRecordScreen() {
           try {
             const status = await currentRecording.getStatusAsync();
             if (status.isRecording && status.metering !== undefined) {
+              currentMeteringRef.current = status.metering;
               console.log('[SPYN Record] Recording active, metering:', status.metering, 'dB');
             }
           } catch (e) {
@@ -1664,6 +1667,26 @@ export default function SpynRecordScreen() {
         // TODO: In the future, send session to Spynners API here
         
         console.log('[SPYN Record] Session saved successfully');
+
+        // Save to My Mixes
+        if (fileUri) {
+          try {
+            await saveLocalMix({
+              user_id: user?.id || user?._id || ''  ,
+              user_name: whoPlayed === 'another' ? otherDjName : (user?.full_name || 'DJ'),
+              audio_url: fileUri,
+              duration: recordingDuration,
+              session_id: sessionData?.id || ''  ,
+              city: location?.city || ''  ,
+              country: location?.country || ''  ,
+              venue: location?.venue || ''  ,
+              tracks_count: allTracks.length,
+            });
+            console.log('[SPYN Record] ✅ Mix saved to My Mixes');
+          } catch (mixError) {
+            console.error('[SPYN Record] Failed to save to My Mixes:', mixError);
+          }
+        }
         
         // Save the mix if requested
         if (saveMix && fileUri) {
