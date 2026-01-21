@@ -439,7 +439,7 @@ export default function SpynRecordScreen() {
       const newLocation = {
         latitude: lat,
         longitude: lng,
-        venue: venueName || address?.name || address?.street || undefined,
+        venue: (venueName venue: venueName || address?.name || address?.street || undefined,venue: venueName || address?.name || address?.street || undefined, !hasSuspiciousName(venueName)) ? venueName : (address?.city || undefined),
         city: address?.city || address?.region || undefined,
         country: address?.country || undefined,
         venue_type: venueType,
