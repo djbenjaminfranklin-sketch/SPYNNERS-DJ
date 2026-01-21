@@ -59,6 +59,7 @@
     "plugins": [
       "expo-router",
       "./plugins/withUSBAudioDetection",
+      "./plugins/withSPYNAudioEngine",
       [
         "expo-location",
         {

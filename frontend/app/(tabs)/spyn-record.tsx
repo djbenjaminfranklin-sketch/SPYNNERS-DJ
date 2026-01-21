@@ -42,6 +42,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import offlineService from '../../src/services/offlineService';
 import { base44Spyn, base44Tracks } from '../../src/services/base44Api';
+import { SpynAudioEngine } from '../../src/native/SpynAudioEngine';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -526,6 +527,27 @@ export default function SpynRecordScreen() {
           setSelectedDeviceId(defaultDevice.deviceId);
         }
       } else {
+        // Native (iOS/Android) - Use SpynAudioEngine for USB detection
+        try {
+          // Try SpynAudioEngine first (native USB detection)
+          if (SpynAudioEngine.isAvailable()) {
+            console.log('[SPYN Record] Using SpynAudioEngine for USB detection...');
+            const usbStatus = await SpynAudioEngine.checkUSBConnected();
+            console.log('[SPYN Record] USB Status:', usbStatus);
+            
+            if (usbStatus.isUSBConnected) {
+              setAudioSource('usb');
+              setAudioSourceName(`🎛️ ${usbStatus.deviceName || 'Interface USB détectée'}`); 
+              console.log('[SPYN Record] ✅ USB device detected:', usbStatus.deviceName);
+              setIsCheckingUSB(false);
+              return;
+            }
+          }
+        } catch (nativeError) {
+          console.log('[SPYN Record] SpynAudioEngine not available, falling back to expo-av');
+        }
+        
+        // Fallback: Use expo-av
         // Native (iOS/Android) - Need to configure audio session and check for external devices
         try {
           const status = await Audio.getPermissionsAsync();
