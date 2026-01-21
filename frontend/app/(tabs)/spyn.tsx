@@ -51,7 +51,7 @@ const RED_COLOR = '#E53935';
 // Session settings
 const MAX_SESSION_DURATION = 5 * 60 * 60 * 1000; // 5 hours
 const RECOGNITION_INTERVAL = 15000; // 10 seconds between recognition cycles
-const RECORDING_DURATION = 6000; // 6 seconds of recording (leaves 4s for processing)
+const RECORDING_DURATION = 12000; // 12 seconds of recording // 6 seconds of recording (leaves 4s for processing)
 
 // Venue types that qualify for Black Diamond
 // STRICT venue types for Black Diamond - only real nightlife/entertainment venues
