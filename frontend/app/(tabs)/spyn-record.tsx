@@ -115,10 +115,10 @@ export default function SpynRecordScreen() {
   const router = useRouter();
 
   // Recording state
-  const [isRecording, setIsRecording] = useState(true);
-  const [isPaused, setIsPaused] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [hasPermission, setHasPermission] = useState(true);
+  const [hasPermission, setHasPermission] = useState(false);
   
   // USB Audio detection hook
   const { isUSBConnected, inputName: usbInputName, checkUSBStatus, isLoading: isUSBLoading } = useUSBAudio({
@@ -151,15 +151,15 @@ export default function SpynRecordScreen() {
   
   // Native Audio VU Meter state
   const [useNativeAudio, setUseNativeAudio] = useState(true);
-  const [nativeAudioActive, setNativeAudioActive] = useState(true);
+  const [nativeAudioActive, setNativeAudioActive] = useState(false);
   
   // Analysis state
-  const [isAnalyzing, setIsAnalyzing] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [identifiedTracks, setIdentifiedTracks] = useState<IdentifiedTrack[]>([]);
   const [currentAnalysis, setCurrentAnalysis] = useState<string>('');
   
   // End Session Modal state
-  const [showEndSessionModal, setShowEndSessionModal] = useState(true);
+  const [showEndSessionModal, setShowEndSessionModal] = useState(false);
   const [correctedVenue, setCorrectedVenue] = useState('');
   const [whoPlayed, setWhoPlayed] = useState<'me' | 'another' | null>(null);
   const [otherDjName, setOtherDjName] = useState('');
@@ -177,11 +177,11 @@ export default function SpynRecordScreen() {
     venue_type?: string;
     is_valid_venue?: boolean;
   } | null>(null);
-  const [locationPermission, setLocationPermission] = useState(true);
+  const [locationPermission, setLocationPermission] = useState(false);
   const [locationLoading, setLocationLoading] = useState(true);
   
   // Diamond modal
-  const [showDiamondModal, setShowDiamondModal] = useState(true);
+  const [showDiamondModal, setShowDiamondModal] = useState(false);
   const diamondRotate = useRef(new Animated.Value(0)).current;
   
   // Waveform
