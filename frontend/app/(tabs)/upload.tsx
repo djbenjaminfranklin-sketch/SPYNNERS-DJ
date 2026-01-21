@@ -20,16 +20,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { Colors, Spacing, BorderRadius } from '../../src/theme/colors';
-import base44Api, { base44Tracks, base44Users, base44Files, Track, User } from '../../src/services/base44Api';
-
-// Backend URL for API calls
-const getBackendUrl = () => {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-  return 'https://djspyn.preview.emergentagent.com';
-};
-const BACKEND_URL = getBackendUrl();
+import base44Api, { base44Tracks, base44Users, base44Files, Track, User, uploadTrackMultipart, apiMeta } from '../../src/services/base44Api';
 
 // Genre options - same as spynners.com
 const GENRES = [
@@ -179,71 +170,28 @@ export default function UploadScreen() {
           setTitle(nameWithoutExt);
         }
         
-        // Try to extract metadata via backend API
+        // Extract metadata via apiMeta service
         try {
-          console.log('[Upload] Extracting metadata via backend...');
+          console.log('[Upload] Extracting metadata via apiMeta...');
           
-          // For web: fetch the file blob and send it
-          if (Platform.OS === 'web') {
-            const fileResponse = await fetch(file.uri);
-            const blob = await fileResponse.blob();
+          if (token) {
+            const result = await apiMeta.extractMetadata(file.uri, file.name, token);
             
-            const formData = new FormData();
-            formData.append('file', blob, file.name);
-            
-            const response = await fetch(`${BACKEND_URL}/api/extract-mp3-metadata`, {
-              method: 'POST',
-              body: formData,
-            });
-            
-            if (response.ok) {
-              const metadata = await response.json();
-              console.log('[Upload] Extracted metadata:', metadata);
+            if (result.success && result.metadata) {
+              console.log('[Upload] Extracted metadata:', result.metadata);
+              const m = result.metadata;
               
-              // Auto-fill fields with extracted metadata
-              if (metadata.title) {
-                setTitle(metadata.title);
-              }
-              if (metadata.artist) {
-                setArtistName(metadata.artist);
-              }
-              if (metadata.genre) {
-                setGenre(metadata.genre);
-              }
-              if (metadata.bpm) {
-                setBpm(metadata.bpm.toString());
-              }
-              if (metadata.cover_image) {
-                setCoverImage(metadata.cover_image);
-                Alert.alert('Info', t('upload.coverExtracted') || 'Cover art extracted from MP3 file');
-              }
+              if (m.title) setTitle(m.title);
+              if (m.artist) setArtistName(m.artist);
+              if (m.genre) setGenres([m.genre]);
+              if (m.bpm) setBpm(m.bpm.toString());
+              if (m.key) setTrackKey(m.key);
+              if (m.isrc) setIsrcCode(m.isrc);
+              if (m.cover_image) setCoverImage(m.cover_image);
+              
+              Alert.alert('✅ Métadonnées extraites', 'Les informations du fichier MP3 ont été récupérées automatiquement');
             } else {
-              console.log('[Upload] Metadata extraction failed:', await response.text());
-            }
-          } else {
-            // For native: use different approach
-            const formData = new FormData();
-            formData.append('file', {
-              uri: file.uri,
-              name: file.name,
-              type: 'audio/mpeg',
-            } as any);
-            
-            const response = await fetch(`${BACKEND_URL}/api/extract-mp3-metadata`, {
-              method: 'POST',
-              body: formData,
-            });
-            
-            if (response.ok) {
-              const metadata = await response.json();
-              if (metadata.title) setTitle(metadata.title);
-              if (metadata.artist) setArtistName(metadata.artist);
-              if (metadata.genre) setGenre(metadata.genre);
-              if (metadata.bpm) setBpm(metadata.bpm.toString());
-              if (metadata.cover_image) {
-                setCoverImage(metadata.cover_image);
-                Alert.alert('Info', 'Cover art extracted from MP3 file');
-              }
+              console.log('[Upload] Metadata extraction failed:', result.error);
             }
           }
         } catch (metadataError) {
@@ -260,130 +208,58 @@ export default function UploadScreen() {
   // Submit track
   const handleSubmit = async () => {
     // Validation
-    if (!title.trim()) {
-      Alert.alert('Error', 'Please enter a track title');
-      return;
-    }
-    if (!artistName.trim()) {
-      Alert.alert('Error', 'Please enter the artist name');
-      return;
-    }
-    if (genres.length === 0) {
-      Alert.alert('Error', 'Veuillez sélectionner au moins un genre');
-      return;
-    }
-    if (!audioFile) {
-      Alert.alert('Error', 'Please upload an audio file');
-      return;
-    }
-    if (!rightsConfirmed) {
-      Alert.alert('Error', 'Please confirm you have the rights to upload this track');
-      return;
-    }
-    if (!freeDownloadAuthorized) {
-      Alert.alert('Error', 'Please authorize free download for promotional purposes');
-      return;
-    }
+    if (!title.trim()) { Alert.alert('Error', 'Please enter a track title'); return; }
+    if (!artistName.trim()) { Alert.alert('Error', 'Please enter the artist name'); return; }
+    if (genres.length === 0) { Alert.alert('Error', 'Please select at least one genre'); return; }
+    if (!audioFile) { Alert.alert('Error', 'Please upload an audio file'); return; }
+    if (!rightsConfirmed) { Alert.alert('Error', 'Please confirm you have the rights to upload this track'); return; }
+    if (!freeDownloadAuthorized) { Alert.alert('Error', 'Please authorize free download for promotional purposes'); return; }
 
     setUploading(true);
     setUploadProgress(0);
 
     try {
-      let audioUrl = '';
-      let artworkUrl = coverImage || '';
-      
-      // Step 1: Upload audio file to Base44
-      setUploadProgress(10);
-      console.log('[Upload] Uploading audio file:', audioFile.name);
-      
-      try {
-        const audioUploadResult = await base44Files.upload(audioFile.uri, audioFile.name);
-        audioUrl = audioUploadResult.file_url || audioUploadResult.url || '';
-        console.log('[Upload] Audio uploaded, URL:', audioUrl);
-      } catch (audioError) {
-        console.error('[Upload] Audio upload error:', audioError);
-        Alert.alert('Error', 'Failed to upload audio file. Please try again.');
+      console.log('[Upload] Starting upload via apiMeta...');
+      setUploadProgress(20);
+
+      if (!token) {
+        Alert.alert('Error', 'You must be logged in to upload');
         setUploading(false);
         return;
       }
-      
-      setUploadProgress(50);
-      
-      // Step 2: Upload cover image if provided (and not already a URL)
-      if (coverImage && !coverImage.startsWith('http')) {
-        try {
-          console.log('[Upload] Uploading cover image...');
-          const coverUploadResult = await base44Files.upload(coverImage, `cover_${Date.now()}.jpg`);
-          artworkUrl = coverUploadResult.file_url || coverUploadResult.url || coverImage;
-          console.log('[Upload] Cover uploaded, URL:', artworkUrl);
-        } catch (coverError) {
-          console.error('[Upload] Cover upload error:', coverError);
-          // Continue without cover, not critical
-        }
-      }
-      
-      setUploadProgress(70);
 
-      // Step 3: Prepare track data with audio URL
-      const trackData: Track = {
+      const result = await apiMeta.uploadTrack({
+        audioFileUri: audioFile.uri,
+        audioFileName: audioFile.name,
+        artworkFileUri: coverImage && !coverImage.startsWith('http') ? coverImage : undefined,
+        artworkFileName: coverImage && !coverImage.startsWith('http') ? `cover_${Date.now()}.jpg` : undefined,
         title: title.trim(),
-        artist_name: artistName.trim(),
-        producer_name: artistName.trim(),
-        producer_id: uploadForUser?.id || user?.id,
-        label_name: labelName.trim() || undefined,
-        collaborators: collaborators ? collaborators.split(',').map(c => c.trim()) : [],
-        genre: genres.join(', '), // Join multiple genres with comma
-        genres: genres, // Also store as array for better querying
-        bpm: bpm ? parseInt(bpm) : undefined,
+        genre: genres.join(', '),
+        bpm: bpm || undefined,
         key: trackKey || undefined,
         energy_level: energyLevel || undefined,
         mood: mood || undefined,
-        release_date: releaseDate || undefined,
-        isrc_code: isrcCode.trim() || undefined,
-        iswc_code: iswcCode.trim() || undefined,
         description: description.trim() || undefined,
-        // IMPORTANT: Save audio and artwork URLs
-        audio_url: audioUrl,
-        artwork_url: artworkUrl,
-        cover_image: artworkUrl,
-        is_unreleased: isUnreleased,
-        is_vip: isVipRequest,
-        rights_confirmed: rightsConfirmed,
-        free_download_authorized: freeDownloadAuthorized,
-        uploaded_by: user?.id,
-        uploaded_for: uploadForUser?.id || user?.id,
-        status: 'pending',
-        rating: 0,
-        download_count: 0,
-        play_count: 0,
-      };
-
-      console.log('[Upload] Creating track with data:', { 
-        title: trackData.title, 
-        audio_url: trackData.audio_url,
-        artwork_url: trackData.artwork_url 
-      });
+      }, token);
 
       setUploadProgress(90);
 
-      // Step 4: Create track in Base44
-      const result = await base44Tracks.create(trackData);
-      
+      if (!result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
       setUploadProgress(100);
-      console.log('[Upload] Track created successfully:', result);
+      console.log('[Upload] Track uploaded successfully:', result);
 
       Alert.alert(
         '✅ Track Uploaded!',
-        'Your track has been submitted for review. You will be notified once it\'s approved.',
+        'Your track has been submitted for review.',
         [{ text: 'OK', onPress: resetForm }]
       );
 
     } catch (error: any) {
-      console.error('Upload error:', error);
-      Alert.alert(
-        'Upload Failed',
-        error.response?.data?.message || 'Could not upload track. Please try again.'
-      );
+      console.error('[Upload] Error:', error);
+      Alert.alert('Upload Failed', 'Error: ' + (error.message || 'Unknown error'));
     } finally {
       setUploading(false);
     }

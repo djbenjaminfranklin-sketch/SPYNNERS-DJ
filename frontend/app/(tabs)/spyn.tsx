@@ -35,7 +35,7 @@ const BUTTON_SIZE = Math.min(SCREEN_WIDTH * 0.45, 180);
 // Get backend URL - always use the full preview URL to ensure auth headers are transmitted
 const getBackendUrl = () => {
   // Always use the full preview domain for API calls
-  return 'https://trackmix-6.preview.emergentagent.com';
+  return 'https://spynner-stable.preview.emergentagent.com';
 };
 
 const BACKEND_URL = getBackendUrl();
@@ -50,7 +50,7 @@ const RED_COLOR = '#E53935';
 
 // Session settings
 const MAX_SESSION_DURATION = 5 * 60 * 60 * 1000; // 5 hours
-const RECOGNITION_INTERVAL = 12000; // 12 seconds between recognition cycles
+const RECOGNITION_INTERVAL = 10000; // 10 seconds between recognition cycles
 const RECORDING_DURATION = 6000; // 6 seconds of recording (leaves 4s for processing)
 
 // Venue types that qualify for Black Diamond
@@ -294,8 +294,8 @@ export default function SpynScreen() {
           } else if (synced > 0) {
             // Show alert if no Spynners tracks identified
             Alert.alert(
-              '🔄 Sync Complete',
-              `${synced} recording(s) processed.\nNo Spynners track identified.`,
+              '🔄 Synchronisation terminée',
+              `${synced} enregistrement(s) traité(s).\nAucun track Spynners identifié.`,
               [{ text: 'OK' }]
             );
           }
@@ -367,8 +367,8 @@ export default function SpynScreen() {
           
           // On iOS, we can't directly query the input device name via expo-av
           // But we can inform the user about the expected behavior
-          setAudioSourceInfo('iOS - Auto Input');
-          setDebugLog('iOS: Connect your USB interface');
+          setAudioSourceInfo('iOS - Entrée auto');
+          setDebugLog('iOS: Branchez votre interface USB');
           
           // Note: On iOS, when a USB/Lightning audio interface is connected,
           // the system automatically routes audio input through it.
@@ -484,22 +484,13 @@ export default function SpynScreen() {
       let isValidVenue = false;
       
       // Try to get venue from Base44 getNearbyPlaces function (Google Places)
-      // Note: Foursquare API requires authentication and is not available on mobile
       try {
         console.log('[SPYN] Calling getNearbyPlaces for:', lat, lng);
-        
-        // Add timeout to prevent UI freeze
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout')), 8000)
-        );
-        
-        const placesPromise = base44Spyn.getNearbyPlaces({
+        const placesResponse = await base44Spyn.getNearbyPlaces({
           latitude: lat,
           longitude: lng,
           radius: 1000,
         });
-        
-        const placesResponse = await Promise.race([placesPromise, timeoutPromise]) as any;
         
         console.log('[SPYN] getNearbyPlaces response:', JSON.stringify(placesResponse));
         
@@ -544,6 +535,7 @@ export default function SpynScreen() {
             console.log('[SPYN] ❌ Venue EXCLUDED - is a residence/office/etc');
             isValidVenue = false;
           } else {
+            // STRICT CHECK - don't assume it's valid, verify the types
             isValidVenue = venueTypes.some((type: string) => 
               VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
             );
@@ -565,6 +557,7 @@ export default function SpynScreen() {
             console.log('[SPYN] ❌ Venue EXCLUDED - is a residence/office/etc');
             isValidVenue = false;
           } else {
+            // STRICT CHECK - don't assume it's valid, verify the types
             isValidVenue = venueTypes.some((type: string) => 
               VALID_VENUE_TYPES.some(valid => type.toLowerCase().includes(valid))
             );
@@ -575,15 +568,6 @@ export default function SpynScreen() {
         console.log('[SPYN] Places lookup failed:', e?.message || e, '- using reverse geocoding');
       }
       
-      
-      // WORKAROUND: Filter out suspicious venues (always same name bug)
-      const SUSPICIOUS_VENUES = ['chef hostel', 'chef', 'hostel'];
-      if (venueName && SUSPICIOUS_VENUES.some(s => venueName.toLowerCase().includes(s))) {
-        console.log('[SPYN] Suspicious venue detected:', venueName, '- ignoring');
-        venueName = undefined;
-        venueType = undefined;
-        isValidVenue = false;
-      }
       // Get address via reverse geocoding
       const [address] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
       
@@ -781,7 +765,7 @@ export default function SpynScreen() {
         interruptionModeAndroid: 1,
       });
 
-      setDebugLog('🎧 Enregistrement en cours (8s)...');
+      setDebugLog('🎧 Recording (8s)...');
 
       // Use HIGH_QUALITY preset for best ACRCloud compatibility
       const { recording } = await Audio.Recording.createAsync(
@@ -1179,8 +1163,8 @@ export default function SpynScreen() {
         
         // Show confirmation that session is saved offline
         Alert.alert(
-          '✅ Session Saved (Offline)',
-          `${endedSession.recordings.length} recording(s) saved.\n\nGo to "Offline Sessions" from the home page to sync when you have network.`,
+          '✅ Session Sauvegardée (Hors Ligne)',
+          `${endedSession.recordings.length} enregistrement(s) sauvegardé(s).\n\nAllez dans "Sessions Offline" depuis la page d'accueil pour synchroniser quand vous aurez du réseau.`,
           [{ text: 'OK' }]
         );
         
@@ -1206,8 +1190,8 @@ export default function SpynScreen() {
     if (isOffline && identifiedTracks.length > 0) {
       console.log('[SPYN] ⚠️ Session was in offline mode - some emails may not have been sent');
       Alert.alert(
-        'Session Saved',
-        'Emails to producers will be sent when you are online and sync your recordings.',
+        'Session sauvegardée',
+        'Les emails aux producteurs seront envoyés quand vous serez en ligne et que vous synchroniserez vos enregistrements.',
         [{ text: 'OK' }]
       );
     } else if (identifiedTracks.length === 0) {
@@ -1325,7 +1309,7 @@ export default function SpynScreen() {
             </Text>
             {audioSourceInfo !== 'Détection...' && (
               <Text style={[styles.debugText, { color: isExternalAudio ? '#4CAF50' : '#888', fontSize: 10 }]}>
-                {isExternalAudio ? '🔌 EXTERNE' : '📱 INTERNE'}
+                {isExternalAudio ? '🔌 EXTERNAL' : '📱 INTERNAL'}
               </Text>
             )}
           </View>
@@ -1365,8 +1349,8 @@ export default function SpynScreen() {
               onPress={async () => {
                 console.log('[SPYN] Manual sync triggered');
                 Alert.alert(
-                  '🔄 Syncing',
-                  'Sending recordings...',
+                  '🔄 Synchronisation',
+                  'Envoi des enregistrements en cours...',
                   [],
                   { cancelable: false }
                 );
@@ -1376,26 +1360,26 @@ export default function SpynScreen() {
                 
                 if (synced > 0) {
                   Alert.alert(
-                    '🎵 Sync Complete!',
-                    `${synced} recording(s) processed successfully.${failed > 0 ? `\n${failed} failed.` : ''}`,
+                    '🎵 Synchronisation terminée !',
+                    `${synced} enregistrement(s) traité(s) avec succès.${failed > 0 ? `\n${failed} échec(s).` : ''}`,
                     [{ text: 'OK' }]
                   );
                 } else if (failed > 0) {
                   Alert.alert(
-                    '❌ Sync Error',
-                    `${failed} recording(s) could not be processed. Try again later.`,
+                    '❌ Erreur de synchronisation',
+                    `${failed} enregistrement(s) n'ont pas pu être traités. Réessayez plus tard.`,
                     [{ text: 'OK' }]
                   );
                 } else {
                   Alert.alert(
                     'ℹ️ Info',
-                    'No recordings to sync.',
+                    'Aucun enregistrement à synchroniser.',
                     [{ text: 'OK' }]
                   );
                 }
               }}
             >
-              <Text style={styles.syncButtonText}>Sync Now</Text>
+              <Text style={styles.syncButtonText}>Synchroniser maintenant</Text>
               <Ionicons name="sync" size={18} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -1731,11 +1715,13 @@ export default function SpynScreen() {
       <Modal visible={showDiamondModal} transparent animationType="fade">
         <View style={styles.diamondModalOverlay}>
           <View style={styles.diamondModalContent}>
-            <Animated.View style={{ transform: [{ rotateY: diamondSpin }] }}>
-              <View style={styles.diamondIcon}>
-                <Ionicons name="diamond" size={80} color="#1a1a2e" />
-              </View>
-            </Animated.View>
+            <View style={styles.diamondAnimationContainer}>
+              <Animated.View style={{ transform: [{ rotateY: diamondSpin }] }}>
+                <View style={styles.diamondIcon}>
+                  <Ionicons name="diamond" size={80} color="#1a1a2e" />
+                </View>
+              </Animated.View>
+            </View>
             <Text style={styles.diamondTitle}>{t('common.congratulations')}</Text>
             <Text style={styles.diamondSubtitle}>{t('spyn.blackDiamondEarned')}</Text>
           </View>
@@ -1796,18 +1782,18 @@ export default function SpynScreen() {
                       setPendingSyncCount(await offlineService.getPendingCount());
                       
                       if (synced === 0 && failed === 0) {
-                        Alert.alert('Info', 'No recordings to sync.');
+                        Alert.alert('Info', 'Aucun enregistrement à synchroniser.');
                         setShowSyncModal(false);
                       }
                     } catch (error) {
                       console.error('[SPYN] Sync error:', error);
-                      Alert.alert('Error', 'Sync failed. Try again.');
+                      Alert.alert('Erreur', 'Échec de la synchronisation. Réessayez.');
                     } finally {
                       setIsSyncing(false);
                     }
                   }}
                 >
-                  <Text style={styles.syncModalButtonText}>Sync Now</Text>
+                  <Text style={styles.syncModalButtonText}>Synchroniser maintenant</Text>
                   <Ionicons name="sync" size={20} color="#fff" />
                 </TouchableOpacity>
                 
@@ -2287,10 +2273,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#333',
   },
-  placeholderImage: { 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
   trackInfo: { 
     flex: 1, 
     marginLeft: 12 
@@ -2515,9 +2497,14 @@ const styles = StyleSheet.create({
     alignItems: 'center' 
   },
   diamondModalContent: { 
+    overflow: 'visible', 
     alignItems: 'center', 
     padding: 40 
   },
+  diamondAnimationContainer: { 
+    overflow: 'visible', 
+    marginBottom: 30, 
+  }, 
   diamondIcon: { 
     width: 120, 
     height: 120, 
