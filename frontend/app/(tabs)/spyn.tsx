@@ -50,7 +50,7 @@ const RED_COLOR = '#E53935';
 
 // Session settings
 const MAX_SESSION_DURATION = 5 * 60 * 60 * 1000; // 5 hours
-const RECOGNITION_INTERVAL = 10000; // 10 seconds between recognition cycles
+const RECOGNITION_INTERVAL = 15000; // 10 seconds between recognition cycles
 const RECORDING_DURATION = 6000; // 6 seconds of recording (leaves 4s for processing)
 
 // Venue types that qualify for Black Diamond
@@ -60,7 +60,7 @@ const VALID_VENUE_TYPES = [
   'night_club', 'nightclub', 'club', 'disco', 'discotheque',
   'bar', 'pub', 'lounge', 'cocktail_bar', 'wine_bar',
   'casino', 'event_venue', 'concert_hall', 'music_venue',
-  'dance_club', 'karaoke', 'jazz_club'
+  'dance_club', 'karaoke', 'jazz_club', 'restaurant'
   // Removed: 'restaurant', 'cafe', 'establishment', 'food', 'point_of_interest'
   // These are too generic and can match homes or any business
 ];
@@ -79,6 +79,19 @@ const EXCLUDED_VENUE_TYPES = [
   'locality', 'political', 'sublocality', 'street_address', 'route',
   'neighborhood', 'premise', 'subpremise', 'natural_feature', 'park'
 ];
+
+// Suspicious venue NAMES to exclude (like Chef Hostel)
+const SUSPICIOUS_VENUE_NAMES = [
+  'chef', 'hostel', 'auberge', 'guesthouse',
+  'airbnb', 'booking', 'hotel', 'motel',
+  'residence', 'apartment', 'maison', 'house', 'chez'
+];
+
+const hasSuspiciousName = (name) => {
+  if (!name) return false;
+  const lowerName = name.toLowerCase();
+  return SUSPICIOUS_VENUE_NAMES.some(s => lowerName.includes(s));
+};
 
 interface TrackResult {
   success: boolean;
@@ -505,7 +518,7 @@ export default function SpynScreen() {
           
           // Check if venue is in EXCLUDED list (home, office, etc.)
           const isExcluded = venueTypes.some((type: string) => 
-            EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
+            hasSuspiciousName(venueName) || EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
           
           if (isExcluded) {
@@ -528,7 +541,7 @@ export default function SpynScreen() {
           
           // Check if venue is in EXCLUDED list
           const isExcluded = venueTypes.some((type: string) => 
-            EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
+            hasSuspiciousName(venueName) || EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
           
           if (isExcluded) {
@@ -550,7 +563,7 @@ export default function SpynScreen() {
           
           // Check if venue is in EXCLUDED list
           const isExcluded = venueTypes.some((type: string) => 
-            EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
+            hasSuspiciousName(venueName) || EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
           
           if (isExcluded) {
@@ -574,7 +587,7 @@ export default function SpynScreen() {
       const newLocation: LocationInfo = {
         latitude: lat,
         longitude: lng,
-        venue: venueName || address?.name || address?.street || undefined,
+        venue: (venueName && !hasSuspiciousName(venueName)) ? venueName : (address?.city || undefined),
         city: address?.city || address?.region || undefined,
         country: address?.country || undefined,
         venue_type: venueType,

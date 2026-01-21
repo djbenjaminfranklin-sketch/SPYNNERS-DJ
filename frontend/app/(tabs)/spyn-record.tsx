@@ -150,7 +150,7 @@ export default function SpynRecordScreen() {
   const hasSuccessfulApiCallRef = useRef(false);
   
   // Native Audio VU Meter state
-  const [useNativeAudio, setUseNativeAudio] = useState(true);
+  const [useNativeAudio, setUseNativeAudio] = useState(false);
   const [nativeAudioActive, setNativeAudioActive] = useState(false);
   
   // Analysis state
