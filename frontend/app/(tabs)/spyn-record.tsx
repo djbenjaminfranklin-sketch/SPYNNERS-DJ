@@ -27,7 +27,6 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
-import { AndroidOutputFormat, AndroidAudioEncoder, IOSAudioQuality } from 'expo-av/build/Audio/RecordingConstants';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 // Import legacy FileSystem API for SDK 54 compatibility
 import * as LegacyFileSystem from 'expo-file-system/legacy';
@@ -42,7 +41,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 import offlineService from '../../src/services/offlineService';
 import { base44Spyn, base44Tracks } from '../../src/services/base44Api';
-import { SpynAudioEngine } from '../../src/native/SpynAudioEngine';
+import { saveLocalMix } from '../profile/my-mixes';
+import useUSBAudio from '../../src/hooks/useUSBAudio';
+import { StereoVUMeter, LiveWaveform } from '../../src/components/audio';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -59,7 +60,7 @@ const getBackendUrl = () => {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     return window.location.origin;
   }
-  return 'https://spyn-dj-app-1.preview.emergentagent.com';
+  return 'https://soundfixer-2.preview.emergentagent.com';
 };
 const BACKEND_URL = getBackendUrl();
 
@@ -67,15 +68,15 @@ const BACKEND_URL = getBackendUrl();
 const RECORDING_OPTIONS = {
   android: {
     extension: '.m4a',
-    outputFormat: AndroidOutputFormat.MPEG_4,
-    audioEncoder: AndroidAudioEncoder.AAC,
+    outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+    audioEncoder: Audio.AndroidAudioEncoder.AAC,
     sampleRate: 44100,
     numberOfChannels: 2,
     bitRate: 320000,
   },
   ios: {
     extension: '.m4a',
-    audioQuality: IOSAudioQuality.MAX,
+    audioQuality: Audio.IOSAudioQuality.MAX,
     sampleRate: 44100,
     numberOfChannels: 2,
     bitRate: 320000,
@@ -119,6 +120,20 @@ export default function SpynRecordScreen() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [hasPermission, setHasPermission] = useState(false);
   
+  // USB Audio detection hook
+  const { isUSBConnected, inputName: usbInputName, checkUSBStatus, isLoading: isUSBLoading } = useUSBAudio({
+    onUSBConnected: (route) => {
+      console.log('[SPYN Record] 🔌 USB Connected:', route.inputName);
+      setAudioSource('usb');
+      setAudioSourceName(route.inputName || 'USB Audio Interface');
+    },
+    onUSBDisconnected: (route) => {
+      console.log('[SPYN Record] 🔌 USB Disconnected');
+      setAudioSource('internal');
+      setAudioSourceName('Microphone interne');
+    },
+  });
+  
   // Audio source state
   const [audioSource, setAudioSource] = useState<'internal' | 'external' | 'usb'>('internal');
   const [audioSourceName, setAudioSourceName] = useState<string>('Microphone interne');
@@ -133,6 +148,10 @@ export default function SpynRecordScreen() {
   
   // Track if we successfully made API calls (proves we're online)
   const hasSuccessfulApiCallRef = useRef(false);
+  
+  // Native Audio VU Meter state
+  const [useNativeAudio, setUseNativeAudio] = useState(true);
+  const [nativeAudioActive, setNativeAudioActive] = useState(false);
   
   // Analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -170,7 +189,6 @@ export default function SpynRecordScreen() {
   
   // Refs
   const recordingRef = useRef<Audio.Recording | null>(null);
-  const currentMeteringRef = useRef<number>(-160);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingSegmentsRef = useRef<string[]>([]); // Store all recording segment URIs for native
@@ -194,7 +212,16 @@ export default function SpynRecordScreen() {
     requestPermissions();
     detectAudioSources();
     initOfflineService();
-    requestLocationPermission();
+    
+    // Check USB status on mount (native iOS)
+    if (Platform.OS === 'ios') {
+      checkUSBStatus().then((route) => {
+        if (route?.isUSB) {
+          setAudioSource('usb');
+          setAudioSourceName(route.inputName || 'USB Audio Interface');
+        }
+      });
+    }
     
     // Listen for device changes (plug/unplug)
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices) {
@@ -218,6 +245,14 @@ export default function SpynRecordScreen() {
       }
     };
   }, []);
+
+  // Request location AFTER auth is ready (token available)
+  useEffect(() => {
+    if (token) {
+      console.log('[SPYN Record] Auth token available, requesting location permission...');
+      requestLocationPermission();
+    }
+  }, [token]);
 
   // ==================== LOCATION ====================
 
@@ -252,14 +287,11 @@ export default function SpynRecordScreen() {
       let isValidVenue = false;
       
       // Valid venue types for Black Diamond - STRICT list
-      // Suspicious venue NAMES to filter out
-      const SUSPICIOUS_VENUE_NAMES = ['chef', 'hostel', 'auberge', 'airbnb', 'guesthouse', 'backpacker'];
-
       const VALID_VENUE_TYPES = [
         'night_club', 'nightclub', 'club', 'disco', 'discotheque',
         'bar', 'pub', 'lounge', 'cocktail_bar', 'wine_bar',
         'casino', 'event_venue', 'concert_hall', 'music_venue',
-        'dance_club', 'karaoke', 'jazz_club'
+        'dance_club', 'karaoke', 'jazz_club', 'restaurant'
       ];
       
       // Types that should NEVER receive Black Diamond
@@ -276,15 +308,57 @@ export default function SpynRecordScreen() {
         'locality', 'political', 'sublocality', 'street_address', 'route',
         'neighborhood', 'premise', 'subpremise', 'natural_feature', 'park'
       ];
+
+      // Suspicious venue NAMES to exclude (like Chef Hostel)
+      const SUSPICIOUS_VENUE_NAMES = [
+        'chef', 'hostel', 'auberge', 'guesthouse',
+        'airbnb', 'booking', 'hotel', 'motel',
+        'residence', 'apartment', 'maison', 'house', 'chez'
+      ];
+
+      const hasSuspiciousName = (name) => {
+        if (!name) return false;
+        const lowerName = name.toLowerCase();
+        return SUSPICIOUS_VENUE_NAMES.some(s => lowerName.includes(s));
+      };
       
-      // Try to get venue from Base44 getNearbyPlaces function (Google Places)
+      // Try Google Places FIRST, fallback to Foursquare (same as website)
       try {
-        console.log('[SPYN Record] Calling getNearbyPlaces for:', lat, lng);
-        const placesResponse = await base44Spyn.getNearbyPlaces({
-          latitude: lat,
-          longitude: lng,
-          radius: 1000,
-        });
+        console.log('[SPYN Record] Trying Google Places for:', lat, lng);
+        
+        // Add timeout to prevent UI freeze
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 8000)
+        );
+        
+        // Try Google Places first
+        let placesResponse: any = null;
+        try {
+          const placesPromise = base44Spyn.getNearbyPlaces({
+            latitude: lat,
+            longitude: lng,
+            radius: 1000,
+          });
+          placesResponse = await Promise.race([placesPromise, timeoutPromise]) as any;
+          console.log('[SPYN Record] Google Places response:', JSON.stringify(placesResponse));
+        } catch (gpError) {
+          console.log('[SPYN Record] Google Places failed, trying Foursquare...');
+        }
+        
+        // Fallback to Foursquare if Google Places failed or returned no venue
+        if (!placesResponse || placesResponse.error || (!placesResponse.venue && !placesResponse.places?.length)) {
+          try {
+            const foursquarePromise = base44Spyn.findNearbyVenueFoursquare({
+              latitude: lat,
+              longitude: lng,
+              radius: 500,
+            });
+            placesResponse = await Promise.race([foursquarePromise, timeoutPromise]) as any;
+            console.log('[SPYN Record] Foursquare response:', JSON.stringify(placesResponse));
+          } catch (fsError) {
+            console.log('[SPYN Record] Foursquare also failed');
+          }
+        }
         
         console.log('[SPYN Record] getNearbyPlaces response:', JSON.stringify(placesResponse));
         
@@ -297,14 +371,11 @@ export default function SpynRecordScreen() {
           console.log('[SPYN Record] Got venue name:', venueName, 'types:', venueTypes);
           
           // Check if venue is EXCLUDED (home, office, etc.)
-          // Check if venue NAME contains suspicious words
-          const hasSuspiciousName = venueName && SUSPICIOUS_VENUE_NAMES.some(word => venueName.toLowerCase().includes(word));
-          
-          const isExcluded = venueTypes.some((type: string) => 
+          const isExcluded = hasSuspiciousName(venueName) || venueTypes.some((type: string) => 
             EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
           
-          if (isExcluded || hasSuspiciousName) {
+          if (isExcluded) {
             console.log('[SPYN Record] ❌ Venue EXCLUDED - is a residence/office/etc');
             isValidVenue = false;
           } else {
@@ -323,14 +394,11 @@ export default function SpynRecordScreen() {
           console.log('[SPYN Record] Got venue from places array:', venueName, 'types:', venueTypes);
           
           // Check if venue is EXCLUDED
-          // Check if venue NAME contains suspicious words
-          const hasSuspiciousName = venueName && SUSPICIOUS_VENUE_NAMES.some(word => venueName.toLowerCase().includes(word));
-          
-          const isExcluded = venueTypes.some((type: string) => 
+          const isExcluded = hasSuspiciousName(venueName) || venueTypes.some((type: string) => 
             EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
           
-          if (isExcluded || hasSuspiciousName) {
+          if (isExcluded) {
             console.log('[SPYN Record] ❌ Venue EXCLUDED');
             isValidVenue = false;
           } else {
@@ -347,14 +415,11 @@ export default function SpynRecordScreen() {
           console.log('[SPYN Record] Got direct venue:', venueName, 'types:', venueTypes);
           
           // Check if venue is EXCLUDED
-          // Check if venue NAME contains suspicious words
-          const hasSuspiciousName = venueName && SUSPICIOUS_VENUE_NAMES.some(word => venueName.toLowerCase().includes(word));
-          
-          const isExcluded = venueTypes.some((type: string) => 
+          const isExcluded = hasSuspiciousName(venueName) || venueTypes.some((type: string) => 
             EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
           
-          if (isExcluded || hasSuspiciousName) {
+          if (isExcluded) {
             console.log('[SPYN Record] ❌ Venue EXCLUDED');
             isValidVenue = false;
           } else {
@@ -414,11 +479,11 @@ export default function SpynRecordScreen() {
       
       if (pendingCount > 0 && !isOffline) {
         Alert.alert(
-          'Sessions en attente',
-          `Vous avez ${pendingCount} session(s) à synchroniser. Voulez-vous les synchroniser maintenant ?`,
+          'Pending Sessions',
+          `You have ${pendingCount} session(s) to sync. Do you want to sync them now?`,
           [
-            { text: 'Plus tard', style: 'cancel' },
-            { text: 'Synchroniser', onPress: syncAllOfflineSessions }
+            { text: 'Later', style: 'cancel' },
+            { text: 'Sync', onPress: syncAllOfflineSessions }
           ]
         );
       }
@@ -430,14 +495,14 @@ export default function SpynRecordScreen() {
   // Sync all offline sessions
   const syncAllOfflineSessions = async () => {
     try {
-      setCurrentAnalysis('Synchronisation en cours...');
+      setCurrentAnalysis('Syncing...');
       const result = await offlineService.syncPendingSessions(token || '');
       
       if (result.synced > 0) {
-        Alert.alert('Succès', `${result.synced} session(s) synchronisée(s) !`);
+        Alert.alert('Success', `${result.synced} session(s) synced!`);
       }
       if (result.failed > 0) {
-        Alert.alert('Attention', `${result.failed} session(s) ont échoué. Réessayez plus tard.`);
+        Alert.alert('Warning', `${result.failed} session(s) failed. Try again later.`);
       }
       
       // Update pending count
@@ -445,7 +510,7 @@ export default function SpynRecordScreen() {
       setPendingSyncCount(pendingCount);
     } catch (error) {
       console.error('[SPYN Record] Sync error:', error);
-      Alert.alert('Erreur', 'Impossible de synchroniser les sessions.');
+      Alert.alert('Error', 'Could not sync sessions.');
     } finally {
       setCurrentAnalysis('');
     }
@@ -527,27 +592,6 @@ export default function SpynRecordScreen() {
           setSelectedDeviceId(defaultDevice.deviceId);
         }
       } else {
-        // Native (iOS/Android) - Use SpynAudioEngine for USB detection
-        try {
-          // Try SpynAudioEngine first (native USB detection)
-          if (SpynAudioEngine.isAvailable()) {
-            console.log('[SPYN Record] Using SpynAudioEngine for USB detection...');
-            const usbStatus = await SpynAudioEngine.checkUSBConnected();
-            console.log('[SPYN Record] USB Status:', usbStatus);
-            
-            if (usbStatus.isUSBConnected) {
-              setAudioSource('usb');
-              setAudioSourceName(`🎛️ ${usbStatus.deviceName || 'Interface USB détectée'}`); 
-              console.log('[SPYN Record] ✅ USB device detected:', usbStatus.deviceName);
-              setIsCheckingUSB(false);
-              return;
-            }
-          }
-        } catch (nativeError) {
-          console.log('[SPYN Record] SpynAudioEngine not available, falling back to expo-av');
-        }
-        
-        // Fallback: Use expo-av
         // Native (iOS/Android) - Need to configure audio session and check for external devices
         try {
           const status = await Audio.getPermissionsAsync();
@@ -642,7 +686,7 @@ export default function SpynRecordScreen() {
           staysActiveInBackground: true,
         });
       } else {
-        Alert.alert('Permission requise', 'L\'accès au microphone est nécessaire pour enregistrer.');
+        Alert.alert('Permission Required', 'Microphone access is needed to record.');
       }
     } catch (error) {
       console.error('Permission error:', error);
@@ -718,26 +762,31 @@ export default function SpynRecordScreen() {
       
       setWaveformData(bars);
     } else if (isRecordingRef.current && !isPaused) {
-      // For native mobile: Use REAL metering data
-      if (recordingRef.current) {
-        recordingRef.current.getStatusAsync().then(status => {
-          if (status.isRecording && status.metering !== undefined) {
-            currentMeteringRef.current = status.metering;
-          }
-        }).catch(() => {});
-      }
-      const dbLevel = currentMeteringRef.current;
-      const normalizedLevel = Math.max(0, Math.min(100, ((dbLevel + 60) / 60) * 100));
+      // For native mobile: Generate animated waveform based on recording status
+      // This provides visual feedback even though we can't access real audio data
       const bars: WaveformBar[] = [];
+      const time = Date.now() / 1000;
+      
       for (let i = 0; i < 40; i++) {
-        const variation = Math.sin(i * 0.5 + Date.now() / 200) * 8;
-        const barHeight = Math.max(5, normalizedLevel + variation + (Math.random() * 3));
+        // Create a wave pattern that looks like real audio
+        const wave1 = Math.sin(time * 2 + i * 0.3) * 30;
+        const wave2 = Math.sin(time * 3.5 + i * 0.2) * 20;
+        const wave3 = Math.sin(time * 1.2 + i * 0.5) * 15;
+        const noise = Math.random() * 15;
+        
+        // Combine waves for more natural look
+        const baseHeight = 25 + wave1 + wave2 + wave3 + noise;
+        const height = Math.max(8, Math.min(85, baseHeight));
+        
+        // Color based on intensity
         let color = CYAN_COLOR;
-        if (barHeight > 70) color = PINK_COLOR;
-        else if (barHeight > 50) color = ORANGE_COLOR;
-        else if (barHeight > 30) color = GREEN_COLOR;
-        bars.push({ height: Math.min(90, barHeight), color });
+        if (height > 65) color = PINK_COLOR;
+        else if (height > 50) color = ORANGE_COLOR;
+        else if (height > 35) color = GREEN_COLOR;
+        
+        bars.push({ height, color });
       }
+      
       setWaveformData(bars);
     } else {
       // Not recording - show static low bars
@@ -814,24 +863,23 @@ export default function SpynRecordScreen() {
       // Start waveform updates
       waveformIntervalRef.current = setInterval(updateWaveform, 100);
       
-      // Start periodic analysis during recording (every 30 seconds)
-      // This allows tracks to be identified and displayed in real-time
-      analysisIntervalRef.current = setInterval(() => {
-        console.log('[SPYN Record] Periodic analysis trigger');
-        analyzeCurrentAudio();
-      }, 30000); // Analyze every 30 seconds
-      
-      // Do an initial analysis after 15 seconds
-      setTimeout(() => {
-        if (isRecordingRef.current) {
-          console.log('[SPYN Record] Initial analysis after 15 seconds');
+      // FIX: Only enable periodic analysis on WEB platform
+      // On native iOS/Android, periodic analysis STOPS the recording
+      if (Platform.OS === 'web') {
+        analysisIntervalRef.current = setInterval(() => {
+          console.log('[SPYN Record] Periodic analysis trigger (web)');
           analyzeCurrentAudio();
-        }
-      }, 15000);
-      
-      // Simple continuous recording - with periodic analysis
-      console.log('[SPYN Record] Recording mode: Continuous with periodic analysis (every 30s)');
-      console.log('[SPYN Record] ✅ Recording started successfully');
+        }, 30000);
+                setTimeout(() => {
+          if (isRecordingRef.current) {
+            console.log('[SPYN Record] Initial analysis (web)');
+            analyzeCurrentAudio();
+          }
+        }, 15000);
+        console.log('[SPYN Record] Recording mode: WEB with analysis');
+      } else {
+        console.log('[SPYN Record] Recording mode: NATIVE CONTINUOUS');
+      }
       
     } catch (error) {
       console.error('[SPYN Record] Start error:', error);
@@ -937,11 +985,11 @@ export default function SpynRecordScreen() {
     } catch (error: any) {
       console.error('[SPYN Record] ❌ Web recording error:', error);
       if (error.name === 'NotAllowedError') {
-        Alert.alert('Permission refusée', 'Vous devez autoriser l\'accès au microphone pour enregistrer.');
+        Alert.alert('Permission Denied', 'You must allow microphone access to record.');
       } else if (error.name === 'NotFoundError') {
-        Alert.alert('Microphone non trouvé', 'Aucun microphone n\'a été détecté.');
+        Alert.alert('Microphone Not Found', 'No microphone was detected.');
       } else {
-        Alert.alert('Erreur', `Impossible d'accéder au microphone: ${error.message}`);
+        Alert.alert('Error', `Could not access microphone: ${error.message}`);
       }
       throw error;
     }
@@ -971,7 +1019,7 @@ export default function SpynRecordScreen() {
       
       if (!granted) {
         console.log('[SPYN Record] Audio permission not granted');
-        Alert.alert('Permission requise', 'L\'accès au microphone est nécessaire');
+        Alert.alert('Permission Required', 'Microphone access is needed');
         throw new Error('Permission not granted');
       }
       
@@ -988,11 +1036,9 @@ export default function SpynRecordScreen() {
       
       // Use the modern API - createAsync with HIGH_QUALITY preset (same as SPYN)
       console.log('[SPYN Record] Creating recording...');
-      const recordingOptions = {
-        ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
-        isMeteringEnabled: true,
-      };
-      const { recording } = await Audio.Recording.createAsync(recordingOptions);
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
       recordingRef.current = recording;
       
       console.log('[SPYN Record] ✅ Native recording started successfully, recording object:', !!recording);
@@ -1025,7 +1071,7 @@ export default function SpynRecordScreen() {
         }
       }
       
-      Alert.alert('Erreur', `Impossible de démarrer l'enregistrement: ${error?.message || 'Erreur inconnue'}`);
+      Alert.alert('Error', `Could not start recording: ${error?.message || 'Unknown error'}`);
       throw error;
     }
   };
@@ -1153,7 +1199,7 @@ export default function SpynRecordScreen() {
                 // If restart fails, stop the session
                 setIsRecording(false);
                 isRecordingRef.current = false;
-                Alert.alert('Erreur', 'Impossible de continuer l\'enregistrement. Session sauvegardée.');
+                Alert.alert('Error', 'Could not continue recording. Session saved.');
               }
             }
           } catch (err) {
@@ -1603,30 +1649,30 @@ export default function SpynRecordScreen() {
         console.log('[SPYN Record] Session completed - not saving to offline storage');
         console.log('[SPYN Record] Session data:', JSON.stringify(sessionData, null, 2));
         
-        // TODO: In the future, send session to Spynners API here
+        // AUTO-SAVE to My Mixes (Local Storage)
+        try {
+          console.log('[SPYN Record] 📤 Saving mix to My Mixes (local)...');
+          await saveLocalMix({
+            user_id: user?.id || user?._id || '',
+            user_name: whoPlayed === 'another' ? otherDjName : (user?.full_name || 'DJ'),
+            audio_url: fileUri, // Local file URI
+            duration: recordingDuration,
+            session_id: sessionData.id,
+            city: location?.city || '',
+            country: location?.country || '',
+            venue: correctedVenue || location?.venue || '',
+            tracks_count: allTracks.length,
+          });
+          console.log('[SPYN Record] ✅ Mix saved to My Mixes');
+        } catch (mixError: any) {
+          console.error('[SPYN Record] ❌ Failed to save mix:', mixError?.message || mixError);
+          // Don't fail the session if mix save fails
+        }
         
         console.log('[SPYN Record] Session saved successfully');
         
         // Save the mix if requested
         if (saveMix && fileUri) {
-          // Save to My Mixes using dynamic import
-          try {
-            const { saveLocalMix } = await import('../profile/my-mixes');
-            await saveLocalMix({
-              user_id: user?.id || '',
-              user_name: whoPlayed === 'another' ? otherDjName : (user?.full_name || 'DJ'),
-              audio_url: fileUri,
-              duration: recordingDuration,
-              session_id: sessionData.id,
-              city: location?.city || '',
-              country: location?.country || '',
-              venue: correctedVenue || location?.venue || '',
-              tracks_count: allTracks.length,
-            });
-            console.log('[SPYN Record] ✅ Mix saved to My Mixes');
-          } catch (mixError) {
-            console.log('[SPYN Record] Could not save to My Mixes:', mixError);
-          }
           setCurrentAnalysis('Préparation du mix pour sauvegarde...');
           await saveRecording(fileUri);
         }
@@ -1650,14 +1696,14 @@ export default function SpynRecordScreen() {
         
         // Show completion alert
         Alert.alert(
-          '🎉 Session terminée !',
-          `Durée: ${formatDuration(recordingDuration)}\nTracks identifiés: ${allTracks.length}${saveMix ? '\n\n📁 Le mix a été préparé pour la sauvegarde.' : ''}`,
+          '🎉 Session Complete!',
+          `Duration: ${formatDuration(recordingDuration)}\nTracks identified: ${allTracks.length}${saveMix ? '\n\n📁 The mix has been prepared for saving.' : ''}`,
           [{ text: 'OK' }]
         );
         
       } catch (saveError) {
         console.error('[SPYN Record] Error saving session:', saveError);
-        Alert.alert('Erreur', 'Impossible de sauvegarder la session');
+        Alert.alert('Error', 'Could not save the session');
       }
       
     } catch (error) {
@@ -1793,7 +1839,7 @@ export default function SpynRecordScreen() {
       console.log('[SPYN Record] Saving recording from:', fileUri);
       
       if (!fileUri) {
-        Alert.alert('Erreur', 'Aucun fichier audio à sauvegarder');
+        Alert.alert('Error', 'No audio file to save');
         return;
       }
       
@@ -1809,13 +1855,13 @@ export default function SpynRecordScreen() {
         link.click();
         document.body.removeChild(link);
         
-        Alert.alert('✅ Téléchargement lancé', 'Votre mix a été téléchargé.');
+        Alert.alert('✅ Download Started', 'Your mix has been downloaded.');
       } else {
         // On iOS/Android, share the M4A file directly
         // M4A (AAC) is a high-quality format supported by all devices
         // No conversion needed - M4A is the native iOS recording format
         console.log('[SPYN Record] Preparing M4A file for sharing...');
-        setCurrentAnalysis('Préparation du fichier audio...');
+        setCurrentAnalysis('Preparing audio file...');
         
         try {
           // Copy the file to a properly named location for sharing
@@ -1848,7 +1894,7 @@ export default function SpynRecordScreen() {
     } catch (error: any) {
       console.error('[SPYN Record] Save error:', error);
       setCurrentAnalysis('');
-      Alert.alert('Erreur', `Impossible de sauvegarder: ${error.message || 'Erreur inconnue'}`);
+      Alert.alert('Error', `Could not save: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -1994,36 +2040,53 @@ export default function SpynRecordScreen() {
           </TouchableOpacity>
         )}
         
-        <View style={[
-          styles.audioSourceBadge,
-          audioSource === 'usb' ? styles.audioSourceUSB : 
-          audioSource === 'external' ? styles.audioSourceExternal : 
-          styles.audioSourceInternal
-        ]}>
-          <Ionicons 
-            name={audioSource === 'usb' ? 'hardware-chip' : audioSource === 'external' ? 'headset' : 'mic'} 
-            size={16} 
-            color={audioSource === 'usb' ? '#00D4FF' : audioSource === 'external' ? GREEN_COLOR : '#888'} 
-          />
-          <Text style={[
-            styles.audioSourceText,
-            (audioSource === 'external' || audioSource === 'usb') && styles.audioSourceTextExternal
-          ]}>
-            {audioSourceName}
-          </Text>
-          {(audioSource === 'external' || audioSource === 'usb') && (
-            <View style={[styles.externalDot, audioSource === 'usb' && styles.usbDot]} />
-          )}
-          {isCheckingUSB && (
-            <Ionicons name="refresh" size={12} color="#666" style={{ marginLeft: 4 }} />
-          )}
+        {/* Audio Source Toggle Buttons */}
+        <View style={styles.audioToggleContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.audioToggleButton,
+              audioSource === 'internal' && styles.audioToggleButtonActive
+            ]}
+            onPress={() => {
+              setAudioSource('internal');
+              setAudioSourceName('Micro interne');
+            }}
+          >
+            <Ionicons name="mic" size={16} color={audioSource === 'internal' ? '#fff' : '#888'} />
+            <Text style={[
+              styles.audioToggleText,
+              audioSource === 'internal' && styles.audioToggleTextActive
+            ]}>Micro</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.audioToggleButton,
+              (audioSource === 'usb' || audioSource === 'external') && styles.audioToggleButtonUSB
+            ]}
+            onPress={() => {
+              setAudioSource('usb');
+              setAudioSourceName('USB / Interface externe');
+              detectAudioSources();
+            }}
+          >
+            <Ionicons name="hardware-chip" size={16} color={(audioSource === 'usb' || audioSource === 'external') ? '#00D4FF' : '#888'} />
+            <Text style={[
+              styles.audioToggleText,
+              (audioSource === 'usb' || audioSource === 'external') && styles.audioToggleTextUSB
+            ]}>USB</Text>
+          </TouchableOpacity>
         </View>
+        
         <TouchableOpacity 
           style={styles.refreshSourceButton}
           onPress={detectAudioSources}
           disabled={isCheckingUSB}
         >
           <Ionicons name="refresh" size={18} color={isCheckingUSB ? '#333' : '#666'} />
+          {isCheckingUSB && (
+            <Ionicons name="sync" size={12} color="#666" style={{ marginLeft: 2 }} />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -2057,10 +2120,30 @@ export default function SpynRecordScreen() {
         ) : null}
       </View>
 
-      {/* Waveform */}
+      {/* Professional VU Meters + Waveform */}
       <View style={styles.waveformSection}>
         <Text style={styles.sectionLabel}>{t('spynRecord.waveform')}</Text>
-        {renderWaveform()}
+        
+        {/* Native VU Meter (L/R channels) */}
+        {useNativeAudio && isRecording ? (
+          <>
+            <StereoVUMeter 
+              isActive={isRecording} 
+              height={20}
+              showLabels={true}
+              style={{ marginBottom: 12 }}
+            />
+            <LiveWaveform 
+              isActive={isRecording}
+              height={100}
+              color="#FF4466"
+              backgroundColor="#1a1a1a"
+            />
+          </>
+        ) : (
+          /* Fallback to original waveform when native not available */
+          renderWaveform()
+        )}
       </View>
 
       {/* Control Buttons */}
@@ -2388,6 +2471,40 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 212, 255, 0.15)',
     borderWidth: 1,
     borderColor: CYAN_COLOR + '60',
+  },
+  audioToggleContainer: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  audioToggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#1a1a1a',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  audioToggleButtonActive: {
+    backgroundColor: PINK_COLOR,
+    borderColor: PINK_COLOR,
+  },
+  audioToggleButtonUSB: {
+    backgroundColor: 'rgba(0, 212, 255, 0.2)',
+    borderColor: CYAN_COLOR,
+  },
+  audioToggleText: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  audioToggleTextActive: {
+    color: '#fff',
+  },
+  audioToggleTextUSB: {
+    color: CYAN_COLOR,
   },
   audioSourceText: {
     color: '#888',
