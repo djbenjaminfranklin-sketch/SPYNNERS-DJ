@@ -169,6 +169,7 @@ export default function SpynRecordScreen() {
   
   // Refs
   const recordingRef = useRef<Audio.Recording | null>(null);
+  const currentMeteringRef = useRef<number>(-160);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingSegmentsRef = useRef<string[]>([]); // Store all recording segment URIs for native
@@ -250,6 +251,9 @@ export default function SpynRecordScreen() {
       let isValidVenue = false;
       
       // Valid venue types for Black Diamond - STRICT list
+      // Suspicious venue NAMES to filter out
+      const SUSPICIOUS_VENUE_NAMES = ['chef', 'hostel', 'auberge', 'airbnb', 'guesthouse', 'backpacker'];
+
       const VALID_VENUE_TYPES = [
         'night_club', 'nightclub', 'club', 'disco', 'discotheque',
         'bar', 'pub', 'lounge', 'cocktail_bar', 'wine_bar',
@@ -292,11 +296,14 @@ export default function SpynRecordScreen() {
           console.log('[SPYN Record] Got venue name:', venueName, 'types:', venueTypes);
           
           // Check if venue is EXCLUDED (home, office, etc.)
+          // Check if venue NAME contains suspicious words
+          const hasSuspiciousName = venueName && SUSPICIOUS_VENUE_NAMES.some(word => venueName.toLowerCase().includes(word));
+          
           const isExcluded = venueTypes.some((type: string) => 
             EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
           
-          if (isExcluded) {
+          if (isExcluded || hasSuspiciousName) {
             console.log('[SPYN Record] ❌ Venue EXCLUDED - is a residence/office/etc');
             isValidVenue = false;
           } else {
@@ -315,11 +322,14 @@ export default function SpynRecordScreen() {
           console.log('[SPYN Record] Got venue from places array:', venueName, 'types:', venueTypes);
           
           // Check if venue is EXCLUDED
+          // Check if venue NAME contains suspicious words
+          const hasSuspiciousName = venueName && SUSPICIOUS_VENUE_NAMES.some(word => venueName.toLowerCase().includes(word));
+          
           const isExcluded = venueTypes.some((type: string) => 
             EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
           
-          if (isExcluded) {
+          if (isExcluded || hasSuspiciousName) {
             console.log('[SPYN Record] ❌ Venue EXCLUDED');
             isValidVenue = false;
           } else {
@@ -336,11 +346,14 @@ export default function SpynRecordScreen() {
           console.log('[SPYN Record] Got direct venue:', venueName, 'types:', venueTypes);
           
           // Check if venue is EXCLUDED
+          // Check if venue NAME contains suspicious words
+          const hasSuspiciousName = venueName && SUSPICIOUS_VENUE_NAMES.some(word => venueName.toLowerCase().includes(word));
+          
           const isExcluded = venueTypes.some((type: string) => 
             EXCLUDED_VENUE_TYPES.some(excluded => type.toLowerCase().includes(excluded))
           );
           
-          if (isExcluded) {
+          if (isExcluded || hasSuspiciousName) {
             console.log('[SPYN Record] ❌ Venue EXCLUDED');
             isValidVenue = false;
           } else {
@@ -683,31 +696,26 @@ export default function SpynRecordScreen() {
       
       setWaveformData(bars);
     } else if (isRecordingRef.current && !isPaused) {
-      // For native mobile: Generate animated waveform based on recording status
-      // This provides visual feedback even though we can't access real audio data
-      const bars: WaveformBar[] = [];
-      const time = Date.now() / 1000;
-      
-      for (let i = 0; i < 40; i++) {
-        // Create a wave pattern that looks like real audio
-        const wave1 = Math.sin(time * 2 + i * 0.3) * 30;
-        const wave2 = Math.sin(time * 3.5 + i * 0.2) * 20;
-        const wave3 = Math.sin(time * 1.2 + i * 0.5) * 15;
-        const noise = Math.random() * 15;
-        
-        // Combine waves for more natural look
-        const baseHeight = 25 + wave1 + wave2 + wave3 + noise;
-        const height = Math.max(8, Math.min(85, baseHeight));
-        
-        // Color based on intensity
-        let color = CYAN_COLOR;
-        if (height > 65) color = PINK_COLOR;
-        else if (height > 50) color = ORANGE_COLOR;
-        else if (height > 35) color = GREEN_COLOR;
-        
-        bars.push({ height, color });
+      // For native mobile: Use REAL metering data
+      if (recordingRef.current) {
+        recordingRef.current.getStatusAsync().then(status => {
+          if (status.isRecording && status.metering !== undefined) {
+            currentMeteringRef.current = status.metering;
+          }
+        }).catch(() => {});
       }
-      
+      const dbLevel = currentMeteringRef.current;
+      const normalizedLevel = Math.max(0, Math.min(100, ((dbLevel + 60) / 60) * 100));
+      const bars: WaveformBar[] = [];
+      for (let i = 0; i < 40; i++) {
+        const variation = Math.sin(i * 0.5 + Date.now() / 200) * 8;
+        const barHeight = Math.max(5, normalizedLevel + variation + (Math.random() * 3));
+        let color = CYAN_COLOR;
+        if (barHeight > 70) color = PINK_COLOR;
+        else if (barHeight > 50) color = ORANGE_COLOR;
+        else if (barHeight > 30) color = GREEN_COLOR;
+        bars.push({ height: Math.min(90, barHeight), color });
+      }
       setWaveformData(bars);
     } else {
       // Not recording - show static low bars
@@ -958,9 +966,11 @@ export default function SpynRecordScreen() {
       
       // Use the modern API - createAsync with HIGH_QUALITY preset (same as SPYN)
       console.log('[SPYN Record] Creating recording...');
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      const recordingOptions = {
+        ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
+        isMeteringEnabled: true,
+      };
+      const { recording } = await Audio.Recording.createAsync(recordingOptions);
       recordingRef.current = recording;
       
       console.log('[SPYN Record] ✅ Native recording started successfully, recording object:', !!recording);
@@ -1577,6 +1587,24 @@ export default function SpynRecordScreen() {
         
         // Save the mix if requested
         if (saveMix && fileUri) {
+          // Save to My Mixes using dynamic import
+          try {
+            const { saveLocalMix } = await import('../profile/my-mixes');
+            await saveLocalMix({
+              user_id: user?.id || '',
+              user_name: whoPlayed === 'another' ? otherDjName : (user?.full_name || 'DJ'),
+              audio_url: fileUri,
+              duration: recordingDuration,
+              session_id: sessionData.id,
+              city: location?.city || '',
+              country: location?.country || '',
+              venue: correctedVenue || location?.venue || '',
+              tracks_count: allTracks.length,
+            });
+            console.log('[SPYN Record] ✅ Mix saved to My Mixes');
+          } catch (mixError) {
+            console.log('[SPYN Record] Could not save to My Mixes:', mixError);
+          }
           setCurrentAnalysis('Préparation du mix pour sauvegarde...');
           await saveRecording(fileUri);
         }
