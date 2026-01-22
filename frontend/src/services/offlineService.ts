@@ -96,12 +96,10 @@ class OfflineService {
     this.networkUnsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
       const wasOffline = !this.isOnline;
       
-      // FORCE ONLINE - If we can make API calls, we're online
-      // The NetInfo library is unreliable on mobile devices
-      // Since the app clearly makes successful API calls, default to online
-      this.isOnline = true;
-      
-      console.log('[Offline] Network state changed: FORCED ONLINE (NetInfo reported: isConnected=' + state.isConnected + ', isInternetReachable=' + state.isInternetReachable + ')');
+      // Real network detection - isInternetReachable can be null initially
+      this.isOnline = state.isConnected === true && state.isInternetReachable !== false;
+
+      console.log('[Offline] Network state changed: isOnline=' + this.isOnline + ' (isConnected=' + state.isConnected + ', isInternetReachable=' + state.isInternetReachable + ')');
       
       // Notify all registered callbacks
       this.networkChangeCallbacks.forEach(callback => {
@@ -145,9 +143,12 @@ class OfflineService {
         if (nextAppState === 'active') {
           // App came to foreground - check network and sync
           console.log('[Offline] App became active - checking for pending sync...');
-          this.isOnline = true; // Assume online when app becomes active
-          this.networkChangeCallbacks.forEach(cb => cb(true));
-          this.autoSyncPendingSessions();
+          this.checkNetworkStatus().then(() => {
+            this.networkChangeCallbacks.forEach(cb => cb(this.isOnline));
+            if (this.isOnline) {
+              this.autoSyncPendingSessions();
+            }
+          });
         }
       });
     }
@@ -176,10 +177,13 @@ class OfflineService {
   }
 
   async checkNetworkStatus(): Promise<boolean> {
-    // FORCE ONLINE - The app clearly makes successful API calls
-    // NetInfo is unreliable on mobile devices
-    this.isOnline = true;
-    console.log('[Offline] checkNetworkStatus: FORCED ONLINE');
+    try {
+      const state = await NetInfo.fetch();
+      this.isOnline = state.isConnected === true && state.isInternetReachable !== false;
+      console.log('[Offline] checkNetworkStatus: isOnline=' + this.isOnline);
+    } catch (error) {
+      console.error('[Offline] checkNetworkStatus error:', error);
+    }
     return this.isOnline;
   }
 
