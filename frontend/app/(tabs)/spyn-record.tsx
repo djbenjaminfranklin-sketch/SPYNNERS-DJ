@@ -150,7 +150,7 @@ export default function SpynRecordScreen() {
   const hasSuccessfulApiCallRef = useRef(false);
   
   // Native Audio VU Meter state
-  const [useNativeAudio, setUseNativeAudio] = useState(false);
+  const [useNativeAudio, setUseNativeAudio] = useState(true);
   const [nativeAudioActive, setNativeAudioActive] = useState(false);
   
   // Analysis state
@@ -878,7 +878,12 @@ export default function SpynRecordScreen() {
         }, 15000);
         console.log('[SPYN Record] Recording mode: WEB with analysis');
       } else {
-        console.log('[SPYN Record] Recording mode: NATIVE CONTINUOUS');
+        // NATIVE: Enable analysis every 60s
+        analysisIntervalRef.current = setInterval(() => {
+          console.log('[SPYN Record] Periodic analysis (native)');
+          analyzeCurrentAudio();
+        }, 60000);
+        console.log('[SPYN Record] Recording mode: NATIVE with 60s analysis');
       }
       
     } catch (error) {
